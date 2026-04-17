@@ -1,0 +1,32 @@
+# Parameters for counter_uas bringup (one section per node name).
+# scenario: single | dual | noisy | dropout
+world_sim_node:
+  ros__parameters:
+    scenario: single
+
+radar_sim_node:
+  ros__parameters:
+    scenario: single
+    radar:
+      range: 12.0
+
+camera_sim_node:
+  ros__parameters:
+    scenario: single
+
+fusion_node:
+  ros__parameters:
+    scenario: single
+    fusion:
+      distance_threshold: 6.0
+
+tracking_node:
+  ros__parameters:
+    scenario: single
+
+viz_node:
+  ros__parameters:
+    scenario: single
+    threat:
+      medium_distance: 8.0
+      high_distance: 5.0

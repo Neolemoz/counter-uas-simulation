@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Cesium — ROS2 /tracks (rosbridge)</title>
+  <link
+    href="https://cesium.com/downloads/cesiumjs/releases/1.122/Build/Cesium/Widgets/widgets.css"
+    rel="stylesheet"
+  />
+  <style>
+    html, body, #cesiumContainer { width: 100%; height: 100%; margin: 0; padding: 0; overflow: hidden; font-family: system-ui, sans-serif; }
+    #status {
+      position: absolute; left: 8px; top: 8px; z-index: 2;
+      background: rgba(0,0,0,.65); color: #e8e8e8; padding: 8px 12px; border-radius: 6px; font-size: 12px; max-width: 420px;
+    }
+  </style>
+</head>
+<body>
+  <div id="status">rosbridge: disconnected</div>
+  <div id="cesiumContainer"></div>
+
+  <script src="https://cesium.com/downloads/cesiumjs/releases/1.122/Build/Cesium/Cesium.js"></script>
+  <script>
+console.log('🔥 JS LOADED');
+    (function () {
+      'use strict';
+
+      // Optional Ion token for World Terrain / imagery (viewer works without it using ellipsoid + OSM).
+      // Cesium.Ion.defaultAccessToken = 'YOUR_ION_ACCESS_TOKEN';
+
+      const WS_URL = 'ws://localhost:9090';
+      const TRACK_TOPIC = '/tracks';
+      /** @type {Cesium.Viewer} */
+      let viewer;
+      /** @type {Cesium.Entity} */
+      let drone;
+
+      const statusEl = document.getElementById('status');
+
+      function setStatus(text) {
+        statusEl.textContent = text;
+      }
+
+      function initCesium() {
+        viewer = new Cesium.Viewer('cesiumContainer', {
+          animation: false,
+          timeline: false,
+          geocoder: false,
+          homeButton: true,
+          sceneModePicker: true,
+          baseLayerPicker: false,
+          navigationHelpButton: false,
+          fullscreenButton: true,
+          baseLayer: new Cesium.ImageryLayer(
+            new Cesium.OpenStreetMapImageryProvider({ url: 'https://tile.openstreetmap.org/' }),
+          ),
+          terrain: new Cesium.Terrain(Promise.resolve(new Cesium.EllipsoidTerrainProvider())),
+        });
+
+        const homeLon = 100.5231;
+        const homeLat = 13.7367;
+        const homeH = 120.0;
+
+        drone = viewer.entities.add({
+          id: 'drone',
+          name: 'ROS /tracks',
+          position: Cesium.Cartesian3.fromDegrees(homeLon, homeLat, homeH),
+          point: {
+            pixelSize: 14,
+            color: Cesium.Color.fromCssColorString('rgba(0, 255, 255, 0.92)'),
+          },
+          label: {
+            text: 'track',
+            font: 'bold 14px sans-serif',
+            fillColor: Cesium.Color.fromCssColorString('rgba(255, 255, 255, 0.98)'),
+            showBackground: true,
+            backgroundColor: Cesium.Color.fromCssColorString('rgba(0, 0, 0, 0.72)'),
+            backgroundPadding: new Cesium.Cartesian2(7, 4),
+            style: Cesium.LabelStyle.FILL,
+            verticalOrigin: Cesium.VerticalOrigin.BOTTOM,
+            pixelOffset: new Cesium.Cartesian2(0, -18),
+          },
+        });
+
+        viewer.camera.flyTo({
+          destination: Cesium.Cartesian3.fromDegrees(homeLon, homeLat, 2500),
+          orientation: {
+            heading: Cesium.Math.toRadians(0),
+            pitch: Cesium.Math.toRadians(-45),
+            roll: 0,
+          },
+        });
+      }
+
+      function isFiniteVec3(x, y, z) {
+        return Number.isFinite(x) && Number.isFinite(y) && Number.isFinite(z);
+      }
+
+      /**
+       * Reject NaN/Infinity/strings — those slip through typeof === 'number' for NaN
+       * and break WebGL (uniform3fv: no array).
+       */
+      function applyTrackMsg(msg) {
+        if (!msg || typeof msg !== 'object') {
+          return;
+        }
+        const x = Number(msg.x);
+        const y = Number(msg.y);
+        const z = Number(msg.z);
+        if (!isFiniteVec3(x, y, z)) {
+          console.warn('⚠️ Skip /tracks update: non-finite x,y,z', { raw: msg, x, y, z });
+          return;
+        }
+
+        const lon = 100.5231 + x * 0.0001;
+        const lat = 13.7367 + y * 0.0001;
+        if (!isFiniteVec3(lon, lat, z)) {
+          return;
+        }
+
+        drone.position = Cesium.Cartesian3.fromDegrees(lon, lat, z);
+        if (drone.label) {
+          drone.label.text = `(${x.toFixed(1)}, ${y.toFixed(1)}, ${z.toFixed(1)})`;
+        }
+      }
+
+      // ---------- WebSocket (ROS bridge) ----------
+      function connectRosbridge() {
+        const socket = new WebSocket(WS_URL);
+
+        socket.onopen = () => {
+          console.log('✅ Connected to ROS bridge');
+          setStatus('rosbridge: connected');
+
+          const subscribeMsg = {
+            op: 'subscribe',
+            topic: TRACK_TOPIC,
+            // ROS 2 needs message type for a reliable subscription:
+            type: 'geometry_msgs/msg/Point',
+          };
+          socket.send(JSON.stringify(subscribeMsg));
+          console.log('📡 Subscribed to /tracks');
+          console.log('📡 subscribe payload:', subscribeMsg);
+        };
+
+        socket.onmessage = (event) => {
+          console.log('📡 Raw message:', event.data);
+
+          let data;
+          try {
+            data = JSON.parse(event.data);
+          } catch (e) {
+            console.warn('⚠️ JSON parse failed:', e.message);
+            return;
+          }
+
+          if (data.msg) {
+            console.log('📦 Parsed op/topic:', data.op, data.topic);
+          }
+
+          if (data.msg) {
+            const tx = Number(data.msg.x);
+            const ty = Number(data.msg.y);
+            const tz = Number(data.msg.z);
+            if (isFiniteVec3(tx, ty, tz)) {
+              console.log('🚁 ROS Track:', tx, ty, tz);
+            }
+          }
+
+          if (data.op === 'publish' && data.topic === TRACK_TOPIC && data.msg) {
+            applyTrackMsg(data.msg);
+            return;
+          }
+          if (data.topic === TRACK_TOPIC && data.msg) {
+            applyTrackMsg(data.msg);
+          }
+        };
+
+        socket.onerror = (error) => {
+          console.error('❌ WebSocket Error:', error);
+          setStatus('rosbridge: WebSocket error (is ./fix_rosbridge.sh running?)');
+        };
+
+        socket.onclose = (event) => {
+          console.warn('⚠️ WebSocket Closed', { code: event.code, reason: event.reason, wasClean: event.wasClean });
+          setStatus('rosbridge: closed — retry in 3s…');
+          setTimeout(connectRosbridge, 3000);
+        };
+      }
+      // ---------- end WebSocket ----------
+
+      try {
+        if (typeof Cesium === 'undefined') {
+          throw new Error('Cesium global missing — check CDN / network');
+        }
+        initCesium();
+        console.log('🗺️ Cesium viewer + drone ready');
+        connectRosbridge();
+      } catch (e) {
+        console.error('❌ Init failed:', e);
+        setStatus('Init error — see console (F12)');
+      }
+    })();
+  </script>
+</body>
+</html>

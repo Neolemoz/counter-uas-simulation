@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Cesium + ROS2 rosbridge</title>
+  <link
+    rel="stylesheet"
+    href="https://cesium.com/downloads/cesiumjs/releases/1.122/Build/Cesium/Widgets/widgets.css"
+  />
+  <style>
+    html, body, #cesiumContainer {
+      width: 100%;
+      height: 100%;
+      margin: 0;
+      padding: 0;
+      overflow: hidden;
+      font-family: system-ui, sans-serif;
+    }
+    #status {
+      position: absolute;
+      left: 8px;
+      top: 8px;
+      z-index: 2;
+      background: rgba(0, 0, 0, 0.65);
+      color: #e8e8e8;
+      padding: 8px 12px;
+      border-radius: 6px;
+      font-size: 12px;
+      max-width: 420px;
+    }
+  </style>
+</head>
+<body>
+  <div id="status">rosbridge: idle</div>
+  <div id="cesiumContainer"></div>
+
+  <script src="https://cesium.com/downloads/cesiumjs/releases/1.122/Build/Cesium/Cesium.js"></script>
+  <script>
+console.log('🔥 JS LOADED');
+
+(function () {
+  'use strict';
+
+  window.addEventListener('error', function (ev) {
+    console.error('❌ window.onerror:', ev.message, ev.filename, ev.lineno);
+  });
+  window.addEventListener('unhandledrejection', function (ev) {
+    console.error('❌ unhandledrejection:', ev.reason);
+  });
+
+  var params = new URLSearchParams(window.location.search);
+  var WS_URL = params.get('ws') || 'ws://127.0.0.1:9090';
+  var TRACK_TOPIC = '/tracks';
+  var smooth = { x: null, y: null, z: null };
+  var SMOOTH_ALPHA = 0.22;
+  var SNAP_JUMP_M = 4.0;
+  var msgCount = 0;
+  console.log('🔌 WebSocket URL:', WS_URL);
+  var viewer;
+  var drone;
+  var statusEl = document.getElementById('status');
+
+  function setStatus(text) {
+    statusEl.textContent = text;
+  }
+
+  function isFiniteVec3(x, y, z) {
+    return Number.isFinite(x) && Number.isFinite(y) && Number.isFinite(z);
+  }
+
+  function applyTrackMsg(msg) {
+    if (!msg || typeof msg !== 'object') {
+      return;
+    }
+    var x = Number(msg.x);
+    var y = Number(msg.y);
+    var z = Number(msg.z);
+    if (!isFiniteVec3(x, y, z)) {
+      console.warn('⚠️ Skip /tracks: non-finite', msg);
+      return;
+    }
+    var sx;
+    var sy;
+    var sz;
+    if (smooth.x === null || smooth.y === null || smooth.z === null) {
+      sx = x;
+      sy = y;
+      sz = z;
+    } else {
+      var dx = x - smooth.x;
+      var dy = y - smooth.y;
+      var dz = z - smooth.z;
+      var dist = Math.sqrt(dx * dx + dy * dy + dz * dz);
+      if (dist > SNAP_JUMP_M) {
+        sx = x;
+        sy = y;
+        sz = z;
+      } else {
+        sx = smooth.x + SMOOTH_ALPHA * dx;
+        sy = smooth.y + SMOOTH_ALPHA * dy;
+        sz = smooth.z + SMOOTH_ALPHA * dz;
+      }
+    }
+    smooth.x = sx;
+    smooth.y = sy;
+    smooth.z = sz;
+    var lon = 100.5231 + sx * 0.0001;
+    var lat = 13.7367 + sy * 0.0001;
+    if (!isFiniteVec3(lon, lat, sz)) {
+      return;
+    }
+    drone.position = Cesium.Cartesian3.fromDegrees(lon, lat, sz);
+    if (drone.label) {
+      drone.label.text = '(' + sx.toFixed(1) + ', ' + sy.toFixed(1) + ', ' + sz.toFixed(1) + ')';
+    }
+  }
+
+  function initCesium() {
+    viewer = new Cesium.Viewer('cesiumContainer', {
+      animation: false,
+      timeline: false,
+      geocoder: false,
+      homeButton: true,
+      sceneModePicker: true,
+      baseLayerPicker: false,
+      navigationHelpButton: false,
+      fullscreenButton: true,
+      baseLayer: new Cesium.ImageryLayer(
+        new Cesium.OpenStreetMapImageryProvider({ url: 'https://tile.openstreetmap.org/' }),
+      ),
+      terrain: new Cesium.Terrain(Promise.resolve(new Cesium.EllipsoidTerrainProvider())),
+    });
+
+    var homeLon = 100.5231;
+    var homeLat = 13.7367;
+    var homeH = 120.0;
+
+    drone = viewer.entities.add({
+      id: 'drone',
+      name: 'ROS /tracks',
+      position: Cesium.Cartesian3.fromDegrees(homeLon, homeLat, homeH),
+      point: {
+        pixelSize: 14,
+        color: Cesium.Color.fromCssColorString('rgba(0, 255, 255, 0.92)'),
+      },
+      label: {
+        text: 'track',
+        font: 'bold 14px sans-serif',
+        fillColor: Cesium.Color.fromCssColorString('rgba(255, 255, 255, 0.98)'),
+        showBackground: true,
+        backgroundColor: Cesium.Color.fromCssColorString('rgba(0, 0, 0, 0.72)'),
+        backgroundPadding: new Cesium.Cartesian2(7, 4),
+        style: Cesium.LabelStyle.FILL,
+        verticalOrigin: Cesium.VerticalOrigin.BOTTOM,
+        pixelOffset: new Cesium.Cartesian2(0, -18),
+      },
+    });
+
+    viewer.camera.flyTo({
+      destination: Cesium.Cartesian3.fromDegrees(homeLon, homeLat, 2500),
+      orientation: {
+        heading: Cesium.Math.toRadians(0),
+        pitch: Cesium.Math.toRadians(-45),
+        roll: 0,
+      },
+    });
+    console.log('🗺️ Cesium viewer + drone ready');
+  }
+
+  function connectRosbridge() {
+    var socket = new WebSocket(WS_URL);
+
+    socket.onopen = function () {
+      console.log('✅ Connected to ROS bridge');
+      setStatus('rosbridge: connected');
+      socket.send(
+        JSON.stringify({
+          op: 'subscribe',
+          topic: TRACK_TOPIC,
+          type: 'geometry_msgs/msg/Point',
+        }),
+      );
+      console.log('📡 Subscribed to ' + TRACK_TOPIC);
+    };
+
+    socket.onerror = function (err) {
+      console.error('❌ WebSocket Error:', err);
+      setStatus('rosbridge: error — start rosbridge on :9090 (e.g. fix_rosbridge.sh)');
+    };
+
+    socket.onclose = function (ev) {
+      console.warn('⚠️ WebSocket Closed', 'code=' + ev.code, ev.reason || '');
+      setStatus('rosbridge: closed — retry in 3s');
+      setTimeout(connectRosbridge, 3000);
+    };
+
+    socket.onmessage = function (event) {
+      msgCount += 1;
+      if (params.get('debug') === '1' || msgCount <= 5 || msgCount % 40 === 0) {
+        console.log('📡 Raw message:', event.data);
+      }
+      var data;
+      try {
+        data = JSON.parse(event.data);
+      } catch (e) {
+        console.warn('⚠️ JSON parse failed:', e.message);
+        return;
+      }
+      if (data.op === 'publish' && data.topic === TRACK_TOPIC && data.msg) {
+        applyTrackMsg(data.msg);
+        return;
+      }
+      if (data.topic === TRACK_TOPIC && data.msg) {
+        applyTrackMsg(data.msg);
+      }
+    };
+  }
+
+  try {
+    if (typeof Cesium === 'undefined') {
+      throw new Error('Cesium global missing — check script CDN / network');
+    }
+    initCesium();
+    connectRosbridge();
+  } catch (e) {
+    console.error('❌ Init failed:', e);
+    setStatus('Init error — see console (F12)');
+  }
+})();
+
+  </script>
+</body>
+</html>
