@@ -24,7 +24,7 @@ def compute_pn_acceleration(
 
     a = N * V_c * np.cross(los_rate, r_hat)
 
-    max_acc = 20.0
+    max_acc = 40.0
     na = float(np.linalg.norm(a))
     if na > max_acc:
         a = a / na * max_acc

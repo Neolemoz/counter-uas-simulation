@@ -1,4 +1,6 @@
 from launch import LaunchDescription
+from launch.actions import IncludeLaunchDescription
+from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch.substitutions import PathJoinSubstitution
 from launch_ros.actions import Node
 from launch_ros.parameter_descriptions import ParameterFile
@@ -11,15 +13,24 @@ def generate_launch_description() -> LaunchDescription:
     )
     params = [ParameterFile(config, allow_substs=True)]
 
+    gazebo_target = IncludeLaunchDescription(
+        PythonLaunchDescriptionSource(
+            [
+                PathJoinSubstitution(
+                    [
+                        FindPackageShare('gazebo_target_sim'),
+                        'launch',
+                        'gazebo_target.launch.py',
+                    ],
+                ),
+            ],
+        ),
+    )
+
     return LaunchDescription(
         [
-            Node(
-                package='world_sim',
-                executable='world_sim_node',
-                name='world_sim_node',
-                output='screen',
-                parameters=params,
-            ),
+            # Synthetic kinematic target replaced by Gazebo (see gazebo_target_sim).
+            gazebo_target,
             Node(
                 package='radar_sim',
                 executable='radar_sim_node',
