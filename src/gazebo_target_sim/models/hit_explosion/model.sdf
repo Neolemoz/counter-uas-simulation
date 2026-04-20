@@ -1,0 +1,20 @@
+<?xml version="1.0" ?>
+<!-- Visual-only bloom spawned at hit location; removed after a few seconds. -->
+<sdf version="1.8">
+  <model name="hit_explosion">
+    <static>true</static>
+    <link name="link">
+      <visual name="flash">
+        <geometry>
+          <sphere><radius>3.2</radius></sphere>
+        </geometry>
+        <material>
+          <ambient>1 0.42 0.05 0.7</ambient>
+          <diffuse>1 0.52 0.08 0.85</diffuse>
+          <emissive>1 0.48 0 1</emissive>
+        </material>
+        <transparency>0.32</transparency>
+      </visual>
+    </link>
+  </model>
+</sdf>

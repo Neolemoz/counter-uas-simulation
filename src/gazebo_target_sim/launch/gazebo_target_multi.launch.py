@@ -1,4 +1,4 @@
-"""Start gz sim + one hostile sphere (sphere_target_0) / multi-interceptor kinematics; /drone/position = ground truth."""
+"""Three hostile spheres + TTI bipartite assignment; /drone_i/position and per-target stop topics."""
 
 from __future__ import annotations
 
@@ -11,12 +11,7 @@ from launch_ros.actions import Node
 from launch_ros.substitutions import FindPackageShare
 
 
-# -----------------------------------------------------------------------------
-# Scenario tuning (แก้ที่นี่): เปลี่ยนความเร็วโดรนโจมตี → guidance + interceptor คำนวณตาม
-# -----------------------------------------------------------------------------
-
 def _target_speed_peak_m_s(vx: float, vz_approach: float, vz_dive: float) -> float:
-    """ขนาดความเร็วสูงสุดของ traject โจมตี (ช่วง approach vs dive)."""
     return max(math.hypot(vx, vz_approach), math.hypot(vx, vz_dive))
 
 
@@ -29,12 +24,6 @@ def _interception_from_target(
     vmax_above_closing_m_s: float,
     interceptor_above_guidance_vmax_m_s: float,
 ) -> tuple[float, float, float, float]:
-    """
-    คืน (v_target_peak, guidance_closing, guidance_max_speed, interceptor_max_speed).
-
-    interception_logic ใช้ closing / max_speed สั่งทิศและ clamp;
-    interceptor ต้อง max_speed >= คำสั่งที่ออกจริง (≈ min(closing, vmax)) + หัวเหลือเล็กน้อย.
-    """
     v_peak = _target_speed_peak_m_s(vx, vz_approach, vz_dive)
     closing = max(8.0, v_peak + closing_margin_over_target_m_s)
     vmax = closing + vmax_above_closing_m_s
@@ -43,43 +32,26 @@ def _interception_from_target(
 
 
 def _vel_smooth_alpha(interceptor_max_m_s: float, v_target_peak: float) -> float:
-    """อัตราตาม headroom — ยิ่งเร็วกว่าเป้ามาก ยิ่งโน้มคำสั่งไวขึ้น."""
     headroom = max(0.0, interceptor_max_m_s - v_target_peak)
     a = 0.38 + 0.035 * headroom
     return float(min(0.88, max(0.32, a)))
 
 
-# ลู่บินโจมตี (ต้องตรงกับค่าที่ส่งให้ target_controller_node)
-# เริ่มเหนือจุดป้องกัน (0,0,*) แล้วร่วงลงแนวดิ่ง — ไม่ใช้ vx คงที่ไป +x (เดิมทำให้ลูกส้ม
-# “ลอด” โดมแล้วบินออกฝั่งไกลนอกเขต)
-TGT_START_X_M = 0.0
-TGT_START_Y_M = 0.0
-# ระยะจากศูนย์ = z เมื่อ (0,0,z) — ความเร็วลงมาจาก target_controller (ไม่ใช่ g โลก; sphere ปิด gravity ใน SDF แล้ว)
-TGT_START_Z_M = 36.0
 TGT_APPROACH_VX_M_S = 0.0
-# ช้าลงให้มองทัน — ถ้ายังเร็ว ลดเลขต่อ (ใกล้ 0 ยิ่งช้า)
 TGT_APPROACH_VZ_M_S = -0.28
 TGT_DIVE_VZ_M_S = -0.45
 TGT_T_DIV_S = 28.0
-# ครึ่งควหนาแถบชนรอบ r_mid: เดิม 3 m ทำให้อยู่ชั้น detect นานแล้วตัด cmd=0 — โดรนเลยไม่บินไล่
 STRIKE_SHELL_HALF_WIDTH_M = 10.0
-
-# ไล่เร็วกว่าเป้า (peak) อย่างน้อยเท่าใด → closing_speed; vmax = closing + เล็กน้อย (clamp ใน node)
 CLOSING_MARGIN_OVER_TARGET_M_S = 6.0
 VMAX_ABOVE_CLOSING_M_S = 1.0
-# แรงดันจริงของ interceptor ต้องเหนือ vmax ของ guidance เล็กน้อย (ไม่ให้โดนตัดที่ 8–18 แบบคงที่)
 INTERCEPTOR_ABOVE_GUIDANCE_VMAX_M_S = 3.0
-
-# โดม 3 ชั้น (m) — ต้องตรงกับ danger_dome_* ใน target_sphere.sdf (โดมเล็กลง มอง overview + โดรนในจอชัดขึ้น)
 DOME_OUTER_M = 36.0
 DOME_MIDDLE_M = 26.0
 DOME_INNER_M = 17.0
-
-# โดรนสะกัด: z=0 ให้ฐานโมเดลอยู่ชิดพื้น (collision box ~0–0.45 m — ตรงกับ target_sphere.sdf)
 INTERCEPTOR_GROUND_Z_M = 0.0
 
 
-def _gz_target_setup(context, *args, **kwargs):
+def _gz_multi_setup(context, *args, **kwargs):
     world_name = LaunchConfiguration('world_name').perform(context)
     world_file = PathJoinSubstitution(
         [FindPackageShare('gazebo_target_sim'), 'worlds', 'target_sphere.sdf'],
@@ -100,7 +72,6 @@ def _gz_target_setup(context, *args, **kwargs):
         output='screen',
     )
 
-    # แปลงเวลาจำลองจาก Gazebo -> /clock เพื่อให้โหนดจับ "reset" (เวลาย้อน) แล้วเคลียร์สถานะ ROS
     clock_bridge = Node(
         package='ros_gz_bridge',
         executable='parameter_bridge',
@@ -111,34 +82,42 @@ def _gz_target_setup(context, *args, **kwargs):
         ],
     )
 
-    controller = Node(
-        package='gazebo_target_sim',
-        executable='target_controller_node',
-        name='target_controller_node',
-        output='screen',
-        parameters=[
-            {
-                'world_name': world_name,
-                'model_name': 'sphere_target_0',
-                'rate_hz': 10.0,
-                'start_x_m': TGT_START_X_M,
-                'start_y_m': TGT_START_Y_M,
-                'start_z_m': TGT_START_Z_M,
-                't_dive_s': TGT_T_DIV_S,
-                'approach_speed': TGT_APPROACH_VX_M_S,
-                'approach_vz': TGT_APPROACH_VZ_M_S,
-                'dive_speed': TGT_DIVE_VZ_M_S,
-                'log_period_s': 1.0,
-                'publish_drone_position': True,
-                'drone_position_topic': '/drone/position',
-                'stop_topic': '/target/stop',
-                'explode_on_hit': True,
-                'explosion_fade_s': 4.0,
-                # gz remove/create บางครั้งใช้เวลานานกว่า set_pose
-                'service_timeout_ms': 5000,
-            },
-        ],
-    )
+    targets_cfg = [
+        ('sphere_target_0', 0.0, 0.0, 36.0, '/drone_0/position', '/target_0/stop'),
+        ('sphere_target_1', -6.0, 5.0, 34.0, '/drone_1/position', '/target_1/stop'),
+        ('sphere_target_2', 6.0, -5.0, 32.0, '/drone_2/position', '/target_2/stop'),
+    ]
+    target_nodes = []
+    for idx, (model_name, sx, sy, sz, pos_topic, stop_topic) in enumerate(targets_cfg):
+        target_nodes.append(
+            Node(
+                package='gazebo_target_sim',
+                executable='target_controller_node',
+                name=f'target_controller_{idx}',
+                output='screen',
+                parameters=[
+                    {
+                        'world_name': world_name,
+                        'model_name': model_name,
+                        'rate_hz': 10.0,
+                        'start_x_m': sx,
+                        'start_y_m': sy,
+                        'start_z_m': sz,
+                        't_dive_s': TGT_T_DIV_S,
+                        'approach_speed': TGT_APPROACH_VX_M_S,
+                        'approach_vz': TGT_APPROACH_VZ_M_S,
+                        'dive_speed': TGT_DIVE_VZ_M_S,
+                        'log_period_s': 1.0,
+                        'publish_drone_position': True,
+                        'drone_position_topic': pos_topic,
+                        'stop_topic': stop_topic,
+                        'explode_on_hit': True,
+                        'explosion_fade_s': 4.0,
+                        'service_timeout_ms': 5000,
+                    },
+                ],
+            ),
+        )
 
     interceptors_cfg = [
         ('interceptor_0', -5.0, 0.0, INTERCEPTOR_GROUND_Z_M),
@@ -166,6 +145,7 @@ def _gz_target_setup(context, *args, **kwargs):
                         'vel_z': 0.0,
                         'cmd_velocity_topic': f'/{model_name}/cmd_velocity',
                         'selected_id_topic': '/interceptor/selected_id',
+                        'assigned_target_topic': f'/{model_name}/assigned_target',
                         'cmd_timeout_s': 0.75,
                         'max_speed_m_s': interceptor_vmax,
                         'position_topic': f'/{model_name}/position',
@@ -185,15 +165,13 @@ def _gz_target_setup(context, *args, **kwargs):
         output='screen',
         parameters=[
             {
-                # Match interceptor_controller tick (10 Hz) to avoid chattering between guidance steps.
                 'rate_hz': 10.0,
                 'closing_speed_m_s': guidance_closing,
                 'max_speed_m_s': guidance_vmax,
                 'min_distance_m': 0.22,
                 'log_period_s': 1.0,
                 'selection_log_period_s': 2.0,
-                # พิมพ์สมการ TTI + กฎเลือกโดรนลง terminal เป็นระยะ (ดู selection_algo_period_s)
-                'selection_algo_verbose': True,
+                'selection_algo_verbose': False,
                 'selection_algo_period_s': 1.0,
                 'selection_margin_s': 0.3,
                 'switch_window_s': 2.0,
@@ -203,26 +181,23 @@ def _gz_target_setup(context, *args, **kwargs):
                 'min_intercept_time_s': 0.02,
                 'target_topic': '/drone/position',
                 'selected_id_topic': '/interceptor/selected_id',
-                'lock_selected_after_first': True,
-                # ระยะหยุด/ระเบิด — ให้กว้างพอจับเมื่อเป้ากับสะกัดมาจากมุมต่างกัน
+                'lock_selected_after_first': False,
                 'hit_threshold_m': 4.5,
                 'hit_min_target_z_m': 0.5,
-                # พุ่งไปจุดบนเปลือก r_mid (ขอบ L1/L2) ในทิศเดียวกับเป้า — pursuit/lead
                 'aim_strike_on_mid_shell': True,
                 'target_velocity_smooth_alpha': 0.52,
                 'pursuit_lead_blend': 0.28,
                 'world_name': world_name,
-                'pause_gz_on_hit': True,
+                # Continuous engagement: do not freeze sim after a kill; other tracks keep running.
+                'pause_gz_on_hit': False,
                 'strike_shell_half_width_m': STRIKE_SHELL_HALF_WIDTH_M,
                 'stop_topic': '/target/stop',
                 'interceptor_ids': ['interceptor_0', 'interceptor_1', 'interceptor_2'],
-                # Direct collision course; PN off (was causing lag vs fast target).
                 'use_pn_refinement': False,
                 'pn_navigation_constant': 3.0,
                 'pn_blend_gain': 0.0,
                 'pn_min_closing_speed_m_s': 0.15,
                 'naive_lead_time_s': 0.85,
-                # Ram/HIT only in strike shell |d - dome_middle_m| ≤ strike_shell_half_width_m. Radii match SDF.
                 'dome_enabled': True,
                 'dome_center_x': 0.0,
                 'dome_center_y': 0.0,
@@ -233,15 +208,37 @@ def _gz_target_setup(context, *args, **kwargs):
                 'reset_lock_when_outside_dome': True,
                 'dome_selection_mode': 'nearest',
                 'publish_dome_rviz_marker': True,
+                'multi_target_enabled': True,
+                'multi_target_labels': ['target_0', 'target_1', 'target_2'],
+                'multi_target_position_topics': [
+                    '/drone_0/position',
+                    '/drone_1/position',
+                    '/drone_2/position',
+                ],
+                'multi_target_stop_topics': [
+                    '/target_0/stop',
+                    '/target_1/stop',
+                    '/target_2/stop',
+                ],
+                'assignment_print_period_s': 1.0,
+                'threat_weight_dist': 1.0,
+                'threat_weight_vz': 0.05,
+                'threat_weight_tti': 1.0,
+                'threat_distance_eps_m': 1.0,
+                'threat_tti_fallback_s': 120.0,
+                'threat_dive_speed_threshold_m_s': 0.35,
+                'threat_dive_boost': 6.0,
+                'threat_critical_radius_m': 14.0,
+                'threat_critical_boost': 50.0,
+                'assignment_stability_enabled': True,
+                'assignment_switch_tti_margin_s': 1.2,
             },
         ],
     )
 
-    # Gazebo must be up before gz service calls. Keep this short: sphere_target is dynamic with
-    # gravity — a multi-second delay lets it fall underground before set_pose runs (no visible target).
     delayed = TimerAction(
         period=0.5,
-        actions=[controller, *interceptor_nodes, interception],
+        actions=[*target_nodes, *interceptor_nodes, interception],
     )
     return [gz, clock_bridge, delayed]
 
@@ -254,11 +251,6 @@ def generate_launch_description() -> LaunchDescription:
                 default_value='counter_uas_target',
                 description='Must match <world name="..."> in target_sphere.sdf.',
             ),
-            DeclareLaunchArgument(
-                'model_child_frame',
-                default_value='',
-                description='Unused: /drone/position is published by target_controller_node (ground truth).',
-            ),
-            OpaqueFunction(function=_gz_target_setup),
+            OpaqueFunction(function=_gz_multi_setup),
         ],
     )
