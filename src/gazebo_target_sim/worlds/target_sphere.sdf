@@ -61,7 +61,8 @@
     <!-- Target stand-ins: orange spheres (truth from target_controller_node per model). -->
     <model name="sphere_target_0">
       <static>false</static>
-      <pose>0 0 36 0 0 0</pose>
+      <!-- Matches gazebo_target.launch TGT_START_* (hostile from altitude). -->
+      <pose>-11 9 40 0 0 0</pose>
       <link name="base_link">
         <gravity>false</gravity>
         <inertial>

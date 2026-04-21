@@ -249,7 +249,9 @@ class InterceptionLogicNode(Node):
     Subscribes to ``/drone/position`` and ``/<id>/position`` for each interceptor id.
     Maintains a **committed** interceptor; reassignment uses TTI margin + minimum dwell
     ``switch_window_s`` (seconds since last commit). Forced reassignment when the committed
-    unit becomes infeasible. Publishes ``Vector3`` on ``/<id>/cmd_velocity`` (non-committed = 0).
+    unit becomes infeasible.     Publishes ``Vector3`` on ``/<id>/cmd_velocity`` (non-committed = 0).
+
+    Logs ``[min_miss]`` (minimum |P_T-P_I| m this run on active guidance/hit paths) vs ``hit_threshold``.
 
     **Kinematics:** ``_compute_intercept`` / naive LOS use **x,y,z**; ``cmd_vel`` includes ``vz``.
     When the target is above the interceptor, the commanded direction has **vz > 0** (climb to
@@ -263,6 +265,8 @@ class InterceptionLogicNode(Node):
         self.declare_parameter('max_speed_m_s', 7.5)
         self.declare_parameter('min_distance_m', 0.45)
         self.declare_parameter('log_period_s', 1.0)
+        # [Intercept Debug] line: mode, distance, t_hit, poses, cmd_vel, alignment (LOS vs cmd).
+        self.declare_parameter('intercept_debug', True)
         self.declare_parameter('selection_log_period_s', 2.0)
         self.declare_parameter('selection_margin_s', 0.3)
         self.declare_parameter('switch_window_s', 2.0)
@@ -341,6 +345,7 @@ class InterceptionLogicNode(Node):
         self._vmax = max(float(self.get_parameter('max_speed_m_s').value), self._closing)
         self._r_stop = max(float(self.get_parameter('min_distance_m').value), 0.05)
         self._log_period = max(float(self.get_parameter('log_period_s').value), 0.2)
+        self._intercept_debug = bool(self.get_parameter('intercept_debug').value)
         self._sel_log_period = max(float(self.get_parameter('selection_log_period_s').value), 0.5)
         self._t_hit_max = max(float(self.get_parameter('max_intercept_time_s').value), 0.5)
         self._t_hit_min = max(float(self.get_parameter('min_intercept_time_s').value), 1e-4)
@@ -497,6 +502,9 @@ class InterceptionLogicNode(Node):
         self._pause_gz_on_hit = bool(self.get_parameter('pause_gz_on_hit').value)
         self._gz_pause_sent = False
         self._last_algo_log: Time | None = None
+        # Closest 3D range |P_T - P_I| seen this run (engagement paths only); reset on sim rewind.
+        self._min_miss_distance = float("inf")
+        self._last_miss_log = self.get_clock().now()  # same cadence as intercept detail log (log_period_s)
 
         qos_marker = QoSProfile(
             depth=1,
@@ -564,6 +572,7 @@ class InterceptionLogicNode(Node):
                 self._multi_v_smooth[lab] = (0.0, 0.0, 0.0)
             self._last_assignment_print = None
             self._multi_prev_assign.clear()
+        self._min_miss_distance = float("inf")
 
     def _publish_stop_signal(self, target_label: str | None) -> None:
         stop = Bool(data=True)
@@ -591,6 +600,29 @@ class InterceptionLogicNode(Node):
 
     def _on_inter(self, iid: str, msg: Point) -> None:
         self._inter_pos[iid] = msg
+
+    def _record_miss_distance(self, miss_distance: float) -> None:
+        """Update minimum range on active guidance / hit-check ticks (single- and multi-target)."""
+        if not math.isfinite(miss_distance) or miss_distance < 0.0:
+            return
+        if miss_distance < self._min_miss_distance:
+            self._min_miss_distance = miss_distance
+
+    def _print_miss_distance_lines(self) -> None:
+        if self._min_miss_distance < float("inf") and math.isfinite(self._min_miss_distance):
+            print(f'[min_miss] = {self._min_miss_distance:.4f} m', flush=True)
+            print(f'hit_threshold = {self._hit_thresh:.4f} m', flush=True)
+        else:
+            print('[min_miss] = n/a', flush=True)
+            print(f'hit_threshold = {self._hit_thresh:.4f} m', flush=True)
+
+    def _maybe_emit_miss_distance_log_multi(self) -> None:
+        """Periodic miss summary when multi-target mode (no _maybe_detail_log on guidance path)."""
+        now = self.get_clock().now()
+        if (now - self._last_miss_log).nanoseconds * 1e-9 < self._log_period:
+            return
+        self._last_miss_log = now
+        self._print_miss_distance_lines()
 
     def _pause_gazebo_world(self) -> None:
         if self._gz_pause_sent or not self._pause_gz_on_hit:
@@ -856,12 +888,17 @@ class InterceptionLogicNode(Node):
 
         ix, iy, iz = float(p_sel.x), float(p_sel.y), float(p_sel.z)
         dist_to_target = _norm(tx - ix, ty - iy, tz - iz)
+        self._record_miss_distance(dist_to_target)
 
         air_ok = self._hit_min_tz is None or tz >= self._hit_min_tz
         if (not self._hit) and dist_to_target < self._hit_thresh and air_ok and strike_ok:
             self._hit = True
             extra = f' layer={layer_for_log}' if layer_for_log else ''
-            print(f'[HIT] {selected}{extra}', flush=True)
+            mm = f'{self._min_miss_distance:.4f} m' if self._min_miss_distance < float("inf") else 'n/a'
+            print(
+                f'[HIT] {selected}{extra}  min_miss={mm}  hit_threshold = {self._hit_thresh:.4f} m',
+                flush=True,
+            )
             self._publish_stop_signal(None)
             self._publish_all({i: zero for i in self._ids})
             self._pause_gazebo_world()
@@ -1177,6 +1214,7 @@ class InterceptionLogicNode(Node):
         iz: float,
         dist: float,
     ) -> Vector3:
+        self._record_miss_distance(dist)
         v_ix, v_iy, v_iz = self._estimate_interceptor_vel(selected, ix, iy, iz)
         zero = Vector3()
         gx, gy, gz = tx, ty, tz
@@ -1264,11 +1302,16 @@ class InterceptionLogicNode(Node):
             return False
         ix, iy, iz = float(p_sel.x), float(p_sel.y), float(p_sel.z)
         dist_to_target = _norm(tx - ix, ty - iy, tz - iz)
+        self._record_miss_distance(dist_to_target)
         air_ok = self._hit_min_tz is None or tz >= self._hit_min_tz
         if dist_to_target < self._hit_thresh and air_ok and strike_ok:
             self._hits_multi[tlabel] = True
             extra = f' layer={layer_for_log}' if layer_for_log else ''
-            print(f'[HIT] {tlabel} by {iid}{extra}', flush=True)
+            mm = f'{self._min_miss_distance:.4f} m' if self._min_miss_distance < float("inf") else 'n/a'
+            print(
+                f'[HIT] {tlabel} by {iid}{extra}  min_miss={mm}  hit_threshold = {self._hit_thresh:.4f} m',
+                flush=True,
+            )
             self._publish_stop_signal(tlabel)
             self._log_active_targets_remaining()
             if self._pause_gz_on_hit:
@@ -1477,6 +1520,7 @@ class InterceptionLogicNode(Node):
                 )
 
         self._publish_all(out_map)
+        self._maybe_emit_miss_distance_log_multi()
 
     def _on_control(self) -> None:
         if self._multi_enabled:
@@ -1724,6 +1768,32 @@ class InterceptionLogicNode(Node):
         # Use ROS logger so the table reliably appears in `ros2 launch` output.
         self.get_logger().info('\n'.join(lines))
 
+    def _intercept_alignment(
+        self,
+        tx: float,
+        ty: float,
+        tz: float,
+        ix: float,
+        iy: float,
+        iz: float,
+        vx: float,
+        vy: float,
+        vz: float,
+    ) -> float | None:
+        """
+        r = P_T - P_I, v_cmd = commanded velocity.
+        alignment = dot(unit(r), unit(v_cmd)) — ~1 means cmd parallel to LOS (pure chase);
+        lower values mean intercept geometry (lead / PN) off the instantaneous LOS.
+        """
+        rx = tx - ix
+        ry = ty - iy
+        rz = tz - iz
+        urx, ury, urz = _unit(rx, ry, rz)
+        uvx, uvy, uvz = _unit(vx, vy, vz)
+        if _norm(urx, ury, urz) < 1e-12 or _norm(uvx, uvy, uvz) < 1e-12:
+            return None
+        return _dot(urx, ury, urz, uvx, uvy, uvz)
+
     def _maybe_detail_log(
         self,
         tx: float,
@@ -1756,12 +1826,28 @@ class InterceptionLogicNode(Node):
             phs = '(n/a)'
             ts = 'n/a'
         pn_s = 'on' if pn_active else 'off'
-        print(
-            f'[interception] sel={selected} mode={mode} pn={pn_s} dist={dist:.2f} m | t_hit={ts} s p_hit={phs} | '
-            f'Vc={vc:.2f} m/s | target=({tx:.2f},{ty:.2f},{tz:.2f}) inter=({ix:.2f},{iy:.2f},{iz:.2f}) | '
-            f'cmd_vel=({vx:.2f},{vy:.2f},{vz:.2f})',
-            flush=True,
-        )
+        if self._intercept_debug:
+            al = self._intercept_alignment(tx, ty, tz, ix, iy, iz, vx, vy, vz)
+            align_s = f'{al:.4f}' if al is not None else 'n/a'
+            print(
+                '[Intercept Debug]\n'
+                f'mode={mode}\n'
+                f'distance={dist:.4f}\n'
+                f't_hit={ts}\n'
+                f'target_pos=({tx:.4f},{ty:.4f},{tz:.4f})\n'
+                f'interceptor_pos=({ix:.4f},{iy:.4f},{iz:.4f})\n'
+                f'cmd_vel=({vx:.4f},{vy:.4f},{vz:.4f})\n'
+                f'alignment={align_s}',
+                flush=True,
+            )
+        else:
+            print(
+                f'[interception] sel={selected} mode={mode} pn={pn_s} dist={dist:.2f} m | t_hit={ts} s p_hit={phs} | '
+                f'Vc={vc:.2f} m/s | target=({tx:.2f},{ty:.2f},{tz:.2f}) inter=({ix:.2f},{iy:.2f},{iz:.2f}) | '
+                f'cmd_vel=({vx:.2f},{vy:.2f},{vz:.2f})',
+                flush=True,
+            )
+        self._print_miss_distance_lines()
 
 
 def main(args: list[str] | None = None) -> None:

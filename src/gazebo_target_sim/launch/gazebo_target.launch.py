@@ -50,13 +50,12 @@ def _vel_smooth_alpha(interceptor_max_m_s: float, v_target_peak: float) -> float
 
 
 # ลู่บินโจมตี (ต้องตรงกับค่าที่ส่งให้ target_controller_node)
-# เริ่มเหนือจุดป้องกัน (0,0,*) แล้วร่วงลงแนวดิ่ง — ไม่ใช้ vx คงที่ไป +x (เดิมทำให้ลูกส้ม
-# “ลอด” โดมแล้วบินออกฝั่งไกลนอกเขต)
-TGT_START_X_M = 0.0
-TGT_START_Y_M = 0.0
-# ระยะจากศูนย์ = z เมื่อ (0,0,z) — ความเร็วลงมาจาก target_controller (ไม่ใช่ g โลก; sphere ปิด gravity ใน SDF แล้ว)
-TGT_START_Z_M = 36.0
-TGT_APPROACH_VX_M_S = 0.0
+# เริ่มสูง + offset XY → วงโคจร + spiral ลงเบาๆ → โจมตี LOS สู่ (0,0,0) (เส้นทางเฉียง 3D สมจริง)
+TGT_START_X_M = -11.0
+TGT_START_Y_M = 9.0
+TGT_START_Z_M = 40.0
+# Horizontal speed toward asset center (m/s) → `approach_speed` on target_controller_node
+TGT_APPROACH_VX_M_S = 3.0
 # ช้าลงให้มองทัน — ถ้ายังเร็ว ลดเลขต่อ (ใกล้ 0 ยิ่งช้า)
 TGT_APPROACH_VZ_M_S = -0.28
 TGT_DIVE_VZ_M_S = -0.45
@@ -78,6 +77,19 @@ DOME_INNER_M = 17.0
 # โดรนสะกัด: z=0 ให้ฐานโมเดลอยู่ชิดพื้น (collision box ~0–0.45 m — ตรงกับ target_sphere.sdf)
 INTERCEPTOR_GROUND_Z_M = 0.0
 
+# เป้า: วงโคจร XY + ลงช้า (spiral จากฟ้า) แล้วค่อย LOS เข้า (0,0,0) — ทดสอบ detect/select/strike + intercept
+TGT_ORBIT_ENABLED = True
+TGT_ORBIT_TURNS = 1.0
+TGT_ORBIT_DURATION_S = 38.0
+TGT_ORBIT_Z_HOLD = False
+# ระหว่าง orbit: ลงเบาๆ (m/s, <=0); ไม่ใช้ dive_speed เพื่อไม่ให้โหนงเกินก่อนจบวง
+TGT_ORBIT_DESCENT_M_S = -0.12
+TGT_ATTACK_XY_SNAP_M = 0.45
+# โจมตีแบบ LOS สู่ (0,0,0) — เส้นทางเฉียงลงทั้งเส้น (ไม่แยก “ราบแล้วดิ่งตรง”)
+TGT_ATTACK_LOS_TO_ORIGIN = True
+# 0 = ให้ target_controller ใช้ hypot(|approach_speed|, |dive_speed|)
+TGT_LOS_CLOSING_SPEED_M_S = 3.8
+
 
 def _gz_target_setup(context, *args, **kwargs):
     world_name = LaunchConfiguration('world_name').perform(context)
@@ -85,14 +97,29 @@ def _gz_target_setup(context, *args, **kwargs):
         [FindPackageShare('gazebo_target_sim'), 'worlds', 'target_sphere.sdf'],
     ).perform(context)
 
-    _v_peak, guidance_closing, guidance_vmax, interceptor_vmax = _interception_from_target(
-        TGT_APPROACH_VX_M_S,
-        TGT_APPROACH_VZ_M_S,
-        TGT_DIVE_VZ_M_S,
-        closing_margin_over_target_m_s=CLOSING_MARGIN_OVER_TARGET_M_S,
-        vmax_above_closing_m_s=VMAX_ABOVE_CLOSING_M_S,
-        interceptor_above_guidance_vmax_m_s=INTERCEPTOR_ABOVE_GUIDANCE_VMAX_M_S,
-    )
+    if TGT_ATTACK_LOS_TO_ORIGIN:
+        los_eff = (
+            TGT_LOS_CLOSING_SPEED_M_S
+            if TGT_LOS_CLOSING_SPEED_M_S > 0.0
+            else math.hypot(TGT_APPROACH_VX_M_S, abs(TGT_DIVE_VZ_M_S))
+        )
+        _v_peak, guidance_closing, guidance_vmax, interceptor_vmax = _interception_from_target(
+            los_eff,
+            0.0,
+            0.0,
+            closing_margin_over_target_m_s=CLOSING_MARGIN_OVER_TARGET_M_S,
+            vmax_above_closing_m_s=VMAX_ABOVE_CLOSING_M_S,
+            interceptor_above_guidance_vmax_m_s=INTERCEPTOR_ABOVE_GUIDANCE_VMAX_M_S,
+        )
+    else:
+        _v_peak, guidance_closing, guidance_vmax, interceptor_vmax = _interception_from_target(
+            TGT_APPROACH_VX_M_S,
+            TGT_APPROACH_VZ_M_S,
+            TGT_DIVE_VZ_M_S,
+            closing_margin_over_target_m_s=CLOSING_MARGIN_OVER_TARGET_M_S,
+            vmax_above_closing_m_s=VMAX_ABOVE_CLOSING_M_S,
+            interceptor_above_guidance_vmax_m_s=INTERCEPTOR_ABOVE_GUIDANCE_VMAX_M_S,
+        )
     vel_smooth_alpha = _vel_smooth_alpha(interceptor_vmax, _v_peak)
 
     gz = ExecuteProcess(
@@ -109,6 +136,15 @@ def _gz_target_setup(context, *args, **kwargs):
         arguments=[
             f'/world/{world_name}/clock@rosgraph_msgs/msg/Clock[gz.msgs.Clock]',
         ],
+    )
+
+    # RViz needs at least one TF so Fixed Frame "map" resolves (markers use frame_id map).
+    map_tf = Node(
+        package='tf2_ros',
+        executable='static_transform_publisher',
+        name='map_to_odom_static_tf',
+        output='screen',
+        arguments=['0', '0', '0', '0', '0', '0', 'map', 'odom'],
     )
 
     controller = Node(
@@ -136,6 +172,14 @@ def _gz_target_setup(context, *args, **kwargs):
                 'explosion_fade_s': 4.0,
                 # gz remove/create บางครั้งใช้เวลานานกว่า set_pose
                 'service_timeout_ms': 5000,
+                'orbit_enabled': TGT_ORBIT_ENABLED,
+                'orbit_turns': TGT_ORBIT_TURNS,
+                'orbit_duration_s': TGT_ORBIT_DURATION_S,
+                'orbit_z_hold': TGT_ORBIT_Z_HOLD,
+                'orbit_descent_m_s': TGT_ORBIT_DESCENT_M_S,
+                'attack_xy_snap_m': TGT_ATTACK_XY_SNAP_M,
+                'attack_los_to_origin': TGT_ATTACK_LOS_TO_ORIGIN,
+                'los_closing_speed_m_s': TGT_LOS_CLOSING_SPEED_M_S,
             },
         ],
     )
@@ -243,7 +287,7 @@ def _gz_target_setup(context, *args, **kwargs):
         period=0.5,
         actions=[controller, *interceptor_nodes, interception],
     )
-    return [gz, clock_bridge, delayed]
+    return [gz, clock_bridge, map_tf, delayed]
 
 
 def generate_launch_description() -> LaunchDescription:

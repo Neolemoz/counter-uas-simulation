@@ -82,6 +82,14 @@ def _gz_multi_setup(context, *args, **kwargs):
         ],
     )
 
+    map_tf = Node(
+        package='tf2_ros',
+        executable='static_transform_publisher',
+        name='map_to_odom_static_tf',
+        output='screen',
+        arguments=['0', '0', '0', '0', '0', '0', 'map', 'odom'],
+    )
+
     targets_cfg = [
         ('sphere_target_0', 0.0, 0.0, 36.0, '/drone_0/position', '/target_0/stop'),
         ('sphere_target_1', -6.0, 5.0, 34.0, '/drone_1/position', '/target_1/stop'),
@@ -240,7 +248,7 @@ def _gz_multi_setup(context, *args, **kwargs):
         period=0.5,
         actions=[*target_nodes, *interceptor_nodes, interception],
     )
-    return [gz, clock_bridge, delayed]
+    return [gz, clock_bridge, map_tf, delayed]
 
 
 def generate_launch_description() -> LaunchDescription:
