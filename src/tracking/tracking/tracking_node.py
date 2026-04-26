@@ -1,22 +1,25 @@
 """
 Multi-target tracker: track–detection association, candidate confirmation (ghost
-rejection), and track lifecycle (miss counter + deletion).
+rejection), track lifecycle (miss counter + deletion), and CV Kalman filtering
+on each confirmed track (state [x,y,z,vx,vy,vz], covariance P).
 """
 
 from __future__ import annotations
 
 import math
-from dataclasses import dataclass
+from collections import deque
+from dataclasses import dataclass, field
 
+import numpy as np
 import rclpy
 from geometry_msgs.msg import Point
 from rclpy.node import Node
 
 # --- Track association — dual STRICT gating (meters) ---
 # A pair (track, detection) is valid only if BOTH are true:
-#   1) distance(det, track current position) < ASSOCIATION_GATE_M
-#   2) distance(det, predicted next position) < ASSOCIATION_GATE_M
-# Predicted position uses constant-velocity: vx = x - px, pred = x + vx (same for y,z).
+#   1) distance(det, track predicted position this cycle) < ASSOCIATION_GATE_M
+#   2) distance(det, one-step-ahead extrapolation) < ASSOCIATION_GATE_M
+# Positions come from the KF **after** the time-update (predict) for this cycle.
 ASSOCIATION_GATE_M = 2.0
 
 # --- Candidate confirmation (same blob across frames) ---
@@ -26,33 +29,146 @@ CANDIDATE_MERGE_M = 1.0
 CONFIRMATION_HITS = 3
 
 CYCLE_PERIOD_S = 0.1
+# Last N positions per candidate for averaged finite-difference v_init (N = maxlen).
+CANDIDATE_POS_HISTORY_MAX = 4
 MAX_MISSED_FRAMES = 10
 # If two confirmed tracks are closer than this (meters), merge duplicates.
 MERGE_DISTANCE_M = 1.0
 
+# --- Constant-velocity Kalman (fixed Q, R; dt = CYCLE_PERIOD_S) ---
+# Process noise (tuned for ~10 Hz); grows uncertainty during coast.
+_Q_POS = 0.02
+_Q_VEL = 0.08
+# Measurement noise (m^2) ~ 0.5 m std on fused position
+_R_MEAS_VAR = 0.5**2
+# Extra covariance inflation when no measurement is associated this cycle
+_Q_MISS_POS = 0.15
+_Q_MISS_VEL = 0.02
+# Initial covariance for new tracks (candidate confirmed)
+_P_INIT_POS_VAR = 4.0
+_P_INIT_VEL_VAR = 25.0
+
+
+def _symmetrize_psd(P: np.ndarray) -> None:
+    P[:] = 0.5 * (P + P.T)
+
+
+def _build_F(dt: float) -> np.ndarray:
+    F = np.eye(6, dtype=float)
+    F[0, 3] = dt
+    F[1, 4] = dt
+    F[2, 5] = dt
+    return F
+
+
+def _build_H() -> np.ndarray:
+    H = np.zeros((3, 6), dtype=float)
+    H[0, 0] = H[1, 1] = H[2, 2] = 1.0
+    return H
+
+
+def _build_Q(dt: float) -> np.ndarray:
+    """Simple diagonal Q scaled by dt (constant-velocity random walk)."""
+    q = np.zeros((6, 6), dtype=float)
+    q[0, 0] = q[1, 1] = q[2, 2] = _Q_POS * dt
+    q[3, 3] = q[4, 4] = q[5, 5] = _Q_VEL * dt
+    return q
+
+
+def _build_R() -> np.ndarray:
+    return np.eye(3, dtype=float) * _R_MEAS_VAR
+
+
+def _build_Q_miss() -> np.ndarray:
+    q = np.zeros((6, 6), dtype=float)
+    q[0, 0] = q[1, 1] = q[2, 2] = _Q_MISS_POS
+    q[3, 3] = q[4, 4] = q[5, 5] = _Q_MISS_VEL
+    return q
+
+
+def _initial_P() -> np.ndarray:
+    d = np.array(
+        [
+            _P_INIT_POS_VAR,
+            _P_INIT_POS_VAR,
+            _P_INIT_POS_VAR,
+            _P_INIT_VEL_VAR,
+            _P_INIT_VEL_VAR,
+            _P_INIT_VEL_VAR,
+        ],
+        dtype=float,
+    )
+    return np.diag(d)
+
 
 @dataclass
 class Track:
-    """Confirmed target: pose, previous pose, lifecycle."""
+    """Confirmed target: CV Kalman state, covariance, lifecycle."""
 
     track_id: int
-    x: float
-    y: float
-    z: float
-    px: float
-    py: float
-    pz: float
+    state: np.ndarray = field(repr=False)  # shape (6,) [x,y,z,vx,vy,vz]
+    P: np.ndarray = field(repr=False)  # shape (6, 6)
     missed_frames: int = 0
 
-    def predicted_xyz(self) -> tuple[float, float, float]:
-        vx = self.x - self.px
-        vy = self.y - self.py
-        vz = self.z - self.pz
-        return (self.x + vx, self.y + vy, self.z + vz)
+    @property
+    def x(self) -> float:
+        return float(self.state[0])
 
-    def update_from_detection(self, det: Point) -> None:
-        self.px, self.py, self.pz = self.x, self.y, self.z
-        self.x, self.y, self.z = det.x, det.y, det.z
+    @property
+    def y(self) -> float:
+        return float(self.state[1])
+
+    @property
+    def z(self) -> float:
+        return float(self.state[2])
+
+    def position_xyz(self) -> tuple[float, float, float]:
+        """Position after the latest predict (or update) for this cycle."""
+        return (float(self.state[0]), float(self.state[1]), float(self.state[2]))
+
+    def gate_ahead_xyz(self, dt: float) -> tuple[float, float, float]:
+        """One-step linear extrapolation from current state (dual-gate second test)."""
+        return (
+            float(self.state[0] + self.state[3] * dt),
+            float(self.state[1] + self.state[4] * dt),
+            float(self.state[2] + self.state[5] * dt),
+        )
+
+    @staticmethod
+    def new_from_position(
+        tid: int,
+        px: float,
+        py: float,
+        pz: float,
+        vx: float = 0.0,
+        vy: float = 0.0,
+        vz: float = 0.0,
+    ) -> Track:
+        s = np.array([px, py, pz, vx, vy, vz], dtype=float)
+        return Track(track_id=tid, state=s, P=_initial_P(), missed_frames=0)
+
+    def kf_predict(self, F: np.ndarray, Q: np.ndarray) -> None:
+        self.state = F @ self.state
+        self.P = F @ self.P @ F.T + Q
+        _symmetrize_psd(self.P)
+
+    def kf_update(self, det: Point, H: np.ndarray, R: np.ndarray) -> None:
+        z = np.array([det.x, det.y, det.z], dtype=float)
+        y = z - H @ self.state
+        S = H @ self.P @ H.T + R
+        K = self.P @ H.T @ np.linalg.inv(S)
+        self.state = self.state + K @ y
+        ih = np.eye(6, dtype=float) - K @ H
+        self.P = ih @ self.P
+        _symmetrize_psd(self.P)
+
+    def kf_miss_inflate(self, Q_miss: np.ndarray) -> None:
+        self.P = self.P + Q_miss
+        _symmetrize_psd(self.P)
+
+
+def _new_candidate_pos_history() -> deque[tuple[float, float, float]]:
+    return deque(maxlen=CANDIDATE_POS_HISTORY_MAX)
 
 
 @dataclass
@@ -63,6 +179,9 @@ class Candidate:
     y: float
     z: float
     hit_count: int
+    pos_history: deque[tuple[float, float, float]] = field(
+        default_factory=_new_candidate_pos_history,
+    )
 
 
 def _distance_point_to_xyz(det: Point, xyz: tuple[float, float, float]) -> float:
@@ -79,25 +198,63 @@ def _distance_point_to_candidate(det: Point, c: Candidate) -> float:
     return math.sqrt(dx * dx + dy * dy + dz * dz)
 
 
-def _distance_det_to_track_current(det: Point, tr: Track) -> float:
-    return _distance_point_to_xyz(det, (tr.x, tr.y, tr.z))
+def _distance_det_to_track_gate_pos(det: Point, tr: Track) -> float:
+    return _distance_point_to_xyz(det, tr.position_xyz())
+
+
+def _initial_velocity_from_candidate(cand: Candidate) -> tuple[float, float, float]:
+    """
+    Average velocity from consecutive segments: v_k = (p_{k+1} - p_k) / dt.
+    Uses up to the last CANDIDATE_POS_HISTORY_MAX positions. Fallback (0,0,0) if < 2 points.
+    """
+    hist = list(cand.pos_history)
+    if len(hist) < 2:
+        return (0.0, 0.0, 0.0)
+    inv_dt = 1.0 / CYCLE_PERIOD_S
+    sx = sy = sz = 0.0
+    n_seg = 0
+    for i in range(len(hist) - 1):
+        x0, y0, z0 = hist[i]
+        x1, y1, z1 = hist[i + 1]
+        sx += (x1 - x0) * inv_dt
+        sy += (y1 - y0) * inv_dt
+        sz += (z1 - z0) * inv_dt
+        n_seg += 1
+    inv_n = 1.0 / n_seg
+    return (sx * inv_n, sy * inv_n, sz * inv_n)
 
 
 class TrackingNode(Node):
     def __init__(self) -> None:
         super().__init__('tracking_node')
         self.declare_parameter('scenario', 'single')
+        self.declare_parameter('max_update_jump_m', 10.0)
+        self._max_update_jump_m = float(self.get_parameter('max_update_jump_m').value)
+        self.declare_parameter('max_track_speed_mps', 60.0)
+        self._max_track_speed_mps = float(self.get_parameter('max_track_speed_mps').value)
+        self.declare_parameter('mahalanobis_gate_threshold', 11.34)
+        self._mahalanobis_gate_threshold = float(
+            self.get_parameter('mahalanobis_gate_threshold').value,
+        )
         self._tracks: list[Track] = []
         self._candidates: list[Candidate] = []
         self._next_id = 1
 
         self._detection_buffer: list[Point] = []
 
+        dt = CYCLE_PERIOD_S
+        self._dt = dt
+        self._F = _build_F(dt)
+        self._H = _build_H()
+        self._Q = _build_Q(dt)
+        self._R = _build_R()
+        self._Q_miss = _build_Q_miss()
+
         self._pub = self.create_publisher(Point, '/tracks', 10)
         # Input changed: use fused detections (radar + camera)
         self.create_subscription(Point, '/fused_detections', self._on_detection, 10)
         self._timer = self.create_timer(CYCLE_PERIOD_S, self._on_cycle_timer)
-        self.get_logger().info('Tracking using fused detections')
+        self.get_logger().info('Tracking using fused detections (CV Kalman per track)')
 
     def _on_detection(self, msg: Point) -> None:
         p = Point()
@@ -109,23 +266,34 @@ class TrackingNode(Node):
         self._detection_buffer = []
         self._process_cycle(detections)
 
+    def _predict_all_tracks(self) -> None:
+        for tr in self._tracks:
+            tr.kf_predict(self._F, self._Q)
+            vx, vy, vz = float(tr.state[3]), float(tr.state[4]), float(tr.state[5])
+            speed = math.sqrt(vx * vx + vy * vy + vz * vz)
+            if speed > self._max_track_speed_mps:
+                s = self._max_track_speed_mps / speed
+                tr.state[3] = vx * s
+                tr.state[4] = vy * s
+                tr.state[5] = vz * s
+
     def _process_cycle(self, detections: list[Point]) -> None:
         n_old = len(self._tracks)
 
+        # Time update for all existing tracks (prior at this measurement time).
+        self._predict_all_tracks()
+
         # ==================================================================
-        # TRACK ASSOCIATION — greedy match with dual gating
-        # Valid match only if BOTH:
-        #   d_curr = dist(det, track current) < 2.0
-        #   d_pred = dist(det, predicted next) < 2.0   where pred = current + (current - prev)
+        # TRACK ASSOCIATION — greedy match with dual gating (same semantics;
+        # gate positions taken from KF state **after** predict).
         # ==================================================================
         assoc_pairs: list[tuple[float, float, int, int]] = []
         for j, det in enumerate(detections):
             for i, tr in enumerate(self._tracks):
-                d_curr = _distance_det_to_track_current(det, tr)
-                pred = tr.predicted_xyz()
+                d_curr = _distance_det_to_track_gate_pos(det, tr)
+                pred = tr.gate_ahead_xyz(self._dt)
                 d_pred = _distance_point_to_xyz(det, pred)
                 if d_curr < ASSOCIATION_GATE_M and d_pred < ASSOCIATION_GATE_M:
-                    # Sort primarily by predicted consistency, then current proximity
                     assoc_pairs.append((d_pred, d_curr, i, j))
 
         assoc_pairs.sort(key=lambda x: (x[0], x[1]))
@@ -136,11 +304,42 @@ class TrackingNode(Node):
         for _d_pred, _d_curr, ti, dj in assoc_pairs:
             if ti in matched_track_idx or dj in matched_det_idx:
                 continue
+            # Outlier rejection: skip KF update if residual jump is too large.
+            tr = self._tracks[ti]
+            det = detections[dj]
+            pred_xyz = tr.position_xyz()
+            rx = float(det.x - pred_xyz[0])
+            ry = float(det.y - pred_xyz[1])
+            rz = float(det.z - pred_xyz[2])
+            residual_dist = math.sqrt(rx * rx + ry * ry + rz * rz)
+            if residual_dist > self._max_update_jump_m:
+                self.get_logger().info(
+                    f'Track {tr.track_id} rejected update (outlier jump {residual_dist:.3f} m > '
+                    f'{self._max_update_jump_m:.3f} m)',
+                )
+                continue
+            z = np.array([det.x, det.y, det.z], dtype=float)
+            y = z - self._H @ tr.state
+            S = self._H @ tr.P @ self._H.T + self._R
+            d2 = float(y.T @ np.linalg.inv(S) @ y)
+            if d2 > self._mahalanobis_gate_threshold:
+                self.get_logger().info(
+                    f'Track {tr.track_id} rejected update (Mahalanobis d2={d2:.3f} > '
+                    f'{self._mahalanobis_gate_threshold:.3f})',
+                )
+                continue
             matched_track_idx.add(ti)
             matched_det_idx.add(dj)
-            self._tracks[ti].update_from_detection(detections[dj])
-            self._tracks[ti].missed_frames = 0
-            tid = self._tracks[ti].track_id
+            tr.kf_update(det, self._H, self._R)
+            vx, vy, vz = float(tr.state[3]), float(tr.state[4]), float(tr.state[5])
+            speed = math.sqrt(vx * vx + vy * vy + vz * vz)
+            if speed > self._max_track_speed_mps:
+                s = self._max_track_speed_mps / speed
+                tr.state[3] = vx * s
+                tr.state[4] = vy * s
+                tr.state[5] = vz * s
+            tr.missed_frames = 0
+            tid = tr.track_id
             self.get_logger().info(f'Track {tid} updated (valid match)')
 
         # Tracks that were not matched: log "bad match" if some detection was
@@ -149,9 +348,9 @@ class TrackingNode(Node):
             if i in matched_track_idx:
                 continue
             tr = self._tracks[i]
-            pred = tr.predicted_xyz()
+            pred = tr.gate_ahead_xyz(self._dt)
             for det in detections:
-                d_curr = _distance_det_to_track_current(det, tr)
+                d_curr = _distance_det_to_track_gate_pos(det, tr)
                 d_pred = _distance_point_to_xyz(det, pred)
                 ok = d_curr < ASSOCIATION_GATE_M and d_pred < ASSOCIATION_GATE_M
                 partial = (d_curr < ASSOCIATION_GATE_M or d_pred < ASSOCIATION_GATE_M) and not ok
@@ -162,10 +361,11 @@ class TrackingNode(Node):
                     break
 
         # ==================================================================
-        # TRACK LIFECYCLE — miss counter
+        # TRACK LIFECYCLE — miss: no measurement update; inflate P
         # ==================================================================
         for i in range(n_old):
             if i not in matched_track_idx:
+                self._tracks[i].kf_miss_inflate(self._Q_miss)
                 self._tracks[i].missed_frames += 1
                 tid = self._tracks[i].track_id
                 mf = self._tracks[i].missed_frames
@@ -266,17 +466,20 @@ class TrackingNode(Node):
             det = unmatched_dets[j]
             cand.x, cand.y, cand.z = det.x, det.y, det.z
             cand.hit_count += 1
+            cand.pos_history.append((float(det.x), float(det.y), float(det.z)))
 
             if cand.hit_count >= CONFIRMATION_HITS:
                 tid = self._next_id
                 self._next_id += 1
+                vx, vy, vz = _initial_velocity_from_candidate(cand)
                 self._tracks.append(
-                    Track(tid, cand.x, cand.y, cand.z, cand.x, cand.y, cand.z, missed_frames=0),
+                    Track.new_from_position(tid, cand.x, cand.y, cand.z, vx, vy, vz),
                 )
                 confirmed_indices.add(k)
                 self.get_logger().info(
                     f'Candidate confirmed → Track created: track_id={tid} at '
-                    f'x={cand.x:.3f}, y={cand.y:.3f}, z={cand.z:.3f}',
+                    f'x={cand.x:.3f}, y={cand.y:.3f}, z={cand.z:.3f} '
+                    f'v_init=({vx:.3f},{vy:.3f},{vz:.3f})',
                 )
 
         # Keep matched candidates that were not just promoted to tracks.
@@ -298,7 +501,9 @@ class TrackingNode(Node):
         for j, det in enumerate(unmatched_dets):
             if j in matched_unmatched_det_idx:
                 continue
-            self._candidates.append(Candidate(det.x, det.y, det.z, 1))
+            nc = Candidate(det.x, det.y, det.z, 1)
+            nc.pos_history.append((float(det.x), float(det.y), float(det.z)))
+            self._candidates.append(nc)
             self.get_logger().info(
                 f'Candidate detected: position=({det.x:.3f}, {det.y:.3f}, {det.z:.3f}) '
                 f'hit_count=1',
@@ -320,9 +525,10 @@ class TrackingNode(Node):
 
     def _log_all_tracks(self) -> None:
         for tr in self._tracks:
+            vx, vy, vz = float(tr.state[3]), float(tr.state[4]), float(tr.state[5])
             self.get_logger().info(
                 f'Track {tr.track_id}: x={tr.x:.3f}, y={tr.y:.3f}, z={tr.z:.3f} '
-                f'(missed_frames={tr.missed_frames})',
+                f'v=({vx:.3f},{vy:.3f},{vz:.3f}) (missed_frames={tr.missed_frames})',
             )
 
 

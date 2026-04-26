@@ -23,6 +23,7 @@ fusion_node:
 tracking_node:
   ros__parameters:
     scenario: single
+    mahalanobis_gate_threshold: 16.27
 
 viz_node:
   ros__parameters:
