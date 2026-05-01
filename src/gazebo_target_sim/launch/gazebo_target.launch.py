@@ -136,6 +136,9 @@ def _gz_target_setup(context, *args, **kwargs):
         arguments=[
             f'/world/{world_name}/clock@rosgraph_msgs/msg/Clock[gz.msgs.Clock]',
         ],
+        remappings=[
+            (f'/world/{world_name}/clock', '/clock'),
+        ],
     )
 
     # RViz needs at least one TF so Fixed Frame "map" resolves (markers use frame_id map).
