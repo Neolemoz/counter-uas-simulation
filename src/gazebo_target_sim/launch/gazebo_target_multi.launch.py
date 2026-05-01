@@ -80,6 +80,9 @@ def _gz_multi_setup(context, *args, **kwargs):
         arguments=[
             f'/world/{world_name}/clock@rosgraph_msgs/msg/Clock[gz.msgs.Clock]',
         ],
+        remappings=[
+            (f'/world/{world_name}/clock', '/clock'),
+        ],
     )
 
     map_tf = Node(
