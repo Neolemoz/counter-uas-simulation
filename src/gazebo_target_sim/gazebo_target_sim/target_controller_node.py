@@ -216,8 +216,7 @@ class TargetControllerNode(Node):
         self._last_log_time = None
         self._reset_trail()
         self._recompute_orbit_frame()
-        if self._target_removed_for_explosion:
-            self._respawn_target_model()
+        if self._target_removed_for_explosion and self._respawn_target_model():
             self._target_removed_for_explosion = False
 
     def _recompute_orbit_frame(self) -> None:
@@ -328,12 +327,12 @@ class TargetControllerNode(Node):
         self.get_logger().warning(f'Model {self._model!r} not found in {world_path!r}; reset respawn disabled.')
         return ''
 
-    def _respawn_target_model(self) -> None:
+    def _respawn_target_model(self) -> bool:
         if not self._target_respawn_sdf_path or not os.path.isfile(self._target_respawn_sdf_path):
             self.get_logger().warning(
                 f'Cannot respawn target {self._model!r}: model SDF unavailable.',
             )
-            return
+            return False
         ok = self._gz_world_service(
             'create',
             'gz.msgs.EntityFactory',
@@ -348,6 +347,7 @@ class TargetControllerNode(Node):
         )
         if not ok:
             self.get_logger().warning(f'gz create target {self._model!r} failed after sim reset.')
+        return ok
 
     def _gz_world_service(self, service_suffix: str, reqtype: str, req: str) -> bool:
         svc = f'/world/{self._world}/{service_suffix}'

@@ -219,8 +219,9 @@ class TargetControllerResetTest(unittest.TestCase):
         def get_clock() -> _Clock:
             return _Clock()
 
-        def respawn() -> None:
+        def respawn() -> bool:
             node.respawn_calls += 1
+            return True
 
         node.get_parameter = get_parameter
         node.destroy_timer = destroy_timer
@@ -251,6 +252,14 @@ class TargetControllerResetTest(unittest.TestCase):
         self.module.TargetControllerNode._on_gz_sim_reset(node)
 
         self.assertEqual(node.respawn_calls, 0)
+
+    def test_reset_keeps_removed_flag_when_respawn_fails(self) -> None:
+        node = self._controller()
+        node._respawn_target_model = lambda: False
+
+        self.module.TargetControllerNode._on_gz_sim_reset(node)
+
+        self.assertTrue(node._target_removed_for_explosion)
 
 
 if __name__ == '__main__':
