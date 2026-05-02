@@ -93,6 +93,18 @@ def _install_ros_stubs() -> None:
         sys.modules['visualization_msgs'] = visualization_msgs
         sys.modules['visualization_msgs.msg'] = visualization_msgs_msg
 
+    if 'rosgraph_msgs.msg' not in sys.modules:
+        rosgraph_msgs = types.ModuleType('rosgraph_msgs')
+        rosgraph_msgs_msg = types.ModuleType('rosgraph_msgs.msg')
+
+        class Clock:
+            pass
+
+        rosgraph_msgs_msg.Clock = Clock
+        rosgraph_msgs.msg = rosgraph_msgs_msg
+        sys.modules['rosgraph_msgs'] = rosgraph_msgs
+        sys.modules['rosgraph_msgs.msg'] = rosgraph_msgs_msg
+
     if 'rclpy' not in sys.modules:
         rclpy = types.ModuleType('rclpy')
         rclpy.init = lambda *args, **kwargs: None
