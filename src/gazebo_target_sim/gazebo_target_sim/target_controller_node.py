@@ -7,7 +7,9 @@ import os
 from collections import deque
 import shutil
 import subprocess
+import tempfile
 from typing import Sequence
+import xml.etree.ElementTree as ET
 
 import rclpy
 from ament_index_python.packages import get_package_share_directory
@@ -98,6 +100,7 @@ class TargetControllerNode(Node):
         self._explosion_fade_s = max(float(self.get_parameter('explosion_fade_s').value), 0.2)
         self._explosion_fx_name: str | None = None
         self._explosion_fade_timer = None
+        self._target_removed_for_explosion = False
 
         self._debug_log = bool(self.get_parameter('target_debug_log_enabled').value)
         self._debug_marker_on = bool(self.get_parameter('target_debug_marker_enabled').value)
@@ -126,6 +129,7 @@ class TargetControllerNode(Node):
 
         share = get_package_share_directory('gazebo_target_sim')
         self._explosion_sdf_path = os.path.join(share, 'models', 'hit_explosion', 'model.sdf')
+        self._target_respawn_sdf_path = self._write_target_respawn_sdf()
         if self._explode_on_hit and not os.path.isfile(self._explosion_sdf_path):
             self.get_logger().warning(
                 f'explode_on_hit: SDF not found at {self._explosion_sdf_path} (install package share).',
@@ -212,6 +216,9 @@ class TargetControllerNode(Node):
         self._last_log_time = None
         self._reset_trail()
         self._recompute_orbit_frame()
+        if self._target_removed_for_explosion:
+            self._respawn_target_model()
+            self._target_removed_for_explosion = False
 
     def _recompute_orbit_frame(self) -> None:
         self._orbit_r = math.hypot(self._px, self._py)
@@ -258,6 +265,8 @@ class TargetControllerNode(Node):
             ok_rm = self._gz_world_service('remove', 'gz.msgs.Entity', fmt_remove_model_req(self._model))
         if not ok_rm:
             self.get_logger().warning(f'gz remove {self._model!r} failed (model may already be gone).')
+        else:
+            self._target_removed_for_explosion = True
 
         self._explosion_fx_name = f'hit_exp_{self.get_clock().now().nanoseconds}'
         ok_sp = False
@@ -288,6 +297,57 @@ class TargetControllerNode(Node):
         self._explosion_fx_name = None
         if name:
             self._gz_world_service('remove', 'gz.msgs.Entity', fmt_remove_model_req(name))
+
+    def _write_target_respawn_sdf(self) -> str:
+        """Extract this controller's target model SDF so reset can recreate it after hit removal."""
+        share = get_package_share_directory('gazebo_target_sim')
+        world_path = os.path.join(share, 'worlds', 'target_sphere.sdf')
+        try:
+            root = ET.parse(world_path).getroot()
+        except (OSError, ET.ParseError) as exc:
+            self.get_logger().warning(f'Cannot prepare target respawn SDF from {world_path!r}: {exc}')
+            return ''
+        for model in root.iter('model'):
+            if model.attrib.get('name') != self._model:
+                continue
+            model_copy = ET.fromstring(ET.tostring(model, encoding='unicode'))
+            pose = model_copy.find('pose')
+            if pose is None:
+                pose = ET.SubElement(model_copy, 'pose')
+            pose.text = '0 0 0 0 0 0'
+            sdf = ET.Element('sdf', {'version': root.attrib.get('version', '1.9')})
+            sdf.append(model_copy)
+            fd, path = tempfile.mkstemp(
+                prefix=f'{self._model}_respawn_',
+                suffix='.sdf',
+                text=True,
+            )
+            with os.fdopen(fd, 'w', encoding='utf-8') as f:
+                f.write(ET.tostring(sdf, encoding='unicode'))
+            return path
+        self.get_logger().warning(f'Model {self._model!r} not found in {world_path!r}; reset respawn disabled.')
+        return ''
+
+    def _respawn_target_model(self) -> None:
+        if not self._target_respawn_sdf_path or not os.path.isfile(self._target_respawn_sdf_path):
+            self.get_logger().warning(
+                f'Cannot respawn target {self._model!r}: model SDF unavailable.',
+            )
+            return
+        ok = self._gz_world_service(
+            'create',
+            'gz.msgs.EntityFactory',
+            fmt_spawn_model_from_file(
+                self._target_respawn_sdf_path,
+                self._model,
+                self._px,
+                self._py,
+                self._pz,
+                allow_renaming=False,
+            ),
+        )
+        if not ok:
+            self.get_logger().warning(f'gz create target {self._model!r} failed after sim reset.')
 
     def _gz_world_service(self, service_suffix: str, reqtype: str, req: str) -> bool:
         svc = f'/world/{self._world}/{service_suffix}'
