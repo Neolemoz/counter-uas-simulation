@@ -13,6 +13,7 @@ import rclpy
 from ament_index_python.packages import get_package_share_directory
 from geometry_msgs.msg import Point
 from rclpy.node import Node
+from rclpy.subscription import Subscription
 from visualization_msgs.msg import Marker
 from rclpy.qos import DurabilityPolicy, HistoryPolicy, QoSProfile, ReliabilityPolicy
 from rclpy.time import Time
@@ -23,13 +24,29 @@ from gazebo_target_sim.gz_entity_tools import fmt_remove_model_req, fmt_spawn_mo
 from gazebo_target_sim.gz_pose_tools import fmt_pose_req
 
 
+def _gz_local_ip() -> str:
+    """Return best local IP for gz transport; falls back to 127.0.0.1."""
+    import socket as _s
+    try:
+        s = _s.socket(_s.AF_INET, _s.SOCK_DGRAM)
+        s.connect(('8.8.8.8', 80))
+        ip = s.getsockname()[0]
+        s.close()
+        if not ip.startswith('127.') and not ip.startswith('169.254.'):
+            return ip
+    except Exception:
+        pass
+    return '127.0.0.1'
+
+
 class TargetControllerNode(Node):
     """
     Calls ``gz service -s /world/<world>/set_pose`` at fixed rate (default 10 Hz).
 
     Counter-UAS hostile track: optional **orbit** in XY (optionally slow **spiral descent**), then
-    **attack** either **LOS toward (0,0,0)** at ``los_closing_speed_m_s`` (slanted 3D path) or
-    decoupled XY + ``dive_speed``.
+    **attack** either **LOS toward (0,0,0)** at ``los_closing_speed_m_s`` (true 3D when
+    ``attack_los_dive_gain`` is 1.0, or steeper dive when gain > 1 via stronger vertical closing)
+    or decoupled XY + ``dive_speed``.
     """
 
     def __init__(self) -> None:
@@ -50,20 +67,34 @@ class TargetControllerNode(Node):
         self.declare_parameter('publish_drone_position', True)
         self.declare_parameter('drone_position_topic', '/drone/position')
         self.declare_parameter('stop_topic', '/target/stop')
+        # Defer subscribing to /target/stop for this many seconds (sim clock after node start
+        # or after sim reset). Queued DDS messages are still delivered when a callback runs
+        # later — checking elapsed time inside the callback is not enough — so we only create
+        # the subscription after this delay (VOLATILE history then has nothing stale to replay).
+        self.declare_parameter('ignore_stop_true_first_s', 8.0)
+        self.declare_parameter('reset_on_sim_clock_rewind', True)
         # หลัง STOP (โหมดไม่ระเบิด): เรียก set_pose ถี่ขึ้นเพื่อดับความเร็วค้างจากแรงปะทะ
         self.declare_parameter('hold_pose_rate_hz', 100.0)
-        # ชนแล้วลบ sphere_target และ spawn วัตถุมองเห็นระเบิดสั้นๆ (UserCommands remove/create)
+        # ชนแล้วซ่อน sphere_target (set_pose ไปพิกัดไกล) + spawn ระเบิดสั้นๆ
+        # remove_model_on_hit=True = ลบด้วย gz remove (โมเดลหายจากโลกจนกว่าจะปิด gz แล้วโหลด world ใหม่)
         self.declare_parameter('explode_on_hit', True)
-        self.declare_parameter('explosion_fade_s', 4.0)
+        self.declare_parameter('explosion_fade_s', 12.0)
+        self.declare_parameter('remove_model_on_hit', False)
+        self.declare_parameter('explosion_hide_x_m', -5000.0)
+        self.declare_parameter('explosion_hide_y_m', -5000.0)
+        self.declare_parameter('explosion_hide_z_m', -5000.0)
         self.declare_parameter('target_debug_log_enabled', True)
         self.declare_parameter('target_debug_marker_enabled', True)
         self.declare_parameter('target_debug_marker_topic', '/target_debug_marker')
         self.declare_parameter('target_debug_marker_frame_id', 'map')
-        self.declare_parameter('target_debug_marker_scale', 0.55)
+        # Default sized for the km-scale single-target world: at >5 km from the default
+        # camera_pose a 0.55 m sphere is sub-pixel.  Override per-scenario to taper down
+        # for short-range labs (e.g. ``target_debug_marker_scale:=0.5``).
+        self.declare_parameter('target_debug_marker_scale', 30.0)
         self.declare_parameter('target_debug_trail_enabled', True)
         self.declare_parameter('target_debug_trail_max_points', 400)
         self.declare_parameter('target_debug_trajectory_topic', '/target_debug_trajectory')
-        self.declare_parameter('target_debug_trail_line_width', 0.12)
+        self.declare_parameter('target_debug_trail_line_width', 8.0)
         # Optional: one horizontal orbit in XY (fixed z), then existing attack toward (0,0) + dive.
         self.declare_parameter('orbit_enabled', False)
         self.declare_parameter('orbit_turns', 1.0)
@@ -76,6 +107,9 @@ class TargetControllerNode(Node):
         self.declare_parameter('attack_los_to_origin', True)
         # <= 0: use hypot(|approach_speed|, |dive_speed|)
         self.declare_parameter('los_closing_speed_m_s', 0.0)
+        # LOS toward origin: 1.0 = true line-of-sight; >1.0 = emphasize vertical closing (steeper dive,
+        # still smooth — not the old cos/sin XY/Z split which broke radial integration).
+        self.declare_parameter('attack_los_dive_gain', 1.35)
 
         self._world = str(self.get_parameter('world_name').value).strip()
         self._model = str(self.get_parameter('model_name').value).strip()
@@ -92,9 +126,14 @@ class TargetControllerNode(Node):
         self._pub_gt = bool(self.get_parameter('publish_drone_position').value)
         gt_topic = str(self.get_parameter('drone_position_topic').value).strip()
         self._stop_topic = str(self.get_parameter('stop_topic').value).strip()
+        self._ignore_stop_true_s = max(float(self.get_parameter('ignore_stop_true_first_s').value), 0.0)
         self._stopped = False
         self._hold_hz = max(float(self.get_parameter('hold_pose_rate_hz').value), 10.0)
         self._explode_on_hit = bool(self.get_parameter('explode_on_hit').value)
+        self._remove_model_on_hit = bool(self.get_parameter('remove_model_on_hit').value)
+        self._hide_x = float(self.get_parameter('explosion_hide_x_m').value)
+        self._hide_y = float(self.get_parameter('explosion_hide_y_m').value)
+        self._hide_z = float(self.get_parameter('explosion_hide_z_m').value)
         self._explosion_fade_s = max(float(self.get_parameter('explosion_fade_s').value), 0.2)
         self._explosion_fx_name: str | None = None
         self._explosion_fade_timer = None
@@ -122,6 +161,8 @@ class TargetControllerNode(Node):
         if _los <= 0.0:
             _los = math.hypot(abs(self._v_approach), abs(self._v_dive_z))
         self._los_speed = max(_los, 0.05)
+        self._los_dive_gain = max(float(self.get_parameter('attack_los_dive_gain').value), 1e-6)
+        self._los_true_radial = abs(self._los_dive_gain - 1.0) < 1e-9
         self._recompute_orbit_frame()
 
         share = get_package_share_directory('gazebo_target_sim')
@@ -143,6 +184,8 @@ class TargetControllerNode(Node):
         self._last_tick_time: Time | None = None
         self._last_log_time: Time | None = None
         self._warned_fail = False
+        self._stop_sub: Subscription | None = None
+        self._stop_arm_timer = None
         self._pub_point = self.create_publisher(Point, gt_topic, 10) if self._pub_gt else None
         self._pub_debug_marker = (
             self.create_publisher(Marker, self._debug_marker_topic, 10) if self._debug_marker_on else None
@@ -153,17 +196,29 @@ class TargetControllerNode(Node):
             else None
         )
         self._reset_trail()
-        _sub_qos = QoSProfile(
+        # Match interception_logic_node publisher: VOLATILE (no latched True across sessions).
+        self._stop_sub_qos = QoSProfile(
             depth=10,
             reliability=ReliabilityPolicy.RELIABLE,
-            durability=DurabilityPolicy.TRANSIENT_LOCAL,
+            durability=DurabilityPolicy.VOLATILE,
             history=HistoryPolicy.KEEP_LAST,
         )
-        self.create_subscription(Bool, self._stop_topic, self._on_stop, _sub_qos)
+        if self._ignore_stop_true_s <= 0.0:
+            self._arm_stop_subscription_once()
+        else:
+            self.get_logger().info(
+                f'{self._stop_topic!r} subscription starts after {self._ignore_stop_true_s:.2f}s sim '
+                'so stale /target/stop messages are not processed late from the DDS queue.',
+            )
+            self._stop_arm_timer = self.create_timer(
+                self._ignore_stop_true_s,
+                self._arm_stop_subscription_once,
+            )
         self._timer_period_s = 1.0 / rate
         self._timer = self.create_timer(self._timer_period_s, self._on_timer)
         self._motion_rate_hz = rate
-        subscribe_sim_time_reset(self, self._on_gz_sim_reset)
+        if bool(self.get_parameter('reset_on_sim_clock_rewind').value):
+            subscribe_sim_time_reset(self, self._on_gz_sim_reset)
         extra = f' + {gt_topic} (ground truth)' if self._pub_gt else ''
         orbit_note = ''
         if self._orbit_enabled and self._orbit_r >= 0.05:
@@ -174,7 +229,7 @@ class TargetControllerNode(Node):
                     f' orbit: {self._orbit_turns:g} turn(s) spiral vz={self._orbit_vz:.3g} m/s;'
                 )
         los_note = (
-            f' LOS attack closing={self._los_speed:.3g} m/s → (0,0,0);'
+            f' LOS attack closing={self._los_speed:.3g} m/s dive_gain={self._los_dive_gain:.3g} → (0,0,0);'
             if self._attack_los
             else f' decoupled attack vz={self._v_dive_z} m/s;'
         )
@@ -183,11 +238,12 @@ class TargetControllerNode(Node):
             f'{orbit_note}{los_note} start=({self._px},{self._py},{self._pz}){extra}',
         )
         self.get_logger().info(
-            'Visual: there is no mesh "drone" in this world — the target is the orange sphere '
-            f'({self._model!r}); interceptors are the small colored boxes.',
+            'Visual: hostile is a small box marker in Gazebo (collision remains sphere); '
+            f'track `{self._model!r}`; interceptors are quadcopter meshes + sight spheres.',
         )
         self.get_logger().info(
-            f'On hit: explode_on_hit={self._explode_on_hit} (remove target + short explosion visual).',
+            f'On hit: explode_on_hit={self._explode_on_hit} remove_model={self._remove_model_on_hit} '
+            f'(default: hide target off-world so Reset keeps 3 sphere models in world).',
         )
         self.get_logger().info(
             'Gazebo GUI Reset: require ros_gz_bridge /clock + topic /world/<name>/clock (see launch).',
@@ -197,6 +253,12 @@ class TargetControllerNode(Node):
         """gz กด reset -> เวลาจำลองย้อน — รีเซ็บตำแหน่ง/เฟสให้ตรงพารามิเตอร์เริ่มต้น."""
         self.get_logger().info('Sim reset (/clock rewind): re-arm target trajectory and timers.')
         self._stopped = False
+        if self._stop_sub is not None:
+            self.destroy_subscription(self._stop_sub)
+            self._stop_sub = None
+        if self._stop_arm_timer is not None:
+            self.destroy_timer(self._stop_arm_timer)
+            self._stop_arm_timer = None
         self._px = float(self.get_parameter('start_x_m').value)
         self._py = float(self.get_parameter('start_y_m').value)
         self._pz = float(self.get_parameter('start_z_m').value)
@@ -212,6 +274,27 @@ class TargetControllerNode(Node):
         self._last_log_time = None
         self._reset_trail()
         self._recompute_orbit_frame()
+        if self._ignore_stop_true_s <= 0.0:
+            self._arm_stop_subscription_once()
+        else:
+            self._stop_arm_timer = self.create_timer(
+                self._ignore_stop_true_s,
+                self._arm_stop_subscription_once,
+            )
+
+    def _arm_stop_subscription_once(self) -> None:
+        if self._stop_sub is not None:
+            if self._stop_arm_timer is not None:
+                self.destroy_timer(self._stop_arm_timer)
+                self._stop_arm_timer = None
+            return
+        self._stop_sub = self.create_subscription(
+            Bool, self._stop_topic, self._on_stop, self._stop_sub_qos,
+        )
+        self.get_logger().info(f'Listening for impact on {self._stop_topic!r}.')
+        if self._stop_arm_timer is not None:
+            self.destroy_timer(self._stop_arm_timer)
+            self._stop_arm_timer = None
 
     def _recompute_orbit_frame(self) -> None:
         self._orbit_r = math.hypot(self._px, self._py)
@@ -227,6 +310,7 @@ class TargetControllerNode(Node):
             return
         if not bool(msg.data):
             return
+        self.get_logger().info(f'Received {self._stop_topic!r} True — applying hit / stop sequence.')
         self._stopped = True
         if self._explode_on_hit:
             self._begin_explosion_sequence()
@@ -253,20 +337,39 @@ class TargetControllerNode(Node):
             p.x, p.y, p.z = ex, ey, ez
             self._pub_point.publish(p)
 
-        ok_rm = self._gz_world_service('remove', 'gz.msgs.Entity', fmt_remove_model_req(self._model))
-        if not ok_rm:
+        if self._remove_model_on_hit:
             ok_rm = self._gz_world_service('remove', 'gz.msgs.Entity', fmt_remove_model_req(self._model))
-        if not ok_rm:
-            self.get_logger().warning(f'gz remove {self._model!r} failed (model may already be gone).')
+            if not ok_rm:
+                ok_rm = self._gz_world_service('remove', 'gz.msgs.Entity', fmt_remove_model_req(self._model))
+            if not ok_rm:
+                self.get_logger().warning(f'gz remove {self._model!r} failed (model may already be gone).')
+        else:
+            self._px, self._py, self._pz = self._hide_x, self._hide_y, self._hide_z
+            ok_h = self._call_set_pose(self._hide_x, self._hide_y, self._hide_z)
+            if not ok_h:
+                ok_h = self._call_set_pose(self._hide_x, self._hide_y, self._hide_z)
+            if ok_h:
+                self.get_logger().info(
+                    f'Target {self._model!r} moved off-world ({self._hide_x},{self._hide_y},{self._hide_z}); '
+                    'entity kept for sim reset / relaunch (3 sphere_target_* remain in world).',
+                )
+            else:
+                self.get_logger().warning(
+                    f'set_pose hide failed for {self._model!r}; falling back to gz remove.',
+                )
+                self._gz_world_service('remove', 'gz.msgs.Entity', fmt_remove_model_req(self._model))
 
         self._explosion_fx_name = f'hit_exp_{self.get_clock().now().nanoseconds}'
         ok_sp = False
-        if os.path.isfile(self._explosion_sdf_path):
+        sdf_exists = os.path.isfile(self._explosion_sdf_path)
+        self.get_logger().info(f'[EXPLOSION] sdf_path={self._explosion_sdf_path!r} exists={sdf_exists}')
+        if sdf_exists:
             ok_sp = self._gz_world_service(
                 'create',
                 'gz.msgs.EntityFactory',
                 fmt_spawn_model_from_file(self._explosion_sdf_path, self._explosion_fx_name, ex, ey, ez),
             )
+            self.get_logger().info(f'[EXPLOSION] gz create returned ok_sp={ok_sp}')
         if not ok_sp:
             self.get_logger().warning(
                 'gz create explosion visual failed (check /world/.../create and SDF path).',
@@ -305,6 +408,11 @@ class TargetControllerNode(Node):
             '--req',
             req,
         )
+        # Ensure GZ_IP is set so gz transport skips interface auto-detection
+        # (which crashes in sandbox / container environments with only loopback).
+        gz_env = os.environ.copy()
+        if not gz_env.get('GZ_IP'):
+            gz_env['GZ_IP'] = _gz_local_ip()
         try:
             r = subprocess.run(
                 cmd,
@@ -312,12 +420,21 @@ class TargetControllerNode(Node):
                 capture_output=True,
                 text=True,
                 timeout=self._timeout_s + 0.25,
+                env=gz_env,
             )
         except subprocess.TimeoutExpired:
             self.get_logger().warning(f'gz service {svc!r} timed out')
             return False
         if r.returncode != 0:
-            self.get_logger().warning(f'gz service {svc!r} rc={r.returncode} stderr={r.stderr!r}')
+            self.get_logger().warning(
+                f'gz service {svc!r} rc={r.returncode} stderr={r.stderr!r} stdout={r.stdout!r}'
+            )
+            return False
+        # gz service may return rc=0 but with "data: false" in stdout on failure.
+        if 'data: false' in r.stdout.lower():
+            self.get_logger().warning(
+                f'gz service {svc!r} returned data:false stdout={r.stdout!r}'
+            )
             return False
         return True
 
@@ -332,17 +449,57 @@ class TargetControllerNode(Node):
             if math.hypot(self._px, self._py) < self._snap_m:
                 self._px = self._py = 0.0
 
+    def _integrate_attack_position(self, vx: float, vy: float, vz: float, dt: float) -> tuple[float, float, float]:
+        """
+        Single Euler step for attack motion.
+
+        LOS mode: when ``attack_los_dive_gain`` is 1.0, velocity is radial toward the origin — if this
+        step would cross the origin along that ray, snap to zero. For gain ≠ 1, use Euler integration only
+        (radial ``step >= dist`` logic does not apply).
+        """
+        if dt <= 0.0:
+            return vx, vy, vz
+        if self._attack_los:
+            if self._los_true_radial:
+                dist = math.sqrt(self._px * self._px + self._py * self._py + self._pz * self._pz)
+                if dist <= 1e-9:
+                    self._px = self._py = self._pz = 0.0
+                    return 0.0, 0.0, 0.0
+                step = self._los_speed * dt
+                if step >= dist - 1e-9:
+                    self._px = self._py = self._pz = 0.0
+                    return 0.0, 0.0, 0.0
+            self._px += vx * dt
+            self._py += vy * dt
+            self._pz += vz * dt
+            return vx, vy, vz
+        # Decoupled XY + dive: clamp horizontal overshoot past (0,0) in the XY plane.
+        h = math.hypot(self._px, self._py)
+        vh = math.hypot(vx, vy)
+        if h > 1e-9 and vh > 1e-9:
+            step_h = vh * dt
+            if step_h >= h - 1e-9:
+                self._px = 0.0
+                self._py = 0.0
+                self._pz += vz * dt
+                return 0.0, 0.0, vz
+        self._px += vx * dt
+        self._py += vy * dt
+        self._pz += vz * dt
+        return vx, vy, vz
+
     def _velocity(self, t_elapsed_s: float) -> tuple[float, float, float]:
-        """Attack phase: LOS toward (0,0,0) or decoupled XY + ``dive_speed``. ``t_elapsed_s`` unused."""
+        """Attack phase: LOS (optional dive gain) or decoupled XY + ``dive_speed``."""
         del t_elapsed_s  # kept for call-site compatibility
         eps = max(1e-6, self._snap_m)
         if self._attack_los:
             dx, dy, dz = -self._px, -self._py, -self._pz
-            n = math.sqrt(dx * dx + dy * dy + dz * dz)
+            gz = self._los_dive_gain * dz
+            n = math.sqrt(dx * dx + dy * dy + gz * gz)
             if n < eps:
                 return (0.0, 0.0, 0.0)
             inv = self._los_speed / n
-            return (dx * inv, dy * inv, dz * inv)
+            return (dx * inv, dy * inv, gz * inv)
         dx = -self._px
         dy = -self._py
         norm = math.hypot(dx, dy)
@@ -487,17 +644,13 @@ class TargetControllerNode(Node):
                 self._py = self._orbit_r * math.sin(theta_end)
                 self._pz = self._orbit_z_start
                 vx, vy, vz = self._velocity(t_elapsed)
-                self._px += vx * dt
-                self._py += vy * dt
-                self._pz += vz * dt
+                vx, vy, vz = self._integrate_attack_position(vx, vy, vz, dt)
                 if self._pz < 0.0:
                     self._pz = 0.0
                 self._snap_attack_pose_if_needed()
         else:
             vx, vy, vz = self._velocity(t_elapsed)
-            self._px += vx * dt
-            self._py += vy * dt
-            self._pz += vz * dt
+            vx, vy, vz = self._integrate_attack_position(vx, vy, vz, dt)
             if self._pz < 0.0:
                 self._pz = 0.0
             self._snap_attack_pose_if_needed()

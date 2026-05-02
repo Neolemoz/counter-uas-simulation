@@ -1,4 +1,5 @@
-# Default bringup: Gazebo counter-UAS scale (km-class dome). For ~10 m lab worlds use config_lab_toy.yaml.
+# Small-scale lab scenario (e.g. world_sim / quick tests on a ~10 m scale).
+# radar.range must exceed typical target distance in that world.
 world_sim_node:
   ros__parameters:
     scenario: single
@@ -7,13 +8,13 @@ radar_sim_node:
   ros__parameters:
     scenario: single
     radar:
-      range: 7000.0
+      range: 12.0
       position_x: 0.0
       position_y: 0.0
       position_z: 0.0
-      azimuth_half_deg: 180.0
-      elevation_half_deg: 70.0
-      detection_probability: 0.97
+      azimuth_half_deg: 90.0
+      elevation_half_deg: 60.0
+      detection_probability: 1.0
       seed: -1
 
 camera_sim_node:
@@ -23,18 +24,18 @@ camera_sim_node:
       mount_x: 0.0
       mount_y: 0.0
       mount_z: 0.0
-      yaw_deg: 180.0
-      horizontal_fov_deg: 72.0
-      vertical_fov_deg: 50.0
-      max_range_m: 8000.0
-      detection_probability: 0.9
+      yaw_deg: 0.0
+      horizontal_fov_deg: 90.0
+      vertical_fov_deg: 55.0
+      max_range_m: 20.0
+      detection_probability: 0.98
 
 fusion_node:
   ros__parameters:
     scenario: single
     fusion:
-      distance_threshold: 250.0
-      radar_weight: 1.15
+      distance_threshold: 6.0
+      radar_weight: 1.0
       camera_weight: 1.0
 
 tracking_node:
@@ -46,11 +47,11 @@ viz_node:
   ros__parameters:
     scenario: single
     threat:
-      medium_distance: 3500.0
-      high_distance: 1500.0
+      medium_distance: 8.0
+      high_distance: 5.0
 
 threat_assessment_node:
   ros__parameters:
     tracks_topic: /tracks
-    high_distance_m: 1500.0
-    medium_distance_m: 3500.0
+    high_distance_m: 5.0
+    medium_distance_m: 8.0

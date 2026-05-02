@@ -13,17 +13,21 @@ from dataclasses import dataclass, field
 import numpy as np
 import rclpy
 from geometry_msgs.msg import Point
+from nav_msgs.msg import Odometry
 from rclpy.node import Node
 
-# --- Track association — dual STRICT gating (meters) ---
+# --- Track association — dual gating (meters), now ROS-tunable ---
 # A pair (track, detection) is valid only if BOTH are true:
-#   1) distance(det, track predicted position this cycle) < ASSOCIATION_GATE_M
-#   2) distance(det, one-step-ahead extrapolation) < ASSOCIATION_GATE_M
-# Positions come from the KF **after** the time-update (predict) for this cycle.
+#   1) distance(det, track predicted position this cycle) < association_gate_m
+#   2) distance(det, one-step-ahead extrapolation) < association_gate_m
+# Positions come from the KF **after** the time-update (predict) for this cycle, so for a
+# well-tracked CV target this gate only needs to swallow measurement noise, not target speed.
 ASSOCIATION_GATE_M = 2.0
 
 # --- Candidate confirmation (same blob across frames) ---
-# Detections within this distance (m) are treated as the same candidate.
+# Detections within this distance (m) of the candidate's *predicted* position (NOT raw last
+# position — important when target speed * dt > gate, e.g. 38 m/s @ 10 Hz = 3.8 m / frame
+# vs gate 1.0 m which previously prevented any track from ever forming for fast targets).
 CANDIDATE_MERGE_M = 1.0
 # Number of consecutive matching frames required before creating a real track.
 CONFIRMATION_HITS = 3
@@ -198,16 +202,28 @@ def _distance_point_to_candidate(det: Point, c: Candidate) -> float:
     return math.sqrt(dx * dx + dy * dy + dz * dz)
 
 
-def _distance_det_to_track_gate_pos(det: Point, tr: Track) -> float:
-    return _distance_point_to_xyz(det, tr.position_xyz())
+def _predicted_candidate_xyz(c: Candidate) -> tuple[float, float, float]:
+    """One-step CV prediction for a Candidate using its short position history.
+
+    With < 2 history points we have no velocity estimate yet, so we return the last position
+    (matching the legacy behaviour for the very first match attempt).  Once there are 2+
+    points we extrapolate by ``CYCLE_PERIOD_S``, which keeps the matching gate sized by
+    *measurement noise* instead of *target speed* — critical for fast targets where naive
+    last-position matching fails.
+    """
+    hist = list(c.pos_history)
+    if len(hist) < 2:
+        return (c.x, c.y, c.z)
+    vx, vy, vz = _initial_velocity_from_history(hist)
+    return (c.x + vx * CYCLE_PERIOD_S, c.y + vy * CYCLE_PERIOD_S, c.z + vz * CYCLE_PERIOD_S)
 
 
-def _initial_velocity_from_candidate(cand: Candidate) -> tuple[float, float, float]:
-    """
-    Average velocity from consecutive segments: v_k = (p_{k+1} - p_k) / dt.
-    Uses up to the last CANDIDATE_POS_HISTORY_MAX positions. Fallback (0,0,0) if < 2 points.
-    """
-    hist = list(cand.pos_history)
+def _initial_velocity_from_history(
+    hist: list[tuple[float, float, float]],
+) -> tuple[float, float, float]:
+    """Average per-segment velocity over a position history. Same maths as the candidate-
+    confirmation step, factored so the predictive matcher can reuse it without duplicating
+    the loop."""
     if len(hist) < 2:
         return (0.0, 0.0, 0.0)
     inv_dt = 1.0 / CYCLE_PERIOD_S
@@ -224,6 +240,20 @@ def _initial_velocity_from_candidate(cand: Candidate) -> tuple[float, float, flo
     return (sx * inv_n, sy * inv_n, sz * inv_n)
 
 
+def _distance_det_to_track_gate_pos(det: Point, tr: Track) -> float:
+    return _distance_point_to_xyz(det, tr.position_xyz())
+
+
+def _initial_velocity_from_candidate(cand: Candidate) -> tuple[float, float, float]:
+    """Average velocity from consecutive segments: v_k = (p_{k+1} - p_k) / dt.
+
+    Uses up to the last ``CANDIDATE_POS_HISTORY_MAX`` positions. Fallback (0,0,0) if <2 points.
+    Implementation delegates to ``_initial_velocity_from_history`` so the candidate-match
+    predictor and the confirmation-time ``v_init`` use exactly the same numerical recipe.
+    """
+    return _initial_velocity_from_history(list(cand.pos_history))
+
+
 class TrackingNode(Node):
     def __init__(self) -> None:
         super().__init__('tracking_node')
@@ -236,6 +266,41 @@ class TrackingNode(Node):
         self._mahalanobis_gate_threshold = float(
             self.get_parameter('mahalanobis_gate_threshold').value,
         )
+        # Per-cycle gates (meters). The defaults (1 m / 2 m) suit a slow lab toy where target
+        # speed * dt << gate, but become *the* track-formation blocker for a km-scale scenario:
+        # at 38 m/s LOS and 10 Hz cycle, target travels 3.8 m / frame, so a 1 m candidate gate
+        # never confirms and no track is ever born — interceptor sits idle in standby.  Override
+        # via config (e.g. config_gazebo_counter_uas.yaml) for fast targets.
+        self.declare_parameter('candidate_match_gate_m', CANDIDATE_MERGE_M)
+        self._candidate_match_gate_m = float(self.get_parameter('candidate_match_gate_m').value)
+        self.declare_parameter('association_gate_m', ASSOCIATION_GATE_M)
+        self._association_gate_m = float(self.get_parameter('association_gate_m').value)
+        self.declare_parameter('confirmation_hits', CONFIRMATION_HITS)
+        self._confirmation_hits = int(self.get_parameter('confirmation_hits').value)
+        # When True the candidate-merge gate is checked against a *predicted* candidate
+        # position (using its short-history velocity), not the raw last detection.  This makes
+        # the gate insensitive to target speed and lets a 1–2 m measurement-noise gate work
+        # for both 5 m/s lab targets and 40 m/s long-range targets.
+        self.declare_parameter('candidate_predictive_gate', True)
+        self._candidate_predictive_gate = bool(self.get_parameter('candidate_predictive_gate').value)
+        # ``primary``: one Point per cycle (lowest track_id) — matches single-target consumers
+        # e.g. interception_logic_node. ``all``: legacy multi-publish (breaks those consumers).
+        self.declare_parameter('tracks_publish_mode', 'primary')
+        _mode = str(self.get_parameter('tracks_publish_mode').value).strip().lower()
+        self._tracks_publish_mode = _mode if _mode in ('primary', 'all') else 'primary'
+        if self._tracks_publish_mode == 'all':
+            self.get_logger().warning(
+                'tracks_publish_mode=all publishes multiple Point messages per cycle on /tracks; '
+                'nodes that keep only the latest message (e.g. interception_logic_node) will see wrong targets.',
+            )
+        # Track-state output (with KF velocity + covariance). Uses ``nav_msgs/Odometry`` so we can
+        # carry position, velocity, and covariance in one standard message — no custom .msg pkg.
+        # ``track_id`` is encoded in ``child_frame_id`` as ``track_<id>`` for downstream selection.
+        # Topic / frames default to a sibling stream so legacy ``/tracks`` (Point) keeps working.
+        self.declare_parameter('tracks_state_topic', '/tracks/state')
+        self.declare_parameter('tracks_state_frame_id', 'map')
+        self._tracks_state_topic = str(self.get_parameter('tracks_state_topic').value).strip() or '/tracks/state'
+        self._tracks_state_frame_id = str(self.get_parameter('tracks_state_frame_id').value).strip() or 'map'
         self._tracks: list[Track] = []
         self._candidates: list[Candidate] = []
         self._next_id = 1
@@ -251,10 +316,15 @@ class TrackingNode(Node):
         self._Q_miss = _build_Q_miss()
 
         self._pub = self.create_publisher(Point, '/tracks', 10)
+        self._pub_state = self.create_publisher(Odometry, self._tracks_state_topic, 10)
         # Input changed: use fused detections (radar + camera)
         self.create_subscription(Point, '/fused_detections', self._on_detection, 10)
         self._timer = self.create_timer(CYCLE_PERIOD_S, self._on_cycle_timer)
-        self.get_logger().info('Tracking using fused detections (CV Kalman per track)')
+        self.get_logger().info(
+            f'Tracking using fused detections (CV Kalman per track); '
+            f'/tracks publish mode={self._tracks_publish_mode!r}; '
+            f'state topic={self._tracks_state_topic!r} frame={self._tracks_state_frame_id!r}',
+        )
 
     def _on_detection(self, msg: Point) -> None:
         p = Point()
@@ -288,12 +358,13 @@ class TrackingNode(Node):
         # gate positions taken from KF state **after** predict).
         # ==================================================================
         assoc_pairs: list[tuple[float, float, int, int]] = []
+        assoc_gate = self._association_gate_m
         for j, det in enumerate(detections):
             for i, tr in enumerate(self._tracks):
                 d_curr = _distance_det_to_track_gate_pos(det, tr)
                 pred = tr.gate_ahead_xyz(self._dt)
                 d_pred = _distance_point_to_xyz(det, pred)
-                if d_curr < ASSOCIATION_GATE_M and d_pred < ASSOCIATION_GATE_M:
+                if d_curr < assoc_gate and d_pred < assoc_gate:
                     assoc_pairs.append((d_pred, d_curr, i, j))
 
         assoc_pairs.sort(key=lambda x: (x[0], x[1]))
@@ -352,8 +423,8 @@ class TrackingNode(Node):
             for det in detections:
                 d_curr = _distance_det_to_track_gate_pos(det, tr)
                 d_pred = _distance_point_to_xyz(det, pred)
-                ok = d_curr < ASSOCIATION_GATE_M and d_pred < ASSOCIATION_GATE_M
-                partial = (d_curr < ASSOCIATION_GATE_M or d_pred < ASSOCIATION_GATE_M) and not ok
+                ok = d_curr < assoc_gate and d_pred < assoc_gate
+                partial = (d_curr < assoc_gate or d_pred < assoc_gate) and not ok
                 if partial:
                     self.get_logger().info(
                         f'Track {tr.track_id} rejected update (bad match)',
@@ -442,11 +513,21 @@ class TrackingNode(Node):
         if not unmatched_dets and not self._candidates:
             return
 
+        # When ``candidate_predictive_gate`` is True, match against a one-step CV prediction so
+        # the gate stays sized by measurement noise (~ R) instead of target speed * dt.  Without
+        # this, fast targets (≳ gate_m / dt) can never accumulate consecutive hits and never
+        # get promoted to a track — the symptom is "interceptor doesn't engage" because the
+        # /tracks/state stream is permanently empty.
         cand_pairs: list[tuple[float, int, int]] = []
+        gate = self._candidate_match_gate_m
         for j, det in enumerate(unmatched_dets):
             for k, cand in enumerate(self._candidates):
-                d = _distance_point_to_candidate(det, cand)
-                if d < CANDIDATE_MERGE_M:
+                if self._candidate_predictive_gate:
+                    pxyz = _predicted_candidate_xyz(cand)
+                    d = _distance_point_to_xyz(det, pxyz)
+                else:
+                    d = _distance_point_to_candidate(det, cand)
+                if d < gate:
                     cand_pairs.append((d, k, j))
 
         cand_pairs.sort(key=lambda x: x[0])
@@ -468,7 +549,7 @@ class TrackingNode(Node):
             cand.hit_count += 1
             cand.pos_history.append((float(det.x), float(det.y), float(det.z)))
 
-            if cand.hit_count >= CONFIRMATION_HITS:
+            if cand.hit_count >= self._confirmation_hits:
                 tid = self._next_id
                 self._next_id += 1
                 vx, vy, vz = _initial_velocity_from_candidate(cand)
@@ -510,12 +591,64 @@ class TrackingNode(Node):
             )
 
     def _publish_all_tracks(self) -> None:
+        if not self._tracks:
+            return
+        if self._tracks_publish_mode == 'primary':
+            tr = min(self._tracks, key=lambda t: t.track_id)
+            out = Point()
+            out.x = tr.x
+            out.y = tr.y
+            out.z = tr.z
+            self._pub.publish(out)
+            self._pub_state.publish(self._track_to_odometry(tr))
+            return
+        # Legacy multi-publish path: also emit one Odometry per track for downstream consumers
+        # that *do* support multi-target on /tracks/state (none today, but keeps the contract honest).
         for tr in self._tracks:
             out = Point()
             out.x = tr.x
             out.y = tr.y
             out.z = tr.z
             self._pub.publish(out)
+            self._pub_state.publish(self._track_to_odometry(tr))
+
+    def _track_to_odometry(self, tr: Track) -> Odometry:
+        """Pack a ``Track`` into ``nav_msgs/Odometry`` with KF state + 6x6 pose/twist covariance.
+
+        ``child_frame_id`` carries the integer track id as ``track_<id>`` so consumers can
+        select a specific track without a custom message type.  Orientation is identity
+        (CV model does not estimate attitude); rotational covariances are large to signal
+        "unknown" without breaking PoseWithCovariance consumers.
+        """
+        msg = Odometry()
+        msg.header.stamp = self.get_clock().now().to_msg()
+        msg.header.frame_id = self._tracks_state_frame_id
+        msg.child_frame_id = f'track_{tr.track_id}'
+        msg.pose.pose.position.x = float(tr.state[0])
+        msg.pose.pose.position.y = float(tr.state[1])
+        msg.pose.pose.position.z = float(tr.state[2])
+        msg.pose.pose.orientation.w = 1.0
+        msg.twist.twist.linear.x = float(tr.state[3])
+        msg.twist.twist.linear.y = float(tr.state[4])
+        msg.twist.twist.linear.z = float(tr.state[5])
+        # 6x6 pose covariance (row-major, [x, y, z, rx, ry, rz]).
+        # Position block from the 3x3 KF position covariance, rotational block large = unknown.
+        pose_cov = [0.0] * 36
+        for i in range(3):
+            for j in range(3):
+                pose_cov[i * 6 + j] = float(tr.P[i, j])
+        for k in range(3, 6):
+            pose_cov[k * 6 + k] = 1e6
+        msg.pose.covariance = pose_cov
+        # 6x6 twist covariance (linear xyz + angular xyz). Linear block from KF velocity covariance.
+        twist_cov = [0.0] * 36
+        for i in range(3):
+            for j in range(3):
+                twist_cov[i * 6 + j] = float(tr.P[3 + i, 3 + j])
+        for k in range(3, 6):
+            twist_cov[k * 6 + k] = 1e6
+        msg.twist.covariance = twist_cov
+        return msg
 
     def _log_active_tracks(self) -> None:
         ids = [tr.track_id for tr in self._tracks]

@@ -1,0 +1,86 @@
+Panels:
+  - Class: rviz_common/Displays
+    Name: Displays
+Preferences:
+  PromptSaveOnExit: true
+Toolbars:
+  theme: dark
+Visualization Manager:
+  Class: ""
+  Displays:
+    - Alpha: 0.5
+      Cell Size: 1000
+      Class: rviz_default_plugins/Grid
+      Color: 80; 80; 80
+      Enabled: true
+      Line Style:
+        Line Width: 0.03
+        Value: Lines
+      Name: Grid
+      Normal Cell Count: 0
+      Plane: XY
+      Plane Cell Count: 80
+      Reference Frame: map
+      Value: true
+    - Class: rviz_default_plugins/Marker
+      Enabled: true
+      Name: Dome
+      Namespaces: {}
+      Topic:
+        Depth: 5
+        Durability Policy: Transient Local
+        Filter size: 10
+        History Policy: Keep Last
+        Reliability Policy: Reliable
+        Value: /danger_zone/dome
+      Value: true
+    - Class: rviz_default_plugins/Marker
+      Enabled: true
+      Name: InterceptionMarkers
+      Namespaces: {}
+      Topic:
+        Depth: 5
+        Durability Policy: Transient Local
+        Filter size: 10
+        History Policy: Keep Last
+        Reliability Policy: Reliable
+        Value: /interception/markers
+      Value: true
+    - Class: rviz_default_plugins/Marker
+      Enabled: true
+      Name: HitMarkers
+      Namespaces: {}
+      Topic:
+        Depth: 5
+        Durability Policy: Transient Local
+        Filter size: 10
+        History Policy: Keep Last
+        Reliability Policy: Reliable
+        Value: /interception/hit_markers
+      Value: true
+  Enabled: true
+  Global Options:
+    Background Color: 38; 38; 38
+    Fixed Frame: map
+    Frame Rate: 30
+  Name: root
+  Tools:
+    - Class: rviz_default_plugins/MoveCamera
+    - Class: rviz_default_plugins/FocusCamera
+  Transformation:
+    Current:
+      Class: rviz_default_plugins/TF
+  Value: true
+  Views:
+    Current:
+      Class: rviz_default_plugins/Orbit
+      Distance: 8000
+      Name: Current View
+      Target Frame: map
+      Value: Orbit (rviz_default_plugins)
+      Yaw: 0.8
+      Pitch: 0.35
+    Saved: ~
+Window Geometry:
+  Displays:
+    collapsed: false

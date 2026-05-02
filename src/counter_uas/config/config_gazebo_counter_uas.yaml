@@ -1,4 +1,5 @@
-# Default bringup: Gazebo counter-UAS scale (km-class dome). For ~10 m lab worlds use config_lab_toy.yaml.
+# Parameters aligned with gazebo_target_sim / target_sphere.sdf scale (dome km-class, radar at asset).
+# Use with: ros2 launch counter_uas bringup.launch.py counter_uas_config:=config_gazebo_counter_uas.yaml
 world_sim_node:
   ros__parameters:
     scenario: single
@@ -41,6 +42,17 @@ tracking_node:
   ros__parameters:
     scenario: single
     mahalanobis_gate_threshold: 16.27
+    # Gates sized for fast (≳30 m/s LOS) targets at 10 Hz.  With predictive candidate matching
+    # the actual residual is on the order of fused-measurement noise (~ m), but we leave
+    # generous margin so a single noisy / dropped frame does not kill candidate confirmation.
+    candidate_match_gate_m: 8.0
+    candidate_predictive_gate: true
+    association_gate_m: 12.0
+    confirmation_hits: 3
+    # The KF velocity often starts at 0 at confirmation; bump the cap so a 35–45 m/s target
+    # is not silently rejected by the speed sanity check.
+    max_track_speed_mps: 80.0
+    max_update_jump_m: 15.0
 
 viz_node:
   ros__parameters:

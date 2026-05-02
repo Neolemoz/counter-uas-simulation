@@ -15,8 +15,19 @@ class ThreatAssessmentNode(Node):
 
     def __init__(self) -> None:
         super().__init__('threat_assessment_node')
+        self.declare_parameter('tracks_topic', '/tracks')
+        self.declare_parameter('high_distance_m', 5.0)
+        self.declare_parameter('medium_distance_m', 10.0)
+
+        topic = str(self.get_parameter('tracks_topic').value).strip() or '/tracks'
+        self._r_high = max(float(self.get_parameter('high_distance_m').value), 0.1)
+        self._r_med = max(float(self.get_parameter('medium_distance_m').value), self._r_high + 0.1)
+
         self._pub = self.create_publisher(String, '/threat_level', 10)
-        self.create_subscription(Point, '/tracks', self._on_track, 10)
+        self.create_subscription(Point, topic, self._on_track, 10)
+        self.get_logger().info(
+            f'threat_assessment: tracks_topic={topic} high_m={self._r_high} medium_m={self._r_med}',
+        )
 
     def _on_track(self, msg: Point) -> None:
         px, py, pz = _PROTECTED
@@ -26,9 +37,9 @@ class ThreatAssessmentNode(Node):
         dist = math.sqrt(dx * dx + dy * dy + dz * dz)
 
         out = String()
-        if dist < 5.0:
+        if dist < self._r_high:
             out.data = 'HIGH'
-        elif dist < 10.0:
+        elif dist < self._r_med:
             out.data = 'MEDIUM'
         else:
             out.data = 'LOW'
