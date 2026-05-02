@@ -66,3 +66,14 @@ threat_assessment_node:
     tracks_topic: /tracks
     high_distance_m: 1500.0
     medium_distance_m: 3500.0
+
+# Guidance / kinematics for a km-scale interceptor.  The default 3 m/s² accel limit suits a
+# small lab toy but at vmax≈78 m/s it produces a ~26 s velocity ramp (max_dv = 3 * 0.05 =
+# 0.15 m/s per cycle), which makes the interceptor *appear stationary* for the first several
+# seconds while the target is racing inbound at 38 m/s — i.e. "the interceptor isn't engaging
+# when the attacker enters the outer dome".  Bump to a realistic small-missile envelope (≈3 g
+# longitudinal, ≈2.5 rad/s yaw) so the ramp completes inside ~3 s.
+interception_logic_node:
+  ros__parameters:
+    max_acceleration_m_s2: 30.0
+    max_turn_rate_rad_s: 2.5
