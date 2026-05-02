@@ -67,13 +67,8 @@ threat_assessment_node:
     high_distance_m: 1500.0
     medium_distance_m: 3500.0
 
-# Guidance / kinematics for a km-scale interceptor.  The default 3 m/s² accel limit suits a
-# small lab toy but at vmax≈78 m/s it produces a ~26 s velocity ramp (max_dv = 3 * 0.05 =
-# 0.15 m/s per cycle), which makes the interceptor *appear stationary* for the first several
-# seconds while the target is racing inbound at 38 m/s — i.e. "the interceptor isn't engaging
-# when the attacker enters the outer dome".  Bump to a realistic small-missile envelope (≈3 g
-# longitudinal, ≈2.5 rad/s yaw) so the ramp completes inside ~3 s.
-interception_logic_node:
-  ros__parameters:
-    max_acceleration_m_s2: 30.0
-    max_turn_rate_rad_s: 2.5
+# NOTE: ``interception_logic_node`` is launched from gazebo_target.launch.py with an inline
+# parameter dict and does NOT consume this YAML.  Its acceleration / turn-rate envelope is
+# tuned via the ``interceptor_max_accel_m_s2`` and ``interceptor_max_turn_rate_rad_s`` launch
+# arguments (defaults 30 m/s² and 2.5 rad/s — sized for the km-scale dome).  Adding params
+# here would silently have no effect.

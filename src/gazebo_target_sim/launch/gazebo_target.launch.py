@@ -230,6 +230,15 @@ def _gz_target_setup(context, *args, **kwargs):
     use_gui = str(LaunchConfiguration('use_gazebo_gui').perform(context)).strip().lower() in (
         '1', 'true', 'yes', 'on',
     )
+    # Guidance accel envelope (km-scale interceptor needs realistic small-missile acceleration —
+    # the legacy 3 m/s² default produces a 26 s ramp from rest to 78 m/s, which the operator
+    # observes as "the interceptor is not engaging" while the attacker closes inbound).
+    interceptor_max_accel = float(
+        LaunchConfiguration('interceptor_max_accel_m_s2').perform(context),
+    )
+    interceptor_turn_rate = float(
+        LaunchConfiguration('interceptor_max_turn_rate_rad_s').perform(context),
+    )
     dome_hyst = float(LaunchConfiguration('dome_outer_hysteresis_m').perform(context))
     tv_alpha = float(LaunchConfiguration('target_velocity_smooth_alpha').perform(context))
     dome_en = str(LaunchConfiguration('dome_enabled').perform(context)).strip().lower() in (
@@ -410,6 +419,12 @@ def _gz_target_setup(context, *args, **kwargs):
             {
                 # Match interceptor_controller tick (10 Hz) to avoid chattering between guidance steps.
                 'rate_hz': 10.0,
+                # Per-cycle Δv = max_accel * dt.  Default 3 m/s² @ 20 Hz = 0.15 m/s/cycle,
+                # which makes the interceptor "appear stationary" for ~26 s before reaching
+                # v_max=78 m/s.  30 m/s² (~3 g) is a realistic small-missile envelope and
+                # cuts the ramp under 3 s without breaking physical plausibility.
+                'max_acceleration_m_s2': interceptor_max_accel,
+                'max_turn_rate_rad_s': interceptor_turn_rate,
                 'closing_speed_m_s': guidance_closing,
                 # Use same cap as interceptor_controller (interceptor_vmax), not guidance_vmax —
                 # otherwise logic clamps cmd at ~47 m/s while physics allows ~57+ m/s (never "runs out" headroom).
@@ -562,6 +577,22 @@ def generate_launch_description() -> LaunchDescription:
                 'use_gazebo_gui',
                 default_value='true',
                 description='If false, runs gz in server-only mode (-s): no 3D window. Use true on a machine with DISPLAY/Wayland.',
+            ),
+            DeclareLaunchArgument(
+                'interceptor_max_accel_m_s2',
+                default_value='30.0',
+                description=(
+                    'Interceptor longitudinal acceleration limit (m/s²). Default 30 (~3 g) for the '
+                    'km-scale config; lower for lab toy.  Must be ≥ ~ v_max / desired_ramp_seconds.'
+                ),
+            ),
+            DeclareLaunchArgument(
+                'interceptor_max_turn_rate_rad_s',
+                default_value='2.5',
+                description=(
+                    'Interceptor turn-rate limit (rad/s). Default 2.5 (~143 deg/s).  Lower values '
+                    'make heading changes smoother but reduce ability to track manoeuvring targets.'
+                ),
             ),
             DeclareLaunchArgument(
                 'gz_use_shipped_gui_config',
