@@ -370,6 +370,12 @@ class TargetControllerNode(Node):
                 fmt_spawn_model_from_file(self._explosion_sdf_path, self._explosion_fx_name, ex, ey, ez),
             )
             self.get_logger().info(f'[EXPLOSION] gz create returned ok_sp={ok_sp}')
+            if ok_sp:
+                self.get_logger().info(
+                    f'[EXPLOSION] spawned visual OK name={self._explosion_fx_name!r} '
+                    f'world={self._world!r} svc=/world/{self._world}/create '
+                    f'gz_ip={os.environ.get("GZ_IP", "")!r}',
+                )
         if not ok_sp:
             self.get_logger().warning(
                 'gz create explosion visual failed (check /world/.../create and SDF path).',

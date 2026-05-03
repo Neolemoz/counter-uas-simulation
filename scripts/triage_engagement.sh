@@ -51,3 +51,12 @@ grep -m1 -E 'Track created' "${LOG}" || echo "  (none)"
 
 echo "--- Last 5 selection_id values published (if any) ---"
 grep -E '\[ASSIGN\]|\[SWITCH\]|\[LAUNCH\]|\[STANDBY\]' "${LOG}" | tail -5 || echo "  (none)"
+
+echo "--- Explosion / stop chain (single-target) ---"
+print_count "/) HIT logs" '\[HIT\]'
+print_count "/) interception HIT: publishing (stop burst)" 'HIT: publishing'
+print_count "/) target Received /target/stop True" 'Received .*/target/stop.*True'
+print_count "/) [EXPLOSION] sdf exists line" '\[EXPLOSION\] sdf_path='
+print_count "/) gz create ok (ok_sp=true)" 'ok_sp=True'
+print_count "/) spawned visual OK" 'spawned visual OK'
+print_count "?) gz create FAILED warn" 'gz create explosion visual failed'

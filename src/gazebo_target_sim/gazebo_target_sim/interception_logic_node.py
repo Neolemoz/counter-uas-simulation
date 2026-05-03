@@ -29,6 +29,7 @@ from typing import TYPE_CHECKING, NamedTuple
 import rclpy
 from geometry_msgs.msg import Point, Vector3
 from nav_msgs.msg import Odometry
+from rclpy.duration import Duration
 from rclpy.node import Node
 from rclpy.qos import DurabilityPolicy, HistoryPolicy, QoSProfile, ReliabilityPolicy
 from rclpy.time import Time
@@ -1280,6 +1281,11 @@ class InterceptionLogicNode(Node):
         # at least this distance from its launch/start position — proves it actually flew.
         self.declare_parameter('hit_min_interceptor_travel_m', 2.0)
         self.declare_parameter('stop_topic', '/target/stop')
+        # VOLATILE /target/stop can be missed if target_controller arms its subscription late
+        # (``ignore_stop_true_first_s``).  Re-publish bursts for this window so the explosion
+        # sequence still runs once the subscriber exists.
+        self.declare_parameter('stop_signal_repeat_duration_s', 15.0)
+        self.declare_parameter('stop_signal_repeat_period_s', 0.35)
         # Phase 2 → Phase 3 gating (opt-in): require radar-range detection + tracking delay elapsed.
         # When disabled (default), behaviour matches the pre-gating implementation.
         self.declare_parameter('sensing_gate_enabled', False)
@@ -1330,12 +1336,15 @@ class InterceptionLogicNode(Node):
         # One-shot HIT flash for RViz (independent of publish_intercept_markers / predict viz).
         self.declare_parameter('publish_hit_markers', True)
         self.declare_parameter('hit_marker_topic', '/interception/hit_markers')
-        self.declare_parameter('hit_marker_duration_s', 3.0)
+        self.declare_parameter('hit_marker_duration_s', 8.0)
         self.declare_parameter('hit_marker_text_scale_m', 220.0)
         self.declare_parameter('hit_marker_text_z_offset_m', 180.0)
         self.declare_parameter('hit_marker_pulse_period_s', 0.12)
         self.declare_parameter('hit_marker_pulse_min_diameter_m', 120.0)
         self.declare_parameter('hit_marker_pulse_max_diameter_m', 520.0)
+        # Extra RViz-only “bloom” sphere (km-scale visibility; Gazebo uses hit_explosion SDF).
+        self.declare_parameter('hit_marker_outer_diameter_m', 720.0)
+        self.declare_parameter('hit_marker_outer_alpha_max', 0.26)
         self.declare_parameter('cuas_intercept_predict_viz_enabled', True)
         self.declare_parameter('cuas_intercept_marker_diameter_m', 2.8)
         self.declare_parameter('cuas_intercept_line_width_m', 0.15)
@@ -1577,6 +1586,8 @@ class InterceptionLogicNode(Node):
             self._hit_pulse_d_min,
             float(self.get_parameter('hit_marker_pulse_max_diameter_m').value),
         )
+        self._hit_outer_d = max(float(self.get_parameter('hit_marker_outer_diameter_m').value), self._hit_pulse_d_min)
+        self._hit_outer_alpha_max = min(1.0, max(0.0, float(self.get_parameter('hit_marker_outer_alpha_max').value)))
         self._pub_intercept_markers = bool(self.get_parameter('publish_intercept_markers').value)
         self._cuas_trails_enabled = bool(self.get_parameter('cuas_trails_enabled').value) and self._pub_intercept_markers
         self._cuas_predict_viz_enabled = bool(self.get_parameter('cuas_intercept_predict_viz_enabled').value) and self._pub_intercept_markers
@@ -1729,6 +1740,9 @@ class InterceptionLogicNode(Node):
         self._tgt_is_state = self._meas_use_filter_vel
         sel_topic = str(self.get_parameter('selected_id_topic').value).strip()
         stop_topic = str(self.get_parameter('stop_topic').value).strip()
+        self._stop_topic = stop_topic or '/target/stop'
+        self._stop_repeat_duration_s = max(0.0, float(self.get_parameter('stop_signal_repeat_duration_s').value))
+        self._stop_repeat_period_s = max(0.05, float(self.get_parameter('stop_signal_repeat_period_s').value))
         rate = max(float(self.get_parameter('rate_hz').value), 1.0)
         self._lock_after_first = bool(self.get_parameter('lock_selected_after_first').value)
         self._hit_thresh = max(float(self.get_parameter('hit_threshold_m').value), 0.05)
@@ -2020,6 +2034,9 @@ class InterceptionLogicNode(Node):
         self._hit_viz_subtitle = ''
         if self._publish_hit_markers:
             self._pub_hit_viz = self.create_publisher(Marker, self._hit_marker_topic, qos_marker)
+        self._stop_repeat_timer = None
+        self._stop_repeat_deadline: Time | None = None
+        self._stop_repeat_pending_label: str | None = None
         _tm = self._cuas_trail_max_points
         self._trail_target = _trail_deque(_tm)
         self._trail_inters: dict[str, deque[tuple[float, float, float]]] = {
@@ -2175,8 +2192,27 @@ class InterceptionLogicNode(Node):
         sph.color.b = 0.05
         sph.color.a = 0.28 + 0.35 * pulse
 
+        outer = Marker()
+        outer.header.frame_id = frame
+        outer.header.stamp = stamp
+        outer.ns = 'hit_flash'
+        outer.id = 2
+        outer.type = Marker.SPHERE
+        outer.action = Marker.ADD
+        outer.pose.position.x = mx
+        outer.pose.position.y = my
+        outer.pose.position.z = mz
+        outer.pose.orientation.w = 1.0
+        od = float(self._hit_outer_d)
+        outer.scale.x = outer.scale.y = outer.scale.z = od
+        outer.color.r = 1.0
+        outer.color.g = 0.55
+        outer.color.b = 0.08
+        outer.color.a = self._hit_outer_alpha_max * (0.55 + 0.45 * pulse)
+
         self._pub_hit_viz.publish(text)
         self._pub_hit_viz.publish(sph)
+        self._pub_hit_viz.publish(outer)
 
     def _on_hit_viz_tick(self) -> None:
         if self._pub_hit_viz is None or self._hit_viz_mid is None:
@@ -3303,6 +3339,7 @@ class InterceptionLogicNode(Node):
         self._last_feas_debug_log = None
         self._last_feas_warn_log = None
         self._cuas_clear_viz_markers()
+        self._cancel_stop_signal_repeat_timer()
         self._heatmap_prob_cache.clear()
         self._clear_intercept_heatmap_prob_markers()
         self._mc_p_last.clear()
@@ -3328,8 +3365,43 @@ class InterceptionLogicNode(Node):
             leg.action = Marker.DELETEALL
             self._pub_intercept_viz.publish(leg)
 
-    def _publish_stop_signal(self, target_label: str | None) -> None:
-        self.get_logger().info(f'HIT: publishing /target/stop True ×3 (multi_label={target_label!r}).')
+    def _cancel_stop_signal_repeat_timer(self) -> None:
+        if self._stop_repeat_timer is not None:
+            self.destroy_timer(self._stop_repeat_timer)
+            self._stop_repeat_timer = None
+        self._stop_repeat_deadline = None
+        self._stop_repeat_pending_label = None
+
+    def _schedule_stop_signal_repeats(self, target_label: str | None) -> None:
+        """Burst ``/target/stop`` VOLATILE publishes until ``target_controller`` arms (and beyond)."""
+        self._cancel_stop_signal_repeat_timer()
+        if self._stop_repeat_duration_s <= 1e-6:
+            return
+        self._stop_repeat_pending_label = target_label
+        deadline = self.get_clock().now() + Duration(seconds=self._stop_repeat_duration_s)
+        self._stop_repeat_deadline = deadline
+        self._stop_repeat_timer = self.create_timer(
+            self._stop_repeat_period_s,
+            self._on_stop_signal_repeat_tick,
+        )
+
+    def _on_stop_signal_repeat_tick(self) -> None:
+        if self._stop_repeat_deadline is None:
+            self._cancel_stop_signal_repeat_timer()
+            return
+        now = self.get_clock().now()
+        if now.nanoseconds >= self._stop_repeat_deadline.nanoseconds:
+            self._cancel_stop_signal_repeat_timer()
+            return
+        self._publish_stop_signal(self._stop_repeat_pending_label, log_hit=False)
+
+    def _publish_stop_signal(self, target_label: str | None, *, log_hit: bool = True) -> None:
+        topic_s = repr(self._stop_topic)
+        if log_hit:
+            self.get_logger().info(
+                f'HIT: publishing {topic_s} True ×3 '
+                f'(multi_label={target_label!r}; repeat_until_armed=yes).',
+            )
         stop = Bool(data=True)
         if target_label is None:
             if self._pub_stop is not None:
@@ -4190,6 +4262,7 @@ class InterceptionLogicNode(Node):
             hit_sub = selected + (f' ({layer_for_log})' if layer_for_log else '')
             self._start_hit_visual(tx, ty, tz, ix, iy, iz, hit_sub)
             self._publish_stop_signal(None)
+            self._schedule_stop_signal_repeats(None)
             # immediate=True: bypass accel limit so interceptor freezes at impact instantly.
             self._publish_all({i: zero for i in self._ids}, immediate=True)
             # Delay pause so target_controller has time to receive stop signal,
@@ -5328,6 +5401,7 @@ class InterceptionLogicNode(Node):
             hit_sub = f'{tlabel} ← {iid}' + (f' ({layer_for_log})' if layer_for_log else '')
             self._start_hit_visual(tx, ty, tz, ix, iy, iz, hit_sub)
             self._publish_stop_signal(tlabel)
+            self._schedule_stop_signal_repeats(tlabel)
             self._log_active_targets_remaining()
             if self._pause_gz_on_hit:
                 self._pause_gazebo_world()

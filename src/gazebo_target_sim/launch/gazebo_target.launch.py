@@ -331,7 +331,8 @@ def _gz_target_setup(context, *args, **kwargs):
                 'drone_position_topic': gt_topic,
                 'stop_topic': '/target/stop',
                 # Block spurious /target/stop during startup (stale session / echo subscribers).
-                'ignore_stop_true_first_s': 8.0,
+                # Reduced from 8s: pairing with VOLATILE stop + interception repeat bursts avoids missing HIT explosions.
+                'ignore_stop_true_first_s': 2.0,
                 'explode_on_hit': True,
                 'explosion_fade_s': 12.0,
                 # False = ซ่อนเป้าด้วย set_pose (ไม่ gz remove) — world ยังมี sphere_target_0..2 ครบหลังชน/รีเซ็ต
@@ -497,6 +498,10 @@ def _gz_target_setup(context, *args, **kwargs):
                 'pause_gz_on_hit': False,
                 'strike_shell_half_width_m': STRIKE_SHELL_HALF_WIDTH_M,
                 'stop_topic': '/target/stop',
+                'stop_signal_repeat_duration_s': 15.0,
+                'stop_signal_repeat_period_s': 0.35,
+                'hit_marker_duration_s': 10.0,
+                'hit_marker_outer_diameter_m': 760.0,
                 # Default off: gate + 2 s tracking delay after false /clock reorder "resets" blocked guidance for long stretches.
                 # Enable for Phase 2→3 integration tests: sensing_gate_enabled:=true via override if needed.
                 'sensing_gate_enabled': False,
