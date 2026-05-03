@@ -42,17 +42,25 @@ tracking_node:
   ros__parameters:
     scenario: single
     mahalanobis_gate_threshold: 16.27
-    # Gates sized for fast (≳30 m/s LOS) targets at 10 Hz.  With predictive candidate matching
-    # the actual residual is on the order of fused-measurement noise (~ m), but we leave
-    # generous margin so a single noisy / dropped frame does not kill candidate confirmation.
-    candidate_match_gate_m: 8.0
+    # Gates sized for the *real* fused-detection cadence at km-scale.  Empirically the
+    # paired-input fusion stream emits ~3.3 Hz (≈300 ms between fused points) with the
+    # default radar/camera rates, and a 50 m/s LOS target moves ~15 m per inter-detection
+    # interval.  The first candidate→candidate match has only one position in history so
+    # the predictive gate degrades to "last position", so we need gate ≥ per-interval
+    # displacement.  20 m gate + 2-hit confirmation gets a track born after a single
+    # follow-up detection (≈ 300–600 ms after first contact).
+    candidate_match_gate_m: 20.0
     candidate_predictive_gate: true
-    association_gate_m: 12.0
-    confirmation_hits: 3
+    association_gate_m: 25.0
+    confirmation_hits: 2
+    # Fusion stream is paired but periodic (~3 Hz).  Miss tolerance of 5 cycles (= 0.5 s
+    # @ 10 Hz tracking) lets a candidate survive at least one silent cycle between
+    # detection bursts so it can accumulate the 2 hits required to promote.
+    candidate_max_missed_frames: 5
     # The KF velocity often starts at 0 at confirmation; bump the cap so a 35–45 m/s target
     # is not silently rejected by the speed sanity check.
     max_track_speed_mps: 80.0
-    max_update_jump_m: 15.0
+    max_update_jump_m: 25.0
 
 viz_node:
   ros__parameters:

@@ -171,21 +171,40 @@ class Track:
         _symmetrize_psd(self.P)
 
 
-def _new_candidate_pos_history() -> deque[tuple[float, float, float]]:
+def _new_candidate_pos_history() -> deque[tuple[float, float, float, float]]:
     return deque(maxlen=CANDIDATE_POS_HISTORY_MAX)
 
 
 @dataclass
 class Candidate:
-    """Temporary blob: not a track until confirmed (reduces ghost tracks)."""
+    """Temporary blob: not a track until confirmed (reduces ghost tracks).
+
+    ``missed_frames`` counts how many *consecutive* tracking cycles have come and gone
+    without a matching detection.  We allow up to ``candidate_max_missed_frames`` (a node
+    param) before discarding — without this the candidate dies after a single empty cycle,
+    which is fatal when the upstream fusion publish rate is bursty (e.g. paired publishes
+    followed by a 200–300 ms silence at km-scale).
+
+    ``pos_history`` stores ``(x, y, z, t_seconds)`` — the explicit timestamp lets the
+    velocity computation use the *actual* elapsed time between observations rather than
+    the (often wrong) ``CYCLE_PERIOD_S`` proxy.  Without this, an upstream stream that
+    publishes every 300 ms gets its velocity inflated 3× (because consecutive history
+    points are assumed to be 100 ms apart), which propagates into the seed track velocity
+    and makes the freshly-born track diverge from the true target inside ~1 s.
+
+    ``last_update_time`` is the timestamp of the most recent successful match; the
+    predictor uses ``now − last_update_time`` directly as the prediction horizon.
+    """
 
     x: float
     y: float
     z: float
     hit_count: int
-    pos_history: deque[tuple[float, float, float]] = field(
+    pos_history: deque[tuple[float, float, float, float]] = field(
         default_factory=_new_candidate_pos_history,
     )
+    missed_frames: int = 0
+    last_update_time: float = 0.0
 
 
 def _distance_point_to_xyz(det: Point, xyz: tuple[float, float, float]) -> float:
@@ -202,40 +221,57 @@ def _distance_point_to_candidate(det: Point, c: Candidate) -> float:
     return math.sqrt(dx * dx + dy * dy + dz * dz)
 
 
-def _predicted_candidate_xyz(c: Candidate) -> tuple[float, float, float]:
-    """One-step CV prediction for a Candidate using its short position history.
+def _predicted_candidate_xyz(
+    c: Candidate, now: float | None = None,
+) -> tuple[float, float, float]:
+    """CV prediction for a Candidate using actual time deltas from ``pos_history``.
 
     With < 2 history points we have no velocity estimate yet, so we return the last position
     (matching the legacy behaviour for the very first match attempt).  Once there are 2+
-    points we extrapolate by ``CYCLE_PERIOD_S``, which keeps the matching gate sized by
-    *measurement noise* instead of *target speed* — critical for fast targets where naive
-    last-position matching fails.
+    points we extrapolate by the *actual elapsed time* since the last update — that horizon
+    is ``now - c.last_update_time`` when ``now`` is provided, or it falls back to
+    ``(missed_frames + 1) * CYCLE_PERIOD_S`` for callers that do not have a clock (tests).
+    Using the real elapsed time eliminates the 2–3× velocity overshoot that occurs when the
+    upstream measurement stream is slower than the tracking cycle.
     """
     hist = list(c.pos_history)
     if len(hist) < 2:
         return (c.x, c.y, c.z)
     vx, vy, vz = _initial_velocity_from_history(hist)
-    return (c.x + vx * CYCLE_PERIOD_S, c.y + vy * CYCLE_PERIOD_S, c.z + vz * CYCLE_PERIOD_S)
+    if now is not None and c.last_update_time > 0.0 and now > c.last_update_time:
+        horizon = float(now - c.last_update_time)
+    else:
+        horizon = float(c.missed_frames + 1) * CYCLE_PERIOD_S
+    return (c.x + vx * horizon, c.y + vy * horizon, c.z + vz * horizon)
 
 
 def _initial_velocity_from_history(
-    hist: list[tuple[float, float, float]],
+    hist: list[tuple[float, float, float, float]],
 ) -> tuple[float, float, float]:
-    """Average per-segment velocity over a position history. Same maths as the candidate-
-    confirmation step, factored so the predictive matcher can reuse it without duplicating
-    the loop."""
+    """Average per-segment velocity over a (x, y, z, t) position history.
+
+    Each segment uses its *own* ``Δt`` (the difference between consecutive timestamps)
+    instead of the cycle period — that way an upstream that publishes every 300 ms does
+    not get its velocity inflated 3× by a 100 ms denominator.  Segments with non-positive
+    ``Δt`` are skipped defensively (clock glitch / duplicate timestamp).
+    """
     if len(hist) < 2:
         return (0.0, 0.0, 0.0)
-    inv_dt = 1.0 / CYCLE_PERIOD_S
     sx = sy = sz = 0.0
     n_seg = 0
     for i in range(len(hist) - 1):
-        x0, y0, z0 = hist[i]
-        x1, y1, z1 = hist[i + 1]
+        x0, y0, z0, t0 = hist[i]
+        x1, y1, z1, t1 = hist[i + 1]
+        dt = t1 - t0
+        if dt <= 0.0:
+            continue
+        inv_dt = 1.0 / dt
         sx += (x1 - x0) * inv_dt
         sy += (y1 - y0) * inv_dt
         sz += (z1 - z0) * inv_dt
         n_seg += 1
+    if n_seg == 0:
+        return (0.0, 0.0, 0.0)
     inv_n = 1.0 / n_seg
     return (sx * inv_n, sy * inv_n, sz * inv_n)
 
@@ -283,6 +319,17 @@ class TrackingNode(Node):
         # for both 5 m/s lab targets and 40 m/s long-range targets.
         self.declare_parameter('candidate_predictive_gate', True)
         self._candidate_predictive_gate = bool(self.get_parameter('candidate_predictive_gate').value)
+        # Number of *consecutive* tracking cycles a candidate may go without a matching
+        # detection before being discarded.  Default 0 reproduces the legacy "one-shot"
+        # behaviour (instant discard).  Bump to 3–5 for km-scale where the fused detection
+        # stream is bursty (paired publishes followed by 200–300 ms silence) — without
+        # tolerance candidates die before they can confirm and no /tracks/state ever fires.
+        self.declare_parameter('candidate_max_missed_frames', 0)
+        self._candidate_max_missed_frames = int(
+            self.get_parameter('candidate_max_missed_frames').value,
+        )
+        if self._candidate_max_missed_frames < 0:
+            self._candidate_max_missed_frames = 0
         # ``primary``: one Point per cycle (lowest track_id) — matches single-target consumers
         # e.g. interception_logic_node. ``all``: legacy multi-publish (breaks those consumers).
         self.declare_parameter('tracks_publish_mode', 'primary')
@@ -334,7 +381,11 @@ class TrackingNode(Node):
     def _on_cycle_timer(self) -> None:
         detections = self._detection_buffer
         self._detection_buffer = []
-        self._process_cycle(detections)
+        # Use a single, monotonic "cycle now" so candidate matching, history append, and the
+        # predictor all see exactly the same reference time — keeps elapsed-time velocity
+        # estimation consistent even if multiple ROS clock ticks happen during the cycle.
+        now = self.get_clock().now().nanoseconds * 1e-9
+        self._process_cycle(detections, now)
 
     def _predict_all_tracks(self) -> None:
         for tr in self._tracks:
@@ -347,7 +398,7 @@ class TrackingNode(Node):
                 tr.state[4] = vy * s
                 tr.state[5] = vz * s
 
-    def _process_cycle(self, detections: list[Point]) -> None:
+    def _process_cycle(self, detections: list[Point], now: float = 0.0) -> None:
         n_old = len(self._tracks)
 
         # Time update for all existing tracks (prior at this measurement time).
@@ -450,7 +501,7 @@ class TrackingNode(Node):
         unmatched_dets: list[Point] = [
             detections[j] for j in range(len(detections)) if j not in matched_det_idx
         ]
-        self._process_candidates(unmatched_dets)
+        self._process_candidates(unmatched_dets, now)
 
         # ==================================================================
         # TRACK LIFECYCLE — delete stale tracks
@@ -501,7 +552,7 @@ class TrackingNode(Node):
             else:
                 i += 1
 
-    def _process_candidates(self, unmatched_dets: list[Point]) -> None:
+    def _process_candidates(self, unmatched_dets: list[Point], now: float = 0.0) -> None:
         """
         Candidate logic (separate from tracks):
 
@@ -523,7 +574,7 @@ class TrackingNode(Node):
         for j, det in enumerate(unmatched_dets):
             for k, cand in enumerate(self._candidates):
                 if self._candidate_predictive_gate:
-                    pxyz = _predicted_candidate_xyz(cand)
+                    pxyz = _predicted_candidate_xyz(cand, now if now > 0.0 else None)
                     d = _distance_point_to_xyz(det, pxyz)
                 else:
                     d = _distance_point_to_candidate(det, cand)
@@ -547,7 +598,14 @@ class TrackingNode(Node):
             det = unmatched_dets[j]
             cand.x, cand.y, cand.z = det.x, det.y, det.z
             cand.hit_count += 1
-            cand.pos_history.append((float(det.x), float(det.y), float(det.z)))
+            cand.missed_frames = 0
+            # Record the ROS time of this match so the velocity computation uses the
+            # *real* elapsed time between consecutive observations, not CYCLE_PERIOD_S.
+            t_stamp = now if now > 0.0 else float(cand.last_update_time + CYCLE_PERIOD_S)
+            cand.pos_history.append(
+                (float(det.x), float(det.y), float(det.z), t_stamp),
+            )
+            cand.last_update_time = t_stamp
 
             if cand.hit_count >= self._confirmation_hits:
                 tid = self._next_id
@@ -563,27 +621,39 @@ class TrackingNode(Node):
                     f'v_init=({vx:.3f},{vy:.3f},{vz:.3f})',
                 )
 
-        # Keep matched candidates that were not just promoted to tracks.
+        # Keep matched candidates that were not just promoted to tracks.  Unmatched
+        # candidates accrue ``missed_frames`` and are only dropped when the counter
+        # exceeds ``candidate_max_missed_frames`` — see the param block in __init__
+        # for the rationale (bursty fusion stream at km-scale).
         new_candidates: list[Candidate] = []
         for k, cand in enumerate(self._candidates):
             if k in confirmed_indices:
                 continue
             if k in matched_cand_idx:
                 new_candidates.append(cand)
-            else:
+                continue
+            cand.missed_frames += 1
+            if cand.missed_frames > self._candidate_max_missed_frames:
                 self.get_logger().info(
                     f'Candidate discarded: position=({cand.x:.3f}, {cand.y:.3f}, {cand.z:.3f}) '
-                    f'hit_count was {cand.hit_count}',
+                    f'hit_count was {cand.hit_count} '
+                    f'missed_frames={cand.missed_frames}',
                 )
+                continue
+            new_candidates.append(cand)
 
         self._candidates = new_candidates
 
         # Spawn new candidates for detections that did not match any candidate.
+        t_stamp_new = now if now > 0.0 else 0.0
         for j, det in enumerate(unmatched_dets):
             if j in matched_unmatched_det_idx:
                 continue
             nc = Candidate(det.x, det.y, det.z, 1)
-            nc.pos_history.append((float(det.x), float(det.y), float(det.z)))
+            nc.pos_history.append(
+                (float(det.x), float(det.y), float(det.z), t_stamp_new),
+            )
+            nc.last_update_time = t_stamp_new
             self._candidates.append(nc)
             self.get_logger().info(
                 f'Candidate detected: position=({det.x:.3f}, {det.y:.3f}, {det.z:.3f}) '
