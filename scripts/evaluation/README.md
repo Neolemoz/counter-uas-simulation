@@ -28,8 +28,19 @@ From `ros2 launch gazebo_target_sim gazebo_target.launch.py`:
 
 - `evaluation_enable_intercept_heatmap_prob:=true` — enables probabilistic intercept heatmap MC export (`runs/intercept_heatmap_export` under current working directory by default unless `evaluation_intercept_heatmap_export_dir` is set).
 - `interceptor_ic_layout:=default|spread|east_bias|custom:...` — repositions interceptor spawns (`custom` expects nine comma-separated numbers `x0,y0,x1,y1,x2,y2` at ground-z).
-- **Headless A/B knobs (merged into `interception_logic_node` parameters):** `eng_metrics_period_s`, `eng_rollout_feasibility_gate`, `eng_rollout_gate_horizon_s`, `guidance_u_max_step_rad`, `guidance_terminal_range_m`, `guidance_terminal_pursuit_blend`. Pass via `scripts/run_capture.py --launch-args '...'` (same declarations exist on `gazebo_target_multi.launch.py`). Campaign thresholds and archived paired-run JSON live in [`docs/evaluation/gnc_headless_campaign_thresholds.md`](../../docs/evaluation/gnc_headless_campaign_thresholds.md).
+- **Headless A/B knobs (merged into `interception_logic_node` parameters):** `eng_metrics_period_s`, `eng_rollout_feasibility_gate`, `eng_rollout_gate_horizon_s`, `guidance_u_max_step_rad`, `guidance_terminal_range_m`, `guidance_terminal_pursuit_blend`, **`t_go_filter_max_step_s`**, **`align_speed_use_smooth_hit_range`**, **`pn_blend_terminal_range_m`**, **`use_pn_refinement`**, **`pn_blend_gain`**. Pass via `scripts/run_capture.py --launch-args '...'` (same declarations exist on `gazebo_target_multi.launch.py`). Campaign thresholds and archived paired-run JSON live in [`docs/evaluation/gnc_headless_campaign_thresholds.md`](../../docs/evaluation/gnc_headless_campaign_thresholds.md).
 
+### Guidance tightening (post roll-out gate)
+
+After `eng_rollout_feasibility_gate:=true`, optional **stacked** tweaks (independent A/B cohorts):
+
+| Step | Intent | Example `launch-args` fragment (km-scale single target) |
+|------|--------|------------------------------------------------------------|
+| 1 | Terminal predict→pursuit | `guidance_terminal_range_m:=800 guidance_terminal_pursuit_blend:=0.35` |
+| 2 | t_go / range coherence | `t_go_filter_max_step_s:=0.8 align_speed_use_smooth_hit_range:=true` |
+| 3 | Unit-vector slew + PN only near target | `guidance_u_max_step_rad:=0.45 use_pn_refinement:=true pn_blend_gain:=0.12 pn_blend_terminal_range_m:=1500` |
+
+Use **one new `--cohort`** per step (e.g. `gnc_step2_coherence_gitXXXX`). Keep matched `--seed-base` / `n` across compared arms. See [`docs/evaluation/gnc_headless_campaign_thresholds.md`](../../docs/evaluation/gnc_headless_campaign_thresholds.md) § Guidance tightening.
 Tip: unset `evaluation_enable_intercept_heatmap_prob` (default **false**) for everyday interactive runs — heatmaps are CPU heavy.
 
 ### Heatmap P(hit) MC vs Gazebo dynamics

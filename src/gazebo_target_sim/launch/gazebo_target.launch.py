@@ -307,6 +307,18 @@ def _gz_target_setup(context, *args, **kwargs):
     guidance_u_max_step_rad = float(LaunchConfiguration('guidance_u_max_step_rad').perform(context))
     guidance_terminal_range_m = float(LaunchConfiguration('guidance_terminal_range_m').perform(context))
     guidance_terminal_pursuit_blend = float(LaunchConfiguration('guidance_terminal_pursuit_blend').perform(context))
+    t_go_filter_max_step_s = float(LaunchConfiguration('t_go_filter_max_step_s').perform(context))
+    align_speed_use_smooth_hit_range = str(
+        LaunchConfiguration('align_speed_use_smooth_hit_range').perform(context),
+    ).strip().lower() in ('1', 'true', 'yes', 'on')
+    pn_blend_terminal_range_m = float(LaunchConfiguration('pn_blend_terminal_range_m').perform(context))
+    use_pn_ref = str(LaunchConfiguration('use_pn_refinement').perform(context)).strip().lower() in (
+        '1',
+        'true',
+        'yes',
+        'on',
+    )
+    pn_blend_gain_lc = max(0.0, float(LaunchConfiguration('pn_blend_gain').perform(context)))
     dome_hyst = float(LaunchConfiguration('dome_outer_hysteresis_m').perform(context))
     tv_alpha = float(LaunchConfiguration('target_velocity_smooth_alpha').perform(context))
     dome_en = str(LaunchConfiguration('dome_enabled').perform(context)).strip().lower() in (
@@ -597,10 +609,10 @@ def _gz_target_setup(context, *args, **kwargs):
                 'feasibility_log_period_s': 1.0,
                 'interceptor_max_speed_m_s': interceptor_vmax,
                 'interceptor_ids': ['interceptor_0', 'interceptor_1', 'interceptor_2'],
-                # Direct collision course; PN off (was causing lag vs fast target).
-                'use_pn_refinement': False,
+                # PN: default off at far field; enable via use_pn_refinement + pn_blend_gain launch args.
+                'use_pn_refinement': use_pn_ref,
                 'pn_navigation_constant': 3.0,
-                'pn_blend_gain': 0.0,
+                'pn_blend_gain': pn_blend_gain_lc,
                 'pn_min_closing_speed_m_s': 0.15,
                 'naive_lead_time_s': 0.85,
                 # Ram/HIT only in strike shell |d - dome_middle_m| ≤ strike_shell_half_width_m. Radii match SDF.
@@ -634,6 +646,9 @@ def _gz_target_setup(context, *args, **kwargs):
                 'guidance_u_max_step_rad': guidance_u_max_step_rad,
                 'guidance_terminal_range_m': guidance_terminal_range_m,
                 'guidance_terminal_pursuit_blend': guidance_terminal_pursuit_blend,
+                't_go_filter_max_step_s': t_go_filter_max_step_s,
+                'align_speed_use_smooth_hit_range': align_speed_use_smooth_hit_range,
+                'pn_blend_terminal_range_m': pn_blend_terminal_range_m,
                 'reset_on_sim_clock_rewind': use_gui,
             },
         ],
@@ -776,6 +791,37 @@ def generate_launch_description() -> LaunchDescription:
                 description=(
                     'Blend weight toward pursuit at terminal_range (0..1); 0 leaves predictive-only in terminal.'
                 ),
+            ),
+            DeclareLaunchArgument(
+                't_go_filter_max_step_s',
+                default_value='0.0',
+                description=(
+                    'Max |Δt_go_filt| per cycle after EMA (s); 0 disables slew cap on filtered t_go.'
+                ),
+            ),
+            DeclareLaunchArgument(
+                'align_speed_use_smooth_hit_range',
+                default_value='false',
+                description=(
+                    'If true, align_speed uses smoothed P_hit range; if false, raw P_hit (matches legacy).'
+                ),
+            ),
+            DeclareLaunchArgument(
+                'pn_blend_terminal_range_m',
+                default_value='0.0',
+                description=(
+                    'Scale PN blend toward zero when dist exceeds this (m); 0 = legacy full pn_blend at all ranges.'
+                ),
+            ),
+            DeclareLaunchArgument(
+                'use_pn_refinement',
+                default_value='false',
+                description='If true, apply proportional navigation correction to guidance direction.',
+            ),
+            DeclareLaunchArgument(
+                'pn_blend_gain',
+                default_value='0.0',
+                description='PN mix-in gain before terminal scaling (0 = off).',
             ),
             DeclareLaunchArgument(
                 'gz_use_shipped_gui_config',

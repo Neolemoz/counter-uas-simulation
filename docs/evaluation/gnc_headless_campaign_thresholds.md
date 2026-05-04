@@ -69,3 +69,31 @@ python3 scripts/monte_carlo.py aggregate --logs-dir runs/logs --pattern '*.log' 
   --meta-cohort gnc_primary_B_rollout --label my_rollout --out-dir runs/mc
 python3 scripts/evaluation/summarize_failure_classes.py runs/mc/my_baseline.csv
 ```
+
+## Guidance tightening (Steps 1–3, gate remains ON)
+
+All arms below assume a **common spine** — at minimum `use_gazebo_gui:=false eng_rollout_feasibility_gate:=true`. Compared cohorts share **matched** `noise_seed`, `timeout-s`, geometry; only the listed knobs differ.
+
+**Step 1 — terminal blend** (`gnc_guidance_step1_<rev>` cohort example):
+
+```text
+guidance_terminal_range_m:=800 guidance_terminal_pursuit_blend:=0.35
+```
+
+**Step 2 — align-speed coherence** (stack Step 2 on Step 1 if desired, or isolate with gate-only spine):
+
+```text
+t_go_filter_max_step_s:=0.8 align_speed_use_smooth_hit_range:=true
+```
+
+**Step 3 — slew + PN in terminal**:
+
+```text
+guidance_u_max_step_rad:=0.45 use_pn_refinement:=true pn_blend_gain:=0.12 pn_blend_terminal_range_m:=1500
+```
+
+Tune numerically per scenario; **`pn_blend_terminal_range_m`** scales PN toward zero when `dist` exceeds this value (LOS-rate PN only ramps in when close).
+
+Smoke helper (runs two short batches if `SKIP_GAZEBO` is unset). Numeric defaults above are **starting points only** — re-tune from logs before interpreting pass/fail; the script checks wiring + matched seeds.
+
+[`scripts/evaluation/run_gnc_guidance_stack_smoke.sh`](../../scripts/evaluation/run_gnc_guidance_stack_smoke.sh)

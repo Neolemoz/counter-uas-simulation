@@ -36,6 +36,8 @@ from rclpy.time import Time
 from std_msgs.msg import Bool, ColorRGBA, String
 from visualization_msgs.msg import Marker
 
+from gazebo_target_sim_interfaces.msg import ImpactEvent
+
 from gazebo_target_sim.clock_reset import subscribe_sim_time_reset
 
 if TYPE_CHECKING:
@@ -1286,6 +1288,9 @@ class InterceptionLogicNode(Node):
         # sequence still runs once the subscriber exists.
         self.declare_parameter('stop_signal_repeat_duration_s', 15.0)
         self.declare_parameter('stop_signal_repeat_period_s', 0.35)
+        self.declare_parameter('publish_impact_event', True)
+        self.declare_parameter('impact_event_topic', '/interception/impact_event')
+        self.declare_parameter('lock_engaged_interceptor_until_hit', True)
         # Phase 2 → Phase 3 gating (opt-in): require radar-range detection + tracking delay elapsed.
         # When disabled (default), behaviour matches the pre-gating implementation.
         self.declare_parameter('sensing_gate_enabled', False)
@@ -1509,6 +1514,22 @@ class InterceptionLogicNode(Node):
         # Low-pass on raw t_go to avoid whipping P_hit when the quadratic root jumps cycle to
         # cycle under noisy v_T. 1.0 = raw (off); 0.3–0.6 is a sane operating range.
         self.declare_parameter('t_go_filter_alpha', 0.5)
+        # Max |Δt_go_filt| per cycle after EMA (s); 0 disables (legacy).
+        self.declare_parameter('t_go_filter_max_step_s', 0.0)
+        # If True, align_speed range uses smoothed P_hit (matches direction state); else raw.
+        self.declare_parameter('align_speed_use_smooth_hit_range', False)
+        # Scale PN blend to zero outside this range (m); 0 = full pn_blend everywhere (legacy).
+        self.declare_parameter('pn_blend_terminal_range_m', 0.0)
+        # Structured [ENG_METRIC] stdout (evaluation / failure classification); 0 = disabled.
+        self.declare_parameter('eng_metrics_period_s', 0.0)
+        # Max rotation of commanded unit LOS per guidance tick toward new predictive dir (rad); pi ~= no-op.
+        self.declare_parameter('guidance_u_max_step_rad', math.pi)
+        # Inside dist < terminal range reduce predictive blend toward pursuit (0 = off).
+        self.declare_parameter('guidance_terminal_range_m', 0.0)
+        self.declare_parameter('guidance_terminal_pursuit_blend', 0.0)
+        # Optional dynamics rollout gate before engagement (default off).
+        self.declare_parameter('eng_rollout_feasibility_gate', False)
+        self.declare_parameter('eng_rollout_gate_horizon_s', 0.0)
 
         self._closing = max(float(self.get_parameter('closing_speed_m_s').value), 0.1)
         self._vmax = max(float(self.get_parameter('max_speed_m_s').value), self._closing)
@@ -1527,6 +1548,22 @@ class InterceptionLogicNode(Node):
         self._meas_delay_s = max(0.0, float(self.get_parameter('measurement_delay_s').value))
         self._align_speed_to_solver = bool(self.get_parameter('align_speed_to_solver').value)
         self._t_go_alpha = min(1.0, max(0.0, float(self.get_parameter('t_go_filter_alpha').value)))
+        self._t_go_filter_max_step = max(0.0, float(self.get_parameter('t_go_filter_max_step_s').value))
+        self._align_speed_smooth_range = bool(self.get_parameter('align_speed_use_smooth_hit_range').value)
+        self._pn_terminal_r = max(0.0, float(self.get_parameter('pn_blend_terminal_range_m').value))
+        self._eng_metrics_period = max(0.0, float(self.get_parameter('eng_metrics_period_s').value))
+        self._guidance_u_max_step = max(0.0, float(self.get_parameter('guidance_u_max_step_rad').value))
+        self._guidance_terminal_r = max(0.0, float(self.get_parameter('guidance_terminal_range_m').value))
+        self._guidance_terminal_pursuit_blend = min(
+            1.0, max(0.0, float(self.get_parameter('guidance_terminal_pursuit_blend').value)),
+        )
+        self._eng_rollout_gate = bool(self.get_parameter('eng_rollout_feasibility_gate').value)
+        self._eng_rollout_gate_horizon_param = float(self.get_parameter('eng_rollout_gate_horizon_s').value)
+
+        self._last_eng_metric_wall: dict[str, float] = {}
+        self._guidance_unit_prev: dict[str, tuple[float, float, float]] = {}
+        self._last_t_go_raw_for_metrics: dict[str, float] = {}
+        self._last_eng_gate_fail_log: dict[str, float] = {}
         # Last filtered t_go per interceptor — used by Phase 2 t_go low-pass / dynamics alignment.
         self._t_go_filtered: dict[str, float | None] = {}
         self._adaptive_speed = bool(self.get_parameter('adaptive_speed_enabled').value)
@@ -1745,6 +1782,7 @@ class InterceptionLogicNode(Node):
         self._stop_repeat_period_s = max(0.05, float(self.get_parameter('stop_signal_repeat_period_s').value))
         rate = max(float(self.get_parameter('rate_hz').value), 1.0)
         self._lock_after_first = bool(self.get_parameter('lock_selected_after_first').value)
+        self._lock_engaged_until_hit = bool(self.get_parameter('lock_engaged_interceptor_until_hit').value)
         self._hit_thresh = max(float(self.get_parameter('hit_threshold_m').value), 0.05)
         self._hit_thresh_dbg = max(float(self.get_parameter('hit_threshold_m_debug').value), 0.05)
         self._dbg_predictive = bool(self.get_parameter('intercept_debug_force_predictive_guidance').value)
@@ -1897,6 +1935,10 @@ class InterceptionLogicNode(Node):
                 self._pub_assigned[iid] = self.create_publisher(String, f'/{iid}/assigned_target', 10)
         else:
             self._pub_stop = self.create_publisher(Bool, stop_topic, _stop_qos)
+        self._pub_impact: Publisher | None = None
+        if bool(self.get_parameter('publish_impact_event').value):
+            _imp_topic = str(self.get_parameter('impact_event_topic').value).strip() or '/interception/impact_event'
+            self._pub_impact = self.create_publisher(ImpactEvent, _imp_topic, _stop_qos)
         self._pub_layer = self.create_publisher(String, '/danger_zone/layer', 10)
 
         if self._multi_enabled:
@@ -2125,6 +2167,121 @@ class InterceptionLogicNode(Node):
                 f'vel={vel:.3f} m/s | mode={mode:8s} | min_miss={miss_s}{feas_col}'
             )
         print('\n'.join(lines), flush=True)
+
+    def _eng_rollout_gate_passes(
+        self,
+        tx: float,
+        ty: float,
+        tz: float,
+        v_tx: float,
+        v_ty: float,
+        v_tz: float,
+        ix: float,
+        iy: float,
+        iz: float,
+    ) -> bool:
+        """Noise-free kinematic rollout; used when ``eng_rollout_feasibility_gate`` is true."""
+        horizon = (
+            self._eng_rollout_gate_horizon_param
+            if self._eng_rollout_gate_horizon_param > 0.0
+            else self._t_hit_max
+        )
+        rng = random.Random(0xC0FFEE)
+        return bool(
+            simulate_intercept_once(
+                tx,
+                ty,
+                tz,
+                v_tx,
+                v_ty,
+                v_tz,
+                ix,
+                iy,
+                iz,
+                v_i_max=self._interceptor_max_speed,
+                t_min=self._t_hit_min,
+                t_max=horizon,
+                hit_thresh_m=self._hit_thresh,
+                pos_sigma_m=0.0,
+                vel_sigma_m_s=0.0,
+                interceptor_pos_sigma_m=0.0,
+                delay_mean_s=0.0,
+                delay_jitter_s=0.0,
+                rng=rng,
+                use_kinematic_rollout=True,
+                rollout_dt=self._heatmap_prob_rollout_dt,
+                rollout_max_turn_rate_rad_s=self._max_turn_rate,
+                rollout_max_accel_m_s2=self._max_accel,
+            ),
+        )
+
+    def _maybe_log_eng_metric_line(
+        self,
+        *,
+        selected: str,
+        dist_m: float,
+        tx: float,
+        ty: float,
+        tz: float,
+        ix: float,
+        iy: float,
+        iz: float,
+        v_tx: float,
+        v_ty: float,
+        v_tz: float,
+        v_ix: float,
+        v_iy: float,
+        v_iz: float,
+        t_go_raw: float | None,
+        feas_geom: bool,
+        speed_cmd: float,
+        vx_cmd: float,
+        vy_cmd: float,
+        vz_cmd: float,
+        rollout_gate_ok: bool,
+    ) -> None:
+        """Single-line [ENG_METRIC] for evaluation classifiers (disabled when period_s=0)."""
+        if self._eng_metrics_period <= 0.0:
+            return
+        now = time.monotonic()
+        last = self._last_eng_metric_wall.get(selected, -1e30)
+        if now - last < self._eng_metrics_period:
+            return
+        self._last_eng_metric_wall[selected] = now
+
+        rx = tx - ix
+        ry = ty - iy
+        rz = tz - iz
+        rn = _norm(rx, ry, rz)
+        v_closing = float('nan')
+        if rn > 1e-6:
+            hux, huy, huz = rx / rn, ry / rn, rz / rn
+            vxrel = v_tx - v_ix
+            vyrel = v_ty - v_iy
+            vzrel = v_tz - v_iz
+            v_closing = -(vxrel * hux + vyrel * huy + vzrel * huz)
+
+        tgf = self._t_go_filtered.get(selected)
+        raw_s = 'n/a' if t_go_raw is None or not math.isfinite(float(t_go_raw)) else f'{float(t_go_raw):.4f}'
+        filt_s = 'n/a' if tgf is None or not math.isfinite(float(tgf)) else f'{float(tgf):.4f}'
+
+        delta_raw = 0.0
+        if t_go_raw is not None and math.isfinite(float(t_go_raw)):
+            prev = self._last_t_go_raw_for_metrics.get(selected)
+            if prev is not None and math.isfinite(prev):
+                delta_raw = float(t_go_raw) - prev
+            self._last_t_go_raw_for_metrics[selected] = float(t_go_raw)
+        else:
+            self._last_t_go_raw_for_metrics.pop(selected, None)
+
+        print(
+            '[ENG_METRIC] '
+            f'id={selected} range_m={dist_m:.4f} v_closing={v_closing:.4f} '
+            f't_go_raw={raw_s} t_go_filt={filt_s} delta_t_go_raw={delta_raw:.4f} '
+            f'feasible_geom={str(bool(feas_geom))} rollout_gate_ok={str(bool(rollout_gate_ok))} '
+            f'speed_cmd={speed_cmd:.4f} vx={vx_cmd:.4f} vy={vy_cmd:.4f} vz={vz_cmd:.4f}',
+            flush=True,
+        )
 
     def _cancel_hit_viz_timer(self) -> None:
         if self._hit_viz_timer is not None:
@@ -3395,6 +3552,32 @@ class InterceptionLogicNode(Node):
             return
         self._publish_stop_signal(self._stop_repeat_pending_label, log_hit=False)
 
+    def _interceptor_seems_launched(self, iid: str | None) -> bool:
+        """Same kinematic guards as HIT for the interceptor: airborne and displaced from ground start."""
+        if iid is None:
+            return False
+        p = self._inter_pos.get(iid)
+        if p is None:
+            return False
+        ix, iy, iz = float(p.x), float(p.y), float(p.z)
+        start = self._inter_start_pos.get(iid)
+        if start is None:
+            return False
+        travel = _norm(ix - start[0], iy - start[1], iz - start[2])
+        return (iz >= self._hit_min_iz) and (travel >= self._hit_min_travel)
+
+    def _publish_impact_event(self, interceptor_id: str, target_label: str = '') -> None:
+        """Unified soft-hit announcement for kinetic FX, logs, and optional Gazebo contact corroboration."""
+        if self._pub_impact is None:
+            return
+        msg = ImpactEvent()
+        msg.interceptor_id = str(interceptor_id).strip()
+        msg.target_label = str(target_label).strip()
+        msg.stamp = self.get_clock().now().to_msg()
+        self._pub_impact.publish(msg)
+        for _ in range(2):
+            self._pub_impact.publish(msg)
+
     def _publish_stop_signal(self, target_label: str | None, *, log_hit: bool = True) -> None:
         topic_s = repr(self._stop_topic)
         if log_hit:
@@ -4191,7 +4374,15 @@ class InterceptionLogicNode(Node):
         self._latch_feasible_at_engagement_start('', selected, feas.feasible)
         self._ensure_latch_on_first_hit('', selected, feas.feasible)
         mc_ok = self._mc_engage_ok(selected)
-        strike_ok_eff = strike_ok and feas.feasible and mc_ok
+        rollout_ok = True
+        if self._eng_rollout_gate:
+            rollout_ok = self._eng_rollout_gate_passes(tx, ty, tz, v_tx, v_ty, v_tz, ix, iy, iz)
+            if not rollout_ok:
+                tnow_g = time.monotonic()
+                if tnow_g - self._last_eng_gate_fail_log.get(selected, -100.0) > 2.0:
+                    print(f'[ENG_GATE] rollout_ok=false id={selected}', flush=True)
+                    self._last_eng_gate_fail_log[selected] = tnow_g
+        strike_ok_eff = strike_ok and feas.feasible and mc_ok and rollout_ok
         self._maybe_phase1_runtime_warnings(
             selected, feas, strike_ok_eff, layer_s=layer_for_log or 'single',
         )
@@ -4261,6 +4452,7 @@ class InterceptionLogicNode(Node):
             )
             hit_sub = selected + (f' ({layer_for_log})' if layer_for_log else '')
             self._start_hit_visual(tx, ty, tz, ix, iy, iz, hit_sub)
+            self._publish_impact_event(selected, '')
             self._publish_stop_signal(None)
             self._schedule_stop_signal_repeats(None)
             # immediate=True: bypass accel limit so interceptor freezes at impact instantly.
@@ -4388,6 +4580,13 @@ class InterceptionLogicNode(Node):
                     dbg_cmd_override = True
 
         blend = self._update_guidance_mode(selected, sol_valid)
+        if (
+            self._guidance_terminal_r > 1e-6
+            and dist > 1e-9
+            and self._guidance_terminal_pursuit_blend > 1e-9
+        ):
+            frac = max(0.0, min(1.0, 1.0 - dist / self._guidance_terminal_r))
+            blend *= 1.0 - self._guidance_terminal_pursuit_blend * frac
         committed_mode = self._guidance_mode[selected]
 
         pn_active = False
@@ -4465,13 +4664,26 @@ class InterceptionLogicNode(Node):
                     rx, ry, rz, v_rx, v_ry, v_rz, self._pn_n, self._pn_min_vc,
                 )
                 if pn_ok:
-                    bx = ux + self._pn_blend * sx
-                    by = uy + self._pn_blend * sy
-                    bz = uz + self._pn_blend * sz
+                    pn_w = self._effective_pn_blend(dist)
+                    bx = ux + pn_w * sx
+                    by = uy + pn_w * sy
+                    bz = uz + pn_w * sz
                     un = _norm(bx, by, bz)
                     if un > 1e-9:
                         ux, uy, uz = bx / un, by / un, bz / un
                         pn_active = True
+
+        ucmdx, ucmdy, ucmdz = (ux_d, uy_d, uz_d) if dbg_cmd_override else (ux, uy, uz)
+        prev_u = self._guidance_unit_prev.get(selected)
+        if prev_u is not None and self._guidance_u_max_step < math.pi - 1e-9:
+            pu, pv, pw = prev_u
+            ucmdx, ucmdy, ucmdz = _rotate_dir_toward(pu, pv, pw, ucmdx, ucmdy, ucmdz, self._guidance_u_max_step)
+        self._guidance_unit_prev[selected] = (ucmdx, ucmdy, ucmdz)
+        if dbg_cmd_override:
+            ux_d, uy_d, uz_d = ucmdx, ucmdy, ucmdz
+            ux, uy, uz = ucmdx, ucmdy, ucmdz
+        else:
+            ux, uy, uz = ucmdx, ucmdy, ucmdz
 
         if dbg_cmd_override:
             sp = sp_dbg
@@ -4492,8 +4704,17 @@ class InterceptionLogicNode(Node):
             t_go_eff = t_go_raw if t_go_filt is None else (
                 self._t_go_alpha * t_go_raw + (1.0 - self._t_go_alpha) * t_go_filt
             )
+            if t_go_filt is not None and self._t_go_filter_max_step > 1e-12:
+                dc = t_go_eff - float(t_go_filt)
+                if abs(dc) > self._t_go_filter_max_step:
+                    t_go_eff = float(t_go_filt) + math.copysign(self._t_go_filter_max_step, dc)
             self._t_go_filtered[selected] = t_go_eff
-            range_to_phit = _norm(phx_raw - ix, phy_raw - iy, phz_raw - iz)
+            if self._align_speed_smooth_range and all(
+                math.isfinite(v) for v in (phx, phy, phz)
+            ):
+                range_to_phit = _norm(phx - ix, phy - iy, phz - iz)
+            else:
+                range_to_phit = _norm(phx_raw - ix, phy_raw - iy, phz_raw - iz)
             t_go_use = max(t_go_eff, self._speed_tgo_min)
             s_solver = max(self._speed_vmin, min(self._vmax, range_to_phit / t_go_use))
             sp = s_solver
@@ -4573,6 +4794,32 @@ class InterceptionLogicNode(Node):
             'feas_status': feas.status,
             'feas_reason': feas.reason,
         }
+        t_go_raw_log: float | None = None
+        if t_hit is not None and math.isfinite(float(t_hit)):
+            t_go_raw_log = float(t_hit)
+        self._maybe_log_eng_metric_line(
+            selected=selected,
+            dist_m=dist,
+            tx=tx,
+            ty=ty,
+            tz=tz,
+            ix=ix,
+            iy=iy,
+            iz=iz,
+            v_tx=v_tx,
+            v_ty=v_ty,
+            v_tz=v_tz,
+            v_ix=v_ix,
+            v_iy=v_iy,
+            v_iz=v_iz,
+            t_go_raw=t_go_raw_log,
+            feas_geom=bool(feas.feasible),
+            speed_cmd=float(sp),
+            vx_cmd=float(vx),
+            vy_cmd=float(vy),
+            vz_cmd=float(vz),
+            rollout_gate_ok=bool(rollout_ok),
+        )
 
         # ── RViz markers: sphere at intercept point + trajectory line ─────────
         iid_index = self._ids.index(selected)
@@ -4714,6 +4961,14 @@ class InterceptionLogicNode(Node):
             return (vx, vy, vz)
         s = self._vmax / n
         return (vx * s, vy * s, vz * s)
+
+    def _effective_pn_blend(self, dist_to_target: float) -> float:
+        """Scale PN mix-in toward zero beyond ``pn_blend_terminal_range_m`` (legacy when range is 0)."""
+        if self._pn_terminal_r <= 1e-6:
+            return self._pn_blend
+        d = float(dist_to_target)
+        scale = max(0.0, min(1.0, 1.0 - d / self._pn_terminal_r))
+        return self._pn_blend * scale
 
     def _update_guidance_mode(self, iid: str, sol_valid: bool) -> float:
         """
@@ -5058,7 +5313,16 @@ class InterceptionLogicNode(Node):
         self._latch_feasible_at_engagement_start(target_label, selected, feas_m.feasible)
         self._ensure_latch_on_first_hit(target_label, selected, feas_m.feasible)
         mc_ok_m = self._mc_engage_ok(selected)
-        strike_ok_eff = strike_ok and feas_m.feasible and mc_ok_m
+        rollout_ok_m = True
+        if self._eng_rollout_gate:
+            rollout_ok_m = self._eng_rollout_gate_passes(tx, ty, tz, v_tx, v_ty, v_tz, ix, iy, iz)
+            if not rollout_ok_m:
+                tnow_g = time.monotonic()
+                gk = f'{target_label}|{selected}'
+                if tnow_g - self._last_eng_gate_fail_log.get(gk, -100.0) > 2.0:
+                    print(f'[ENG_GATE] rollout_ok=false id={selected} target={target_label}', flush=True)
+                    self._last_eng_gate_fail_log[gk] = tnow_g
+        strike_ok_eff = strike_ok and feas_m.feasible and mc_ok_m and rollout_ok_m
         layer_s = f'{target_label}:{layer_for_log}'.strip(':') or 'multi'
         self._maybe_phase1_runtime_warnings(selected, feas_m, strike_ok_eff, layer_s=layer_s)
         v_ix, v_iy, v_iz = self._estimate_interceptor_vel(selected, ix, iy, iz)
@@ -5124,6 +5388,13 @@ class InterceptionLogicNode(Node):
                     dbg_cmd_override_m = True
 
         blend_m = self._update_guidance_mode(selected, sol_valid_m)
+        if (
+            self._guidance_terminal_r > 1e-6
+            and dist > 1e-9
+            and self._guidance_terminal_pursuit_blend > 1e-9
+        ):
+            frac_t = max(0.0, min(1.0, 1.0 - dist / self._guidance_terminal_r))
+            blend_m *= 1.0 - self._guidance_terminal_pursuit_blend * frac_t
         committed_mode_m = self._guidance_mode[selected]
 
         if dbg_cmd_override_m:
@@ -5189,12 +5460,22 @@ class InterceptionLogicNode(Node):
                     rx, ry, rz, v_rx, v_ry, v_rz, self._pn_n, self._pn_min_vc,
                 )
                 if pn_ok:
-                    bx = ux + self._pn_blend * sx
-                    by = uy + self._pn_blend * sy
-                    bz = uz + self._pn_blend * sz
+                    pn_wm = self._effective_pn_blend(dist)
+                    bx = ux + pn_wm * sx
+                    by = uy + pn_wm * sy
+                    bz = uz + pn_wm * sz
                     un = _norm(bx, by, bz)
                     if un > 1e-9:
                         ux, uy, uz = bx / un, by / un, bz / un
+        ucmmx, ucmmy, ucmmz = (ux, uy, uz)
+        prev_um = self._guidance_unit_prev.get(selected)
+        if prev_um is not None and self._guidance_u_max_step < math.pi - 1e-9:
+            pu, pv, pw = prev_um
+            ucmmx, ucmmy, ucmmz = _rotate_dir_toward(
+                pu, pv, pw, ucmmx, ucmmy, ucmmz, self._guidance_u_max_step,
+            )
+        self._guidance_unit_prev[selected] = (ucmmx, ucmmy, ucmmz)
+        ux, uy, uz = ucmmx, ucmmy, ucmmz
         if dbg_cmd_override_m:
             sp = sp_dbg_m
         else:
@@ -5350,7 +5631,16 @@ class InterceptionLogicNode(Node):
         )
         self._ensure_latch_on_first_hit(tlabel, iid, feas_hit.feasible)
         mc_ok_h = self._mc_engage_ok(iid)
-        strike_ok_eff = strike_ok and feas_hit.feasible and mc_ok_h
+        rollout_ok_h = True
+        if self._eng_rollout_gate:
+            rollout_ok_h = self._eng_rollout_gate_passes(tx, ty, tz, v_tx, v_ty, v_tz, ix, iy, iz)
+            if not rollout_ok_h:
+                tnow_g = time.monotonic()
+                gk = f'{tlabel}|{iid}'
+                if tnow_g - self._last_eng_gate_fail_log.get(gk, -100.0) > 2.0:
+                    print(f'[ENG_GATE] rollout_ok=false id={iid} target={tlabel}', flush=True)
+                    self._last_eng_gate_fail_log[gk] = tnow_g
+        strike_ok_eff = strike_ok and feas_hit.feasible and mc_ok_h and rollout_ok_h
         eff_hit_mu = self._hit_gate_distance_m()
         dist_to_target = _norm(tx - ix, ty - iy, tz - iz)
         d_seg = float('inf')
@@ -5400,6 +5690,7 @@ class InterceptionLogicNode(Node):
             )
             hit_sub = f'{tlabel} ← {iid}' + (f' ({layer_for_log})' if layer_for_log else '')
             self._start_hit_visual(tx, ty, tz, ix, iy, iz, hit_sub)
+            self._publish_impact_event(iid, tlabel)
             self._publish_stop_signal(tlabel)
             self._schedule_stop_signal_repeats(tlabel)
             self._log_active_targets_remaining()
@@ -5757,8 +6048,12 @@ class InterceptionLogicNode(Node):
                                     tx, ty, tz, v_tx, v_ty, v_tz, lx, ly, lz,
                                 )
                                 if not ok_l:
-                                    self._locked_selected_id = None
-                                    self._current_selected_id = None
+                                    if not (
+                                        self._lock_engaged_until_hit
+                                        and self._interceptor_seems_launched(self._locked_selected_id)
+                                    ):
+                                        self._locked_selected_id = None
+                                        self._current_selected_id = None
                         if self._locked_selected_id is None:
                             best_i, any_feas, best_t, best_s = self._pick_best_feasible_interceptor_single(
                                 tx, ty, tz, v_tx, v_ty, v_tz,
