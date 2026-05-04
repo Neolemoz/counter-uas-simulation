@@ -1,0 +1,11 @@
+{
+  "csv": "/home/neociel/drone/counter-uas-simulation/runs/mc/gnc_primary_rollout.csv",
+  "failure_hist": {
+    "F2_geom_not_dyn": 6,
+    "F5_unknown": 34
+  },
+  "meta_cohorts_seen": [
+    "gnc_primary_B_rollout"
+  ],
+  "n_classified": 40
+}

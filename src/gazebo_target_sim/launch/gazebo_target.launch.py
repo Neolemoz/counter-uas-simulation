@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import math
 import os
+from pathlib import Path
 
 from ament_index_python.packages import get_package_share_directory
 from launch import LaunchDescription
@@ -91,6 +92,36 @@ def _vel_smooth_alpha(interceptor_max_m_s: float, v_target_peak: float) -> float
     return float(min(0.88, max(0.32, a)))
 
 
+# Named interceptor XY layouts @ INTERCEPTOR_GROUND_Z_M (evaluation / asymmetric IC sweeps).
+_INTERCEPTOR_IC_LAYOUT_XY: dict[str, tuple[tuple[float, float], tuple[float, float], tuple[float, float]]] = {
+    'default': ((-5.0, 0.0), (4.0, -4.0), (-4.0, 5.0)),
+    # Wider footprints for dome-scale kinematics probes.
+    'spread': ((-280.0, 0.0), (210.0, -180.0), (-190.0, 230.0)),
+    'east_bias': ((520.0, -80.0), (480.0, 120.0), (410.0, -320.0)),
+}
+
+
+def _resolve_interceptor_ic_layout_xy(
+    spec_raw: str,
+) -> tuple[tuple[float, float], tuple[float, float], tuple[float, float]]:
+    spec_st = (spec_raw or '').strip().lower() or 'default'
+    if spec_st.startswith('custom:'):
+        tail = spec_st[7:].replace(',', ' ')
+        nums: list[float] = []
+        for tok in tail.split():
+            try:
+                nums.append(float(tok))
+            except ValueError as exc:
+                raise ValueError('interceptor_ic_layout custom requires six numeric tokens') from exc
+        if len(nums) != 6:
+            raise ValueError('interceptor_ic_layout custom needs x0,y0,x1,y1,x2,y2')
+        return (nums[0], nums[1]), (nums[2], nums[3]), (nums[4], nums[5])
+    tup = _INTERCEPTOR_IC_LAYOUT_XY.get(spec_st)
+    if tup is None:
+        return _INTERCEPTOR_IC_LAYOUT_XY['default']
+    return tup
+
+
 # -----------------------------------------------------------------------------
 # Realism baseline (slide-friendly SI, defense-in-depth domes):
 # - Hostile sUAS: ~15–40+ m/s; default LOS closing **38 m/s** (~137 km/h) — fast but credible.
@@ -99,11 +130,20 @@ def _vel_smooth_alpha(interceptor_max_m_s: float, v_target_peak: float) -> float
 #   outer = detect aligned with radar envelope — r_outer 6, r_mid 3, r_inner 1.2 km.
 # -----------------------------------------------------------------------------
 
+# โดม 3 ชั้น (m) — ตัวเลขนี้ต้องตรงกับ worlds/target_sphere.sdf danger_dome_* radius
+DOME_OUTER_M  = 6000.0
+DOME_MIDDLE_M = 3000.0
+DOME_INNER_M  = 1200.0
+DOME_OUTER_HYSTERESIS_M = 150.0
+
 # ลู่บินโจมตี (ต้องตรงกับค่าที่ส่งให้ target_controller_node)
-# เริ่มห่าง ~2.95 km slant — ใกล้พอให้ถึง strike shell ในไม่กี่นาทีเมื่อ headless CI
-TGT_START_X_M = -2400.0
-TGT_START_Y_M = 1680.0
-TGT_START_Z_M = 240.0
+# Bearing เดิม (−2400, 1680, 1650) → สเกลให้ |P|=dome_outer บนเปลือกโดมนอก (danger_dome_outer)
+_tgt_bx_m, _tgt_by_m, _tgt_bz_m = -2400.0, 1680.0, 1650.0
+_tgt_bn = math.hypot(math.hypot(_tgt_bx_m, _tgt_by_m), _tgt_bz_m)
+_tgt_shell_scale = DOME_OUTER_M / max(_tgt_bn, 1e-6)
+TGT_START_X_M = _tgt_bx_m * _tgt_shell_scale
+TGT_START_Y_M = _tgt_by_m * _tgt_shell_scale
+TGT_START_Z_M = _tgt_bz_m * _tgt_shell_scale
 # Horizontal speed toward asset center (m/s) → `approach_speed` on target_controller_node
 TGT_APPROACH_VX_M_S = 38.0
 # แนวดิ่งลง (m/s, <=0)
@@ -120,12 +160,6 @@ VMAX_ABOVE_CLOSING_M_S = 8.0
 # แรงดันจริงของ interceptor ต้องเหนือค่า max ที่ guidance คิดไว้ (สอดคล้อง max_speed บน controller)
 INTERCEPTOR_ABOVE_GUIDANCE_VMAX_M_S = 14.0
 
-# โดม 3 ชั้น (m) — ตัวเลขนี้ต้องตรงกับ worlds/target_sphere.sdf danger_dome_* radius
-DOME_OUTER_M  = 6000.0
-DOME_MIDDLE_M = 3000.0
-DOME_INNER_M  = 1200.0
-DOME_OUTER_HYSTERESIS_M = 150.0
-
 # โดรนสะกัด: z=0 ให้ฐานโมเดลอยู่ชิดพื้น (collision box ~0–0.45 m — ตรงกับ target_sphere.sdf)
 INTERCEPTOR_GROUND_Z_M = 0.0
 
@@ -141,8 +175,8 @@ TGT_ATTACK_XY_SNAP_M = 0.45
 TGT_ATTACK_LOS_TO_ORIGIN = True
 # 0 = ให้ target_controller ใช้ hypot(|approach_speed|, |dive_speed|)
 TGT_LOS_CLOSING_SPEED_M_S = 38.0
-# >1.0 = steeper LOS-style dive (stronger vertical closing vs horizontal; 1.0 = true 3D LOS).
-TGT_LOS_DIVE_GAIN = 1.35
+# 1.0 = ความเร็วเรเดียลเข้า (0,0,0) ให้ตรงกับมุมทางเรขาจากตำแหน่งเริ่ม (>1 เฉียดลงในแนวตั้งเกินจาก LOS จริง)
+TGT_LOS_DIVE_GAIN = 1.0
 
 
 def _gz_target_setup(context, *args, **kwargs):
@@ -227,6 +261,29 @@ def _gz_target_setup(context, *args, **kwargs):
         LaunchConfiguration('intercept_heatmap_prob_use_cmd_vel').perform(context),
     ).strip().lower() in ('1', 'true', 'yes', 'on')
 
+    evaluation_enable_prob = str(
+        LaunchConfiguration('evaluation_enable_intercept_heatmap_prob').perform(context),
+    ).strip().lower() in ('1', 'true', 'yes', 'on')
+    evaluation_export_dir_lc = str(
+        LaunchConfiguration('evaluation_intercept_heatmap_export_dir').perform(context),
+    ).strip()
+
+    intercept_heatmap_prob_enabled_early = False
+    if evaluation_enable_prob:
+        if evaluation_export_dir_lc:
+            heatmap_export_dir = evaluation_export_dir_lc
+        elif not heatmap_export_dir:
+            heatmap_export_dir = str((Path.cwd() / 'runs' / 'intercept_heatmap_export').resolve())
+        intercept_heatmap_prob_enabled_early = True
+    elif heatmap_export_dir:
+        intercept_heatmap_prob_enabled_early = True
+
+    layout_spec = LaunchConfiguration('interceptor_ic_layout').perform(context).strip()
+    try:
+        layout_xy = _resolve_interceptor_ic_layout_xy(layout_spec)
+    except ValueError:
+        layout_xy = _resolve_interceptor_ic_layout_xy('default')
+
     use_gui = str(LaunchConfiguration('use_gazebo_gui').perform(context)).strip().lower() in (
         '1', 'true', 'yes', 'on',
     )
@@ -239,6 +296,17 @@ def _gz_target_setup(context, *args, **kwargs):
     interceptor_turn_rate = float(
         LaunchConfiguration('interceptor_max_turn_rate_rad_s').perform(context),
     )
+    eng_metrics_period_s = float(LaunchConfiguration('eng_metrics_period_s').perform(context))
+    eng_rollout_feasibility_gate = str(LaunchConfiguration('eng_rollout_feasibility_gate').perform(context)).strip().lower() in (
+        '1',
+        'true',
+        'yes',
+        'on',
+    )
+    eng_rollout_gate_horizon_s = float(LaunchConfiguration('eng_rollout_gate_horizon_s').perform(context))
+    guidance_u_max_step_rad = float(LaunchConfiguration('guidance_u_max_step_rad').perform(context))
+    guidance_terminal_range_m = float(LaunchConfiguration('guidance_terminal_range_m').perform(context))
+    guidance_terminal_pursuit_blend = float(LaunchConfiguration('guidance_terminal_pursuit_blend').perform(context))
     dome_hyst = float(LaunchConfiguration('dome_outer_hysteresis_m').perform(context))
     tv_alpha = float(LaunchConfiguration('target_velocity_smooth_alpha').perform(context))
     dome_en = str(LaunchConfiguration('dome_enabled').perform(context)).strip().lower() in (
@@ -373,9 +441,13 @@ def _gz_target_setup(context, *args, **kwargs):
         )
 
     interceptors_cfg = [
-        ('interceptor_0', -5.0, 0.0, INTERCEPTOR_GROUND_Z_M),
-        ('interceptor_1', 4.0, -4.0, INTERCEPTOR_GROUND_Z_M),
-        ('interceptor_2', -4.0, 5.0, INTERCEPTOR_GROUND_Z_M),
+        (
+            f'interceptor_{idx}',
+            float(layout_xy[idx][0]),
+            float(layout_xy[idx][1]),
+            INTERCEPTOR_GROUND_Z_M,
+        )
+        for idx in range(3)
     ]
     interceptor_nodes = []
     for idx, (model_name, ox, oy, oz) in enumerate(interceptors_cfg):
@@ -405,6 +477,11 @@ def _gz_target_setup(context, *args, **kwargs):
                         'publish_marker': True,
                         'marker_scale': 1.15,
                         'vel_smooth_alpha': max(vel_smooth_alpha, 0.55),
+                        'impact_event_topic': '/interception/impact_event',
+                        'hide_model_on_impact': True,
+                        'impact_hide_x_m': -5000.0,
+                        'impact_hide_y_m': -5000.0,
+                        'impact_hide_z_m': -5000.0,
                         'reset_on_sim_clock_rewind': use_gui,
                     },
                 ],
@@ -475,7 +552,7 @@ def _gz_target_setup(context, *args, **kwargs):
                 'tracks_state_topic': tracks_state_topic_arg,
                 'selected_id_topic': '/interceptor/selected_id',
                 # Allow re-assignment so the unit closest to a kill window stays committed (see TTI selection).
-                'lock_selected_after_first': False,
+                'lock_selected_after_first': True,
                 # hit_threshold_m: 3-D radius for HIT detection.
                 # 1.0 m = tight enough to look like near-physical contact visually,
                 # wide enough to register before the target descends below air_ok altitude.
@@ -500,6 +577,9 @@ def _gz_target_setup(context, *args, **kwargs):
                 'stop_topic': '/target/stop',
                 'stop_signal_repeat_duration_s': 15.0,
                 'stop_signal_repeat_period_s': 0.35,
+                'impact_event_topic': '/interception/impact_event',
+                'publish_impact_event': True,
+                'lock_engaged_interceptor_until_hit': True,
                 'hit_marker_duration_s': 10.0,
                 'hit_marker_outer_diameter_m': 760.0,
                 # Default off: gate + 2 s tracking delay after false /clock reorder "resets" blocked guidance for long stretches.
@@ -535,6 +615,7 @@ def _gz_target_setup(context, *args, **kwargs):
                 'reset_lock_when_outside_dome': True,
                 'dome_selection_mode': 'nearest',
                 'publish_dome_rviz_marker': True,
+                'intercept_heatmap_prob_enabled': intercept_heatmap_prob_enabled_early,
                 'intercept_heatmap_prob_export_dir': heatmap_export_dir,
                 'intercept_heatmap_prob_export_stamp_files': heatmap_export_stamp,
                 'intercept_heatmap_prob_use_cmd_vel': heatmap_prob_use_cmd_vel,
@@ -547,6 +628,12 @@ def _gz_target_setup(context, *args, **kwargs):
                 'intercept_heatmap_prob_pos_sigma_m': 22.0,
                 'intercept_heatmap_prob_vel_sigma_m_s': 1.35,
                 'intercept_heatmap_prob_delay_jitter_s': 0.28,
+                'eng_metrics_period_s': eng_metrics_period_s,
+                'eng_rollout_feasibility_gate': eng_rollout_feasibility_gate,
+                'eng_rollout_gate_horizon_s': eng_rollout_gate_horizon_s,
+                'guidance_u_max_step_rad': guidance_u_max_step_rad,
+                'guidance_terminal_range_m': guidance_terminal_range_m,
+                'guidance_terminal_pursuit_blend': guidance_terminal_pursuit_blend,
                 'reset_on_sim_clock_rewind': use_gui,
             },
         ],
@@ -572,7 +659,55 @@ def _gz_target_setup(context, *args, **kwargs):
                 arguments=['-d', rviz_cfg],
             ),
         )
-    return [gz_argv_log, gz_empty_tree_hint, gz, clock_bridge, map_tf, *rviz_nodes, delayed]
+
+    corroborator_bundle: list[Node] = []
+    if str(LaunchConfiguration('enable_hit_contact_corroborator').perform(context)).strip().lower() in (
+        '1', 'true', 'yes', 'on',
+    ):
+        gz_ct_topic = str(LaunchConfiguration('impact_contact_gz_topic').perform(context)).strip()
+        if not gz_ct_topic:
+            gz_ct_topic = '/counter_uas_sphere_target_0_contacts'
+        corroborator_bundle.append(
+            Node(
+                package='ros_gz_bridge',
+                executable='parameter_bridge',
+                name='impact_contact_bridge',
+                output='screen',
+                arguments=[
+                    f'{gz_ct_topic}@ros_gz_interfaces/msg/Contacts[gz.msgs.Contacts',
+                ],
+                remappings=[(gz_ct_topic, '/interception/gz_contacts')],
+            ),
+        )
+        corroborator_bundle.append(
+            Node(
+                package='gazebo_target_sim',
+                executable='hit_contact_corroborator_node',
+                name='hit_contact_corroborator',
+                output='screen',
+                parameters=[
+                    {
+                        'impact_event_topic': '/interception/impact_event',
+                        'contacts_topic': '/interception/gz_contacts',
+                        'match_window_s': 0.25,
+                        'target_label_models': (
+                            'target_0=sphere_target_0,target_1=sphere_target_1,target_2=sphere_target_2'
+                        ),
+                    },
+                ],
+            ),
+        )
+
+    return [
+        gz_argv_log,
+        gz_empty_tree_hint,
+        gz,
+        clock_bridge,
+        map_tf,
+        *corroborator_bundle,
+        *rviz_nodes,
+        delayed,
+    ]
 
 
 def generate_launch_description() -> LaunchDescription:
@@ -597,6 +732,49 @@ def generate_launch_description() -> LaunchDescription:
                 description=(
                     'Interceptor turn-rate limit (rad/s). Default 2.5 (~143 deg/s).  Lower values '
                     'make heading changes smoother but reduce ability to track manoeuvring targets.'
+                ),
+            ),
+            DeclareLaunchArgument(
+                'eng_metrics_period_s',
+                default_value='0.0',
+                description=(
+                    'interception_logic_node: periodic [ENG_METRIC] snapshots (s); 0 disables. '
+                    'Use small values (e.g. 0.25–1.0) only for evaluation runs.'
+                ),
+            ),
+            DeclareLaunchArgument(
+                'eng_rollout_feasibility_gate',
+                default_value='false',
+                description=(
+                    'interception_logic_node: if true, kinematic rollout must pass before composite strike_ok_eff.'
+                ),
+            ),
+            DeclareLaunchArgument(
+                'eng_rollout_gate_horizon_s',
+                default_value='0.0',
+                description=(
+                    'Rollout horizon passed to simulate_intercept_once (s); 0 uses node max intercept horizon.'
+                ),
+            ),
+            DeclareLaunchArgument(
+                'guidance_u_max_step_rad',
+                default_value=str(math.pi),
+                description=(
+                    'Cap per-cycle rotation of commanded guidance unit vector (rad); π = effectively no limit.'
+                ),
+            ),
+            DeclareLaunchArgument(
+                'guidance_terminal_range_m',
+                default_value='0.0',
+                description=(
+                    'Blend predictive guidance toward pursuit inside this range (m); 0 disables terminal blend.'
+                ),
+            ),
+            DeclareLaunchArgument(
+                'guidance_terminal_pursuit_blend',
+                default_value='0.0',
+                description=(
+                    'Blend weight toward pursuit at terminal_range (0..1); 0 leaves predictive-only in terminal.'
                 ),
             ),
             DeclareLaunchArgument(
@@ -708,6 +886,31 @@ def generate_launch_description() -> LaunchDescription:
                 ),
             ),
             DeclareLaunchArgument(
+                'evaluation_enable_intercept_heatmap_prob',
+                default_value='false',
+                description=(
+                    'If true, enables intercept_heatmap_prob export to evaluation_intercept_heatmap_export_dir, '
+                    'or defaults to cwd/runs/intercept_heatmap_export when that arg is empty. '
+                    'Does not unset an explicit intercept_heatmap_prob_export_dir — that wins when set.'
+                ),
+            ),
+            DeclareLaunchArgument(
+                'evaluation_intercept_heatmap_export_dir',
+                default_value='',
+                description=(
+                    'Directory for intercept probability heatmap CSV/SVG exports when '
+                    'evaluation_enable_intercept_heatmap_prob:=true. Empty ⇒ cwd/runs/intercept_heatmap_export.'
+                ),
+            ),
+            DeclareLaunchArgument(
+                'interceptor_ic_layout',
+                default_value='default',
+                description=(
+                    'Interceptor XY spawn layout at ground-Z: default | spread | east_bias | '
+                    'custom:x0,y0,x1,y1,x2,y2 (six comma-separated meters in map frame).'
+                ),
+            ),
+            DeclareLaunchArgument(
                 'intercept_measurement_source',
                 default_value='ground_truth',
                 description=(
@@ -792,6 +995,23 @@ def generate_launch_description() -> LaunchDescription:
                 'use_rviz',
                 default_value='false',
                 description='If true, starts rviz2 with share/gazebo_target_sim/rviz/hit_overlay.rviz.',
+            ),
+            DeclareLaunchArgument(
+                'enable_hit_contact_corroborator',
+                default_value='false',
+                description=(
+                    'If true, bridges gz.msgs.Contacts from impact_contact_gz_topic and runs '
+                    'hit_contact_corroborator_node (logs [HIT_CORROBORATED] vs [IMPACT_SOFT_ONLY]). '
+                    'SDF must define the contact sensor topic (see sphere_target impact_contact).'
+                ),
+            ),
+            DeclareLaunchArgument(
+                'impact_contact_gz_topic',
+                default_value='/counter_uas_sphere_target_0_contacts',
+                description=(
+                    'Gazebo transport topic for hostile contact sensor (bridged to /interception/gz_contacts). '
+                    'Multi-target: override to e.g. /counter_uas_sphere_target_1_contacts for corroboration on that bandit.'
+                ),
             ),
             OpaqueFunction(function=_apply_gz_ip_from_launch),
             LogInfo(
