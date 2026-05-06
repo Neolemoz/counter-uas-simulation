@@ -1994,6 +1994,7 @@ class InterceptionLogicNode(Node):
         self._world_name_gz = str(self.get_parameter('world_name').value).strip() or 'counter_uas_target'
         self._pause_gz_on_hit = bool(self.get_parameter('pause_gz_on_hit').value)
         self._gz_pause_sent = False
+        self._pause_gz_timer = None
         self._last_algo_log: Time | None = None
         self._last_feas_log: Time | None = None
         self._last_class_warn: Time | None = None
@@ -3340,6 +3341,7 @@ class InterceptionLogicNode(Node):
         self._last_feas_warn_log = None
         self._cuas_clear_viz_markers()
         self._cancel_stop_signal_repeat_timer()
+        self._cancel_gazebo_pause_timer()
         self._heatmap_prob_cache.clear()
         self._clear_intercept_heatmap_prob_markers()
         self._mc_p_last.clear()
@@ -3394,6 +3396,21 @@ class InterceptionLogicNode(Node):
             self._cancel_stop_signal_repeat_timer()
             return
         self._publish_stop_signal(self._stop_repeat_pending_label, log_hit=False)
+
+    def _cancel_gazebo_pause_timer(self) -> None:
+        if self._pause_gz_timer is not None:
+            self.destroy_timer(self._pause_gz_timer)
+            self._pause_gz_timer = None
+
+    def _schedule_gazebo_pause(self) -> None:
+        if not self._pause_gz_on_hit or self._gz_pause_sent:
+            return
+        self._cancel_gazebo_pause_timer()
+        self._pause_gz_timer = self.create_timer(3.5, self._on_gazebo_pause_timer)
+
+    def _on_gazebo_pause_timer(self) -> None:
+        self._cancel_gazebo_pause_timer()
+        self._pause_gazebo_world()
 
     def _publish_stop_signal(self, target_label: str | None, *, log_hit: bool = True) -> None:
         topic_s = repr(self._stop_topic)
@@ -4267,7 +4284,7 @@ class InterceptionLogicNode(Node):
             self._publish_all({i: zero for i in self._ids}, immediate=True)
             # Delay pause so target_controller has time to receive stop signal,
             # remove target model, and spawn explosion visual before world freezes.
-            self.create_timer(3.5, self._pause_gazebo_world)
+            self._schedule_gazebo_pause()
             return
         if (
             range_plausible
@@ -5403,8 +5420,7 @@ class InterceptionLogicNode(Node):
             self._publish_stop_signal(tlabel)
             self._schedule_stop_signal_repeats(tlabel)
             self._log_active_targets_remaining()
-            if self._pause_gz_on_hit:
-                self._pause_gazebo_world()
+            self._schedule_gazebo_pause()
             return True
         if (
             dist_for_hit < eff_hit_mu
