@@ -19,6 +19,8 @@ from std_msgs.msg import String
 from std_msgs.msg import ColorRGBA
 from visualization_msgs.msg import Marker
 
+from gazebo_target_sim_interfaces.msg import ImpactEvent
+
 from gazebo_target_sim.clock_reset import subscribe_sim_time_reset
 from gazebo_target_sim.gz_pose_tools import fmt_pose_req_full, quat_align_body_x_to_velocity
 
@@ -89,6 +91,12 @@ class InterceptorControllerNode(Node):
         # a bounded FIFO sized by ``ceil(cmd_delay_s / dt)``.  Use to characterise how robust
         # the guidance loop is to extra plant delay on top of sensor latency.
         self.declare_parameter('autopilot.cmd_delay_s', 0.0)
+        # Hide this Gazebo model off-world when interception_logic publishes ImpactEvent for it.
+        self.declare_parameter('impact_event_topic', '/interception/impact_event')
+        self.declare_parameter('hide_model_on_impact', True)
+        self.declare_parameter('impact_hide_x_m', -5000.0)
+        self.declare_parameter('impact_hide_y_m', -5000.0)
+        self.declare_parameter('impact_hide_z_m', -5000.0)
 
         self._world = str(self.get_parameter('world_name').value).strip()
         self._model = str(self.get_parameter('model_name').value).strip()
@@ -117,6 +125,13 @@ class InterceptorControllerNode(Node):
         self._v_orient_floor = max(float(self.get_parameter('orient_min_speed_m_s').value), 1e-3)
         self._ap_tau_s = max(0.0, float(self.get_parameter('autopilot.tau_s').value))
         self._ap_delay_s = max(0.0, float(self.get_parameter('autopilot.cmd_delay_s').value))
+        self._hid_impact = (
+            float(self.get_parameter('impact_hide_x_m').value),
+            float(self.get_parameter('impact_hide_y_m').value),
+            float(self.get_parameter('impact_hide_z_m').value),
+        )
+        self._hide_on_impact = bool(self.get_parameter('hide_model_on_impact').value)
+        self._impact_topic = str(self.get_parameter('impact_event_topic').value).strip()
         self._vx_s = 0.0
         self._vy_s = 0.0
         self._vz_s = 0.0
@@ -130,6 +145,7 @@ class InterceptorControllerNode(Node):
         self._last_log = self.get_clock().now()
         self._selected_id: str = ''
         self._assigned_target: str = ''
+        self._impact_hidden = False
 
         rate = max(float(self.get_parameter('rate_hz').value), 0.5)
         self._dt = 1.0 / rate
@@ -150,6 +166,8 @@ class InterceptorControllerNode(Node):
         self._pub_mk = self.create_publisher(Marker, self._marker_topic, 10) if self._do_marker else None
         self.create_subscription(Vector3, self._cmd_topic, self._on_cmd, 10)
         self.create_subscription(String, self._sel_topic, self._on_selected, 10)
+        if self._hide_on_impact and self._impact_topic:
+            self.create_subscription(ImpactEvent, self._impact_topic, self._on_impact_event, 10)
         if self._assigned_topic:
             self.create_subscription(String, self._assigned_topic, self._on_assigned_target, 10)
 
@@ -187,9 +205,28 @@ class InterceptorControllerNode(Node):
         self._have_cmd = False
         self._selected_id = ''
         self._assigned_target = ''
+        self._impact_hidden = False
         self._cmd_stamp = self.get_clock().now()
         # Physically move the Gazebo model back to origin so it doesn't float.
         self._call_set_pose(self._px, self._py, self._pz, 0.0, 0.0, 0.0, 1.0)
+
+    def _on_impact_event(self, msg: ImpactEvent) -> None:
+        if not self._hide_on_impact or self._impact_hidden:
+            return
+        if str(msg.interceptor_id).strip() != self._model:
+            return
+        hx, hy, hz = self._hid_impact
+        self._impact_hidden = True
+        self._idle = True
+        self._vx_s = self._vy_s = self._vz_s = 0.0
+        self._px, self._py, self._pz = hx, hy, hz
+        if self._cmd_buf_len > 0:
+            self._cmd_buf.clear()
+            zero = (0.0, 0.0, 0.0)
+            for _ in range(self._cmd_buf_len):
+                self._cmd_buf.append(zero)
+        self._call_set_pose(hx, hy, hz, 0.0, 0.0, 0.0, 1.0)
+        print(f'[IMPACT_HIDE] {self._model} moved off-world (kinetic removal)', flush=True)
 
     def _on_cmd(self, msg: Vector3) -> None:
         self._cmd = msg
@@ -206,6 +243,11 @@ class InterceptorControllerNode(Node):
             self._idle = False
             print(f'[LAUNCH] {self._model}', flush=True)
         elif not self._idle and not new_sel:
+            if self._impact_hidden:
+                self._idle = True
+                self._vx_s = self._vy_s = self._vz_s = 0.0
+                print(f'[STANDBY] {self._model} (post-impact; skip origin snap)', flush=True)
+                return
             # Empty selected_id: interception clears selection on HIT, outside dome, lost
             # target, etc. Do NOT treat all of these as "kamikaze remove" — that was deleting
             # the model when we only meant to stand down, and broke Gazebo pose updates.
@@ -218,6 +260,8 @@ class InterceptorControllerNode(Node):
             self._call_set_pose(ox, oy, oz, 0.0, 0.0, 0.0, 1.0)
             print(f'[STANDBY] {self._model} (selection cleared)', flush=True)
         elif not self._idle and new_sel != self._model:
+            if self._impact_hidden:
+                return
             # A different interceptor was selected — stand down and return to ground.
             self._idle = True
             self._vx_s = self._vy_s = self._vz_s = 0.0

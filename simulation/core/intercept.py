@@ -1,18 +1,36 @@
 from __future__ import annotations
 
-from typing import Optional
+import importlib.util
+from pathlib import Path
+from typing import Any, Optional
 
 import numpy as np
 
-try:
-    # Repo code commonly runs with "simulation/" on PYTHONPATH so "core" resolves.
-    from core.utils import normalize
-except ModuleNotFoundError:  # allows running this file directly
-    def normalize(vector: np.ndarray) -> np.ndarray:
-        n = float(np.linalg.norm(vector))
-        if n < 1e-15:
-            raise ValueError("Cannot normalize zero-length vector")
-        return vector / n
+_GUIDANCE_LIB: Any | None = None
+
+
+def _load_guidance_lib() -> Any:
+    """Load the canonical CV-intercept primitives from the source tree.
+
+    ``simulation/`` is intentionally runnable without a ROS install or sourced workspace, so
+    use a repo-relative file load instead of relying on the ``gazebo_target_sim`` package being
+    importable.  This keeps offline feasibility on the same numerical contract as live Gazebo.
+    """
+    global _GUIDANCE_LIB
+    if _GUIDANCE_LIB is not None:
+        return _GUIDANCE_LIB
+
+    repo_root = Path(__file__).resolve().parents[2]
+    path = repo_root / "src" / "gazebo_target_sim" / "gazebo_target_sim" / "guidance_lib.py"
+    if not path.is_file():
+        raise ModuleNotFoundError(f"canonical guidance_lib.py not found at {path}")
+    spec = importlib.util.spec_from_file_location("gazebo_target_sim_guidance_lib", path)
+    if spec is None or spec.loader is None:
+        raise ImportError(f"could not load guidance_lib.py from {path}")
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    _GUIDANCE_LIB = mod
+    return mod
 
 
 def compute_tti_target(
@@ -463,47 +481,22 @@ def solve_intercept_time(
     p_i0: np.ndarray,
     s_i: float,
 ) -> float | None:
-    r0 = p_t0 - p_i0
-    vv = float(np.dot(v_t, v_t))
-    rv = float(np.dot(r0, v_t))
-    rr = float(np.dot(r0, r0))
-
-    a = vv - s_i**2
-    b = 2.0 * rv
-    c = rr
-
-    eps = 1e-12
-    candidates: list[float] = []
-
-    if abs(a) < eps:
-        if abs(b) < eps:
-            return None
-        t = -c / b
-        if t > 0:
-            candidates.append(t)
-    else:
-        disc = b * b - 4.0 * a * c
-        if disc < 0:
-            return None
-        sqrt_d = np.sqrt(disc)
-        for t in ((-b - sqrt_d) / (2.0 * a), (-b + sqrt_d) / (2.0 * a)):
-            if t > 0:
-                candidates.append(float(t))
-
-    if not candidates:
-        return None
-
-    valid: list[float] = []
-    for t in candidates:
-        d = (p_t0 + v_t * t) - p_i0
-        lhs = float(np.linalg.norm(d))
-        rhs = s_i * t
-        if abs(lhs - rhs) <= 1e-6 * max(1.0, lhs, rhs):
-            valid.append(t)
-
-    if not valid:
-        return None
-    return min(valid)
+    p = np.asarray(p_t0, dtype=float).reshape(3)
+    v = np.asarray(v_t, dtype=float).reshape(3)
+    i = np.asarray(p_i0, dtype=float).reshape(3)
+    guidance = _load_guidance_lib()
+    return guidance.solve_intercept_time(
+        float(p[0]),
+        float(p[1]),
+        float(p[2]),
+        float(v[0]),
+        float(v[1]),
+        float(v[2]),
+        float(i[0]),
+        float(i[1]),
+        float(i[2]),
+        float(s_i),
+    )
 
 
 def compute_intercept(
@@ -512,13 +505,28 @@ def compute_intercept(
     p_i0: np.ndarray,
     s_i: float,
 ) -> tuple[float, np.ndarray, np.ndarray] | None:
-    t = solve_intercept_time(p_t0, v_t, p_i0, s_i)
-    if t is None:
+    p = np.asarray(p_t0, dtype=float).reshape(3)
+    v = np.asarray(v_t, dtype=float).reshape(3)
+    i = np.asarray(p_i0, dtype=float).reshape(3)
+    guidance = _load_guidance_lib()
+    sol = guidance.compute_intercept(
+        float(p[0]),
+        float(p[1]),
+        float(p[2]),
+        float(v[0]),
+        float(v[1]),
+        float(v[2]),
+        float(i[0]),
+        float(i[1]),
+        float(i[2]),
+        float(s_i),
+    )
+    if sol is None:
         return None
 
-    p_hit = p_t0 + v_t * t
-    delta = p_hit - p_i0
-    u = normalize(delta)
+    t, phx, phy, phz, ux, uy, uz = sol
+    p_hit = np.array([phx, phy, phz], dtype=float)
+    u = np.array([ux, uy, uz], dtype=float)
     return t, p_hit, u
 
 

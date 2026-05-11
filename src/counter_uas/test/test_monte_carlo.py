@@ -75,6 +75,8 @@ def test_aggregate_writes_outputs(tmp_path) -> None:
     args.pattern = '*.log'
     args.label = 'unit'
     args.out_dir = str(out_dir)
+    args.meta_cohort = ''
+    args.notes_substring = ''
 
     rc = mc.cmd_aggregate(args)
     assert rc == 0

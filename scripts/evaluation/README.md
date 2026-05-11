@@ -20,6 +20,10 @@ See [`metrics_definitions.yaml`](metrics_definitions.yaml) for field semantics (
 | `evaluation_row.py` | One aggregated JSON row for matrices |
 | `classify_run.py` | F1–F5 failure bucket from log + optional `capture_rc` |
 | [`summarize_failure_classes.py`](summarize_failure_classes.py) | F1–F5 histogram over a `monte_carlo` per-run CSV (`log_path`) |
+| [`pair_mc_seed_outcomes.py`](pair_mc_seed_outcomes.py) | Join two MC CSVs on `noise_seed` from `.meta.json` notes; bucket G1–G4 paired outcomes |
+| [`run_scenario_generalization_a_vs_d.sh`](run_scenario_generalization_a_vs_d.sh) | Run matched-seed scenario generalization MC for gate-only A vs frozen D |
+| [`summarize_scenario_generalization.py`](summarize_scenario_generalization.py) | Reduce per-cell A/D MC JSONs into per-cell and worst-cell CSV reports |
+| [`run_gnc_tuning_playbook.sh`](run_gnc_tuning_playbook.sh) | [Phase 0–4 guidance tuning MC driver](gnc_guidance_tuning_playbook_ops.md) |
 | [`fixtures/sample_heatmap_for_validate.csv`](fixtures/sample_heatmap_for_validate.csv) | Tiny heatmap for `--dry-run` / CI |
 
 ### Launch knobs (evaluation)

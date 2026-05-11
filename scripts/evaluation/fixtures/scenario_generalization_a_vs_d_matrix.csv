@@ -1,0 +1,10 @@
+cell_tag,target_los_closing_m_s,target_los_dive_gain,interceptor_ic_layout,notes_meta
+los32_div10_default,32.0,1.0,default,slow closing default interceptor layout
+los32_div10_spread,32.0,1.0,spread,slow closing spread interceptor layout
+los32_div10_east,32.0,1.0,east_bias,slow closing east-biased interceptor layout
+los38_div10_default,38.0,1.0,default,nominal closing default interceptor layout
+los38_div10_spread,38.0,1.0,spread,nominal closing spread interceptor layout
+los38_div10_east,38.0,1.0,east_bias,nominal closing east-biased interceptor layout
+los44_div10_default,44.0,1.0,default,fast closing default interceptor layout
+los44_div10_spread,44.0,1.0,spread,fast closing spread interceptor layout
+los44_div10_east,44.0,1.0,east_bias,fast closing east-biased interceptor layout

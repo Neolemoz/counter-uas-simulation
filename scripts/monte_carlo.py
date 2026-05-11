@@ -17,10 +17,10 @@ Two operating modes
    aggregate metrics.  No simulator is launched.  Useful for re-analysing past runs and for
    tests / CI where Gazebo is not available.
 
-2. ``--mode run`` — drive ``scripts/run_capture.py`` for ``--n`` runs.  Each run gets a
-   different ``seed`` injected into the launch arguments (``noise_seed:=<i>``); the rest of
-   the launch args you pass on the command line are forwarded verbatim, so this is the same
-   surface you already use for one-off runs.
+2. ``--mode run`` — drive ``scripts/run_capture.py`` for ``--n`` runs. Each injected
+   Monte Carlo RNG uses ``noise_seed:=<seed_base+i>`` (unless overridden) and records
+   ``noise_seed_mc`` + optional static ``geometry_id`` for reproducible pairing with
+   spatial scenario matrices.
 
 Examples
 --------
@@ -216,15 +216,59 @@ def _write_outputs(out_dir: Path, label: str, summary: dict, rows: list[dict]) -
 # --------------------------------------------------------------------------------------
 
 
+def _load_log_meta(log_path: Path) -> dict:
+    mp = log_path.with_suffix('.meta.json')
+    if not mp.is_file():
+        return {}
+    try:
+        return json.loads(mp.read_text(encoding='utf-8'))
+    except (json.JSONDecodeError, OSError):
+        return {}
+
+
+def _log_matches_aggregate_filters(
+    log_path: Path,
+    *,
+    meta_cohort: str,
+    notes_substring: str,
+) -> bool:
+    md = _load_log_meta(log_path)
+    if meta_cohort and md.get('cohort') != meta_cohort:
+        return False
+    if notes_substring:
+        notes_blob = str(md.get('notes') or '')
+        if notes_substring not in notes_blob:
+            try:
+                head = log_path.read_text(encoding='utf-8', errors='replace')[:8192]
+            except OSError:
+                head = ''
+            if notes_substring not in head:
+                return False
+    return True
+
+
 def cmd_aggregate(args: argparse.Namespace) -> int:
     analyze = _load_analyze_run()
     logs_dir = Path(args.logs_dir)
     if not logs_dir.is_dir():
         print(f"logs_dir not found: {logs_dir}", file=sys.stderr)
         return 2
-    log_files = sorted(logs_dir.glob(args.pattern))
+    log_files_all = sorted(logs_dir.glob(args.pattern))
+    log_files = [
+        p
+        for p in log_files_all
+        if _log_matches_aggregate_filters(
+            p,
+            meta_cohort=(args.meta_cohort or '').strip(),
+            notes_substring=(args.notes_substring or '').strip(),
+        )
+    ]
     if not log_files:
-        print(f"no logs matched {args.pattern} in {logs_dir}", file=sys.stderr)
+        print(
+            f'no logs matched {args.pattern} in {logs_dir} after cohort/notes filters '
+            f'(meta-cohort={args.meta_cohort!r} notes-substring={args.notes_substring!r})',
+            file=sys.stderr,
+        )
         return 2
     rows: list[dict] = []
     for log in log_files:
@@ -247,6 +291,12 @@ def cmd_run(args: argparse.Namespace) -> int:
 
     rows: list[dict] = []
     base_args = args.launch_args or ""
+    gid = getattr(args, "geometry_id", "").strip()
+
+    geometry_note = ""
+    if gid:
+        geometry_note = f' geometry_id="{gid}"'
+
     for i in range(args.n):
         seed = args.seed_base + i
         # Compose seed-aware launch args without overwriting whatever the caller already set.
@@ -256,11 +306,19 @@ def cmd_run(args: argparse.Namespace) -> int:
         cmd = [
             sys.executable,
             str(rc_script),
-            "--scenario", args.scenario,
-            "--timeout-s", str(args.timeout_s),
-            "--notes", f"mc_label={args.label} seed={seed}",
-            "--launch-args", per_run_args,
+            '--scenario', args.scenario,
+            '--timeout-s', str(args.timeout_s),
+            '--notes',
+            f"mc_label={args.label} seed={seed}{geometry_note}".strip(),
         ]
+        if getattr(args, 'cohort', None):
+            cmd.extend(['--cohort', str(args.cohort).strip()])
+        cmd.extend(
+            [
+                '--launch-args',
+                per_run_args,
+            ],
+        )
         print(f"[monte_carlo] run {i + 1}/{args.n}  seed={seed}", flush=True)
         r = subprocess.run(cmd, capture_output=True, text=True)
         if r.returncode not in (0, 124):
@@ -278,7 +336,11 @@ def cmd_run(args: argparse.Namespace) -> int:
         result = analyze.parse_run_to_result(str(log_path))
         result["run_id"] = log_path.stem
         result["log_path"] = str(log_path)
-        result["seed"] = seed
+        result["noise_seed_mc"] = seed
+        result["seed"] = seed  # backwards compat alias
+        gid_str = gid.strip()
+        if gid_str:
+            result["geometry_id"] = gid_str
         rows.append(result)
     if not rows:
         print("no successful runs collected", file=sys.stderr)
@@ -315,16 +377,43 @@ def main() -> int:
     pa.add_argument("--pattern", default="*.log")
     pa.add_argument("--label", default="aggregate")
     pa.add_argument("--out-dir", default=str(DEFAULT_OUT))
+    pa.add_argument(
+        '--meta-cohort',
+        type=str,
+        default='',
+        help='If set, include only logs whose paired .meta.json "cohort" field matches exactly.',
+    )
+    pa.add_argument(
+        '--notes-substring',
+        type=str,
+        default='',
+        help='If set, require substring in meta "notes" or in the first ~8k chars of the log file.',
+    )
     pa.set_defaults(func=cmd_aggregate)
 
     pr = sub.add_parser("run", help="Run N sims via run_capture.py and aggregate.")
     pr.add_argument("--n", type=int, default=10)
     pr.add_argument("--seed-base", type=int, default=1)
+    pr.add_argument(
+        '--geometry-id',
+        type=str,
+        default='',
+        help=(
+            'Static scenario geometry label echoed into mc notes (orthogonal to MC noise_seed). '
+            'Use with matrix harness to separate spatial runs from RNG noise.'
+        ),
+    )
     pr.add_argument("--scenario", choices=["single", "multi"], default="single")
     pr.add_argument("--timeout-s", type=float, default=14.0)
     pr.add_argument("--launch-args", type=str, default=None)
     pr.add_argument("--label", default="run")
     pr.add_argument("--out-dir", default=str(DEFAULT_OUT))
+    pr.add_argument(
+        '--cohort',
+        type=str,
+        default='',
+        help='Passed to run_capture --cohort on each MC run (evaluation cohort tag).',
+    )
     pr.set_defaults(func=cmd_run)
 
     pc = sub.add_parser("compare", help="Print a side-by-side table from MC summary JSONs.")

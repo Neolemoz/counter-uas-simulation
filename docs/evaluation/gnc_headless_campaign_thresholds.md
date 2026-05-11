@@ -70,7 +70,12 @@ python3 scripts/monte_carlo.py aggregate --logs-dir runs/logs --pattern '*.log' 
 python3 scripts/evaluation/summarize_failure_classes.py runs/mc/my_baseline.csv
 ```
 
-## Guidance tightening (Steps 1–3, gate remains ON)
+## Operations: systematic guidance tuning playbook
+
+Phase 0 snapshot, Phase 1–4 MC drivers, cohort naming, and confirm-N examples:
+
+[**`docs/evaluation/gnc_guidance_tuning_playbook_ops.md`**](gnc_guidance_tuning_playbook_ops.md) · **`scripts/evaluation/run_gnc_tuning_playbook.sh`**
+
 
 All arms below assume a **common spine** — at minimum `use_gazebo_gui:=false eng_rollout_feasibility_gate:=true`. Compared cohorts share **matched** `noise_seed`, `timeout-s`, geometry; only the listed knobs differ.
 

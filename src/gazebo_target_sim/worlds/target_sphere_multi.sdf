@@ -184,6 +184,14 @@
             </sphere>
           </geometry>
         </collision>
+        <sensor name="impact_contact" type="contact">
+          <always_on>1</always_on>
+          <update_rate>200</update_rate>
+          <contact>
+            <collision>col</collision>
+            <topic>/counter_uas_sphere_target_0_contacts</topic>
+          </contact>
+        </sensor>
         <visual name="vis">
           <geometry>
             <box><size>2.2 2.2 1.0</size></box>
@@ -233,6 +241,14 @@
             </sphere>
           </geometry>
         </collision>
+        <sensor name="impact_contact" type="contact">
+          <always_on>1</always_on>
+          <update_rate>200</update_rate>
+          <contact>
+            <collision>col</collision>
+            <topic>/counter_uas_sphere_target_1_contacts</topic>
+          </contact>
+        </sensor>
         <visual name="vis">
           <geometry>
             <box><size>2.2 2.2 1.0</size></box>
@@ -282,6 +298,14 @@
             </sphere>
           </geometry>
         </collision>
+        <sensor name="impact_contact" type="contact">
+          <always_on>1</always_on>
+          <update_rate>200</update_rate>
+          <contact>
+            <collision>col</collision>
+            <topic>/counter_uas_sphere_target_2_contacts</topic>
+          </contact>
+        </sensor>
         <visual name="vis">
           <geometry>
             <box><size>2.2 2.2 1.0</size></box>

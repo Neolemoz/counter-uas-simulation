@@ -34,6 +34,10 @@ def generate_launch_description() -> LaunchDescription:
             'fused_detections_topic': LaunchConfiguration('fused_detections_topic'),
             'tracks_topic': LaunchConfiguration('tracks_topic'),
             'tracks_state_topic': LaunchConfiguration('tracks_state_topic'),
+            # Forward through so one ``ros2 launch counter_uas bringup`` line can toggle
+            # Gazebo GUI and RViz (defaults match gazebo_target.launch.py).
+            'use_gazebo_gui': LaunchConfiguration('use_gazebo_gui'),
+            'use_rviz': LaunchConfiguration('use_rviz'),
         }.items(),
     )
 
@@ -69,6 +73,22 @@ def generate_launch_description() -> LaunchDescription:
                 'tracks_state_topic',
                 default_value='/tracks/state',
                 description='Odometry topic when intercept_measurement_source:=tracks_state.',
+            ),
+            DeclareLaunchArgument(
+                'use_gazebo_gui',
+                default_value='true',
+                description=(
+                    'Passed to gazebo_target.launch.py — false runs gz server-only (-s); '
+                    'true opens the 3D client (needs DISPLAY/Wayland).'
+                ),
+            ),
+            DeclareLaunchArgument(
+                'use_rviz',
+                default_value='false',
+                description=(
+                    'Passed to gazebo_target.launch.py — if true, starts rviz2 with '
+                    'gazebo_target_sim/rviz/hit_overlay.rviz.'
+                ),
             ),
             gazebo_target,
             Node(

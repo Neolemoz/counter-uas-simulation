@@ -1,0 +1,2 @@
+scenario_id,target_start_x_m,target_start_y_m,target_start_z_m,target_los_closing_m_s,target_los_dive_gain,interceptor_ic_layout,extra_launch_args,notes_meta
+smoke_baseline,,,,,,default,,single-row smoke for ci_eval tier2-smoke

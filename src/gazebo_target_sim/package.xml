@@ -15,6 +15,8 @@
   <depend>nav_msgs</depend>
   <depend>tf2_msgs</depend>
   <depend>std_msgs</depend>
+  <depend>gazebo_target_sim_interfaces</depend>
+  <depend>ros_gz_interfaces</depend>
   <depend>visualization_msgs</depend>
   <depend>rosgraph_msgs</depend>
 

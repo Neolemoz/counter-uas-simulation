@@ -39,6 +39,10 @@ from visualization_msgs.msg import Marker
 from gazebo_target_sim_interfaces.msg import ImpactEvent
 
 from gazebo_target_sim.clock_reset import subscribe_sim_time_reset
+from gazebo_target_sim.guidance_lib import (
+    compute_intercept as _guidance_compute_intercept,
+    solve_intercept_time as _guidance_solve_intercept_time,
+)
 
 if TYPE_CHECKING:
     from rclpy.publisher import Publisher
@@ -205,106 +209,35 @@ def _solve_intercept_time(
     s_i: float,
     trace: list[str] | None = None,
 ) -> float | None:
-    """
-    เวลาปิดระยะเชิงค่าคงที่: หา t>0 น้อยสุดที่ |r0 + v_T t| = s_i t
-    โดย r0 = P_T - P_I  ยกกำลังสองได้สมการกำลังสอง a t^2 + b t + c = 0
-    a = |v_T|^2 - s_i^2,  b = 2 r0·v_T,  c = |r0|^2
-    """
-    r0x = p_tx - p_ix
-    r0y = p_ty - p_iy
-    r0z = p_tz - p_iz
-    vv = _dot(v_tx, v_ty, v_tz, v_tx, v_ty, v_tz)
-    rv = _dot(r0x, r0y, r0z, v_tx, v_ty, v_tz)
-    rr = _dot(r0x, r0y, r0z, r0x, r0y, r0z)
-
+    """Thin live-node wrapper around the canonical CV-intercept solver."""
+    t = _guidance_solve_intercept_time(
+        p_tx, p_ty, p_tz,
+        v_tx, v_ty, v_tz,
+        p_ix, p_iy, p_iz,
+        s_i,
+    )
     if trace is not None:
+        r0x = p_tx - p_ix
+        r0y = p_ty - p_iy
+        r0z = p_tz - p_iz
+        trace.append('    using canonical guidance_lib.solve_intercept_time')
         trace.append(f"    r0 = P_T - P_I = ({r0x:.6f}, {r0y:.6f}, {r0z:.6f})")
-        trace.append(f"    |v_T|^2 = {vv:.8f}    r0·v_T = {rv:.8f}    |r0|^2 = {rr:.8f}")
         trace.append(f"    s_i (closing/intercept speed) = {s_i:.6f} m/s")
-        trace.append('    Quad from |r0+v_T t|^2 = s_i^2 t^2  =>  a t^2 + b t + c = 0')
-        trace.append(f"    a = |v_T|^2 - s_i^2 = {vv:.8f} - {s_i * s_i:.8f}")
-
-    a = vv - s_i * s_i
-    b = 2.0 * rv
-    c = rr
-    if trace is not None:
-        trace.append(f"        = {a:.8f}")
-        trace.append(f"    b = 2 * r0·v_T = {b:.8f}")
-        trace.append(f"    c = |r0|^2 = {c:.8f}")
-    eps = 1e-12
-    candidates: list[float] = []
-
-    if abs(a) < eps:
-        if trace is not None:
-            trace.append('    |a| ~ 0  =>  linear: b*t + c = 0  =>  t = -c/b')
-        if abs(b) < eps:
-            if trace is not None:
-                trace.append('    b ~ 0  =>  no positive root')
-            return None
-        t_lin = -c / b
-        if trace is not None:
-            trace.append(f'    t_lin = {-c:.8f}/{b:.8f} = {t_lin:.8f}')
-        if t_lin > 0.0:
-            candidates.append(t_lin)
+        trace.append('    tolerance = max(0.12, 5e-4 * max(|r(t)|, s_i*t, 1.0))')
+        if t is None:
+            trace.append('    => no positive geometrically valid intercept root')
         else:
-            if trace is not None:
-                trace.append('    t_lin <= 0  rejected')
-    else:
-        disc = b * b - 4.0 * a * c
-        if trace is not None:
-            trace.append(f'    discriminant D = b^2 - 4ac = {disc:.8f}')
-        if disc < 0.0:
-            if trace is not None:
-                trace.append('    D < 0  =>  no real t')
-            return None
-        sqrt_d = math.sqrt(disc)
-        t0 = (-b - sqrt_d) / (2.0 * a)
-        t1 = (-b + sqrt_d) / (2.0 * a)
-        if trace is not None:
-            trace.append(f'    t = (-b ± sqrt(D))/(2a)  =>  {t0:.8f}, {t1:.8f}')
-        for t in (t0, t1):
-            if t > 0.0:
-                candidates.append(float(t))
-
-    if not candidates:
-        if trace is not None:
-            trace.append('    no positive candidate t')
-        return None
-
-    if trace is not None:
-        trace.append('    Geometric check: |r0 + v_T t| ≈ s_i * t  (tolerance-scaled)')
-    valid: list[float] = []
-    for t in candidates:
-        hx = p_tx + v_tx * t - p_ix
-        hy = p_ty + v_ty * t - p_iy
-        hz = p_tz + v_tz * t - p_iz
-        lhs = _norm(hx, hy, hz)
-        rhs = s_i * t
-        tol = max(0.12, 5e-4 * max(lhs, rhs, 1.0))
-        ok = _intercept_tolerance(lhs, rhs)
-        if trace is not None:
+            hx = p_tx + v_tx * t - p_ix
+            hy = p_ty + v_ty * t - p_iy
+            hz = p_tz + v_tz * t - p_iz
+            lhs = _norm(hx, hy, hz)
+            rhs = s_i * t
+            tol = max(0.12, 5e-4 * max(lhs, rhs, 1.0))
             trace.append(
-                f'      t={t:.8f}: |r(t)|={lhs:.6f}  s_i*t={rhs:.6f}  |diff|={abs(lhs - rhs):.6f}  tol={tol:.6f}  ok={ok}',
+                f'      t={t:.8f}: |r(t)|={lhs:.6f}  s_i*t={rhs:.6f}  |diff|={abs(lhs - rhs):.6f}  tol={tol:.6f}',
             )
-        if ok:
-            valid.append(t)
-
-    if not valid:
-        if trace is not None:
-            trace.append(
-                '    no valid intercept root: no candidate passed geometric tolerance (|r(t)| ≈ s_i*t); returning None',
-            )
-        return None
-    t_best = min(valid)
-    if trace is not None:
-        trace.append(f'    => chosen t = min(valid) = {t_best:.8f} s')
-    return t_best
-
-
-def _intercept_tolerance(lhs: float, rhs: float) -> bool:
-    """ยอมรับคลาดเคลื่อนเลข — เดิมเทียบ 1e-6 ทำให้ทิ้งคำตอบที่ถูกต้องเชิงพีชคณิตบ่อยเกินไป."""
-    tol = max(0.12, 5e-4 * max(lhs, rhs, 1.0))
-    return abs(lhs - rhs) <= tol
+            trace.append(f'    => chosen t = {t:.8f} s')
+    return t
 
 
 def _compute_intercept(
@@ -319,16 +252,12 @@ def _compute_intercept(
     p_iz: float,
     s_i: float,
 ) -> tuple[float, float, float, float, float, float, float] | None:
-    t = _solve_intercept_time(p_tx, p_ty, p_tz, v_tx, v_ty, v_tz, p_ix, p_iy, p_iz, s_i)
-    if t is None or not math.isfinite(t):
-        return None
-    phx = p_tx + v_tx * t
-    phy = p_ty + v_ty * t
-    phz = p_tz + v_tz * t
-    ux, uy, uz = _unit(phx - p_ix, phy - p_iy, phz - p_iz)
-    if _norm(ux, uy, uz) < 1e-9:
-        return None
-    return (t, phx, phy, phz, ux, uy, uz)
+    return _guidance_compute_intercept(
+        p_tx, p_ty, p_tz,
+        v_tx, v_ty, v_tz,
+        p_ix, p_iy, p_iz,
+        s_i,
+    )
 
 
 def _dashed_line_list_points(

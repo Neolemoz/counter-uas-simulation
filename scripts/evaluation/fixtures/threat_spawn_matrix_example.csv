@@ -1,0 +1,4 @@
+scenario_id,target_start_x_m,target_start_y_m,target_start_z_m,target_los_closing_m_s,target_los_dive_gain,interceptor_ic_layout,extra_launch_args,notes_meta
+baseline_default,,,,,,default,,baseline spawn from launch constants
+stress_shell_edge,-4282.8,2997.97,2944.43,42.0,1.35,default,,higher LOS on outer-shell bearing
+east_bias_guard,-2400.0,1680.0,990.0,38.0,1.0,east_bias,,asymmetric interceptor layout probe

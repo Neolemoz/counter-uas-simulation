@@ -1,0 +1,12 @@
+# Phase 0 — frozen tuning reference (physics-aware playbook)
+created_utc=2026-05-04T19-34-52Z
+git_short=d2e67e4
+
+spine_launch_args=
+  use_gazebo_gui:=false eng_rollout_feasibility_gate:=true
+
+cohort_example=
+  gnc_tune_p0_reference_d2e67e4
+
+instructions=
+  Phase 1+ arms MUST use identical spine plus only declared deltas per playbook.

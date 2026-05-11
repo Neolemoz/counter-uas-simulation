@@ -78,6 +78,24 @@ def main() -> None:
     p.add_argument('--delay-mean', type=float, default=2.0)
     p.add_argument('--delay-jitter', type=float, default=0.28)
     p.add_argument('--seed', type=int, default=42)
+    p.add_argument(
+        '--rollout-max-turn-rate-rad-s',
+        type=float,
+        default=2.5,
+        help=(
+            'Must match live Gazebo interception node / launch default '
+            '(DeclareLaunchArgument interceptor_max_turn_rate_rad_s default 2.5).'
+        ),
+    )
+    p.add_argument(
+        '--rollout-max-accel-m-s2',
+        type=float,
+        default=30.0,
+        help=(
+            'Must match live launch default interceptor_max_accel_m_s2 (default 30).'
+        ),
+    )
+    p.add_argument('--rollout-dt', type=float, default=0.05, help='Kinematic rollout timestep for P(hit) MC.')
     p.add_argument('--stamp-svg', action='store_true', help='also write intercept_heatmap_prob_stamped.*')
     p.add_argument('--png-3d', action='store_true', help='also write intercept_heatmap_prob_latest_3d.png (matplotlib)')
     p.add_argument(
@@ -168,9 +186,9 @@ def main() -> None:
             delay_jitter_s=args.delay_jitter,
             rng=rng,
             use_kinematic_rollout=True,
-            rollout_dt=0.05,
-            rollout_max_turn_rate_rad_s=1.5,
-            rollout_max_accel_m_s2=3.0,
+            rollout_dt=float(args.rollout_dt),
+            rollout_max_turn_rate_rad_s=float(args.rollout_max_turn_rate_rad_s),
+            rollout_max_accel_m_s2=float(args.rollout_max_accel_m_s2),
         )
         lbl.append((tx, ty, tz, prob))
     elapsed = time.monotonic() - t0

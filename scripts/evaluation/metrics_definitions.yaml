@@ -1,0 +1,33 @@
+# Field definitions for counter-UAS Gazebo evaluation (see scripts/evaluation/README.md).
+# Intended for reproducible CSV/JSON summaries from run logs + metadata.
+
+evaluation_version: '1'
+
+outcomes:
+  success_gazebo_analyze_run:
+    source: analyze_run.parse_run_to_result(success)
+    description: Parsed boolean from interception log cues (canonical for monte_carlo harness).
+  hit_summarize_run:
+    source: summarize_run.parse_log([HIT] tag chain)
+    description: Binary hostile-intercept registration from tagged [HIT] line.
+  min_miss_m:
+    source: summarize_run / METRICS-derived series
+    description: Minimum reported miss distance observed in log ( meters ).
+  layer_at_hit:
+    source: summarize_run(layer from [HIT] rest)
+    description: Dome / engagement shell label printed at kinetic HIT moment.
+
+oracle_selection_single_target:
+  description: >-
+    Offline audit only. Within one printed "Interceptor Selection" block per tick,
+    consider ids with feasible=True and finite tti. Oracle id is argmin_tti among those;
+    ties ⇒ any id in tied set is counted correct if selected equals one of them.
+  implementation: scripts/evaluation/selection_audit.py
+
+csv_row_extensions:
+  - scenario_id
+  - interceptor_ic_layout
+  - geometry_id
+  - noise_seed
+  - git_commit
+  - notes

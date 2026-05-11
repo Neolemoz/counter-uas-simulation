@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 # รัน C-UAS Gazebo + world ให้ถูกต้อง (source ROS + workspace อัตโนมัติ)
+# Quick smoke (no Gazebo): python3 scripts/smoke_impact_event.py  (needs install + source)
 # Usage:
 #   ./scripts/run_gazebo_cuas.sh
 #   ./scripts/run_gazebo_cuas.sh --multi

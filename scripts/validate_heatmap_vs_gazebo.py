@@ -276,6 +276,13 @@ def main() -> int:
         type=Path,
         default=_REPO / "runs" / "intercept_heatmap_export" / "intercept_heatmap_prob_latest.csv",
     )
+    ap.add_argument(
+        "--evaluation-sample-fixture",
+        action="store_true",
+        help=(
+            "Use scripts/evaluation/fixtures/sample_heatmap_for_validate.csv for cell selection (--dry-run safe)."
+        ),
+    )
     ap.add_argument("--runs-per-cell", type=int, default=2, help="Monte Carlo trials per validation cell (>=1)")
     ap.add_argument("--timeout-s", type=float, default=90.0)
     ap.add_argument("--scenario", choices=["single", "multi"], default="single")
@@ -288,6 +295,11 @@ def main() -> int:
     )
     ap.add_argument("--out-csv", type=Path, default=None, help="optional path to save summary CSV")
     args = ap.parse_args()
+
+    if getattr(args, 'evaluation_sample_fixture', False):
+        args.heatmap_csv = Path(__file__).resolve().parent / 'evaluation' / 'fixtures' / (
+            'sample_heatmap_for_validate.csv'
+        )
 
     if int(args.runs_per_cell) < 1:
         print("--runs-per-cell must be >= 1", file=sys.stderr)

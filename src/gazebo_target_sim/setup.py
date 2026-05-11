@@ -32,6 +32,7 @@ setup(
             'interceptor_controller_node = gazebo_target_sim.interceptor_controller_node:main',
             'interception_logic_node = gazebo_target_sim.interception_logic_node:main',
             'noisy_measurement_node = gazebo_target_sim.noisy_measurement_node:main',
+            'hit_contact_corroborator_node = gazebo_target_sim.hit_contact_corroborator_node:main',
         ],
     },
 )

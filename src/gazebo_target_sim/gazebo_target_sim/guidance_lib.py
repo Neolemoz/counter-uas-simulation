@@ -17,7 +17,12 @@ measurement / actuator conditions:
   loop between the kinematic solver and the bounded dynamics.
 
 The geometric solver is re-exported here so external callers can use it without importing
-the giant node module; the node still owns its own copy for backwards compatibility.
+the giant node module.  This module is the canonical CV-intercept contract: roots are
+accepted only when the recomputed geometry closes within
+``max(0.12, 5e-4 * max(lhs, rhs, 1.0))`` meters.  That tolerance is intentionally wider
+than a pure floating-point epsilon because the live loop consumes noisy, delayed target
+states and should reject only roots that are geometrically inconsistent, not roots lost to
+roundoff or lightly perturbed telemetry.
 """
 
 from __future__ import annotations

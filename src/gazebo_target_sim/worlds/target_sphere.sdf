@@ -163,7 +163,7 @@
     <model name="sphere_target_0">
       <static>false</static>
       <!-- Matches gazebo_target.launch.py default TGT_START_* (hostile from altitude). -->
-      <pose>-2400 1680 240 0 0 0</pose>
+      <pose>-4282.813 2997.969 2944.434 0 0 0</pose>
       <link name="base_link">
         <gravity>false</gravity>
         <inertial>
@@ -184,6 +184,14 @@
             </sphere>
           </geometry>
         </collision>
+        <sensor name="impact_contact" type="contact">
+          <always_on>1</always_on>
+          <update_rate>200</update_rate>
+          <contact>
+            <collision>col</collision>
+            <topic>/counter_uas_sphere_target_0_contacts</topic>
+          </contact>
+        </sensor>
         <!-- Hostile marker: neutral box (not orange/pink spheres). Collision unchanged. -->
         <visual name="vis">
           <geometry>

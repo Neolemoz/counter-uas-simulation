@@ -29,9 +29,10 @@ class RunMeta:
     workspace: str
     cmd: list[str]
     timeout_s: float
-    git_commit: str | None
-    git_dirty: bool | None
-    notes: str | None
+    git_commit: str | None = None
+    git_dirty: bool | None = None
+    notes: str | None = None
+    cohort: str | None = None
 
 
 def _utc_ts() -> str:
@@ -76,6 +77,7 @@ def run_capture(
     timeout_s: float,
     notes: str | None,
     launch_args: str | None,
+    cohort: str | None = None,
 ) -> tuple[Path, Path, RunMeta, int]:
     if not INSTALL_SETUP.is_file():
         raise FileNotFoundError("Missing install/setup.bash (run colcon build first).")
@@ -126,6 +128,13 @@ def run_capture(
     ros_log_dir.mkdir(parents=True, exist_ok=True)
     home_dir = WORKSPACE / "runs" / "home"
     home_dir.mkdir(parents=True, exist_ok=True)
+    note_parts: list[str] = []
+    if cohort:
+        note_parts.append(f'cohort={cohort}')
+    if notes:
+        note_parts.append(str(notes).strip())
+    notes_combined = ' '.join(note_parts) if note_parts else None
+
     meta = RunMeta(
         run_id=run_id,
         created_utc=ts,
@@ -134,9 +143,11 @@ def run_capture(
         timeout_s=float(timeout_s),
         git_commit=_git_commit(),
         git_dirty=_git_dirty(),
-        notes=notes,
+        notes=notes_combined,
+        cohort=cohort,
     )
-    meta_path.write_text(json.dumps(asdict(meta), indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    meta_dict = asdict(meta)
+    meta_path.write_text(json.dumps(meta_dict, indent=2, sort_keys=True) + "\n", encoding="utf-8")
 
     with log_path.open("w", encoding="utf-8") as f:
         f.write(f"=== run_id: {run_id} ===\n")
@@ -145,6 +156,8 @@ def run_capture(
             f.write(f"=== git_commit: {meta.git_commit} ===\n")
         if meta.git_dirty is not None:
             f.write(f"=== git_dirty: {meta.git_dirty} ===\n")
+        if meta.cohort:
+            f.write(f"=== cohort: {meta.cohort} ===\n")
         f.write(f"=== scenario: {scenario} ===\n")
         f.write(f"=== timeout_s: {timeout_s} ===\n")
         f.write(f"=== cmd: {cmd} ===\n\n")
@@ -177,6 +190,12 @@ def main() -> int:
     p.add_argument("--timeout-s", type=float, default=14.0)
     p.add_argument("--notes", type=str, default=None)
     p.add_argument(
+        "--cohort",
+        type=str,
+        default=None,
+        help="Evaluation cohort tag (stored in .meta.json and log header for monte_carlo filters).",
+    )
+    p.add_argument(
         "--launch-args",
         type=str,
         default=None,
@@ -190,6 +209,7 @@ def main() -> int:
             timeout_s=args.timeout_s,
             notes=args.notes,
             launch_args=args.launch_args,
+            cohort=args.cohort,
         )
     except Exception as e:
         print(f"run_capture failed: {e}", file=sys.stderr)
