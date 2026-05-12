@@ -139,3 +139,15 @@ def test_run_mode_source_preserves_seed_geometry_and_cohort_contracts() -> None:
     assert 'result["seed"] = seed  # backwards compat alias' in source
     assert 'result["geometry_id"] = gid_str' in source
     assert "cmd.extend(['--cohort', str(args.cohort).strip()])" in source
+
+
+def test_reporting_language_keeps_mc_statistics_descriptive() -> None:
+    source = (_REPO_ROOT / 'scripts' / 'monte_carlo.py').read_text(encoding='utf-8')
+    readme = (_REPO_ROOT / 'scripts' / 'evaluation' / 'README.md').read_text(encoding='utf-8')
+
+    assert 'report descriptive summaries' in source
+    assert 'outputs are descriptive simulation statistics' in source
+    assert 'They are not confidence' in source
+    assert 'Current summaries include run count, success count/rate' in readme
+    assert 'they are not confidence intervals' in readme
+    assert 'Use `compare` tables as side-by-side descriptive comparisons' in readme

@@ -1,14 +1,18 @@
 #!/usr/bin/env python3
-"""Monte Carlo harness: run N scenarios with varying seeds and report a credibility-grade summary.
+"""Monte Carlo harness: run N scenarios with varying seeds and report descriptive summaries.
 
 This is the Phase 4 V&V driver.  ``analyze_run.parse_run_to_result`` already extracts
 ``success`` / ``miss_distance_m`` / ``intercept_time_s`` from a single log; this script wraps
-that with a parameter sweep so we can produce the metrics a defense reviewer expects:
+that with a parameter sweep so we can produce simulation metrics for review:
 
 * success rate (count + percentage)
 * miss distance: mean, median, P95, full empirical CDF
 * intercept time: mean, std, P95
 * per-run table (CSV) + aggregate JSON
+
+Reporting scope: outputs are descriptive simulation statistics. They are not confidence
+intervals or operational effectiveness claims unless a separate uncertainty/significance
+analysis is run against comparable cohorts.
 
 Two operating modes
 -------------------

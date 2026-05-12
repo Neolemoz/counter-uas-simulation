@@ -68,6 +68,13 @@ Tip: unset `evaluation_enable_intercept_heatmap_prob` (default **false**) for ev
 - `parse_run_to_result` is the stable parser-visible contract for aggregate statistics: `success`, `miss_distance_m`, `intercept_time_s`, `time_margin_s`, `layer_at_hit`, and `notes`.
 - Heatmap-vs-Gazebo validation samples cells deterministically from the heatmap CSV using `--seed`; replay launch args pin `target_start_x_m`, `target_start_y_m`, `target_start_z_m`, and default to headless `use_gazebo_gui:=false`.
 
+### Reporting standards
+
+- Report Monte Carlo outputs as descriptive simulation statistics unless a script explicitly computes uncertainty intervals. Current summaries include run count, success count/rate, miss-distance quantiles, empirical CDF samples, and intercept-time quantiles; they are not confidence intervals.
+- Use `compare` tables as side-by-side descriptive comparisons. Do not describe one arm as statistically superior unless matched seed/geometry/cohort/launch assumptions are documented and a separate significance or uncertainty analysis is performed.
+- Use heatmap `GOOD` / `PARTIAL` / `POOR` only for offline-vs-Gazebo surrogate agreement under aligned assumptions. Do not translate those labels into operational readiness, field P(kill), or doctrine language.
+- When presenting parser-derived metrics, keep the metric source visible: `miss_distance_m` may come from `[min_miss]` or the minimum parsed distance series, and `intercept_time_s` may come from the last `t_go` or `t_hit` sample.
+
 ### Engagement metrics (`[ENG_METRIC]`)
 
 When `eng_metrics_period_s` > 0 on `interception_logic_node`, the node prints occasional single-line snapshots (`range_m`, `v_closing`, `t_go_raw` / `t_go_filt`, `delta_t_go_raw`, `feasible_geom`, `rollout_gate_ok`, commanded speed). Default **0** leaves behavior unchanged.

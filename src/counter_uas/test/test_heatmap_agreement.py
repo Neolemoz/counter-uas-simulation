@@ -70,3 +70,14 @@ def test_validation_metrics_compare_absolute_probability_error() -> None:
     assert rows[1]['error'] == pytest.approx(0.10)
     assert mean_e == pytest.approx(0.05)
     assert max_e == pytest.approx(0.10)
+
+
+def test_heatmap_reporting_language_rejects_operational_claims() -> None:
+    validate = (_REPO_ROOT / 'scripts' / 'validate_heatmap_vs_gazebo.py').read_text(encoding='utf-8')
+    readme = (_REPO_ROOT / 'scripts' / 'evaluation' / 'README.md').read_text(encoding='utf-8')
+
+    assert 'sparse surrogate-agreement spot check' in validate
+    assert 'not an operational' in validate
+    assert 'not doctrine or field performance' in validate
+    assert 'Use heatmap `GOOD` / `PARTIAL` / `POOR` only for offline-vs-Gazebo surrogate agreement' in readme
+    assert 'Do not translate those labels into operational readiness' in readme
