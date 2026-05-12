@@ -36,6 +36,14 @@ def _write_synthetic_logs(tmp_dir: Path) -> None:
     (tmp_dir / 'run_b.log').write_text(_MISS_LOG, encoding='utf-8')
 
 
+def _write_meta(log_path: Path, *, cohort: str = '', notes: str = '') -> None:
+    payload = {
+        'cohort': cohort,
+        'notes': notes,
+    }
+    log_path.with_suffix('.meta.json').write_text(json.dumps(payload), encoding='utf-8')
+
+
 def test_summarise_counts_success_and_misses(tmp_path) -> None:
     mc = _load_mc()
     logs_dir = tmp_path / 'logs'
@@ -91,3 +99,43 @@ def test_aggregate_writes_outputs(tmp_path) -> None:
     csv_text = csv_path.read_text(encoding='utf-8')
     assert 'run_id' in csv_text and 'miss_distance_m' in csv_text
     assert 'run_a' in csv_text and 'run_b' in csv_text
+
+
+def test_aggregate_filters_by_meta_cohort_and_notes(tmp_path) -> None:
+    mc = _load_mc()
+    logs_dir = tmp_path / 'logs'
+    logs_dir.mkdir()
+    _write_synthetic_logs(logs_dir)
+    _write_meta(logs_dir / 'run_a.log', cohort='cohort_a', notes='arm=A seed=101')
+    _write_meta(logs_dir / 'run_b.log', cohort='cohort_b', notes='arm=B seed=101')
+    out_dir = tmp_path / 'mc'
+
+    class Args:
+        pass
+
+    args = Args()
+    args.logs_dir = str(logs_dir)
+    args.pattern = '*.log'
+    args.label = 'unit'
+    args.out_dir = str(out_dir)
+    args.meta_cohort = 'cohort_a'
+    args.notes_substring = 'arm=A'
+
+    rc = mc.cmd_aggregate(args)
+    assert rc == 0
+    payload = json.loads((out_dir / 'unit.json').read_text(encoding='utf-8'))
+    assert payload['n_runs'] == 1
+    csv_text = (out_dir / 'unit.csv').read_text(encoding='utf-8')
+    assert 'run_a' in csv_text
+    assert 'run_b' not in csv_text
+
+
+def test_run_mode_source_preserves_seed_geometry_and_cohort_contracts() -> None:
+    source = (_REPO_ROOT / 'scripts' / 'monte_carlo.py').read_text(encoding='utf-8')
+
+    assert 'seed = args.seed_base + i' in source
+    assert 'noise_seed:={seed}' in source
+    assert 'result["noise_seed_mc"] = seed' in source
+    assert 'result["seed"] = seed  # backwards compat alias' in source
+    assert 'result["geometry_id"] = gid_str' in source
+    assert "cmd.extend(['--cohort', str(args.cohort).strip()])" in source

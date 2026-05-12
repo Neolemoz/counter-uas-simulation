@@ -54,6 +54,23 @@ def test_parse_run_to_result_shape(tmp_path: Path) -> None:
     assert r['intercept_time_s'] == pytest.approx(45.2)
 
 
+def test_parse_run_to_result_contract_keys_stay_stable(tmp_path: Path) -> None:
+    ar = _load_analyze_run()
+    p = tmp_path / 'run.log'
+    p.write_text(_GOLDEN_LOG + '\n', encoding='utf-8')
+    r = ar.parse_run_to_result(str(p))
+
+    assert set(r) == {
+        'success',
+        'miss_distance_m',
+        'intercept_time_s',
+        'time_margin_s',
+        'layer_at_hit',
+        'notes',
+    }
+    assert isinstance(r['notes'], str)
+
+
 def test_metrics_row_regex_matches_prefixed_line() -> None:
     ar = _load_analyze_run()
     line = (

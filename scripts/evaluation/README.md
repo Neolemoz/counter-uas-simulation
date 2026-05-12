@@ -57,6 +57,14 @@ Tip: unset `evaluation_enable_intercept_heatmap_prob` (default **false**) for ev
 
 `python3 scripts/monte_carlo.py aggregate --meta-cohort <tag>` includes only runs whose paired `.meta.json` has `"cohort": "<tag>"` (set via `run_capture --cohort` or `RUN_COHORT` + `run_scenario_matrix --cohort`). Use `--notes-substring` to filter on free-text notes or log header.
 
+### Statistical validation contracts
+
+- Treat `scripts/run_capture.py` `.meta.json` files as the replay manifest: they preserve `run_id`, `created_utc`, workspace, full launch command, timeout, git commit/dirty state, optional `cohort`, and free-text notes.
+- For matched Monte Carlo comparisons, keep `--seed-base`, `--n`, launch arguments, and scenario geometry fixed across arms. `scripts/monte_carlo.py run` records `noise_seed_mc`, the backwards-compatible `seed` alias, and optional `geometry_id` in per-run rows.
+- Use `--cohort` plus `aggregate --meta-cohort` to avoid mixed cohorts. Use `--notes-substring` only as a secondary filter because notes are free text.
+- `parse_run_to_result` is the stable parser-visible contract for aggregate statistics: `success`, `miss_distance_m`, `intercept_time_s`, `time_margin_s`, `layer_at_hit`, and `notes`.
+- Heatmap-vs-Gazebo validation samples cells deterministically from the heatmap CSV using `--seed`; replay launch args pin `target_start_x_m`, `target_start_y_m`, `target_start_z_m`, and default to headless `use_gazebo_gui:=false`.
+
 ### Engagement metrics (`[ENG_METRIC]`)
 
 When `eng_metrics_period_s` > 0 on `interception_logic_node`, the node prints occasional single-line snapshots (`range_m`, `v_closing`, `t_go_raw` / `t_go_filt`, `delta_t_go_raw`, `feasible_geom`, `rollout_gate_ok`, commanded speed). Default **0** leaves behavior unchanged.
