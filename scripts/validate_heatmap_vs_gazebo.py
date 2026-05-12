@@ -7,6 +7,12 @@ Target start positions are passed via gazebo_target.launch.py launch args (targe
 LOS / closing behavior stays default in launch (attack_los_to_origin + los_closing_speed_m_s).
 
 By default runs **headless** (``use_gazebo_gui:=false``) so batch validation does not open the Gazebo GUI.
+
+Credibility scope: this is a sparse surrogate-agreement spot check. ``P_heatmap`` is a
+simulation-model probability from the configured heatmap approximation, not an operational
+P(kill).  GOOD/PARTIAL/POOR thresholds below are acceptance bands for offline-vs-Gazebo
+agreement under the same launch assumptions; they are not doctrine or field performance
+criteria.
 """
 
 from __future__ import annotations
@@ -246,6 +252,12 @@ def compute_validation_metrics(
 
 
 def _verdict(mean_e: float, max_e: float) -> str:
+    """Credibility band for sparse P_heatmap-vs-Gazebo agreement.
+
+    These thresholds intentionally judge surrogate agreement only:
+    GOOD requires mean absolute error <= 0.15 and max error <= 0.25;
+    PARTIAL allows mean <= 0.30 and max <= 0.45.  Anything worse is POOR.
+    """
     if not (mean_e == mean_e):  # nan
         return "POOR"
     if mean_e <= 0.15 and max_e <= 0.25:

@@ -52,6 +52,9 @@ Tip: unset `evaluation_enable_intercept_heatmap_prob` (default **false**) for ev
 - The live `interception_logic_node` uses `estimate_hit_probability(..., use_kinematic_rollout=True)` with `rollout_max_turn_rate_rad_s` and `rollout_max_accel_m_s2` wired from the same parameters as the executed `cmd_vel` limits (`max_turn_rate_rad_s`, `max_acceleration_m_s2`).
 - **Offline** [`scripts/render_intercept_heatmap_prob_offline.py`](../render_intercept_heatmap_prob_offline.py) defaults **`--rollout-max-turn-rate-rad-s 2.5`** and **`--rollout-max-accel-m-s2 30.0`** to match [`gazebo_target.launch.py`](../../src/gazebo_target_sim/launch/gazebo_target.launch.py) `DeclareLaunchArgument` defaults. Override those flags if your launch uses different limits.
 - For credibility, keep offline rollout limits aligned with the Gazebo run you are comparing to. The legacy “light” hit model (`estimate_hit_probability_light`) is for fast debug only, not calibrated plant match.
+- `validate_heatmap_vs_gazebo.py` is a sparse surrogate-agreement spot check, not an operational P(kill) claim. It samples up to three high (`P>0.8`), three mid (`0.4<=P<=0.8`), and three low (`P<0.4`) cells with deterministic `--seed` shuffling, padding from probability quantiles when a tier is underfilled.
+- Validation verdicts are fixed credibility bands for model agreement: `GOOD` requires mean absolute error <= 0.15 and max error <= 0.25; `PARTIAL` allows mean <= 0.30 and max <= 0.45; otherwise the result is `POOR`.
+- Replay spot checks pin `target_start_x_m`, `target_start_y_m`, `target_start_z_m`, and headless mode. Keep the heatmap generation assumptions, launch args, and rollout limits aligned before interpreting agreement.
 
 ### Monte Carlo aggregate cohorts
 
