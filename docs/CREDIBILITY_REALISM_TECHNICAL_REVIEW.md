@@ -52,6 +52,19 @@ These pieces are **internally consistent** within their **stated** assumptions. 
 
 ---
 
+## 3.1 Current Layer-B sensor / timestamp contract audit
+
+The current Layer-B implementation keeps the runtime behavior intentionally narrow:
+
+* `/radar/detections`, `/camera/detections`, `/fused_detections`, and legacy `/tracks` are `geometry_msgs/Point` streams. They carry position only: no `header.stamp`, no sensor id, no covariance, and no track id. Treat these paths as simplified compatibility surfaces, not auditable state estimates.
+* `fusion_node` fuses Point inputs into one Point output per fusion event when paired-input mode is enabled. That stabilizes the downstream measurement count, but it still discards source timestamps and source covariance because the input/output message type cannot carry them.
+* `tracking_node` uses the node clock for candidate history and publishes `/tracks/state` as `nav_msgs/Odometry`. This is the preferred realism path because it carries `header.stamp`, frame id, KF position, KF velocity, pose/twist covariance, and `child_frame_id="track_<id>"`.
+* `interception_logic_node` preserves the distinction: Point sources are consumed as position-only inputs with node-side velocity estimation, while `tracks_state` consumes Odometry and uses upstream filter velocity. The Odometry callback currently consumes position and velocity; it does not use covariance or enforce `child_frame_id` selection.
+
+Layer-B contract implication: prefer `intercept_measurement_source:=tracks_state` for full-stack realism checks. Point paths remain useful for deterministic replay, ground-truth baselines, and legacy single-target flows, but any result using them should be labeled as timestamp/covariance/source-metadata simplified.
+
+---
+
 ## 4. Proposed corrected architecture (credibility-first)
 
 **Goal:** Each block has a **clear I/O contract**, **time**, **uncertainty**, and **fidelity tier** you can defend.

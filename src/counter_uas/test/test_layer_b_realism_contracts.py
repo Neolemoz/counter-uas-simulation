@@ -95,3 +95,42 @@ def test_heatmap_validation_replay_preserves_launch_boundary() -> None:
     assert 'if launch_args:' in run_capture
     assert 'ros_cmd = f"{ros_cmd} {launch_args}"' in run_capture
     assert 'cmd=cmd' in run_capture
+
+
+def test_fusion_point_stream_remains_explicitly_unstamped_and_single_output() -> None:
+    fusion = _read('src/fusion/fusion/fusion_node.py')
+
+    assert 'from geometry_msgs.msg import Point' in fusion
+    assert 'from nav_msgs.msg import Odometry' not in fusion
+    assert 'create_publisher(Point, \'/fused_detections\', 10)' in fusion
+    assert "create_subscription(Point, '/radar/detections', self._on_radar, 10)" in fusion
+    assert "create_subscription(Point, '/camera/detections', self._on_camera, 10)" in fusion
+    assert 'Single-output sensor fusion: emits exactly one ``geometry_msgs/Point`` per fusion event.' in fusion
+    assert 'Single-sensor path: only publish when pair-up is disabled (legacy mode).' in fusion
+
+
+def test_tracking_state_stream_preserves_timestamp_covariance_and_track_id_contract() -> None:
+    tracking = _read('src/tracking/tracking/tracking_node.py')
+
+    assert 'self.create_subscription(Point, \'/fused_detections\', self._on_detection, 10)' in tracking
+    assert 'self._pub = self.create_publisher(Point, \'/tracks\', 10)' in tracking
+    assert 'self._pub_state = self.create_publisher(Odometry, self._tracks_state_topic, 10)' in tracking
+    assert 'msg.header.stamp = self.get_clock().now().to_msg()' in tracking
+    assert 'msg.header.frame_id = self._tracks_state_frame_id' in tracking
+    assert "msg.child_frame_id = f'track_{tr.track_id}'" in tracking
+    assert 'msg.pose.covariance = pose_cov' in tracking
+    assert 'msg.twist.covariance = twist_cov' in tracking
+    assert 'msg.twist.twist.linear.x = float(tr.state[3])' in tracking
+
+
+def test_interception_tracks_state_uses_odometry_while_point_paths_stay_simplified() -> None:
+    node = _read('src/gazebo_target_sim/gazebo_target_sim/interception_logic_node.py')
+
+    assert 'tracks       -> Point on tracks_topic        (legacy; KF velocity dropped)' in node
+    assert 'tracks_state -> Odometry on tracks_state_topic (uses KF position + velocity + cov)' in node
+    assert "elif _meas_src in ('tracks_state', 'track_state', 'odometry'):" in node
+    assert 'self._meas_use_filter_vel = True' in node
+    assert 'self.create_subscription(Odometry, tgt_topic, self._on_target_state, 10)' in node
+    assert 'self.create_subscription(Point, tgt_topic, self._on_target, 10)' in node
+    assert 'self._target_filter_velocity = (' in node
+    assert 'self._target = msg' in node
