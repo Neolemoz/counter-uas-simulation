@@ -53,10 +53,10 @@ def generate_launch_description() -> LaunchDescription:
             ),
             DeclareLaunchArgument(
                 'intercept_measurement_source',
-                default_value='tracks',
+                default_value='tracks_state',
                 description=(
                     'interception_logic_node input: ground_truth | fused | tracks | tracks_state '
-                    '(full stack defaults to tracks).'
+                    '(full stack defaults to tracks_state).'
                 ),
             ),
             DeclareLaunchArgument(
