@@ -34,6 +34,7 @@ def evaluation_row(log_path: Path, *, meta_path: Path | None = None) -> dict:
 
     git_commit = meta.get("git_commit")
     dirty = meta.get("git_dirty")
+    cohort = meta.get("cohort")
     notes_v = meta.get("notes")
 
     row = dc_asdict(ss)
@@ -42,6 +43,7 @@ def evaluation_row(log_path: Path, *, meta_path: Path | None = None) -> dict:
         {
             "git_commit": git_commit,
             "git_dirty": dirty,
+            "cohort": cohort,
             "notes_meta": notes_v,
         },
     )

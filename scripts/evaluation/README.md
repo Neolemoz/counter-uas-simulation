@@ -18,12 +18,14 @@ See [`metrics_definitions.yaml`](metrics_definitions.yaml) for field semantics (
 | [`scripts/validate_heatmap_vs_gazebo.py`](../validate_heatmap_vs_gazebo.py) | Sparse surrogate vs Gazebo |
 | `selection_audit.py` | oracle vs selected from logs |
 | `evaluation_row.py` | One aggregated JSON row for matrices |
+| `stats_helpers.py` | Wilson intervals, deterministic bootstrap CIs, paired-delta helpers |
+| `statistical_validation.py` | Layer C aggregate, paired-seed, and manifest validation reports |
 | `classify_run.py` | F1–F5 failure bucket from log + optional `capture_rc` |
-| [`summarize_failure_classes.py`](summarize_failure_classes.py) | F1–F5 histogram over a `monte_carlo` per-run CSV (`log_path`) |
-| [`pair_mc_seed_outcomes.py`](pair_mc_seed_outcomes.py) | Join two MC CSVs on `noise_seed` from `.meta.json` notes; bucket G1–G4 paired outcomes |
+| [`summarize_failure_classes.py`](summarize_failure_classes.py) | F1–F5 histogram plus class-proportion confidence intervals over a `monte_carlo` per-run CSV (`log_path`) |
+| [`pair_mc_seed_outcomes.py`](pair_mc_seed_outcomes.py) | Join two MC CSVs on `noise_seed`; bucket G1–G4 paired outcomes and optional Layer C stats JSON |
 | [`run_scenario_generalization_a_vs_d.sh`](run_scenario_generalization_a_vs_d.sh) | Run matched-seed scenario generalization MC for gate-only A vs frozen D |
 | [`summarize_scenario_generalization.py`](summarize_scenario_generalization.py) | Reduce per-cell A/D MC JSONs into per-cell and worst-cell CSV reports |
-| [`run_gnc_tuning_playbook.sh`](run_gnc_tuning_playbook.sh) | [Phase 0–4 guidance tuning MC driver](gnc_guidance_tuning_playbook_ops.md) |
+| [`run_gnc_tuning_playbook.sh`](run_gnc_tuning_playbook.sh) | [Phase 0–4 guidance tuning MC driver](../../docs/evaluation/gnc_guidance_tuning_playbook_ops.md) |
 | [`fixtures/sample_heatmap_for_validate.csv`](fixtures/sample_heatmap_for_validate.csv) | Tiny heatmap for `--dry-run` / CI |
 
 ### Launch knobs (evaluation)
@@ -56,6 +58,28 @@ Tip: unset `evaluation_enable_intercept_heatmap_prob` (default **false**) for ev
 ### Monte Carlo aggregate cohorts
 
 `python3 scripts/monte_carlo.py aggregate --meta-cohort <tag>` includes only runs whose paired `.meta.json` has `"cohort": "<tag>"` (set via `run_capture --cohort` or `RUN_COHORT` + `run_scenario_matrix --cohort`). Use `--notes-substring` to filter on free-text notes or log header.
+`scripts/evaluation/evaluation_row.py` keeps the replay-manifest lineage attached to each row by copying `cohort`, `git_commit`, `git_dirty`, and `notes` metadata into the derived JSON row. Treat that row as the authoritative per-run trace record for later comparison or grouping.
+
+Layer C outputs add Wilson 95% confidence intervals for success rate, deterministic bootstrap intervals for miss-distance/intercept-time P50/P95, and replay columns (`noise_seed_mc`, `geometry_id`, `cohort`, `meta_path`, git state, launch args, notes). Treat `N<10` as smoke and `N<40` as pilot unless a report explicitly accepts wider uncertainty. See [`docs/evaluation/layer_c_statistical_validation.md`](../../docs/evaluation/layer_c_statistical_validation.md).
+
+Interval-aware aggregate:
+
+```bash
+python3 scripts/evaluation/statistical_validation.py aggregate \
+  --input runs/mc/YOUR_LABEL.csv \
+  --summary runs/mc/YOUR_LABEL.json \
+  --out-json runs/evaluation/YOUR_LABEL_stats.json
+```
+
+Paired-seed comparison:
+
+```bash
+python3 scripts/evaluation/statistical_validation.py paired \
+  --baseline runs/mc/baseline.csv \
+  --candidate runs/mc/candidate.csv \
+  --out-json runs/evaluation/baseline_vs_candidate_paired_stats.json \
+  --out-csv runs/evaluation/baseline_vs_candidate_paired_rows.csv
+```
 
 ### Engagement metrics (`[ENG_METRIC]`)
 
@@ -93,4 +117,16 @@ Dry-run sparse validation picker (no Gazebo):
 python3 scripts/validate_heatmap_vs_gazebo.py \\
   --heatmap-csv scripts/evaluation/fixtures/sample_heatmap_for_validate.csv \\
   --dry-run --seed 1
+```
+
+Layer C MC-vs-Gazebo agreement (long Gazebo campaign):
+
+```bash
+python3 scripts/validate_heatmap_vs_gazebo.py \\
+  --heatmap-csv runs/intercept_heatmap_export/intercept_heatmap_prob_latest.csv \\
+  --runs-per-cell 40 \\
+  --seed-base 5001 \\
+  --timeout-s 90 \\
+  --out-csv runs/evaluation/layer_c_heatmap_vs_gazebo.csv \\
+  --out-json runs/evaluation/layer_c_heatmap_vs_gazebo.json
 ```
