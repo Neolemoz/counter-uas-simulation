@@ -57,8 +57,37 @@ if TYPE_CHECKING:
     from rclpy.publisher import Publisher
 
 
+class FeasibilityDecision(NamedTuple):
+    feasible: bool
+    t_intercept_at_cap: float | None
+    required_min_speed: float | None
+    reason: str
+
+
 def _norm(x: float, y: float, z: float) -> float:
     return math.sqrt(x * x + y * y + z * z)
+
+
+def _obs_value(value: object) -> str:
+    if value is None:
+        return '(none)'
+    if isinstance(value, bool):
+        return 'true' if value else 'false'
+    if isinstance(value, float):
+        if math.isfinite(value):
+            return f'{value:.6f}'
+        return 'nan'
+    s = str(value).strip()
+    if not s:
+        return '(empty)'
+    return s.replace(' ', '_')
+
+
+def _obs_line(tag: str, **fields: object) -> str:
+    parts = [tag]
+    for key, value in fields.items():
+        parts.append(f'{key}={_obs_value(value)}')
+    return ' '.join(parts)
 
 
 def compute_required_speed(
@@ -1811,6 +1840,7 @@ class InterceptionLogicNode(Node):
         self._hit_min_travel = max(float(self.get_parameter('hit_min_interceptor_travel_m').value), 0.0)
         self._inter_start_pos: dict[str, tuple[float, float, float]] = {}
 
+        self._selected_id_topic = sel_topic
         self._pubs: dict[str, Publisher] = {}
         for iid in self._ids:
             cmd_topic = f'/{iid}/cmd_velocity'
@@ -1894,12 +1924,18 @@ class InterceptionLogicNode(Node):
         self._best_id_last: str | None = None
         self._last_hold_log: Time | None = None
         self._locked_selected_id: str | None = None
+        self._last_selected_id_published: str = ''
+        self._last_selected_obs_meaning: str = ''
+        self._last_switch_obs_log: Time | None = None
+        self._last_switch_obs_line: str | None = None
 
         # Interceptor assignment lock: prevents reselection for a fixed duration.
         self._assigned_interceptor_id: str | None = None
         self._assignment_time: Time | None = None
         self._assignment_lock_duration: float = 1.5
         self._last_assign_lock_log: Time | None = None
+        self._last_assigned_target_published: dict[str, str] = {iid: '' for iid in self._ids}
+        self._multi_assign_evidence: dict[str, dict[str, object]] = {}
 
         # Acceleration limit: smooth velocity commands to prevent fly-stop-fly jerks.
         # _control_dt is updated every cycle; _control_dt_default is the nominal period.
@@ -3315,6 +3351,10 @@ class InterceptionLogicNode(Node):
         self._reacquire_since = None
         self._switch_count = 0
         self._best_id_last = None
+        self._last_selected_id_published = ''
+        self._last_selected_obs_meaning = ''
+        self._last_switch_obs_log = None
+        self._last_switch_obs_line = None
         self._prev_velocity = {iid: (0.0, 0.0, 0.0) for iid in self._ids}
         self._last_control_time = None
         self._control_dt = self._control_dt_default
@@ -3346,6 +3386,7 @@ class InterceptionLogicNode(Node):
             self._hit_snap_target_prev_multi.clear()
             self._last_assignment_print = None
             self._multi_prev_assign.clear()
+            self._multi_assign_evidence.clear()
             for lab in self._multi_labels:
                 self._multi_dome_outside_latched[lab] = False
                 self._multi_dome_hyst_init[lab] = False
@@ -3373,6 +3414,7 @@ class InterceptionLogicNode(Node):
         self._heatmap_prob_skip_next = False
         for _iid in self._ids:
             self._last_guidance_cmd[_iid] = (0.0, 0.0, 0.0)
+            self._last_assigned_target_published[_iid] = ''
         self._mc_high_p_start_m.clear()
         self._last_phase1_high_p_warn.clear()
         self._last_phase1_vreq_warn_m = 0.0
@@ -3487,6 +3529,107 @@ class InterceptionLogicNode(Node):
                 self._last_class_warn = now
         return ok
 
+    def _publish_selected_state(self, selected: str | None, *, reason: str) -> None:
+        data = '' if selected is None else str(selected)
+        self._pub_selected.publish(String(data=data))
+        meaning = (
+            'unused_in_multi_target_mode'
+            if self._multi_enabled
+            else 'committed_interceptor_for_single_target'
+        )
+        if data == self._last_selected_id_published and meaning == self._last_selected_obs_meaning:
+            return
+        transition = 'clear' if not data else ('commit' if not self._last_selected_id_published else 'switch')
+        print(
+            _obs_line(
+                '[TACTICAL_SELECTED_ID]',
+                topic=self._selected_id_topic,
+                selected_id=data or None,
+                previous=self._last_selected_id_published or None,
+                transition=transition,
+                meaning=meaning,
+                reason=reason,
+            ),
+            flush=True,
+        )
+        self._last_selected_id_published = data
+        self._last_selected_obs_meaning = meaning
+
+    def _emit_commit_observation(
+        self,
+        old: str | None,
+        new: str | None,
+        now: Time,
+        *,
+        reason: str,
+    ) -> None:
+        t_rel = (now - self._t0).nanoseconds * 1e-9
+        event = 'switch'
+        if old is None and new is not None:
+            event = 'commit'
+        elif old is not None and new is None:
+            event = 'clear'
+        print(
+            _obs_line(
+                '[TACTICAL_COMMIT]',
+                event=event,
+                previous=old,
+                selected_id=new,
+                reason=reason,
+                t_rel_s=t_rel,
+            ),
+            flush=True,
+        )
+
+    def _maybe_log_tactical_switch(
+        self,
+        now: Time,
+        *,
+        dedupe: bool = False,
+        **fields: object,
+    ) -> None:
+        line = _obs_line('[TACTICAL_SWITCH]', **fields)
+        if dedupe:
+            if (
+                self._last_switch_obs_line == line
+                and self._last_switch_obs_log is not None
+                and (now - self._last_switch_obs_log).nanoseconds * 1e-9 < 0.5
+            ):
+                return
+            self._last_switch_obs_line = line
+            self._last_switch_obs_log = now
+        else:
+            self._last_switch_obs_line = line
+            self._last_switch_obs_log = now
+        print(line, flush=True)
+
+    def _intercept_feasibility_snapshot(
+        self,
+        tx: float,
+        ty: float,
+        tz: float,
+        v_tx: float,
+        v_ty: float,
+        v_tz: float,
+        ix: float,
+        iy: float,
+        iz: float,
+    ) -> FeasibilityDecision:
+        s_min, _t_at_min_s = minimum_intercept_closing_speed(
+            tx, ty, tz, v_tx, v_ty, v_tz, ix, iy, iz,
+            self._t_hit_min, self._t_hit_max, self._interceptor_max_speed,
+        )
+        if s_min is None or _t_at_min_s is None:
+            return FeasibilityDecision(False, None, None, 'no_intercept_solution_in_window')
+        if s_min > self._interceptor_max_speed + 1e-3:
+            return FeasibilityDecision(False, None, float(s_min), 'required_min_speed_above_cap')
+        t_cap = _solve_intercept_time(
+            tx, ty, tz, v_tx, v_ty, v_tz, ix, iy, iz, self._interceptor_max_speed,
+        )
+        if not _t_in_feasible_window(t_cap, self._t_hit_min, self._t_hit_max):
+            return FeasibilityDecision(False, t_cap, float(s_min), 'cap_solution_outside_time_window')
+        return FeasibilityDecision(True, float(t_cap), float(s_min), 'feasible')
+
     def _intercept_feasibility_triple(
         self,
         tx: float,
@@ -3505,20 +3648,8 @@ class InterceptionLogicNode(Node):
         required_min_speed comes from bisection (slowest closing speed that still fits the time window).
         t_intercept_at_max_speed is used for ranking / comparison (aligns with TTI at capability cap).
         """
-        s_min, _t_at_min_s = minimum_intercept_closing_speed(
-            tx, ty, tz, v_tx, v_ty, v_tz, ix, iy, iz,
-            self._t_hit_min, self._t_hit_max, self._interceptor_max_speed,
-        )
-        if s_min is None or _t_at_min_s is None:
-            return False, None, None
-        if s_min > self._interceptor_max_speed + 1e-3:
-            return False, None, None
-        t_cap = _solve_intercept_time(
-            tx, ty, tz, v_tx, v_ty, v_tz, ix, iy, iz, self._interceptor_max_speed,
-        )
-        if not _t_in_feasible_window(t_cap, self._t_hit_min, self._t_hit_max):
-            return False, None, None
-        return True, float(t_cap), float(s_min)
+        snap = self._intercept_feasibility_snapshot(tx, ty, tz, v_tx, v_ty, v_tz, ix, iy, iz)
+        return snap.feasible, snap.t_intercept_at_cap, snap.required_min_speed
 
     def _pick_best_feasible_interceptor_single(
         self,
@@ -3581,9 +3712,12 @@ class InterceptionLogicNode(Node):
     def _maybe_log_feasibility_single(
         self,
         *,
-        feasible: bool,
-        t_int: float | None,
-        s_req: float | None,
+        tx: float,
+        ty: float,
+        tz: float,
+        v_tx: float,
+        v_ty: float,
+        v_tz: float,
         selected: str | None,
         d_th: float,
     ) -> None:
@@ -3592,6 +3726,22 @@ class InterceptionLogicNode(Node):
             if (now - self._last_feas_log).nanoseconds * 1e-9 < self._feas_log_period:
                 return
         self._last_feas_log = now
+        evidence: list[tuple[str, FeasibilityDecision]] = []
+        for iid in self._ids:
+            p = self._inter_pos.get(iid)
+            if p is None:
+                continue
+            snap = self._intercept_feasibility_snapshot(
+                tx, ty, tz, v_tx, v_ty, v_tz,
+                float(p.x), float(p.y), float(p.z),
+            )
+            evidence.append((iid, snap))
+        selected_snap = next((snap for iid, snap in evidence if iid == selected), None)
+        any_feas = any(snap.feasible for _, snap in evidence)
+        t_int = selected_snap.t_intercept_at_cap if selected_snap is not None else None
+        s_req = selected_snap.required_min_speed if selected_snap is not None else None
+        feasible = selected_snap.feasible if selected_snap is not None else any_feas
+        selected_reason = selected_snap.reason if selected_snap is not None else ('best_feasible_available' if any_feas else 'no_feasible_interceptor')
         sreq = f'{s_req:.3f}' if s_req is not None and math.isfinite(s_req) else 'n/a'
         tint = f'{t_int:.3f}' if t_int is not None and math.isfinite(t_int) else 'n/a'
         print(
@@ -3599,6 +3749,32 @@ class InterceptionLogicNode(Node):
             f'interceptor_cap={self._interceptor_max_speed:.3f} m/s  selected={selected!r}  d_threat={d_th:.3f} m',
             flush=True,
         )
+        print(
+            _obs_line(
+                '[TACTICAL_FEASIBILITY]',
+                selected_id=selected,
+                feasible=feasible,
+                reason=selected_reason,
+                t_intercept_at_cap_s=t_int,
+                required_min_speed_m_s=s_req,
+                d_threat_m=d_th,
+            ),
+            flush=True,
+        )
+        for iid, snap in evidence:
+            if snap.feasible:
+                continue
+            print(
+                _obs_line(
+                    '[TACTICAL_FEASIBILITY_REJECT]',
+                    interceptor=iid,
+                    selected=(iid == selected),
+                    reason=snap.reason,
+                    t_intercept_at_cap_s=snap.t_intercept_at_cap,
+                    required_min_speed_m_s=snap.required_min_speed,
+                ),
+                flush=True,
+            )
 
     def _on_target(self, msg: Point) -> None:
         self._target = msg
@@ -3782,6 +3958,17 @@ class InterceptionLogicNode(Node):
     ) -> dict[str, str]:
         """Prefer previous interceptor unless greedy option improves TTI by more than margin."""
         if not self._assign_stability or not active_i:
+            self._multi_assign_evidence = {
+                tlabel: {
+                    'decision': 'greedy_best',
+                    'chosen': greedy_assign.get(tlabel),
+                    'greedy': greedy_assign.get(tlabel),
+                    'previous': self._multi_prev_assign.get(tlabel),
+                    'prev_tti': None,
+                    'greedy_tti': None,
+                }
+                for tlabel in active_t
+            }
             self._multi_prev_assign = {k: v for k, v in greedy_assign.items()}
             return greedy_assign
 
@@ -3795,30 +3982,43 @@ class InterceptionLogicNode(Node):
         stable: dict[str, str] = {}
         used: set[str] = set()
         margin = self._assign_switch_margin
+        evidence: dict[str, dict[str, object]] = {}
 
         for tlabel in threat_ordered_labels:
             ti = active_t.index(tlabel)
             greedy_iid = greedy_assign.get(tlabel)
             prev_iid = self._multi_prev_assign.get(tlabel)
             pick: str | None = None
+            decision = 'unassigned'
+            prev_tti = tti_for(prev_iid, ti) if prev_iid else None
+            greedy_tti = tti_for(greedy_iid, ti) if greedy_iid else None
 
             if prev_iid and prev_iid in active_i and prev_iid not in used:
-                ttp = tti_for(prev_iid, ti)
-                ttg = tti_for(greedy_iid, ti) if greedy_iid else None
-                if ttp is not None:
-                    if ttg is None or ttg >= ttp - margin:
+                if prev_tti is not None:
+                    if greedy_tti is None or greedy_tti >= prev_tti - margin:
                         pick = prev_iid
+                        decision = 'stable_keep_previous'
             if pick is None and greedy_iid and greedy_iid not in used:
                 pick = greedy_iid
+                decision = 'greedy_best'
             if pick is None and prev_iid and prev_iid in active_i and prev_iid not in used:
-                ttp = tti_for(prev_iid, ti)
-                if ttp is not None:
+                if prev_tti is not None:
                     pick = prev_iid
+                    decision = 'fallback_previous'
 
             if pick:
                 stable[tlabel] = pick
                 used.add(pick)
+            evidence[tlabel] = {
+                'decision': decision,
+                'chosen': pick,
+                'greedy': greedy_iid,
+                'previous': prev_iid,
+                'prev_tti': prev_tti,
+                'greedy_tti': greedy_tti,
+            }
 
+        self._multi_assign_evidence = evidence
         self._multi_prev_assign = dict(stable)
         return stable
 
@@ -3900,6 +4100,7 @@ class InterceptionLogicNode(Node):
         return (cx + dx * s, cy + dy * s, cz + dz * s)
 
     def _clear_assignments(self) -> None:
+        prev_selected = self._current_selected_id
         self._locked_selected_id = None
         self._current_selected_id = None
         self._committed_since = None
@@ -3917,6 +4118,13 @@ class InterceptionLogicNode(Node):
         self._last_hit_range = {i: None for i in self._ids}
         self._feasible_at_engagement_start_by_pair.clear()
         self._feas_eng_latch_assign.clear()
+        if prev_selected is not None:
+            self._emit_commit_observation(
+                prev_selected,
+                None,
+                self.get_clock().now(),
+                reason='clear_assignments_reset',
+            )
 
     def _hit_range_plausible_for_tick(self, iid: str, dist_now: float) -> bool:
         """True if dist_now is consistent with closing speed vs previous tick (reject pose spikes)."""
@@ -4926,21 +5134,31 @@ class InterceptionLogicNode(Node):
             return float('inf')
         return (now - self._committed_since).nanoseconds * 1e-9
 
-    def _apply_commit_change(self, old: str | None, new: str | None, now: Time) -> None:
+    def _apply_commit_change(
+        self,
+        old: str | None,
+        new: str | None,
+        now: Time,
+        *,
+        reason: str = 'unspecified',
+        update_assignment_lock: bool = True,
+    ) -> None:
         if old == new:
             return
-        t_rel = (now - self._t0).nanoseconds * 1e-9
         if old is not None and new is not None:
+            t_rel = (now - self._t0).nanoseconds * 1e-9
             print(f'[SWITCH t={t_rel:.3f}s] {old} -> {new}', flush=True)
             self._switch_count += 1
         elif old is not None and new is None:
+            t_rel = (now - self._t0).nanoseconds * 1e-9
             print(f'[SWITCH t={t_rel:.3f}s] {old} -> (none)', flush=True)
             self._switch_count += 1
+        self._emit_commit_observation(old, new, now, reason=reason)
         self._current_selected_id = new
         self._committed_since = now
 
         # Update assignment lock state whenever the committed interceptor changes.
-        if new != self._assigned_interceptor_id:
+        if update_assignment_lock and new != self._assigned_interceptor_id:
             prev = self._assigned_interceptor_id
             self._assigned_interceptor_id = new
             self._assignment_time = now
@@ -4951,17 +5169,30 @@ class InterceptionLogicNode(Node):
                 f'current assigned: {self._assigned_interceptor_id!r}',
                 flush=True,
             )
+            print(
+                _obs_line(
+                    '[TACTICAL_ASSIGNMENT_LOCK]',
+                    previous=prev,
+                    assigned_interceptor=new,
+                    reason=reason,
+                    meaning='assignment_lock_window_for_dome_off_committed_selection',
+                    lock_duration_s=self._assignment_lock_duration,
+                ),
+                flush=True,
+            )
 
-    def _maybe_hold_log(self, now: Time, msg: str) -> None:
+    def _maybe_hold_log(self, now: Time, msg: str) -> bool:
         # Avoid spamming HOLD every control tick.
         if self._last_hold_log is None:
             self._last_hold_log = now
             print(msg, flush=True)
-            return
+            return True
         age = (now - self._last_hold_log).nanoseconds * 1e-9
         if age >= 0.5:
             self._last_hold_log = now
             print(msg, flush=True)
+            return True
+        return False
 
     def _update_committed_selection(
         self,
@@ -4983,6 +5214,15 @@ class InterceptionLogicNode(Node):
                         f'[ASSIGN_LOCK] holding {self._assigned_interceptor_id!r} '
                         f'(lock_age={lock_age:.3f}s / {self._assignment_lock_duration:.1f}s)',
                         flush=True,
+                    )
+                    self._maybe_log_tactical_switch(
+                        now,
+                        dedupe=True,
+                        decision='hold',
+                        reason='assignment_lock_active',
+                        current=self._assigned_interceptor_id,
+                        lock_age_s=lock_age,
+                        lock_duration_s=self._assignment_lock_duration,
                     )
                 return self._assigned_interceptor_id
 
@@ -5006,7 +5246,7 @@ class InterceptionLogicNode(Node):
 
         if cur is None:
             # If any interceptor is feasible, never commit to (none).
-            self._apply_commit_change(None, best_id, now)
+            self._apply_commit_change(None, best_id, now, reason='initial_best_candidate')
             if self._lock_after_first and self._current_selected_id is not None:
                 self._locked_selected_id = self._current_selected_id
             return self._current_selected_id
@@ -5025,24 +5265,43 @@ class InterceptionLogicNode(Node):
             if any_feasible:
                 # Prefer to keep current during transient infeasible periods.
                 if lost_age < self._lost_timeout_s:
-                    self._maybe_hold_log(
+                    if self._maybe_hold_log(
                         now,
                         f'[HOLD] keeping {cur} despite temporary infeasible (lost_age={lost_age:.2f}s)',
-                    )
+                    ):
+                        self._maybe_log_tactical_switch(
+                            now,
+                            dedupe=True,
+                            decision='hold',
+                            reason='current_temporarily_infeasible',
+                            current=cur,
+                            candidate=best_id,
+                            lost_age_s=lost_age,
+                            lost_timeout_s=self._lost_timeout_s,
+                        )
                     return cur
                 # After timeout, switch to best feasible (never to none if any feasible).
-                self._apply_commit_change(cur, best_id, now)
+                self._apply_commit_change(cur, best_id, now, reason='lost_timeout_best_feasible')
                 self._lost_since = None
                 return self._current_selected_id
 
             # No feasible interceptors at all: allow (none) only after timeout.
             if lost_age < self._lost_timeout_s:
-                self._maybe_hold_log(
+                if self._maybe_hold_log(
                     now,
                     f'[HOLD] keeping {cur} despite all-infeasible (lost_age={lost_age:.2f}s)',
-                )
+                ):
+                    self._maybe_log_tactical_switch(
+                        now,
+                        dedupe=True,
+                        decision='hold',
+                        reason='all_infeasible_grace_period',
+                        current=cur,
+                        lost_age_s=lost_age,
+                        lost_timeout_s=self._lost_timeout_s,
+                    )
                 return cur
-            self._apply_commit_change(cur, None, now)
+            self._apply_commit_change(cur, None, now, reason='lost_timeout_clear_no_feasible')
             self._lost_since = None
             return self._current_selected_id
 
@@ -5069,9 +5328,40 @@ class InterceptionLogicNode(Node):
                 and b_tti + self._tti_margin < c_tti
                 and dwell >= self._switch_window_s
             ):
+                self._maybe_log_tactical_switch(
+                    now,
+                    decision='switch',
+                    reason='tti_margin_and_dwell_satisfied',
+                    current=cur,
+                    candidate=best_id,
+                    current_tti_s=c_tti,
+                    candidate_tti_s=b_tti,
+                    margin_s=self._tti_margin,
+                    dwell_s=dwell,
+                    switch_window_s=self._switch_window_s,
+                )
                 new_id = best_id
+            else:
+                reason = 'candidate_not_better_enough'
+                if b_tti is not None and c_tti is not None and not (b_tti + self._tti_margin < c_tti):
+                    reason = 'tti_margin_not_met'
+                elif dwell < self._switch_window_s:
+                    reason = 'switch_dwell_not_met'
+                self._maybe_log_tactical_switch(
+                    now,
+                    dedupe=True,
+                    decision='hold',
+                    reason=reason,
+                    current=cur,
+                    candidate=best_id,
+                    current_tti_s=c_tti,
+                    candidate_tti_s=b_tti,
+                    margin_s=self._tti_margin,
+                    dwell_s=dwell,
+                    switch_window_s=self._switch_window_s,
+                )
 
-        self._apply_commit_change(cur, new_id, now)
+        self._apply_commit_change(cur, new_id, now, reason='switch_evaluation_complete')
         if self._lock_after_first and self._current_selected_id is not None and self._locked_selected_id is None:
             self._locked_selected_id = self._current_selected_id
         return self._current_selected_id
@@ -5432,6 +5722,20 @@ class InterceptionLogicNode(Node):
                 lines.append(f'{lab} -> none')
             else:
                 lines.append(f'{lab} -> {intr}')
+            ev = self._multi_assign_evidence.get(lab, {})
+            lines.append(
+                _obs_line(
+                    '[TACTICAL_MULTI_ASSIGN]',
+                    target=lab,
+                    assigned_interceptor=intr,
+                    decision=ev.get('decision', 'unassigned'),
+                    previous=ev.get('previous'),
+                    greedy=ev.get('greedy'),
+                    prev_tti_s=ev.get('prev_tti'),
+                    greedy_tti_s=ev.get('greedy_tti'),
+                    switch_margin_s=self._assign_switch_margin,
+                ),
+            )
         print('\n'.join(lines), flush=True)
 
     def _publish_assignment_strings(self, assign: dict[str, str]) -> None:
@@ -5439,11 +5743,28 @@ class InterceptionLogicNode(Node):
         for lab, iid in assign.items():
             inv[iid] = lab
         for iid in self._ids:
-            self._pub_assigned[iid].publish(String(data=inv.get(iid, '')))
+            assigned = inv.get(iid, '')
+            self._pub_assigned[iid].publish(String(data=assigned))
+            prev = self._last_assigned_target_published.get(iid, '')
+            if assigned != prev:
+                reason = 'assigned_target_commit' if assigned else 'assigned_target_clear'
+                print(
+                    _obs_line(
+                        '[TACTICAL_ASSIGNED_TARGET]',
+                        interceptor=iid,
+                        assigned_target=assigned or None,
+                        previous=prev or None,
+                        transition='commit' if assigned else 'clear',
+                        meaning='non_empty_arms_multi_target_motion_empty_disarms',
+                        reason=reason,
+                    ),
+                    flush=True,
+                )
+                self._last_assigned_target_published[iid] = assigned
 
     def _on_control_multi(self) -> None:
         zero = Vector3()
-        self._pub_selected.publish(String(data=''))
+        self._publish_selected_state(None, reason='multi_target_mode_selected_id_unused')
         if all(self._hits_multi.get(l, False) for l in self._multi_labels):
             self._publish_assignment_strings({})
             self._publish_all({i: zero for i in self._ids}, immediate=True)
@@ -5674,7 +5995,7 @@ class InterceptionLogicNode(Node):
                 if self._hit:
                     self._publish_all({i: zero for i in self._ids}, immediate=True)
                     # Deselect all so launched interceptors return to ground (idle/standby).
-                    self._pub_selected.publish(String(data=''))
+                    self._publish_selected_state(None, reason='hit_freeze_clear')
                     return
                 
                 tx, ty, tz = float(self._target.x), float(self._target.y), float(self._target.z)
@@ -5685,7 +6006,7 @@ class InterceptionLogicNode(Node):
                 self._maybe_arm_detection_time(None, tx, ty, tz)
                 if not self.is_detected(tx, ty, tz) or not self.is_tracking_ready(None, _now_ctrl):
                     self._publish_all({i: zero for i in self._ids})
-                    self._pub_selected.publish(String(data=''))
+                    self._publish_selected_state(None, reason='target_not_detected_or_tracking_not_ready')
                     return
                 
                 d_th = self._dist_threat(tx, ty, tz)
@@ -5700,7 +6021,7 @@ class InterceptionLogicNode(Node):
                         if self._reset_lock_outside:
                             self._clear_assignments()
                         self._publish_all({i: zero for i in self._ids})
-                        self._pub_selected.publish(String(data=''))
+                        self._publish_selected_state(None, reason='outside_effective_dome_clear')
                         return
                 
                     # strike_ok = layered HIT policy only (not engagement trigger).
@@ -5709,7 +6030,7 @@ class InterceptionLogicNode(Node):
                     if self._feasibility_based:
                         if not self._classification_allows_engagement():
                             self._publish_all({i: zero for i in self._ids})
-                            self._pub_selected.publish(String(data=''))
+                            self._publish_selected_state(None, reason='classification_gate_blocked')
                             return
                         rows = self._build_tti_rows(
                             tx, ty, tz, v_tx, v_ty, v_tz,
@@ -5718,8 +6039,15 @@ class InterceptionLogicNode(Node):
                         if self._locked_selected_id is not None:
                             p_l = self._inter_pos.get(self._locked_selected_id)
                             if p_l is None:
+                                prev_selected = self._current_selected_id
                                 self._locked_selected_id = None
-                                self._current_selected_id = None
+                                self._apply_commit_change(
+                                    prev_selected,
+                                    None,
+                                    _now_ctrl,
+                                    reason='feasibility_lock_missing_position_clear',
+                                    update_assignment_lock=False,
+                                )
                             else:
                                 lx, ly, lz = float(p_l.x), float(p_l.y), float(p_l.z)
                                 ok_l, _, _ = self._intercept_feasibility_triple(
@@ -5730,42 +6058,58 @@ class InterceptionLogicNode(Node):
                                         self._lock_engaged_until_hit
                                         and self._interceptor_seems_launched(self._locked_selected_id)
                                     ):
+                                        prev_selected = self._current_selected_id
                                         self._locked_selected_id = None
-                                        self._current_selected_id = None
+                                        self._apply_commit_change(
+                                            prev_selected,
+                                            None,
+                                            _now_ctrl,
+                                            reason='feasibility_lock_became_infeasible_clear',
+                                            update_assignment_lock=False,
+                                        )
                         if self._locked_selected_id is None:
-                            best_i, any_feas, best_t, best_s = self._pick_best_feasible_interceptor_single(
+                            best_i, any_feas, _, _ = self._pick_best_feasible_interceptor_single(
                                 tx, ty, tz, v_tx, v_ty, v_tz,
                             )
                             self._maybe_log_feasibility_single(
-                                feasible=any_feas,
-                                t_int=best_t,
-                                s_req=best_s,
+                                tx=tx,
+                                ty=ty,
+                                tz=tz,
+                                v_tx=v_tx,
+                                v_ty=v_ty,
+                                v_tz=v_tz,
                                 selected=best_i,
                                 d_th=d_th,
                             )
                             if not any_feas or best_i is None:
                                 self._clear_assignments()
                                 self._publish_all({i: zero for i in self._ids})
-                                self._pub_selected.publish(String(data=''))
+                                self._publish_selected_state(None, reason='no_feasible_interceptor')
                                 return
                             self._locked_selected_id = best_i
-                            self._current_selected_id = best_i
+                            self._apply_commit_change(
+                                self._current_selected_id,
+                                best_i,
+                                _now_ctrl,
+                                reason='feasibility_based_initial_commit',
+                                update_assignment_lock=False,
+                            )
                         else:
                             p_sel = self._inter_pos.get(self._locked_selected_id)
                             if p_sel is not None:
                                 ix, iy, iz = float(p_sel.x), float(p_sel.y), float(p_sel.z)
-                                ok_c, t_c, s_c = self._intercept_feasibility_triple(
-                                    tx, ty, tz, v_tx, v_ty, v_tz, ix, iy, iz,
-                                )
                                 self._maybe_log_feasibility_single(
-                                    feasible=ok_c,
-                                    t_int=t_c,
-                                    s_req=s_c,
+                                    tx=tx,
+                                    ty=ty,
+                                    tz=tz,
+                                    v_tx=v_tx,
+                                    v_ty=v_ty,
+                                    v_tz=v_tz,
                                     selected=self._locked_selected_id,
                                     d_th=d_th,
                                 )
                         selected = self._locked_selected_id
-                        self._pub_selected.publish(String(data=selected if selected is not None else ''))
+                        self._publish_selected_state(selected, reason='feasibility_based_selected_commit')
                         self._maybe_selection_log(rows, selected, tx, ty, tz, layer)
                         self._maybe_print_selection_algorithm_verbose(
                             'feasibility_based' if not self._engagement_layer else f'feas_layer_{self._engagement_layer}',
@@ -5790,13 +6134,13 @@ class InterceptionLogicNode(Node):
                             if d_th > self._r_mid:
                                 self._clear_assignments()
                             self._publish_all({i: zero for i in self._ids})
-                            self._pub_selected.publish(String(data=''))
+                            self._publish_selected_state(None, reason='guidance_start_layer_not_reached')
                             return
                     elif not self._in_strike_zone(d_th):
                         if d_th > self._r_mid:
                             self._clear_assignments()
                         self._publish_all({i: zero for i in self._ids})
-                        self._pub_selected.publish(String(data=''))
+                        self._publish_selected_state(None, reason='strike_shell_not_reached')
                         return
                 
                     rows = self._build_tti_rows(tx, ty, tz, v_tx, v_ty, v_tz)
@@ -5808,15 +6152,27 @@ class InterceptionLogicNode(Node):
                         if feasible:
                             best_iid = min(feasible, key=lambda x: (x[0], self._ids.index(x[1])))[1]
                             self._locked_selected_id = best_iid
-                            self._current_selected_id = best_iid
+                            self._apply_commit_change(
+                                self._current_selected_id,
+                                best_iid,
+                                _now_ctrl,
+                                reason='legacy_zone_initial_commit_feasible_best',
+                                update_assignment_lock=False,
+                            )
                         else:
                             nid = self._nearest_interceptor_id(tx, ty, tz)
                             if nid is not None:
                                 self._locked_selected_id = nid
-                                self._current_selected_id = nid
+                                self._apply_commit_change(
+                                    self._current_selected_id,
+                                    nid,
+                                    _now_ctrl,
+                                    reason='legacy_zone_initial_commit_nearest_fallback',
+                                    update_assignment_lock=False,
+                                )
                 
                     selected = self._locked_selected_id
-                    self._pub_selected.publish(String(data=selected if selected is not None else ''))
+                    self._publish_selected_state(selected, reason='legacy_zone_selected_commit')
                     self._maybe_selection_log(rows, selected, tx, ty, tz, layer)
                     self._maybe_print_selection_algorithm_verbose(
                         'strike_shell' if not self._engagement_layer else f'layer_{self._engagement_layer}',
@@ -5835,9 +6191,7 @@ class InterceptionLogicNode(Node):
                 rows = self._build_tti_rows(tx, ty, tz, v_tx, v_ty, v_tz)
                 now = self.get_clock().now()
                 selected = self._update_committed_selection(rows, now, tx, ty, tz)
-                sel_msg = String()
-                sel_msg.data = selected if selected is not None else ''
-                self._pub_selected.publish(sel_msg)
+                self._publish_selected_state(selected, reason='dome_off_committed_selection')
                 self._maybe_selection_log(rows, selected, tx, ty, tz, layer)
                 self._maybe_print_selection_algorithm_verbose(
                     'dome_off_hysteresis',
