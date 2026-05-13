@@ -32,6 +32,12 @@ ros2 bag play your_bag.mcap --clock 100
 
 Use `--remap` if your capture used prefixed topic names. For engagement-only trials, record `/drone/position` plus `/interception/*` markers.
 
+### Tactical replay interpretation
+
+For tactical replay, treat recorded engagement-state topics such as `/interceptor/selected_id` as the authoritative state signal. Treat `[TACTICAL_*]` logs as additive descriptive or explanatory notes only.
+
+Do not infer tactical truth from explanatory-log ordering, cadence, or absence.
+
 ## Sim vs production interface
 
 | Layer | Simulation (this repo) | Production-oriented stub |

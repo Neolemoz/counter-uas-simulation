@@ -68,6 +68,12 @@ Tip: unset `evaluation_enable_intercept_heatmap_prob` (default **false**) for ev
 - `parse_run_to_result` is the stable parser-visible contract for aggregate statistics: `success`, `miss_distance_m`, `intercept_time_s`, `time_margin_s`, `layer_at_hit`, and `notes`.
 - Heatmap-vs-Gazebo validation samples cells deterministically from the heatmap CSV using `--seed`; replay launch args pin `target_start_x_m`, `target_start_y_m`, `target_start_z_m`, and default to headless `use_gazebo_gui:=false`.
 
+### Tactical observability boundary
+
+Tactical observability logs (`[TACTICAL_*]`) are **additive observability evidence only**. Stable parser-visible contracts remain the existing parser surfaces used by `parse_run_to_result`, `selection_audit.py`, and `classify_run.py`.
+
+For tooling, treat topic semantics such as `/interceptor/selected_id` and per-interceptor `assigned_target` as the authoritative tactical truth. Treat `[TACTICAL_*]` logs as descriptive or explanatory context only. Any future parser dependence on `[TACTICAL_*]` requires separate governance review.
+
 ### Reporting standards
 
 - Report Monte Carlo outputs as descriptive simulation statistics unless a script explicitly computes uncertainty intervals. Current summaries include run count, success count/rate, miss-distance quantiles, empirical CDF samples, and intercept-time quantiles; they are not confidence intervals.
