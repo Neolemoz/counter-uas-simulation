@@ -34,6 +34,20 @@ def generate_launch_description() -> LaunchDescription:
             'fused_detections_topic': LaunchConfiguration('fused_detections_topic'),
             'tracks_topic': LaunchConfiguration('tracks_topic'),
             'tracks_state_topic': LaunchConfiguration('tracks_state_topic'),
+            'use_noisy_measurement': LaunchConfiguration('use_noisy_measurement'),
+            'ground_truth_topic': LaunchConfiguration('ground_truth_topic'),
+            'noisy_topic': LaunchConfiguration('noisy_topic'),
+            'noise_seed': LaunchConfiguration('noise_seed'),
+            'noise_rate_hz': LaunchConfiguration('noise_rate_hz'),
+            'ghost_detection_prob': LaunchConfiguration('ghost_detection_prob'),
+            'ghost_placement_mode': LaunchConfiguration('ghost_placement_mode'),
+            'ghost_near_threshold_xy_min_m': LaunchConfiguration('ghost_near_threshold_xy_min_m'),
+            'ghost_near_threshold_xy_max_m': LaunchConfiguration('ghost_near_threshold_xy_max_m'),
+            'ghost_persistence_ticks': LaunchConfiguration('ghost_persistence_ticks'),
+            'fragmentation_staggered_enabled': LaunchConfiguration('fragmentation_staggered_enabled'),
+            'fragmentation_stagger_cycle_ticks': LaunchConfiguration('fragmentation_stagger_cycle_ticks'),
+            'fragmentation_stagger_phase_ticks': LaunchConfiguration('fragmentation_stagger_phase_ticks'),
+            'fragmentation_stagger_gap_ticks': LaunchConfiguration('fragmentation_stagger_gap_ticks'),
             # Forward through so one ``ros2 launch counter_uas bringup`` line can toggle
             # Gazebo GUI and RViz (defaults match gazebo_target.launch.py).
             'use_gazebo_gui': LaunchConfiguration('use_gazebo_gui'),
@@ -75,6 +89,84 @@ def generate_launch_description() -> LaunchDescription:
                 description='Odometry topic when intercept_measurement_source:=tracks_state.',
             ),
             DeclareLaunchArgument(
+                'use_noisy_measurement',
+                default_value='false',
+                description='Forwarded to gazebo_target.launch.py; enables noisy_measurement_node when true.',
+            ),
+            DeclareLaunchArgument(
+                'ground_truth_topic',
+                default_value='/drone/position',
+                description='Ground-truth target Point topic from gazebo_target.launch.py.',
+            ),
+            DeclareLaunchArgument(
+                'noisy_topic',
+                default_value='/drone/position_noisy',
+                description='Noisy measurement Point topic from gazebo_target.launch.py.',
+            ),
+            DeclareLaunchArgument(
+                'sensor_input_topic',
+                default_value='/drone/position',
+                description=(
+                    'Input topic for radar/camera sensing path. Leave at /drone/position for legacy behavior; '
+                    'set to /drone/position_noisy to propagate additive ambiguity overlays into /fused_detections and /tracks/state.'
+                ),
+            ),
+            DeclareLaunchArgument(
+                'noise_seed',
+                default_value='0',
+                description='Forwarded noise seed for deterministic noisy_measurement overlay runs.',
+            ),
+            DeclareLaunchArgument(
+                'noise_rate_hz',
+                default_value='10.0',
+                description='Forwarded noisy_measurement publish cadence (Hz).',
+            ),
+            DeclareLaunchArgument(
+                'ghost_detection_prob',
+                default_value='0.0',
+                description='Forwarded noisy_measurement ghost injection probability.',
+            ),
+            DeclareLaunchArgument(
+                'ghost_placement_mode',
+                default_value='broad',
+                description='Forwarded ghost placement mode: broad or near_threshold.',
+            ),
+            DeclareLaunchArgument(
+                'ghost_near_threshold_xy_min_m',
+                default_value='18.0',
+                description='Forwarded minimum XY offset (m) for near-threshold ghost placement.',
+            ),
+            DeclareLaunchArgument(
+                'ghost_near_threshold_xy_max_m',
+                default_value='24.0',
+                description='Forwarded maximum XY offset (m) for near-threshold ghost placement.',
+            ),
+            DeclareLaunchArgument(
+                'ghost_persistence_ticks',
+                default_value='1',
+                description='Forwarded number of adjacent noisy ticks to repeat a sampled ghost offset.',
+            ),
+            DeclareLaunchArgument(
+                'fragmentation_staggered_enabled',
+                default_value='false',
+                description='Forwarded deterministic staggered fragmentation toggle.',
+            ),
+            DeclareLaunchArgument(
+                'fragmentation_stagger_cycle_ticks',
+                default_value='6',
+                description='Forwarded stagger cycle length (ticks).',
+            ),
+            DeclareLaunchArgument(
+                'fragmentation_stagger_phase_ticks',
+                default_value='1',
+                description='Forwarded stagger phase offset (ticks).',
+            ),
+            DeclareLaunchArgument(
+                'fragmentation_stagger_gap_ticks',
+                default_value='2',
+                description='Forwarded staggered fragmentation gap length (ticks).',
+            ),
+            DeclareLaunchArgument(
                 'use_gazebo_gui',
                 default_value='true',
                 description=(
@@ -97,6 +189,7 @@ def generate_launch_description() -> LaunchDescription:
                 name='radar_sim_node',
                 output='screen',
                 parameters=params,
+                remappings=[('/drone/position', LaunchConfiguration('sensor_input_topic'))],
             ),
             Node(
                 package='camera_sim',
@@ -104,6 +197,7 @@ def generate_launch_description() -> LaunchDescription:
                 name='camera_sim_node',
                 output='screen',
                 parameters=params,
+                remappings=[('/drone/position', LaunchConfiguration('sensor_input_topic'))],
             ),
             Node(
                 package='fusion',

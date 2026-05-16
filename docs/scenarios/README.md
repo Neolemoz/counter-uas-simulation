@@ -13,6 +13,10 @@ Each entry describes:
 
 Edit [`scenario_catalog.yaml`](scenario_catalog.yaml) when adding a new world or ROC study; keep names aligned with `ros2 launch` arguments in the root [`README.md`](../README.md).
 
+Runtime-realism overlay packs live under [`docs/scenarios/realism/`](realism/). They are additive metadata for delayed detection, burst dropout, cadence diversity, and future crossing-target stress; they do not change launch defaults by themselves.
+
+Wave 2 lifecycle-propagation profiles live in `scripts/evaluation/fixtures/ambiguity_sweep_profiles_wave2.csv`. They are additive metadata for propagation/timing refinement and keep legacy behavior unchanged unless explicitly selected.
+
 ## Recording & replay (ros2 bag)
 
 **Record** a full bringup session (trim topics to what you need):

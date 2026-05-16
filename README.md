@@ -109,3 +109,48 @@ Parses a small synthetic log with `scripts/analyze_run.py` so metric extraction 
 ## Message types (roadmap)
 
 The perception chain currently uses `geometry_msgs/Point` for compact lab plumbing. For production-style contracts, prefer stamped messages or track messages with **id, stamp, frame_id, covariance** (Phase C+ evolution).
+
+## Runtime realism status
+
+The current realism roadmap is additive-only and replay-safe. The latest frozen Wave 1
+ambiguity work added:
+
+- near-threshold ghost placement
+- staggered fragmentation windows
+- additive lifecycle-thrash derivation
+- replay-safe ambiguity profile sweeps and annotations
+
+What did **not** change:
+
+- no tracker/fusion redesign
+- no `/tracks/state` semantic change
+- no topic/schema change
+- no parser-contract change
+
+Current conclusion:
+
+- ambiguity pressure now degrades runtime performance more clearly
+- tracker lifecycle counters still remain largely dormant under current Wave 1 stress
+- the next realism frontier is stronger propagation through the existing
+  `/fused_detections -> tracking_node -> /tracks/state` path without architecture redesign
+
+Wave 2 then refined that frontier and is now frozen stable:
+
+- sensor-path propagation toggle
+- phase-aligned fragmentation refinement
+- near-threshold ghost persistence
+- matched-seed lifecycle activation sweeps
+
+Empirical limit:
+
+- propagation refinement succeeded partially
+- downstream tactical/runtime metrics moved
+- lifecycle counters still remained dormant
+- the current blocker is sustained threshold crossing
+- ambiguity now reaches sensing/fusion/tracking behavior more strongly than Wave 1
+
+Next roadmap frontier:
+
+- additive threshold-sensitive lifecycle activation refinement through the existing
+  `/fused_detections -> tracking_node -> /tracks/state` flow
+- keep it default-off, replay-safe, parser-safe, and additive-only

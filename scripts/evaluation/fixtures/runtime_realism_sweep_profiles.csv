@@ -1,0 +1,7 @@
+profile_id,launch_args,notes
+baseline,use_noisy_measurement:=true noise_seed:=4101,legacy-compatible noise layer enabled with realism overlays off
+delayed_only,use_noisy_measurement:=true noise_seed:=4101 noise_delay_mean_s:=0.20 noise_delay_jitter_s:=0.05,delayed detections only
+burst_dropout_only,use_noisy_measurement:=true noise_seed:=4101 dropout_prob:=0.05 burst_dropout_prob:=0.20 burst_dropout_min_ticks:=2 burst_dropout_max_ticks:=4,clustered dropout stress
+stale_replay_only,use_noisy_measurement:=true noise_seed:=4101 dropout_prob:=0.18 stale_detection_enabled:=true stale_max_consecutive:=2,stale replay under dropouts
+async_timing_only,use_noisy_measurement:=true noise_seed:=4101 noise_rate_hz:=7.0 noise_period_jitter_s:=0.02,async timing diversity only
+combined_runtime_stress,use_noisy_measurement:=true noise_seed:=4101 noise_delay_mean_s:=0.18 noise_delay_jitter_s:=0.05 dropout_prob:=0.08 burst_dropout_prob:=0.18 burst_dropout_min_ticks:=2 burst_dropout_max_ticks:=4 stale_detection_enabled:=true stale_max_consecutive:=2 noise_rate_hz:=7.0 noise_period_jitter_s:=0.02,combined realism stress

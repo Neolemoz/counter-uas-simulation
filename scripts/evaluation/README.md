@@ -24,6 +24,10 @@ See [`metrics_definitions.yaml`](metrics_definitions.yaml) for field semantics (
 | [`run_scenario_generalization_a_vs_d.sh`](run_scenario_generalization_a_vs_d.sh) | Run matched-seed scenario generalization MC for gate-only A vs frozen D |
 | [`summarize_scenario_generalization.py`](summarize_scenario_generalization.py) | Reduce per-cell A/D MC JSONs into per-cell and worst-cell CSV reports |
 | [`run_gnc_tuning_playbook.sh`](run_gnc_tuning_playbook.sh) | [Phase 0–4 guidance tuning MC driver](gnc_guidance_tuning_playbook_ops.md) |
+| [`run_realism_sweep.py`](run_realism_sweep.py) | Small matched-seed runtime-realism sweep over additive delay/stale/dropout/timing overlays |
+| [`classify_realism_failure.py`](classify_realism_failure.py) | Additive realism-stressor taxonomy (R0–R5) layered on top of existing F1–F5 buckets |
+| [`run_ambiguity_sweep.py`](run_ambiguity_sweep.py) | Small matched-seed sensing-ambiguity sweep over additive ghost/fragmentation overlays |
+| [`classify_ambiguity_failure.py`](classify_ambiguity_failure.py) | Additive ambiguity taxonomy (A0–A5) layered on top of existing F1–F5 and R0–R5 buckets |
 | [`fixtures/sample_heatmap_for_validate.csv`](fixtures/sample_heatmap_for_validate.csv) | Tiny heatmap for `--dry-run` / CI |
 
 ### Launch knobs (evaluation)
@@ -67,6 +71,82 @@ Tip: unset `evaluation_enable_intercept_heatmap_prob` (default **false**) for ev
 - Use `--cohort` plus `aggregate --meta-cohort` to avoid mixed cohorts. Use `--notes-substring` only as a secondary filter because notes are free text.
 - `parse_run_to_result` is the stable parser-visible contract for aggregate statistics: `success`, `miss_distance_m`, `intercept_time_s`, `time_margin_s`, `layer_at_hit`, and `notes`.
 - Heatmap-vs-Gazebo validation samples cells deterministically from the heatmap CSV using `--seed`; replay launch args pin `target_start_x_m`, `target_start_y_m`, `target_start_z_m`, and default to headless `use_gazebo_gui:=false`.
+- Runtime-realism overlays remain additive and default-off. Use `run_realism_sweep.py` or explicit launch args with matched seeds/cohorts to keep comparisons interpretable.
+- Sensing-ambiguity overlays remain additive and default-off. Use `run_ambiguity_sweep.py` or explicit launch args with matched seeds/cohorts to keep ghost/fragmentation comparisons interpretable.
+- Matched seeds preserve comparability, not bitwise identity: Gazebo / ROS scheduling can still introduce bounded rerun variance in miss distance or intercept time even when the qualitative outcome and overlay counts remain aligned.
+
+### Wave 2 lifecycle-propagation freeze
+
+Wave 2 lifecycle-propagation refinement is frozen with a **stable** validation verdict.
+
+Implemented Wave 2 scope:
+
+- sensor-path propagation toggle
+- phase-aligned fragmentation refinement
+- near-threshold ghost persistence
+- Wave 2 lifecycle-pressure profile matrix in `fixtures/ambiguity_sweep_profiles_wave2.csv`
+- matched-seed lifecycle activation sweeps
+- regression and governance validation
+
+Parser and replay boundaries remain unchanged:
+
+- parser-visible summaries from `parse_run_to_result` remain stable
+- added propagation/timing annotations are explanatory only
+- added lifecycle metrics are additive derivations only
+- downstream tools are not required to consume the new annotations
+
+Current empirical limit:
+
+- propagation refinement succeeded partially
+- downstream tactical/runtime metrics moved
+- lifecycle counters still remained dormant
+- current blocker is sustained threshold crossing
+- ambiguity now reaches sensing/fusion/tracking behavior more strongly than Wave 1
+
+Key architectural insight:
+
+- propagation quality mattered more than realism breadth
+- additional realism families are not yet justified
+- current priority remains lifecycle-threshold activation through existing paths
+
+Next roadmap frontier:
+
+- additive threshold-sensitive lifecycle activation refinement through the existing `/fused_detections -> tracking_node -> /tracks/state` flow
+- keep it default-off, seed-controlled, parser-safe, and free of tracker/fusion redesign
+
+Warning:
+
+- do not interpret dormant lifecycle counters as proof of tracker robustness
+
+### Wave 1 ambiguity freeze
+
+Wave 1 tracks-state-centered ambiguity realism is frozen with a **stable** validation verdict.
+
+Implemented Wave 1 scope:
+
+- near-threshold ghost placement
+- staggered fragmentation windows
+- evaluation-only lifecycle thrash derivation in `realism_metrics.py`
+- Wave 1 ambiguity profile matrix in `fixtures/ambiguity_sweep_profiles.csv`
+- replay-safe additive ambiguity annotations
+
+Parser and replay boundaries remain unchanged:
+
+- parser-visible summaries from `parse_run_to_result` remain stable
+- added ambiguity annotations are explanatory only
+- added lifecycle metrics are additive derivations only
+- downstream tools are not required to consume the new annotations
+
+Current empirical limit:
+
+- Wave 1 increases ambiguity event pressure and runtime degradation
+- Wave 1 does not yet produce meaningful activation of tracker lifecycle counters
+- do not interpret dormant lifecycle counters as proof of tracker robustness
+
+Next roadmap frontier:
+
+- additive lifecycle-propagation refinement through the existing `/fused_detections -> tracking_node -> /tracks/state` flow
+- keep it default-off, seed-controlled, parser-safe, and free of tracker/fusion redesign
 
 ### Tactical observability boundary
 

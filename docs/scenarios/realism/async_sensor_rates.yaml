@@ -1,0 +1,8 @@
+overlay_id: async_sensor_rates
+seed_required: true
+scenario_scope: single_target_runtime_realism
+launch_args:
+  use_noisy_measurement: true
+  noise_rate_hz: 7.0
+  noise_period_jitter_s: 0.02
+notes: Bounded cadence diversity overlay; default launch cadence remains unchanged.

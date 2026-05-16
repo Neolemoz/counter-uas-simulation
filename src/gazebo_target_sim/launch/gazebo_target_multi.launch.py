@@ -128,6 +128,33 @@ def _gz_multi_setup(context, *args, **kwargs):
     dropout_prob = float(LaunchConfiguration('dropout_prob').perform(context))
     noise_seed = int(float(LaunchConfiguration('noise_seed').perform(context)))
     noise_rate_hz = float(LaunchConfiguration('noise_rate_hz').perform(context))
+    noise_delay_mean_s = float(LaunchConfiguration('noise_delay_mean_s').perform(context))
+    noise_delay_jitter_s = float(LaunchConfiguration('noise_delay_jitter_s').perform(context))
+    noise_period_jitter_s = float(LaunchConfiguration('noise_period_jitter_s').perform(context))
+    stale_detection_enabled = str(
+        LaunchConfiguration('stale_detection_enabled').perform(context),
+    ).strip().lower() in ('1', 'true', 'yes', 'on')
+    stale_max_consecutive = int(float(LaunchConfiguration('stale_max_consecutive').perform(context)))
+    burst_dropout_prob = float(LaunchConfiguration('burst_dropout_prob').perform(context))
+    burst_dropout_min_ticks = int(float(LaunchConfiguration('burst_dropout_min_ticks').perform(context)))
+    burst_dropout_max_ticks = int(float(LaunchConfiguration('burst_dropout_max_ticks').perform(context)))
+    ghost_detection_prob = float(LaunchConfiguration('ghost_detection_prob').perform(context))
+    ghost_placement_mode = str(LaunchConfiguration('ghost_placement_mode').perform(context)).strip() or 'broad'
+    ghost_offset_xy_min_m = float(LaunchConfiguration('ghost_offset_xy_min_m').perform(context))
+    ghost_offset_xy_max_m = float(LaunchConfiguration('ghost_offset_xy_max_m').perform(context))
+    ghost_near_threshold_xy_min_m = float(LaunchConfiguration('ghost_near_threshold_xy_min_m').perform(context))
+    ghost_near_threshold_xy_max_m = float(LaunchConfiguration('ghost_near_threshold_xy_max_m').perform(context))
+    ghost_offset_z_std_m = float(LaunchConfiguration('ghost_offset_z_std_m').perform(context))
+    ghost_persistence_ticks = int(float(LaunchConfiguration('ghost_persistence_ticks').perform(context)))
+    fragmentation_prob = float(LaunchConfiguration('fragmentation_prob').perform(context))
+    fragmentation_min_ticks = int(float(LaunchConfiguration('fragmentation_min_ticks').perform(context)))
+    fragmentation_max_ticks = int(float(LaunchConfiguration('fragmentation_max_ticks').perform(context)))
+    fragmentation_staggered_enabled = str(
+        LaunchConfiguration('fragmentation_staggered_enabled').perform(context),
+    ).strip().lower() in ('1', 'true', 'yes', 'on')
+    fragmentation_stagger_cycle_ticks = int(float(LaunchConfiguration('fragmentation_stagger_cycle_ticks').perform(context)))
+    fragmentation_stagger_phase_ticks = int(float(LaunchConfiguration('fragmentation_stagger_phase_ticks').perform(context)))
+    fragmentation_stagger_gap_ticks = int(float(LaunchConfiguration('fragmentation_stagger_gap_ticks').perform(context)))
     noisy_suffix = str(LaunchConfiguration('noisy_suffix').perform(context)).strip() or '_noisy'
     world_file = PathJoinSubstitution(
         [FindPackageShare('gazebo_target_sim'), 'worlds', 'target_sphere_multi.sdf'],
@@ -353,6 +380,29 @@ def _gz_multi_setup(context, *args, **kwargs):
                             'noise_std_m': noise_std_m,
                             'dropout_prob': dropout_prob,
                             'seed': noise_seed + idx,
+                            'delay_mean_s': noise_delay_mean_s,
+                            'delay_jitter_s': noise_delay_jitter_s,
+                            'publish_period_jitter_s': noise_period_jitter_s,
+                            'stale_detection_enabled': stale_detection_enabled,
+                            'stale_max_consecutive': stale_max_consecutive,
+                            'burst_dropout_prob': burst_dropout_prob,
+                            'burst_dropout_min_ticks': burst_dropout_min_ticks,
+                            'burst_dropout_max_ticks': burst_dropout_max_ticks,
+                            'ghost_detection_prob': ghost_detection_prob,
+                            'ghost_placement_mode': ghost_placement_mode,
+                            'ghost_offset_xy_min_m': ghost_offset_xy_min_m,
+                            'ghost_offset_xy_max_m': ghost_offset_xy_max_m,
+                        'ghost_near_threshold_xy_min_m': ghost_near_threshold_xy_min_m,
+                        'ghost_near_threshold_xy_max_m': ghost_near_threshold_xy_max_m,
+                        'ghost_offset_z_std_m': ghost_offset_z_std_m,
+                        'ghost_persistence_ticks': ghost_persistence_ticks,
+                        'fragmentation_prob': fragmentation_prob,
+                            'fragmentation_min_ticks': fragmentation_min_ticks,
+                            'fragmentation_max_ticks': fragmentation_max_ticks,
+                            'fragmentation_staggered_enabled': fragmentation_staggered_enabled,
+                            'fragmentation_stagger_cycle_ticks': fragmentation_stagger_cycle_ticks,
+                            'fragmentation_stagger_phase_ticks': fragmentation_stagger_phase_ticks,
+                            'fragmentation_stagger_gap_ticks': fragmentation_stagger_gap_ticks,
                         },
                     ],
                 ),
@@ -629,6 +679,121 @@ def generate_launch_description() -> LaunchDescription:
                 'noise_rate_hz',
                 default_value='10.0',
                 description='Publish rate (Hz) for noisy measurement topics.',
+            ),
+            DeclareLaunchArgument(
+                'noise_delay_mean_s',
+                default_value='0.0',
+                description='Optional added delay (seconds) for noisy measurement publishes.',
+            ),
+            DeclareLaunchArgument(
+                'noise_delay_jitter_s',
+                default_value='0.0',
+                description='Uniform half-width jitter around noise_delay_mean_s (seconds).',
+            ),
+            DeclareLaunchArgument(
+                'noise_period_jitter_s',
+                default_value='0.0',
+                description='Uniform half-width jitter applied to noisy measurement publish cadence.',
+            ),
+            DeclareLaunchArgument(
+                'stale_detection_enabled',
+                default_value='false',
+                description='If true, noisy measurements may re-emit the last fresh sample during dropouts.',
+            ),
+            DeclareLaunchArgument(
+                'stale_max_consecutive',
+                default_value='0',
+                description='Maximum consecutive stale detections emitted while stale_detection_enabled:=true.',
+            ),
+            DeclareLaunchArgument(
+                'burst_dropout_prob',
+                default_value='0.0',
+                description='Probability per publish tick of entering a clustered dropout burst.',
+            ),
+            DeclareLaunchArgument(
+                'burst_dropout_min_ticks',
+                default_value='2',
+                description='Minimum length (ticks) of a dropout burst when burst_dropout_prob > 0.',
+            ),
+            DeclareLaunchArgument(
+                'burst_dropout_max_ticks',
+                default_value='5',
+                description='Maximum length (ticks) of a dropout burst when burst_dropout_prob > 0.',
+            ),
+            DeclareLaunchArgument(
+                'ghost_detection_prob',
+                default_value='0.0',
+                description='Probability per publish tick of injecting one ghost / false detection.',
+            ),
+            DeclareLaunchArgument(
+                'ghost_placement_mode',
+                default_value='broad',
+                description='Ghost placement mode: broad (legacy) or near_threshold for tighter candidate/association pressure.',
+            ),
+            DeclareLaunchArgument(
+                'ghost_offset_xy_min_m',
+                default_value='3.0',
+                description='Minimum XY offset from truth (m) for ghost detections.',
+            ),
+            DeclareLaunchArgument(
+                'ghost_offset_xy_max_m',
+                default_value='12.0',
+                description='Maximum XY offset from truth (m) for ghost detections.',
+            ),
+            DeclareLaunchArgument(
+                'ghost_near_threshold_xy_min_m',
+                default_value='18.0',
+                description='Minimum XY offset (m) for near-threshold ghost placement mode.',
+            ),
+            DeclareLaunchArgument(
+                'ghost_near_threshold_xy_max_m',
+                default_value='24.0',
+                description='Maximum XY offset (m) for near-threshold ghost placement mode.',
+            ),
+            DeclareLaunchArgument(
+                'ghost_offset_z_std_m',
+                default_value='0.5',
+                description='Z-axis Gaussian std-dev (m) for ghost detections.',
+            ),
+            DeclareLaunchArgument(
+                'ghost_persistence_ticks',
+                default_value='1',
+                description='Number of adjacent noisy-measurement ticks to repeat a sampled ghost offset.',
+            ),
+            DeclareLaunchArgument(
+                'fragmentation_prob',
+                default_value='0.0',
+                description='Probability per publish tick of entering a bounded fragmentation gap.',
+            ),
+            DeclareLaunchArgument(
+                'fragmentation_min_ticks',
+                default_value='2',
+                description='Minimum length (ticks) of a fragmentation gap when fragmentation_prob > 0.',
+            ),
+            DeclareLaunchArgument(
+                'fragmentation_max_ticks',
+                default_value='5',
+                description='Maximum length (ticks) of a fragmentation gap when fragmentation_prob > 0.',
+            ),
+            DeclareLaunchArgument(
+                'fragmentation_staggered_enabled',
+                default_value='false',
+                description='If true, inject deterministic staggered fragmentation gaps on top of the legacy random mode.',
+            ),
+            DeclareLaunchArgument(
+                'fragmentation_stagger_cycle_ticks',
+                default_value='6',
+                description='Tick period for staggered fragmentation gaps when enabled.',
+            ),
+            DeclareLaunchArgument(
+                'fragmentation_stagger_phase_ticks',
+                default_value='1',
+                description='Tick offset before staggered fragmentation begins when enabled.',
+            ),
+            DeclareLaunchArgument(
+                'fragmentation_stagger_gap_ticks',
+                default_value='2',
+                description='Length (ticks) of each staggered fragmentation gap when enabled.',
             ),
             DeclareLaunchArgument(
                 'intercept_heatmap_prob_export_dir',
