@@ -28,6 +28,7 @@ See [`metrics_definitions.yaml`](metrics_definitions.yaml) for field semantics (
 | [`classify_realism_failure.py`](classify_realism_failure.py) | Additive realism-stressor taxonomy (R0–R5) layered on top of existing F1–F5 buckets |
 | [`run_ambiguity_sweep.py`](run_ambiguity_sweep.py) | Small matched-seed sensing-ambiguity sweep over additive ghost/fragmentation overlays |
 | [`classify_ambiguity_failure.py`](classify_ambiguity_failure.py) | Additive ambiguity taxonomy (A0–A5) layered on top of existing F1–F5 and R0–R5 buckets |
+| [`classify_selection_oracle_divergence.py`](classify_selection_oracle_divergence.py) | Additive selection/oracle divergence taxonomy (D0–D5), evidence-only and non-authoritative |
 | [`fixtures/sample_heatmap_for_validate.csv`](fixtures/sample_heatmap_for_validate.csv) | Tiny heatmap for `--dry-run` / CI |
 
 ### Launch knobs (evaluation)
@@ -73,7 +74,85 @@ Tip: unset `evaluation_enable_intercept_heatmap_prob` (default **false**) for ev
 - Heatmap-vs-Gazebo validation samples cells deterministically from the heatmap CSV using `--seed`; replay launch args pin `target_start_x_m`, `target_start_y_m`, `target_start_z_m`, and default to headless `use_gazebo_gui:=false`.
 - Runtime-realism overlays remain additive and default-off. Use `run_realism_sweep.py` or explicit launch args with matched seeds/cohorts to keep comparisons interpretable.
 - Sensing-ambiguity overlays remain additive and default-off. Use `run_ambiguity_sweep.py` or explicit launch args with matched seeds/cohorts to keep ghost/fragmentation comparisons interpretable.
+- Wave 4 bringup observability is additive and default-off. Observer-aware evaluation rows may include passive continuity, persistence, and churn evidence, but historical logs without observer markers still parse with zero-valued additive fields.
+- Wave 7 selection/oracle divergence fields are additive and evidence-only: mismatch block indices/counts localize replay-side oracle disagreement without changing authority or parser contracts.
+- Wave 7 is now frozen stable: selection/oracle divergence is replay-classifiable, late-stage, and geometry-sensitive, while fragmented timing remains locally useful but not robustly transferable.
+- Wave 4 is now frozen stable: the passive bringup observer and selection-visibility proxy are evidence-only, additive, and non-authoritative.
+- Wave 5 is now frozen stable: confirmed-track reachability and recovery exist in the bringup topology, but the timing envelope is narrow and phase-sensitive.
 - Matched seeds preserve comparability, not bitwise identity: Gazebo / ROS scheduling can still introduce bounded rerun variance in miss distance or intercept time even when the qualitative outcome and overlay counts remain aligned.
+
+### Wave 5 timing-envelope freeze
+
+Wave 5 established a bounded recovery envelope under the real bringup topology.
+
+Validated findings:
+
+- recovery exists once confirmed-track reachability is present
+- recovery is cadence-sensitive
+- lifecycle stability is phase-sensitive
+- aggressive silence does not monotonically improve recovery
+- `cycle=7 gap=4 phase=1` is an instability pocket in the tested region
+- `cycle=7 gap=4 phase=3` is the strongest bounded fragmented operating point in the tested region
+
+Safe bounded experimental region:
+
+- keep the validated reachability geometry:
+  - `target_start_x_m:=-1500.0`
+  - `target_start_y_m:=0.0`
+  - `target_start_z_m:=300.0`
+- use matched seeds when comparing cadence / phase variants
+- treat the observer-enabled reachability baseline as the safest reference arm
+- if fragmentation timing is required, stay near the `cycle=7 / gap=4` family and avoid `phase=1`
+
+Phase-sensitive caution:
+
+- identical cadence shape with different `fragmentation_stagger_phase_ticks` can materially change success, churn, and deletion
+- keep phase comparisons explicit in profile ids / cohort names
+- do not infer monotonic behavior from stronger silence windows alone
+
+### Wave 3 lifecycle-activation freeze
+
+Wave 3 threshold-sensitive lifecycle activation is frozen with a **stable** validation verdict.
+
+Implemented Wave 3 scope:
+
+- bringup-topology sweep support
+- cadence-aligned silence bursts
+- silence/resume oscillation refinement
+- Wave 3 threshold-sensitive profile matrix in `fixtures/ambiguity_sweep_profiles_wave3.csv`
+- matched-seed lifecycle activation sweeps
+- regression and governance validation
+
+Parser and replay boundaries remain unchanged:
+
+- parser-visible summaries from `parse_run_to_result` remain stable
+- added silence/timing annotations are explanatory only
+- added lifecycle metrics are additive derivations only
+- downstream tools are not required to consume the new annotations
+
+Current empirical limit:
+
+- bringup topology was exercised successfully
+- fragmentation pressure increased
+- lifecycle counters still remained dormant
+- tactical / selection visibility may itself be under-driven in the current bringup evaluation topology
+- sustained threshold crossing remains unresolved
+
+Key architectural insight:
+
+- propagation refinement alone was insufficient
+- lifecycle activation may now be limited by evaluation/topology visibility itself
+- additional realism breadth is not yet justified
+- current priority remains topology-aware lifecycle observability refinement through existing paths
+
+Next narrow realism frontier:
+
+- topology-aware lifecycle observability refinement through the existing `bringup.launch.py -> /fused_detections -> tracking_node -> /tracks/state` path
+- keep it default-off, replay-safe, parser-safe, and additive-only
+
+Warning:
+
+- do not interpret dormant lifecycle counters or `nan` tactical summary fields as proof of tracker robustness
 
 ### Wave 2 lifecycle-propagation freeze
 

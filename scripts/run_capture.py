@@ -71,6 +71,16 @@ def _bash_cmd(source_setup: Path, inner_cmd: str) -> list[str]:
     return ["bash", "-lc", f"source {source_setup} && {inner_cmd}"]
 
 
+def _ros_launch_cmd_for_scenario(scenario: str) -> str:
+    if scenario == "single":
+        return "ros2 launch gazebo_target_sim gazebo_target.launch.py"
+    if scenario == "multi":
+        return "ros2 launch gazebo_target_sim gazebo_target_multi.launch.py"
+    if scenario == "bringup":
+        return "ros2 launch counter_uas bringup.launch.py"
+    raise ValueError(f"Unknown scenario: {scenario!r}")
+
+
 def run_capture(
     *,
     scenario: str,
@@ -88,12 +98,7 @@ def run_capture(
     log_path = RUNS_DIR / f"{run_id}.log"
     meta_path = RUNS_DIR / f"{run_id}.meta.json"
 
-    if scenario == "single":
-        ros_cmd = "ros2 launch gazebo_target_sim gazebo_target.launch.py"
-    elif scenario == "multi":
-        ros_cmd = "ros2 launch gazebo_target_sim gazebo_target_multi.launch.py"
-    else:
-        raise ValueError(f"Unknown scenario: {scenario!r}")
+    ros_cmd = _ros_launch_cmd_for_scenario(scenario)
 
     if launch_args:
         ros_cmd = f"{ros_cmd} {launch_args}"
@@ -186,7 +191,7 @@ def run_capture(
 
 def main() -> int:
     p = argparse.ArgumentParser(description="Run a scenario and capture machine-parsable logs.")
-    p.add_argument("--scenario", choices=["single", "multi"], default="single")
+    p.add_argument("--scenario", choices=["single", "multi", "bringup"], default="single")
     p.add_argument("--timeout-s", type=float, default=14.0)
     p.add_argument("--notes", type=str, default=None)
     p.add_argument(
@@ -223,4 +228,3 @@ def main() -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
-

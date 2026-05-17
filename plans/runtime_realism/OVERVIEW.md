@@ -21,8 +21,12 @@ Current frozen checkpoint:
 
 - Wave 1 tracks-state-centered ambiguity realism is complete and stable
 - Wave 2 lifecycle-propagation refinement is complete and stable
-- remaining realism frontier is sustained threshold-crossing through the existing
-  `/fused_detections -> tracking_node -> /tracks/state` flow
+- Wave 3 threshold-sensitive lifecycle activation is complete and stable
+- Wave 4 topology-aware lifecycle observability refinement is complete and stable
+- Wave 5 threshold-crossing lifecycle activation refinement is complete and stable
+- remaining realism frontier is bounded cadence / phase refinement inside the validated
+  bringup reachability geometry through the existing `bringup.launch.py ->
+  /fused_detections -> tracking_node -> /tracks/state` path
 - future work must remain additive-only, default-off, seed-controlled, parser-safe,
   and outside tracker/fusion redesign
 

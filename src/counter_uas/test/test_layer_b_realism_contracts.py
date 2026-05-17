@@ -19,6 +19,9 @@ def test_full_stack_bringup_prefers_tracks_state() -> None:
     assert "default_value='tracks_state'" in text
     assert "'tracks_state_topic': LaunchConfiguration('tracks_state_topic')" in text
     assert "default_value='/tracks/state'" in text
+    assert "'target_start_x_m': LaunchConfiguration('target_start_x_m')" in text
+    assert "'target_start_y_m': LaunchConfiguration('target_start_y_m')" in text
+    assert "'target_start_z_m': LaunchConfiguration('target_start_z_m')" in text
 
 
 def test_standalone_single_target_keeps_ground_truth_default_with_state_override() -> None:

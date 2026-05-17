@@ -21,6 +21,16 @@ _LINE_FEASIBLE = re.compile(
     re.IGNORECASE,
 )
 _LINE_SELECTED = re.compile(r"^selected\s*:\s*(\S+)", re.IGNORECASE)
+_LIFECYCLE_OBSERVER_SUMMARY_RE = re.compile(
+    r"\[LIFECYCLE_OBSERVER\]\s+event=summary\b.*?"
+    r"tracks_state_msgs_window=(?P<msgs>\d+).*?"
+    r"unique_track_ids_window=(?P<uniq>\d+).*?"
+    r"track_persistence_events_window=(?P<persist>\d+)",
+)
+_TRACK_CONTINUITY_GAP_RE = re.compile(r"\[TRACK_CONTINUITY\]\s+event=track_gap\b")
+_TRACK_CONTINUITY_CHANGE_RE = re.compile(r"\[TRACK_CONTINUITY\]\s+event=track_id_change\b")
+_SELECTION_PROXY_RE = re.compile(r"\[SELECTION_PROXY\]\s+event=track_persistence_window\b")
+_FRAGMENTED_GAP_RE = re.compile(r"\[REALISM_EVENT\]\s+fragmented_gap_start\b")
 
 
 def _strip_ros_launch_prefix(line: str) -> str:
@@ -52,8 +62,11 @@ def extract_selection_blocks(text: str) -> list[dict[str, object]]:
 
     i = 0
     max_scan_lines = 64
+    fragmented_gap_seen = False
     while i < len(lines):
         headline = _strip_ros_launch_prefix(lines[i])
+        if _FRAGMENTED_GAP_RE.search(headline):
+            fragmented_gap_seen = True
         if _SELECTION_HEADER not in headline:
             i += 1
             continue
@@ -68,6 +81,8 @@ def extract_selection_blocks(text: str) -> list[dict[str, object]]:
             # Next header starts a fresh block handled by outer loop at index j.
             if _SELECTION_HEADER in line_stripped:
                 break
+            if _FRAGMENTED_GAP_RE.search(nxt_strip):
+                fragmented_gap_seen = True
 
             m_fe = _LINE_FEASIBLE.match(line_stripped)
             if m_fe:
@@ -94,6 +109,9 @@ def extract_selection_blocks(text: str) -> list[dict[str, object]]:
                 "oracle_tti_min": tmin,
                 "selected": sel,
                 "oracle_match": match,
+                "block_index": len(out) + 1,
+                "line_index": i + 1,
+                "after_fragmented_gap": fragmented_gap_seen,
             },
         )
         # Continue from first line following this block without re-consuming the header.
@@ -142,12 +160,18 @@ def selection_audit_summary(text: str) -> dict:
             "last_oracle_ids": [],
             "last_oracle_tti_min": None,
             "last_oracle_match": None,
+            "first_selection_mismatch_block": 0,
+            "last_selection_mismatch_block": 0,
+            "selection_mismatch_count": 0,
+            "mismatch_after_fragmented_gap_count": 0,
         }
     matches = sum(1 for b in blocks if b.get("oracle_match") is True)
     aud = sum(1 for b in blocks if b.get("oracle_match") is not None)
     lb = blocks[-1]
     oids = lb["oracle_ids"] if isinstance(lb.get("oracle_ids"), list) else []
     rate = matches / aud if aud else None
+    mismatch_blocks = [b for b in blocks if b.get("oracle_match") is False]
+    mismatch_indices = [int(b.get("block_index", 0) or 0) for b in mismatch_blocks]
     return {
         "n_selection_blocks": len(blocks),
         "selection_oracle_match_rate": rate,
@@ -155,4 +179,35 @@ def selection_audit_summary(text: str) -> dict:
         "last_oracle_ids": list(oids),
         "last_oracle_tti_min": lb.get("oracle_tti_min"),
         "last_oracle_match": lb.get("oracle_match"),
+        "first_selection_mismatch_block": min(mismatch_indices, default=0),
+        "last_selection_mismatch_block": max(mismatch_indices, default=0),
+        "selection_mismatch_count": len(mismatch_blocks),
+        "mismatch_after_fragmented_gap_count": sum(
+            1 for b in mismatch_blocks if bool(b.get("after_fragmented_gap", False))
+        ),
+    }
+
+
+def observer_visibility_summary(text: str) -> dict:
+    summary_windows = 0
+    persistence_window_count = 0
+    churn_event_count = 0
+    selection_proxy_event_count = 0
+
+    for raw_line in text.splitlines():
+        line = _strip_ros_launch_prefix(raw_line)
+        ms = _LIFECYCLE_OBSERVER_SUMMARY_RE.search(line)
+        if ms:
+            summary_windows += 1
+            persistence_window_count += int(ms.group("persist"))
+        if _TRACK_CONTINUITY_GAP_RE.search(line) or _TRACK_CONTINUITY_CHANGE_RE.search(line):
+            churn_event_count += 1
+        if _SELECTION_PROXY_RE.search(line):
+            selection_proxy_event_count += 1
+
+    return {
+        "observer_visibility_windows": summary_windows,
+        "persistence_window_count": persistence_window_count,
+        "churn_event_count": churn_event_count,
+        "selection_proxy_event_count": selection_proxy_event_count,
     }

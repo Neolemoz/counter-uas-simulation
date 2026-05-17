@@ -154,3 +154,85 @@ Next roadmap frontier:
 - additive threshold-sensitive lifecycle activation refinement through the existing
   `/fused_detections -> tracking_node -> /tracks/state` flow
 - keep it default-off, replay-safe, parser-safe, and additive-only
+
+Wave 3 then exercised that frontier and is now frozen stable:
+
+- bringup-topology sweep support
+- cadence-aligned silence bursts
+- silence/resume oscillation refinement
+- Wave 3 threshold-sensitive profile matrix
+- matched-seed lifecycle activation sweeps
+- regression and governance validation
+
+Empirical conclusion:
+
+- bringup topology was exercised successfully
+- fragmentation pressure increased
+- lifecycle counters still remained dormant
+- tactical / selection visibility may itself be under-driven in the current bringup evaluation topology
+- sustained threshold crossing remains unresolved
+
+Frozen boundaries for Wave 3:
+
+- no tracker redesign
+- no fusion redesign
+- no `/tracks/state` semantic change
+- no parser-contract change
+- no topic/schema change
+- no hardware/PX4/MAVLink/HITL assumptions
+
+Next roadmap frontier:
+
+- topology-aware lifecycle observability refinement through the existing
+  `bringup.launch.py -> /fused_detections -> tracking_node -> /tracks/state` path
+- keep it default-off, replay-safe, parser-safe, and additive-only
+
+Wave 4 then added the passive bringup observability tap and is now frozen stable:
+
+- default-off lifecycle observer
+- passive selection-visibility proxy
+- additive observer-aware evaluation summaries
+
+Empirical conclusion:
+
+- bringup lifecycle / selection visibility is now observable
+- evidence remains passive and non-authoritative
+- lifecycle activation itself remains unresolved when counters stay dormant
+
+Frozen boundaries for Wave 4:
+
+- no tracker redesign
+- no fusion redesign
+- no `/tracks/state` semantic change
+- no parser-contract change
+- no topic/schema change
+- no hardware/PX4/MAVLink/HITL assumptions
+
+Caution:
+
+- do not interpret dormant lifecycle counters or `nan` tactical summary fields as proof of tracker robustness
+
+Wave 7 then completed the selection/oracle divergence audit and is now frozen stable:
+
+- selection/oracle divergence is replay-classifiable
+- divergence onset is late-stage and replay-localizable
+- divergence follows fragmentation-gap / churn escalation
+- fragmented timing remains locally useful but not robustly transferable
+- failures are geometry-sensitive instability signatures, not proof of missing lifecycle capability
+
+Frozen Wave 7 evaluation fields:
+
+- `selection_oracle_divergence_class`
+- `first_selection_mismatch_block`
+- `last_selection_mismatch_block`
+- `selection_mismatch_count`
+- `mismatch_after_fragmented_gap_count`
+
+Frozen boundaries for Wave 7:
+
+- no runtime behavior change
+- no tracker redesign
+- no fusion redesign
+- no parser-contract change
+- no authority reinterpretation
+- no architecture redesign

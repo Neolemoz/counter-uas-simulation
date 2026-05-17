@@ -407,7 +407,7 @@ def main() -> int:
             'Use with matrix harness to separate spatial runs from RNG noise.'
         ),
     )
-    pr.add_argument("--scenario", choices=["single", "multi"], default="single")
+    pr.add_argument("--scenario", choices=["single", "multi", "bringup"], default="single")
     pr.add_argument("--timeout-s", type=float, default=14.0)
     pr.add_argument("--launch-args", type=str, default=None)
     pr.add_argument("--label", default="run")

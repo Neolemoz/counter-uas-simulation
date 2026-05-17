@@ -1,4 +1,5 @@
 from launch import LaunchDescription
+from launch.conditions import IfCondition
 from launch.actions import DeclareLaunchArgument, IncludeLaunchDescription
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch.substitutions import LaunchConfiguration, PathJoinSubstitution
@@ -48,6 +49,9 @@ def generate_launch_description() -> LaunchDescription:
             'fragmentation_stagger_cycle_ticks': LaunchConfiguration('fragmentation_stagger_cycle_ticks'),
             'fragmentation_stagger_phase_ticks': LaunchConfiguration('fragmentation_stagger_phase_ticks'),
             'fragmentation_stagger_gap_ticks': LaunchConfiguration('fragmentation_stagger_gap_ticks'),
+            'target_start_x_m': LaunchConfiguration('target_start_x_m'),
+            'target_start_y_m': LaunchConfiguration('target_start_y_m'),
+            'target_start_z_m': LaunchConfiguration('target_start_z_m'),
             # Forward through so one ``ros2 launch counter_uas bringup`` line can toggle
             # Gazebo GUI and RViz (defaults match gazebo_target.launch.py).
             'use_gazebo_gui': LaunchConfiguration('use_gazebo_gui'),
@@ -167,6 +171,21 @@ def generate_launch_description() -> LaunchDescription:
                 description='Forwarded staggered fragmentation gap length (ticks).',
             ),
             DeclareLaunchArgument(
+                'target_start_x_m',
+                default_value='-2400.0',
+                description='Forwarded target sphere initial X (m) for reachable bringup profiles.',
+            ),
+            DeclareLaunchArgument(
+                'target_start_y_m',
+                default_value='1680.0',
+                description='Forwarded target sphere initial Y (m) for reachable bringup profiles.',
+            ),
+            DeclareLaunchArgument(
+                'target_start_z_m',
+                default_value='1650.0',
+                description='Forwarded target sphere initial Z (m) for reachable bringup profiles.',
+            ),
+            DeclareLaunchArgument(
                 'use_gazebo_gui',
                 default_value='true',
                 description=(
@@ -180,6 +199,14 @@ def generate_launch_description() -> LaunchDescription:
                 description=(
                     'Passed to gazebo_target.launch.py — if true, starts rviz2 with '
                     'gazebo_target_sim/rviz/hit_overlay.rviz.'
+                ),
+            ),
+            DeclareLaunchArgument(
+                'enable_lifecycle_observer',
+                default_value='false',
+                description=(
+                    'Default-off passive observer for /tracks/state and optional selection evidence in the '
+                    'real bringup topology.'
                 ),
             ),
             gazebo_target,
@@ -225,6 +252,14 @@ def generate_launch_description() -> LaunchDescription:
                 executable='viz_node',
                 name='viz_node',
                 output='screen',
+                parameters=params,
+            ),
+            Node(
+                package='counter_uas',
+                executable='lifecycle_observer_node',
+                name='lifecycle_observer_node',
+                output='screen',
+                condition=IfCondition(LaunchConfiguration('enable_lifecycle_observer')),
                 parameters=params,
             ),
         ],

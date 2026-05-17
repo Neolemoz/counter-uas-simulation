@@ -1,14 +1,14 @@
 import os
 from glob import glob
 
-from setuptools import setup
+from setuptools import find_packages, setup
 
 package_name = 'counter_uas'
 
 setup(
     name=package_name,
     version='0.0.1',
-    packages=[],
+    packages=find_packages(exclude=['test']),
     data_files=[
         ('share/ament_index/resource_index/packages', ['resource/' + package_name]),
         ('share/' + package_name, ['package.xml']),
@@ -23,4 +23,9 @@ setup(
     maintainer_email='user@example.com',
     description='Launch bringup for the counter-UAS simulation stack.',
     license='Apache-2.0',
+    entry_points={
+        'console_scripts': [
+            'lifecycle_observer_node = counter_uas.lifecycle_observer_node:main',
+        ],
+    },
 )

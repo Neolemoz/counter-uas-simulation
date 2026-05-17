@@ -68,6 +68,15 @@ def test_realism_metrics_handles_logs_without_realism_tags() -> None:
         'ghost_detection_count': 0,
         'fragmented_gap_count': 0,
         'fragmented_gap_end_count': 0,
+        'lifecycle_observer_summary_count': 0,
+        'tracks_state_observation_count': 0,
+        'unique_track_ids_observed_count': 0,
+        'track_continuity_gap_count': 0,
+        'track_continuity_change_count': 0,
+        'selection_proxy_window_count': 0,
+        'selection_proxy_event_count': 0,
+        'track_persistence_boundary_count': 0,
+        'lifecycle_observer_selected_id_count': 0,
         'candidate_spawn_count': 0,
         'candidate_discard_count': 0,
         'duplicate_track_merge_count': 0,
@@ -95,3 +104,29 @@ def test_realism_metrics_accepts_wave1_annotation_fields_without_contract_change
     assert out['ghost_detection_count'] == 1
     assert out['fragmented_gap_count'] == 1
     assert out['fragmented_gap_end_count'] == 1
+
+
+def test_realism_metrics_counts_passive_lifecycle_observer_evidence_additively() -> None:
+    mod = _load_realism_metrics()
+    log = """
+    [lifecycle_observer_node-1] [LIFECYCLE_OBSERVER] event=armed tracks_state_topic=/tracks/state selected_id_topic=/interceptor/selected_id summary_period_s=5.000 gap_warn_s=0.300
+    [lifecycle_observer_node-1] [TRACK_CONTINUITY] event=track_first_seen track_id=7 frame_id=track_7
+    [lifecycle_observer_node-1] [TRACK_CONTINUITY] event=track_gap gap_s=0.400 prev_track_id=7 next_track_id=8 frame_id=track_8
+    [lifecycle_observer_node-1] [TRACK_CONTINUITY] event=track_id_change prev_track_id=7 next_track_id=8 gap_s=0.400 frame_id=track_8
+    [lifecycle_observer_node-1] [LIFECYCLE_OBSERVER] event=selected_id selected_id=interceptor_2 previous_selected_id=(none)
+    [lifecycle_observer_node-1] [SELECTION_PROXY] event=track_persistence_window track_id=7 persistence_s=1.200 track_switch_to=8 frame_id=track_8
+    [lifecycle_observer_node-1] [TRACK_PERSISTENCE] event=track_persistence_boundary previous_track_id=7 next_track_id=8 persistence_s=1.200
+    [lifecycle_observer_node-1] [LIFECYCLE_OBSERVER] event=summary tracks_state_msgs_window=4 tracks_state_msgs_total=4 unique_track_ids_window=2 track_id_changes_window=1 track_gap_events_window=1 track_persistence_events_window=1 selected_id_changes_window=1 idle_s=0.500 last_track_id=8 selected_id=interceptor_2
+    """.strip()
+
+    out = mod.realism_metrics_summary(log)
+
+    assert out['lifecycle_observer_summary_count'] == 1
+    assert out['tracks_state_observation_count'] == 4
+    assert out['unique_track_ids_observed_count'] == 2
+    assert out['track_continuity_gap_count'] == 1
+    assert out['track_continuity_change_count'] == 1
+    assert out['selection_proxy_window_count'] == 1
+    assert out['selection_proxy_event_count'] == 1
+    assert out['track_persistence_boundary_count'] == 1
+    assert out['lifecycle_observer_selected_id_count'] == 1

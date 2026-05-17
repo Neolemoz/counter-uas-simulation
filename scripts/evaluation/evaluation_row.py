@@ -19,7 +19,9 @@ if str(_EVAL_DIR) not in sys.path:
 import summarize_run  # noqa: E402
 from classify_ambiguity_failure import classify_ambiguity_failure  # noqa: E402
 from classify_realism_failure import classify_realism_failure  # noqa: E402
+from classify_selection_oracle_divergence import classify_selection_oracle_divergence  # noqa: E402
 from realism_metrics import realism_metrics_summary  # noqa: E402
+from selection_audit import observer_visibility_summary  # noqa: E402
 from selection_audit import selection_audit_summary  # noqa: E402
 
 
@@ -28,6 +30,7 @@ def evaluation_row(log_path: Path, *, meta_path: Path | None = None) -> dict:
     run_id = log_path.stem
     ss = summarize_run.parse_log(text, run_id=run_id)
     sa = selection_audit_summary(text)
+    ov = observer_visibility_summary(text)
     rm = realism_metrics_summary(text)
     meta: dict = {}
     if meta_path and meta_path.is_file():
@@ -42,9 +45,11 @@ def evaluation_row(log_path: Path, *, meta_path: Path | None = None) -> dict:
 
     row = dc_asdict(ss)
     row.update(sa)
+    row.update(ov)
     row.update(rm)
     row["ambiguity_failure_class"] = classify_ambiguity_failure(row)
     row["realism_failure_class"] = classify_realism_failure(row)
+    row["selection_oracle_divergence_class"] = classify_selection_oracle_divergence(row)
     row.update(
         {
             "git_commit": git_commit,

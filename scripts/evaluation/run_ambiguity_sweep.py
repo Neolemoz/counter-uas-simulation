@@ -22,6 +22,7 @@ for p in (_SCRIPTS_DIR, _EVAL_DIR):
 
 from evaluation_row import evaluation_row  # noqa: E402
 from classify_ambiguity_failure import classify_ambiguity_failure  # noqa: E402
+from classify_selection_oracle_divergence import classify_selection_oracle_divergence  # noqa: E402
 
 
 def _run_cmd(cmd: list[str]) -> None:
@@ -58,10 +59,18 @@ def _summarize_eval_rows(rows: list[dict]) -> dict[str, str]:
         return sum(int(row.get(field, 0) or 0) for row in rows)
 
     ambiguity_classes: dict[str, int] = {}
+    divergence_classes: dict[str, int] = {}
     for row in rows:
         cls = str(row.get('ambiguity_failure_class') or 'A0_none')
         ambiguity_classes[cls] = ambiguity_classes.get(cls, 0) + 1
+        div_cls = str(row.get('selection_oracle_divergence_class') or 'D5_inconclusive_visibility_limited')
+        divergence_classes[div_cls] = divergence_classes.get(div_cls, 0) + 1
     dominant_ambiguity = max(ambiguity_classes.items(), key=lambda kv: kv[1])[0] if ambiguity_classes else 'A0_none'
+    dominant_divergence = (
+        max(divergence_classes.items(), key=lambda kv: kv[1])[0]
+        if divergence_classes
+        else 'D5_inconclusive_visibility_limited'
+    )
 
     return {
         'ghost_detection_count': str(_sum_int('ghost_detection_count')),
@@ -74,7 +83,10 @@ def _summarize_eval_rows(rows: list[dict]) -> dict[str, str]:
         'max_track_missed_frames': str(max((int(row.get('max_track_missed_frames', 0) or 0) for row in rows), default=0)),
         'selection_oracle_match_rate_mean': f'{_fmean(oracle_rates_f):.3f}',
         'n_selection_blocks': str(_sum_int('n_selection_blocks')),
+        'selection_mismatch_count': str(_sum_int('selection_mismatch_count')),
+        'mismatch_after_fragmented_gap_count': str(_sum_int('mismatch_after_fragmented_gap_count')),
         'dominant_ambiguity_failure_class': dominant_ambiguity,
+        'dominant_selection_oracle_divergence_class': dominant_divergence,
     }
 
 
@@ -143,6 +155,7 @@ def main() -> int:
                     eval_row = evaluation_row(log_path, meta_path=meta_path if meta_path.is_file() else None)
                     eval_row['notes_meta'] = f"{eval_row.get('notes_meta') or ''} scenario={scenario} profile={profile_id} notes={notes}".strip()
                     eval_row['ambiguity_failure_class'] = classify_ambiguity_failure(eval_row)
+                    eval_row['selection_oracle_divergence_class'] = classify_selection_oracle_divergence(eval_row)
                     per_rows.append(eval_row)
         derived = _summarize_eval_rows(per_rows)
         success_rate_pct = f"{100.0 * float(summary.get('success_rate', 0.0)):.1f}"

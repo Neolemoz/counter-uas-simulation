@@ -11,6 +11,9 @@
 
   <exec_depend>launch</exec_depend>
   <exec_depend>launch_ros</exec_depend>
+  <exec_depend>rclpy</exec_depend>
+  <exec_depend>nav_msgs</exec_depend>
+  <exec_depend>std_msgs</exec_depend>
   <exec_depend>gazebo_target_sim</exec_depend>
   <exec_depend>ros_gz_bridge</exec_depend>
   <exec_depend>world_sim</exec_depend>
