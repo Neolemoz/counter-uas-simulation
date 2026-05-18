@@ -41,6 +41,16 @@ tracking_node:
   ros__parameters:
     scenario: single
     mahalanobis_gate_threshold: 16.27
+    # Default bringup is the km-scale Gazebo stack and consumes /tracks/state.
+    # Keep the tracker gates aligned with the paired radar/camera cadence so
+    # tracks confirm before the interceptor waits forever on an empty stream.
+    candidate_match_gate_m: 20.0
+    candidate_predictive_gate: true
+    association_gate_m: 25.0
+    confirmation_hits: 2
+    candidate_max_missed_frames: 5
+    max_track_speed_mps: 80.0
+    max_update_jump_m: 25.0
 
 viz_node:
   ros__parameters:
