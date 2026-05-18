@@ -6,6 +6,8 @@ This folder supports the roadmap for **spatial DOE**, **heatmap surrogate valida
 
 See [`metrics_definitions.yaml`](metrics_definitions.yaml) for field semantics (`success`, `hit`, oracle selection).
 
+For the current freeze registry, layer map, and meta-governance review guidance, see [`docs/evaluation/meta_governance_maturity_review_r1.md`](../../docs/evaluation/meta_governance_maturity_review_r1.md).
+
 ## Scripts (repo root vs this folder)
 
 | Tool | Purpose |
