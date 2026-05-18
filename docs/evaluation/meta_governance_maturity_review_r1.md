@@ -94,6 +94,14 @@ This inventory describes frozen layers as documentation and governance surfaces.
 - Governance assumptions: UX clarity is allowed only while it preserves non-authoritative evidence layering.
 - Maintenance implication: repeated caveats should be centralized or referenced to avoid drift and reviewer fatigue.
 
+### Phase 3 Replay Narrative Validation Layer
+
+- Purpose: validate static replay narratives for reviewer interpretation coherence, including sequence readability, evidence visibility, taxonomy coherence, ambiguity handling, provenance visibility, and maintainability.
+- Authority boundary: reviewer-interpretation validation only; no runtime correctness, readiness, certification, severity, capability, robustness, tactical authority, parser/schema, live replay, operator, or operational visualization semantics.
+- Artifact surfaces: [replay_narrative_validation_phase3_plan.md](replay_narrative_validation_phase3_plan.md), [replay_narrative_validation_phase3_review.md](replay_narrative_validation_phase3_review.md), [replay_narrative_validation_phase3_freeze_audit.md](replay_narrative_validation_phase3_freeze_audit.md), [reviewer_interpretation_guide.md](reviewer_interpretation_guide.md), and [scripts/evaluation/README.md](../../scripts/evaluation/README.md).
+- Governance assumptions: validation findings are qualitative reviewer notes; narrative summaries remain sequence-oriented and evidence-oriented, not causal-assertive or authoritative.
+- Maintenance implication: future generated reports, if separately scoped, should stay static, deterministic, replay-side, and non-authoritative, with repeated caveats centralized through the reviewer guide.
+
 ## 3. Structural Risk Map
 
 ### Semantic Overlap

@@ -7,6 +7,7 @@ This folder supports the roadmap for **spatial DOE**, **heatmap surrogate valida
 See [`metrics_definitions.yaml`](metrics_definitions.yaml) for field semantics (`success`, `hit`, oracle selection).
 
 For the current freeze registry, layer map, and meta-governance review guidance, see [`docs/evaluation/meta_governance_maturity_review_r1.md`](../../docs/evaluation/meta_governance_maturity_review_r1.md).
+For the Phase 3 replay narrative validation scope, reviewer matrix/rubric, and freeze audit, see [`docs/evaluation/replay_narrative_validation_phase3_plan.md`](../../docs/evaluation/replay_narrative_validation_phase3_plan.md), [`docs/evaluation/replay_narrative_validation_phase3_review.md`](../../docs/evaluation/replay_narrative_validation_phase3_review.md), and [`docs/evaluation/replay_narrative_validation_phase3_freeze_audit.md`](../../docs/evaluation/replay_narrative_validation_phase3_freeze_audit.md).
 
 ## Scripts (repo root vs this folder)
 
