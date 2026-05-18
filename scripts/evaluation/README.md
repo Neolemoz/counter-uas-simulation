@@ -29,6 +29,7 @@ See [`metrics_definitions.yaml`](metrics_definitions.yaml) for field semantics (
 | [`run_ambiguity_sweep.py`](run_ambiguity_sweep.py) | Small matched-seed sensing-ambiguity sweep over additive ghost/fragmentation overlays |
 | [`classify_ambiguity_failure.py`](classify_ambiguity_failure.py) | Additive ambiguity taxonomy (A0–A5) layered on top of existing F1–F5 and R0–R5 buckets |
 | [`classify_selection_oracle_divergence.py`](classify_selection_oracle_divergence.py) | Additive selection/oracle divergence taxonomy (D0–D5), evidence-only and non-authoritative |
+| [`replay_observability.py`](replay_observability.py) | Additive replay evidence bundles, divergence traces, lifecycle timelines, matched-seed reports, topology/timing indexes, governance linting, and static reviewer reports |
 | [`fixtures/sample_heatmap_for_validate.csv`](fixtures/sample_heatmap_for_validate.csv) | Tiny heatmap for `--dry-run` / CI |
 
 ### Launch knobs (evaluation)
@@ -239,6 +240,35 @@ For tooling, treat topic semantics such as `/interceptor/selected_id` and per-in
 - Use `compare` tables as side-by-side descriptive comparisons. Do not describe one arm as statistically superior unless matched seed/geometry/cohort/launch assumptions are documented and a separate significance or uncertainty analysis is performed.
 - Use heatmap `GOOD` / `PARTIAL` / `POOR` only for offline-vs-Gazebo surrogate agreement under aligned assumptions. Do not translate those labels into operational readiness, field P(kill), or doctrine language.
 - When presenting parser-derived metrics, keep the metric source visible: `miss_distance_m` may come from `[min_miss]` or the minimum parsed distance series, and `intercept_time_s` may come from the last `t_go` or `t_hit` sample.
+- Replay observability reports from `replay_observability.py` are derived evaluation artifacts only. They preserve raw lineage and distinguish raw runtime evidence, canonical parser-visible summaries, additive evaluation artifacts, and explanatory visualization layers.
+
+### Replay observability reviewer artifacts
+
+`replay_observability.py` packages existing evidence without changing runtime behavior, parser-visible contracts, lifecycle semantics, divergence taxonomy labels, or authority surfaces.
+
+```bash
+python3 scripts/evaluation/replay_observability.py single-run-report \
+  runs/logs/YOUR_RUN.log \
+  --meta runs/logs/YOUR_RUN.meta.json \
+  --out-json runs/evaluation/YOUR_RUN.replay_observability.json
+
+python3 scripts/evaluation/replay_observability.py paired-comparison \
+  runs/mc/baseline.csv runs/mc/candidate.csv \
+  --out-json runs/evaluation/baseline_vs_candidate.replay_observability.json
+
+python3 scripts/evaluation/replay_observability.py topology-index \
+  scripts/evaluation/fixtures/ambiguity_sweep_profiles_wave6_transferability.csv \
+  --out-json runs/evaluation/wave6_topology_timing_index.json
+
+python3 scripts/evaluation/replay_observability.py governance-lint \
+  runs/evaluation/YOUR_RUN.replay_observability.json
+
+python3 scripts/evaluation/replay_observability.py static-report \
+  runs/evaluation/YOUR_RUN.replay_observability.json \
+  --out-markdown runs/evaluation/YOUR_RUN.replay_observability.md
+```
+
+These reports are review conveniences: they do not create a unified authoritative replay state and must not be used as operational readiness, hardware readiness, tactical authority, or lifecycle robustness claims.
 
 ### Engagement metrics (`[ENG_METRIC]`)
 
