@@ -266,6 +266,14 @@ python3 scripts/evaluation/replay_observability.py governance-lint \
 python3 scripts/evaluation/replay_observability.py static-report \
   runs/evaluation/YOUR_RUN.replay_observability.json \
   --out-markdown runs/evaluation/YOUR_RUN.replay_observability.md
+
+python3 scripts/evaluation/replay_observability.py dashboard \
+  --single-run-json runs/evaluation/YOUR_RUN.replay_observability.json \
+  --paired-comparison-json runs/evaluation/baseline_vs_candidate.replay_observability.json \
+  --topology-index-json runs/evaluation/wave6_topology_timing_index.json \
+  --governance-lint-json runs/evaluation/YOUR_RUN.governance_lint.json \
+  --out-html runs/evaluation/replay_reviewer_dashboard.html \
+  --out-markdown runs/evaluation/replay_reviewer_dashboard.md
 ```
 
 These reports are review conveniences: they do not create a unified authoritative replay state and must not be used as operational readiness, hardware readiness, tactical authority, or lifecycle robustness claims.

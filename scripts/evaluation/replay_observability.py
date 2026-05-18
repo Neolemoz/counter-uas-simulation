@@ -712,6 +712,330 @@ def render_static_html(markdown_text: str) -> str:
     )
 
 
+def _html_cell(value: Any) -> str:
+    return html.escape("" if value is None else str(value))
+
+
+def _markdown_cell(value: Any) -> str:
+    text = "" if value is None else str(value)
+    return text.replace("|", "\\|").replace("\n", " ")
+
+
+def _markdown_table(headers: list[str], rows: list[list[Any]]) -> list[str]:
+    if not rows:
+        return ["_No rows._", ""]
+    out = [
+        "| " + " | ".join(headers) + " |",
+        "| " + " | ".join("---" for _ in headers) + " |",
+    ]
+    for row in rows:
+        out.append("| " + " | ".join(_markdown_cell(v) for v in row) + " |")
+    out.append("")
+    return out
+
+
+def _html_table(headers: list[str], rows: list[list[Any]]) -> str:
+    if not rows:
+        return "<p><em>No rows.</em></p>"
+    head = "".join(f"<th>{_html_cell(h)}</th>" for h in headers)
+    body_rows = []
+    for row in rows:
+        body_rows.append("<tr>" + "".join(f"<td>{_html_cell(v)}</td>" for v in row) + "</tr>")
+    return "<table><thead><tr>" + head + "</tr></thead><tbody>" + "".join(body_rows) + "</tbody></table>"
+
+
+def _dashboard_inputs(
+    *,
+    single_run: dict[str, Any] | None = None,
+    paired_comparison: dict[str, Any] | None = None,
+    topology_index: dict[str, Any] | None = None,
+    governance_lint: dict[str, Any] | None = None,
+    input_paths: dict[str, str] | None = None,
+) -> dict[str, Any]:
+    return {
+        "single_run": single_run or {},
+        "paired_comparison": paired_comparison or {},
+        "topology_index": topology_index or {},
+        "governance_lint": governance_lint or {},
+        "input_paths": input_paths or {},
+    }
+
+
+def _dashboard_warnings(data: dict[str, Any]) -> list[str]:
+    warnings: list[str] = []
+    single = data["single_run"]
+    bundle = single.get("bundle", {}) if isinstance(single, dict) else {}
+    for source in (
+        bundle,
+        data["paired_comparison"],
+        data["topology_index"],
+        data["governance_lint"],
+    ):
+        if not isinstance(source, dict):
+            continue
+        for warning in source.get("warnings") or []:
+            warnings.append(str(warning))
+        for issue in source.get("issues") or []:
+            warnings.append(f"governance issue: {issue}")
+    return sorted(dict.fromkeys(warnings))
+
+
+def _single_run_rows(single: dict[str, Any]) -> tuple[list[list[Any]], list[list[Any]], list[list[Any]]]:
+    bundle = single.get("bundle", {}) if isinstance(single, dict) else {}
+    lineage = bundle.get("lineage", {}) if isinstance(bundle, dict) else {}
+    trace = single.get("divergence_trace", {}) if isinstance(single, dict) else {}
+    timeline = single.get("lifecycle_timeline", {}) if isinstance(single, dict) else {}
+    trace_summary = trace.get("summary", {}) if isinstance(trace, dict) else {}
+    event_counts = (
+        timeline.get("summary", {}).get("event_counts", {})
+        if isinstance(timeline, dict)
+        else {}
+    )
+    card = [
+        ["run_id", lineage.get("run_id")],
+        ["seed", lineage.get("seed")],
+        ["seed_source", lineage.get("seed_source")],
+        ["cohort", lineage.get("cohort")],
+        ["git_commit", lineage.get("git_commit")],
+        ["git_dirty", lineage.get("git_dirty")],
+        ["log_path", lineage.get("log_path")],
+        ["meta_path", lineage.get("meta_path")],
+        ["divergence_class", trace_summary.get("selection_oracle_divergence_class")],
+        ["first_mismatch_block", trace_summary.get("first_selection_mismatch_block")],
+        ["selection_mismatch_count", trace_summary.get("selection_mismatch_count")],
+    ]
+    divergence_rows = []
+    for block in trace.get("blocks", []) if isinstance(trace, dict) else []:
+        divergence_rows.append(
+            [
+                block.get("block_index"),
+                block.get("line_index"),
+                block.get("selected"),
+                ",".join(str(v) for v in block.get("oracle_ids", [])),
+                block.get("oracle_match"),
+                block.get("after_fragmented_gap"),
+            ]
+        )
+    lifecycle_rows = []
+    for name in sorted(event_counts):
+        lifecycle_rows.append([name, event_counts[name]])
+    return card, divergence_rows, lifecycle_rows
+
+
+def _paired_rows(paired: dict[str, Any]) -> tuple[list[list[Any]], list[list[Any]]]:
+    summary = paired.get("summary", {}) if isinstance(paired, dict) else {}
+    bucket_rows = [[k, v] for k, v in sorted((summary.get("bucket_counts") or {}).items())]
+    seed_rows = []
+    for row in paired.get("paired_seeds", []) if isinstance(paired, dict) else []:
+        base = row.get("base", {})
+        cand = row.get("candidate", {})
+        seed_rows.append(
+            [
+                row.get("seed"),
+                row.get("bucket"),
+                base.get("success"),
+                cand.get("success"),
+                base.get("seed_source"),
+                cand.get("seed_source"),
+                base.get("cohort"),
+                cand.get("cohort"),
+                base.get("log_path"),
+                cand.get("log_path"),
+            ]
+        )
+    seed_rows.sort(key=lambda r: (str(r[0]), str(r[1])))
+    return bucket_rows, seed_rows
+
+
+def _topology_rows(topology: dict[str, Any]) -> tuple[list[list[Any]], list[list[Any]]]:
+    summary = topology.get("summary", {}) if isinstance(topology, dict) else {}
+    timing_rows = [[k, ", ".join(v)] for k, v in sorted((summary.get("timing_groups") or {}).items())]
+    profile_rows = []
+    for record in topology.get("records", []) if isinstance(topology, dict) else []:
+        geometry = record.get("geometry", {})
+        fragmentation = record.get("fragmentation", {})
+        profile_rows.append(
+            [
+                record.get("profile_id"),
+                record.get("scenario"),
+                record.get("profile_label"),
+                geometry.get("target_start_x_m"),
+                geometry.get("target_start_y_m"),
+                geometry.get("target_start_z_m"),
+                fragmentation.get("cycle_ticks"),
+                fragmentation.get("gap_ticks"),
+                fragmentation.get("phase_ticks"),
+                record.get("observer_enabled"),
+                record.get("noise_seed"),
+                record.get("launch_args"),
+                record.get("notes"),
+            ]
+        )
+    profile_rows.sort(key=lambda r: (str(r[0]), str(r[1])))
+    return timing_rows, profile_rows
+
+
+def render_dashboard_markdown(
+    *,
+    single_run: dict[str, Any] | None = None,
+    paired_comparison: dict[str, Any] | None = None,
+    topology_index: dict[str, Any] | None = None,
+    governance_lint: dict[str, Any] | None = None,
+    input_paths: dict[str, str] | None = None,
+) -> str:
+    """Render a static, non-authoritative reviewer dashboard in markdown."""
+
+    data = _dashboard_inputs(
+        single_run=single_run,
+        paired_comparison=paired_comparison,
+        topology_index=topology_index,
+        governance_lint=governance_lint,
+        input_paths=input_paths,
+    )
+    warnings = _dashboard_warnings(data)
+    single_card, divergence_rows, lifecycle_rows = _single_run_rows(data["single_run"])
+    bucket_rows, seed_rows = _paired_rows(data["paired_comparison"])
+    timing_rows, profile_rows = _topology_rows(data["topology_index"])
+    lines = [
+        "# Replay Reviewer Static Dashboard",
+        "",
+        f"**Governance:** {NON_AUTHORITATIVE_NOTICE}",
+        "",
+        "This dashboard is an explanatory visualization layer. It is not a parser contract, "
+        "runtime authority surface, lifecycle semantic replacement, or operational readiness claim.",
+        "",
+        "## Evidence Layer Labels",
+        "",
+        "- Raw runtime evidence: original logs and sidecar metadata.",
+        "- Canonical parser-visible summary: existing success/miss/intercept-time fields.",
+        "- Derived evaluation artifact: additive replay observability JSON.",
+        "- Explanatory visualization layer: this static dashboard.",
+        "",
+        "## Warning Panel",
+        "",
+    ]
+    lines.extend(f"- {w}" for w in warnings or ["No warnings reported by supplied artifacts."])
+    lines.append("")
+    lines.extend(["## Provenance / Evidence Map", ""])
+    input_rows = [[k, v] for k, v in sorted(data["input_paths"].items())]
+    lines.extend(_markdown_table(["artifact", "path"], input_rows))
+    lines.extend(["## Single-Run Replay Card", ""])
+    lines.extend(_markdown_table(["field", "value"], single_card))
+    lines.extend(["## Divergence Timeline Table", ""])
+    lines.append("Temporal context only: fragmented-gap adjacency is not causal proof.")
+    lines.append("")
+    lines.extend(_markdown_table(["block", "line", "selected", "oracle_ids", "match", "after_fragmented_gap"], divergence_rows))
+    lines.extend(["## Lifecycle / Churn Overlay", ""])
+    lines.append("Explanatory overlay only: lifecycle/churn counters are not tracker truth.")
+    lines.append("")
+    lines.extend(_markdown_table(["event_type", "count"], lifecycle_rows))
+    lines.extend(["## Matched-Seed Comparison", ""])
+    lines.append("Descriptive comparison only: no statistical superiority claim is made.")
+    lines.append("")
+    lines.extend(_markdown_table(["bucket", "count"], bucket_rows))
+    lines.extend(
+        _markdown_table(
+            [
+                "seed",
+                "bucket",
+                "base_success",
+                "candidate_success",
+                "base_seed_source",
+                "candidate_seed_source",
+                "base_cohort",
+                "candidate_cohort",
+                "base_log",
+                "candidate_log",
+            ],
+            seed_rows,
+        )
+    )
+    lines.extend(["## Topology / Timing Summary", ""])
+    lines.append("Descriptive grouping only: profile labels do not replace topology semantics.")
+    lines.append("")
+    lines.extend(_markdown_table(["timing_group", "profile_ids"], timing_rows))
+    lines.extend(
+        _markdown_table(
+            [
+                "profile_id",
+                "scenario",
+                "label",
+                "x",
+                "y",
+                "z",
+                "cycle",
+                "gap",
+                "phase",
+                "observer",
+                "noise_seed",
+                "launch_args",
+                "notes",
+            ],
+            profile_rows,
+        )
+    )
+    lines.extend(["## Anti-Claims", ""])
+    for claim in _governance_block()["anti_claims"]:
+        lines.append(f"- {claim}")
+    lines.append("")
+    return "\n".join(lines)
+
+
+def render_dashboard_html(markdown_text: str) -> str:
+    """Render dashboard markdown as deterministic standalone HTML."""
+
+    def _cells(line: str) -> list[str]:
+        return [c.strip() for c in line.strip().strip("|").split("|")]
+
+    lines = markdown_text.splitlines()
+    body: list[str] = []
+    i = 0
+    while i < len(lines):
+        line = lines[i]
+        if line.startswith("# "):
+            body.append(f"<h1>{_html_cell(line[2:])}</h1>")
+        elif line.startswith("## "):
+            body.append(f"<h2>{_html_cell(line[3:])}</h2>")
+        elif line.startswith("**Governance:**"):
+            body.append(f"<p><strong>{_html_cell(line)}</strong></p>")
+        elif line.startswith("- "):
+            items = []
+            while i < len(lines) and lines[i].startswith("- "):
+                items.append(f"<li>{_html_cell(lines[i][2:])}</li>")
+                i += 1
+            body.append("<ul>" + "".join(items) + "</ul>")
+            continue
+        elif line.startswith("| ") and i + 1 < len(lines) and lines[i + 1].startswith("| "):
+            headers = _cells(line)
+            i += 2
+            rows: list[list[str]] = []
+            while i < len(lines) and lines[i].startswith("| "):
+                rows.append(_cells(lines[i]))
+                i += 1
+            body.append(_html_table(headers, rows))
+            continue
+        elif line.strip():
+            body.append(f"<p>{_html_cell(line)}</p>")
+        i += 1
+
+    return (
+        "<!doctype html><html><head><meta charset=\"utf-8\">"
+        "<title>Replay Reviewer Static Dashboard</title>"
+        "<style>"
+        "body{font-family:sans-serif;max-width:1180px;margin:2rem auto;line-height:1.45;}"
+        ".banner{border:1px solid #999;padding:1rem;margin-bottom:1rem;}"
+        "table{border-collapse:collapse;width:100%;margin:0.75rem 0;}"
+        "th,td{border:1px solid #aaa;padding:0.35rem;text-align:left;vertical-align:top;}"
+        "th{font-weight:bold;}"
+        "</style></head><body>"
+        "<div class=\"banner\"><strong>Non-authoritative reviewer dashboard.</strong> "
+        + html.escape(NON_AUTHORITATIVE_NOTICE)
+        + "</div>"
+        + "".join(body)
+        + "</body></html>\n"
+    )
+
+
 def _cmd_bundle(args: argparse.Namespace) -> int:
     payload = build_evidence_bundle(args.log, meta_path=args.meta, evaluation_row_path=args.evaluation_row)
     _write_json(args.out_json, payload)
@@ -769,6 +1093,30 @@ def _cmd_static_report(args: argparse.Namespace) -> int:
     return 0
 
 
+def _cmd_dashboard(args: argparse.Namespace) -> int:
+    input_paths = {
+        "single_run_json": str(args.single_run_json) if args.single_run_json else "",
+        "paired_comparison_json": str(args.paired_comparison_json) if args.paired_comparison_json else "",
+        "topology_index_json": str(args.topology_index_json) if args.topology_index_json else "",
+        "governance_lint_json": str(args.governance_lint_json) if args.governance_lint_json else "",
+    }
+    markdown_text = render_dashboard_markdown(
+        single_run=_read_json(args.single_run_json),
+        paired_comparison=_read_json(args.paired_comparison_json),
+        topology_index=_read_json(args.topology_index_json),
+        governance_lint=_read_json(args.governance_lint_json),
+        input_paths={k: v for k, v in input_paths.items() if v},
+    )
+    args.out_html.parent.mkdir(parents=True, exist_ok=True)
+    args.out_html.write_text(render_dashboard_html(markdown_text), encoding="utf-8")
+    print(f"Wrote {args.out_html.resolve()}")
+    if args.out_markdown:
+        args.out_markdown.parent.mkdir(parents=True, exist_ok=True)
+        args.out_markdown.write_text(markdown_text, encoding="utf-8")
+        print(f"Wrote {args.out_markdown.resolve()}")
+    return 0
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     sub = parser.add_subparsers(dest="cmd", required=True)
@@ -810,6 +1158,15 @@ def main() -> int:
     p_static.add_argument("--out-markdown", type=Path, required=True)
     p_static.add_argument("--out-html", type=Path, default=None)
     p_static.set_defaults(func=_cmd_static_report)
+
+    p_dashboard = sub.add_parser("dashboard", help="Render a static reviewer dashboard from existing JSON artifacts.")
+    p_dashboard.add_argument("--single-run-json", type=Path, default=None)
+    p_dashboard.add_argument("--paired-comparison-json", type=Path, default=None)
+    p_dashboard.add_argument("--topology-index-json", type=Path, default=None)
+    p_dashboard.add_argument("--governance-lint-json", type=Path, default=None)
+    p_dashboard.add_argument("--out-html", type=Path, required=True)
+    p_dashboard.add_argument("--out-markdown", type=Path, default=None)
+    p_dashboard.set_defaults(func=_cmd_dashboard)
 
     args = parser.parse_args()
     return int(args.func(args))

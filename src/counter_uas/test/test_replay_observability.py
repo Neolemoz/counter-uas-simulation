@@ -204,3 +204,115 @@ def test_governance_lint_rejects_missing_labels() -> None:
 
     assert lint['ok'] is False
     assert 'missing governance block' in lint['issues']
+
+
+def test_dashboard_renderer_preserves_governance_and_lineage(tmp_path) -> None:
+    mod = _load_module()
+    log, meta = _write_log_and_meta(tmp_path)
+    single = mod.build_single_run_report(log, meta_path=meta)
+    lint = mod.lint_governance_artifact(single['bundle'])
+    pair = {
+        'artifact_type': 'matched_seed_comparison_report',
+        'governance': single['governance'],
+        'summary': {'bucket_counts': {'G1_base_ok_cand_fail': 1}},
+        'paired_seeds': [
+            {
+                'seed': 101,
+                'bucket': 'G1_base_ok_cand_fail',
+                'base': {
+                    'success': True,
+                    'log_path': str(log),
+                    'seed_source': 'row.seed',
+                    'cohort': 'baseline_cohort',
+                },
+                'candidate': {
+                    'success': False,
+                    'log_path': str(log),
+                    'seed_source': 'meta.cmd',
+                    'cohort': 'candidate_cohort',
+                },
+            }
+        ],
+        'warnings': [],
+    }
+    topology = {
+        'artifact_type': 'topology_timing_analytics_index',
+        'governance': single['governance'],
+        'summary': {
+            'timing_groups': {'enabled=true cycle=7 gap=4 phase=3': ['g0_reference_phase3_bounded']},
+        },
+        'records': [
+            {
+                'profile_id': 'g0_reference_phase3_bounded',
+                'scenario': 'bringup',
+                'profile_label': 'bounded_fragmented_point',
+                'geometry': {
+                    'target_start_x_m': '-1500.0',
+                    'target_start_y_m': '0.0',
+                    'target_start_z_m': '300.0',
+                },
+                'fragmentation': {
+                    'cycle_ticks': '7',
+                    'gap_ticks': '4',
+                    'phase_ticks': '3',
+                },
+                'observer_enabled': 'true',
+                'noise_seed': '101',
+                'launch_args': (
+                    'enable_lifecycle_observer:=true fragmentation_staggered_enabled:=true '
+                    'fragmentation_stagger_cycle_ticks:=7 fragmentation_stagger_gap_ticks:=4 '
+                    'fragmentation_stagger_phase_ticks:=3 noise_seed:=101'
+                ),
+                'notes': 'bounded fragmented point',
+            }
+        ],
+    }
+
+    markdown = mod.render_dashboard_markdown(
+        single_run=single,
+        paired_comparison=pair,
+        topology_index=topology,
+        governance_lint=lint,
+        input_paths={'single_run_json': '/tmp/single.json'},
+    )
+    html = mod.render_dashboard_html(markdown)
+
+    assert 'Replay Reviewer Static Dashboard' in markdown
+    assert 'Derived evaluation artifact only' in markdown
+    assert 'Explanatory visualization layer' in markdown
+    assert 'Temporal context only' in markdown
+    assert 'not a parser contract' in markdown
+    assert str(log) in markdown
+    assert 'meta_path' in markdown
+    assert 'seed_source' in markdown
+    assert 'row.seed' in markdown
+    assert 'meta.cmd' in markdown
+    assert 'baseline_cohort' in markdown
+    assert 'candidate_cohort' in markdown
+    assert 'interceptor_0' in markdown
+    assert 'g0_reference_phase3_bounded' in markdown
+    assert 'enable_lifecycle_observer:=true' in markdown
+    assert 'bounded fragmented point' in markdown
+    assert 'No warnings reported by supplied artifacts.' in markdown
+    assert '<strong>Non-authoritative reviewer dashboard.</strong>' in html
+
+
+def test_dashboard_renderer_is_deterministic(tmp_path) -> None:
+    mod = _load_module()
+    log, meta = _write_log_and_meta(tmp_path)
+    single = mod.build_single_run_report(log, meta_path=meta)
+    lint = mod.lint_governance_artifact(single['bundle'])
+
+    first_md = mod.render_dashboard_markdown(
+        single_run=single,
+        governance_lint=lint,
+        input_paths={'single_run_json': '/tmp/single.json'},
+    )
+    second_md = mod.render_dashboard_markdown(
+        single_run=single,
+        governance_lint=lint,
+        input_paths={'single_run_json': '/tmp/single.json'},
+    )
+
+    assert first_md == second_md
+    assert mod.render_dashboard_html(first_md) == mod.render_dashboard_html(second_md)
