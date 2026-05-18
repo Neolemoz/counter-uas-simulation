@@ -296,6 +296,13 @@ def _gz_target_setup(context, *args, **kwargs):
     interceptor_turn_rate = float(
         LaunchConfiguration('interceptor_max_turn_rate_rad_s').perform(context),
     )
+    interceptor_autopilot_tau_s = float(LaunchConfiguration('interceptor_autopilot_tau_s').perform(context))
+    interceptor_cmd_delay_s = float(LaunchConfiguration('interceptor_cmd_delay_s').perform(context))
+    interceptor_plant_accel = float(LaunchConfiguration('interceptor_plant_max_accel_m_s2').perform(context))
+    interceptor_plant_turn_rate = float(LaunchConfiguration('interceptor_plant_max_turn_rate_rad_s').perform(context))
+    interceptor_plant_use_measured_dt = str(
+        LaunchConfiguration('interceptor_plant_use_measured_dt').perform(context),
+    ).strip().lower() in ('1', 'true', 'yes', 'on')
     eng_metrics_period_s = float(LaunchConfiguration('eng_metrics_period_s').perform(context))
     eng_rollout_feasibility_gate = str(LaunchConfiguration('eng_rollout_feasibility_gate').perform(context)).strip().lower() in (
         '1',
@@ -489,6 +496,11 @@ def _gz_target_setup(context, *args, **kwargs):
                         'publish_marker': True,
                         'marker_scale': 1.15,
                         'vel_smooth_alpha': max(vel_smooth_alpha, 0.55),
+                        'autopilot.tau_s': interceptor_autopilot_tau_s,
+                        'autopilot.cmd_delay_s': interceptor_cmd_delay_s,
+                        'plant.max_accel_m_s2': interceptor_plant_accel,
+                        'plant.max_turn_rate_rad_s': interceptor_plant_turn_rate,
+                        'plant.use_measured_dt': interceptor_plant_use_measured_dt,
                         'impact_event_topic': '/interception/impact_event',
                         'hide_model_on_impact': True,
                         'impact_hide_x_m': -5000.0,
@@ -633,6 +645,8 @@ def _gz_target_setup(context, *args, **kwargs):
                 'intercept_heatmap_prob_use_cmd_vel': heatmap_prob_use_cmd_vel,
                 'intercept_heatmap_prob_use_kinematic_rollout': True,
                 'intercept_heatmap_prob_rollout_dt_s': 0.05,
+                'intercept_heatmap_prob_rollout_autopilot_tau_s': interceptor_autopilot_tau_s,
+                'intercept_heatmap_prob_rollout_cmd_delay_s': interceptor_cmd_delay_s,
                 'intercept_heatmap_prob_rollout_mc_cap': 12,
                 'intercept_heatmap_prob_use_cell_los_velocity': True,
                 'intercept_heatmap_prob_target_los_speed_m_s': heatmap_los_speed,
@@ -748,6 +762,31 @@ def generate_launch_description() -> LaunchDescription:
                     'Interceptor turn-rate limit (rad/s). Default 2.5 (~143 deg/s).  Lower values '
                     'make heading changes smoother but reduce ability to track manoeuvring targets.'
                 ),
+            ),
+            DeclareLaunchArgument(
+                'interceptor_autopilot_tau_s',
+                default_value='0.0',
+                description='Live interceptor first-order velocity response tau (s); 0 keeps legacy EMA path.',
+            ),
+            DeclareLaunchArgument(
+                'interceptor_cmd_delay_s',
+                default_value='0.0',
+                description='Live interceptor command transport delay (s), modeled as a deterministic FIFO.',
+            ),
+            DeclareLaunchArgument(
+                'interceptor_plant_max_accel_m_s2',
+                default_value='0.0',
+                description='Optional plant-side acceleration limit in interceptor_controller; 0 preserves legacy controller behavior.',
+            ),
+            DeclareLaunchArgument(
+                'interceptor_plant_max_turn_rate_rad_s',
+                default_value='0.0',
+                description='Optional plant-side turn-rate limit in interceptor_controller; 0 preserves legacy controller behavior.',
+            ),
+            DeclareLaunchArgument(
+                'interceptor_plant_use_measured_dt',
+                default_value='false',
+                description='If true, interceptor_controller integrates with measured ROS timer dt; false uses configured fixed dt.',
             ),
             DeclareLaunchArgument(
                 'eng_metrics_period_s',

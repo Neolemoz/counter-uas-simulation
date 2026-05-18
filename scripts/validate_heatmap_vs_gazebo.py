@@ -13,6 +13,7 @@ from __future__ import annotations
 
 import argparse
 import csv
+import json
 import random
 import sys
 import time
@@ -23,9 +24,13 @@ _SCRIPTS = Path(__file__).resolve().parent
 _REPO = _SCRIPTS.parent
 if str(_SCRIPTS) not in sys.path:
     sys.path.insert(0, str(_SCRIPTS))
+_EVAL = _SCRIPTS / "evaluation"
+if str(_EVAL) not in sys.path:
+    sys.path.insert(0, str(_EVAL))
 
 from analyze_run import parse_run_to_result  # noqa: E402
 from run_capture import run_capture  # noqa: E402
+import stats_helpers as stats  # noqa: E402
 
 P_COL_CANDIDATES = ("p_hit_noise_model", "p_hit", "p")
 
@@ -153,10 +158,13 @@ def _launch_args_for_cell(
     z: float,
     *,
     headless: bool,
+    noise_seed: int | None = None,
 ) -> str:
     base = (
         f"target_start_x_m:={x:.6f} target_start_y_m:={y:.6f} target_start_z_m:={z:.6f}"
     )
+    if noise_seed is not None:
+        base = f"{base} noise_seed:={int(noise_seed)}"
     if headless:
         return f"{base} use_gazebo_gui:=false"
     return f"{base} use_gazebo_gui:=true"
@@ -170,6 +178,7 @@ def run_validation_trials(
     timeout_s: float = 90.0,
     notes_prefix: str = "heatmap_validation",
     headless: bool = True,
+    seed_base: int = 1,
 ) -> list[dict]:
     """
     For each cell, run Gazebo ``runs_per_cell`` times via ``run_capture``; parse logs with ``parse_run_to_result``.
@@ -184,15 +193,23 @@ def run_validation_trials(
         tier = cell["tier"]
         ok = 0
         total = int(runs_per_cell)
+        seeds: list[int] = []
+        log_paths: list[str] = []
         for ri in range(total):
-            note = f"{notes_prefix} cell=({cx:.3f},{cy:.3f},{cz:.3f}) run={ri + 1}/{total} p_heatmap={p_hm:.4f}"
-            launch_args = _launch_args_for_cell(cx, cy, cz, headless=headless)
+            seed = int(seed_base) + len(results) * total + ri
+            seeds.append(seed)
+            note = (
+                f"{notes_prefix} cell=({cx:.3f},{cy:.3f},{cz:.3f}) "
+                f"run={ri + 1}/{total} seed={seed} p_heatmap={p_hm:.4f}"
+            )
+            launch_args = _launch_args_for_cell(cx, cy, cz, headless=headless, noise_seed=seed)
             log_path, _meta_path, _meta_obj, _rc = run_capture(
                 scenario=scenario,
                 timeout_s=float(timeout_s),
                 notes=note,
                 launch_args=launch_args,
             )
+            log_paths.append(str(log_path))
             try:
                 pr = parse_run_to_result(str(log_path))
                 if bool(pr.get("success")):
@@ -206,6 +223,8 @@ def run_validation_trials(
                 "p_heatmap": float(p_hm),
                 "success_count": int(ok),
                 "total_runs": int(total),
+                "seed_list": seeds,
+                "log_paths": log_paths,
             },
         )
     return results
@@ -230,6 +249,7 @@ def compute_validation_metrics(
         ok = int(r["success_count"])
         p_gz = float(ok) / float(tot)
         err = abs(p_gz - p_hm)
+        signed_err = p_gz - p_hm
         errors.append(err)
         rows.append(
             {
@@ -237,12 +257,70 @@ def compute_validation_metrics(
                 "tier": tier,
                 "p_heatmap": p_hm,
                 "p_gazebo": p_gz,
+                "p_gazebo_ci95": stats.wilson_ci(ok, tot),
                 "error": err,
+                "signed_error": signed_err,
+                "brier": (p_gz - p_hm) ** 2,
+                "success_count": ok,
+                "total_runs": tot,
+                "seed_list": list(r.get("seed_list") or []),
+                "log_paths": list(r.get("log_paths") or []),
             },
         )
     mean_e = sum(errors) / len(errors) if errors else float("nan")
     max_e = max(errors) if errors else float("nan")
     return rows, float(mean_e), float(max_e)
+
+
+def compute_agreement_summary(table: list[dict], *, bootstrap_seed: int = 1) -> dict[str, object]:
+    """Aggregate heatmap-vs-Gazebo calibration metrics with uncertainty."""
+    errors = [float(r["error"]) for r in table]
+    signed = [float(r["signed_error"]) for r in table]
+    briers = [float(r["brier"]) for r in table]
+    by_tier: dict[str, list[dict]] = {}
+    for row in table:
+        by_tier.setdefault(str(row.get("tier") or ""), []).append(row)
+
+    def _mean(xs: list[float]) -> float:
+        return sum(xs) / len(xs) if xs else float("nan")
+
+    return {
+        "n_cells": len(table),
+        "cohort_tier": stats.cohort_tier(min((int(r.get("total_runs") or 0) for r in table), default=0)),
+        "mean_abs_error": _mean(errors),
+        "mean_abs_error_ci95": stats.bootstrap_ci(
+            errors,
+            _mean,
+            confidence=0.95,
+            seed=bootstrap_seed + 1,
+            method_name="bootstrap_mean_abs_calibration_error",
+        ),
+        "max_abs_error": max(errors) if errors else float("nan"),
+        "mean_signed_error": _mean(signed),
+        "brier_score": _mean(briers),
+        "brier_score_ci95": stats.bootstrap_ci(
+            briers,
+            _mean,
+            confidence=0.95,
+            seed=bootstrap_seed + 2,
+            method_name="bootstrap_mean_brier_score",
+        ),
+        "by_tier": {
+            tier: {
+                "n_cells": len(rows),
+                "mean_p_heatmap": _mean([float(r["p_heatmap"]) for r in rows]),
+                "mean_p_gazebo": _mean([float(r["p_gazebo"]) for r in rows]),
+                "mean_abs_error": _mean([float(r["error"]) for r in rows]),
+                "mean_signed_error": _mean([float(r["signed_error"]) for r in rows]),
+            }
+            for tier, rows in sorted(by_tier.items())
+        },
+        "caution": (
+            ""
+            if all(int(r.get("total_runs") or 0) >= 40 for r in table)
+            else "runs_per_cell below N>=40 validation guidance; treat agreement as smoke/pilot unless intervals are explicitly accepted"
+        ),
+    }
 
 
 def _verdict(mean_e: float, max_e: float) -> str:
@@ -263,6 +341,7 @@ def _print_table(table: list[dict]) -> None:
         print(
             f"  [{tier:4s}] cell=({cx:.1f},{cy:.1f},{cz:.1f})  "
             f"p_heatmap={row['p_heatmap']:.3f}  p_gazebo={row['p_gazebo']:.3f}  "
+            f"CI95=[{row['p_gazebo_ci95']['lower']:.3f},{row['p_gazebo_ci95']['upper']:.3f}]  "
             f"|err|={row['error']:.3f}",
             flush=True,
         )
@@ -287,6 +366,7 @@ def main() -> int:
     ap.add_argument("--timeout-s", type=float, default=90.0)
     ap.add_argument("--scenario", choices=["single", "multi"], default="single")
     ap.add_argument("--seed", type=int, default=42)
+    ap.add_argument("--seed-base", type=int, default=1, help="First noise_seed for replayable Gazebo trials")
     ap.add_argument("--dry-run", action="store_true", help="only print selected cells; no Gazebo")
     ap.add_argument(
         "--gazebo-gui",
@@ -294,6 +374,7 @@ def main() -> int:
         help="Open Gazebo 3D window (default: headless via use_gazebo_gui:=false)",
     )
     ap.add_argument("--out-csv", type=Path, default=None, help="optional path to save summary CSV")
+    ap.add_argument("--out-json", type=Path, default=None, help="optional path to save agreement metrics JSON")
     args = ap.parse_args()
 
     if getattr(args, 'evaluation_sample_fixture', False):
@@ -331,13 +412,18 @@ def main() -> int:
         scenario=str(args.scenario),
         timeout_s=float(args.timeout_s),
         headless=headless,
+        seed_base=int(args.seed_base),
     )
     table, mean_e, max_e = compute_validation_metrics(trial_results)
+    agreement = compute_agreement_summary(table, bootstrap_seed=int(args.seed_base))
     verdict = _verdict(mean_e, max_e)
 
     _print_table(table)
     print(f"mean |error|: {mean_e:.4f}", flush=True)
     print(f"max |error|:  {max_e:.4f}", flush=True)
+    print(f"brier score:  {float(agreement['brier_score']):.4f}", flush=True)
+    if agreement.get("caution"):
+        print(f"caution: {agreement['caution']}", flush=True)
     print(f"conclusion: {verdict}", flush=True)
 
     if args.out_csv is not None:
@@ -356,9 +442,15 @@ def main() -> int:
                     "z_m",
                     "p_heatmap",
                     "p_gazebo",
+                    "p_gazebo_ci95_low",
+                    "p_gazebo_ci95_high",
                     "error",
+                    "signed_error",
+                    "brier",
                     "success_count",
                     "total_runs",
+                    "seed_list",
+                    "log_paths",
                 ],
             )
             w.writeheader()
@@ -372,12 +464,31 @@ def main() -> int:
                         "z_m": cz,
                         "p_heatmap": row["p_heatmap"],
                         "p_gazebo": row["p_gazebo"],
+                        "p_gazebo_ci95_low": row["p_gazebo_ci95"]["lower"],
+                        "p_gazebo_ci95_high": row["p_gazebo_ci95"]["upper"],
                         "error": row["error"],
+                        "signed_error": row["signed_error"],
+                        "brier": row["brier"],
                         "success_count": tr["success_count"],
                         "total_runs": tr["total_runs"],
+                        "seed_list": " ".join(str(s) for s in row.get("seed_list", [])),
+                        "log_paths": " ".join(str(p) for p in row.get("log_paths", [])),
                     },
                 )
         print(f"[validate] wrote {outp}", flush=True)
+
+    if args.out_json is not None:
+        args.out_json.parent.mkdir(parents=True, exist_ok=True)
+        payload = {
+            "heatmap_csv": str(args.heatmap_csv),
+            "runs_per_cell": int(args.runs_per_cell),
+            "seed_base": int(args.seed_base),
+            "verdict": verdict,
+            "agreement": agreement,
+            "cells": table,
+        }
+        args.out_json.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+        print(f"[validate] wrote {args.out_json}", flush=True)
 
     return 0
 

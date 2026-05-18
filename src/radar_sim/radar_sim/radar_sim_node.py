@@ -3,7 +3,7 @@ import random
 
 import rclpy
 from rclpy.node import Node
-from geometry_msgs.msg import Point
+from geometry_msgs.msg import Point, PointStamped
 
 
 def _deg2rad(d: float) -> float:
@@ -60,6 +60,7 @@ class RadarSimNode(Node):
             self._std_z = 0.2
 
         self._pub = self.create_publisher(Point, '/radar/detections', 10)
+        self._pub_stamped = self.create_publisher(PointStamped, '/radar/detections_stamped', 10)
         self.create_subscription(Point, '/drone/position', self._on_position, 10)
 
     def _in_beam(self, msg: Point) -> bool:
@@ -97,21 +98,21 @@ class RadarSimNode(Node):
         out.x = msg.x + random.gauss(0.0, self._std_xy)
         out.y = msg.y + random.gauss(0.0, self._std_xy)
         out.z = msg.z + random.gauss(0.0, self._std_z)
-        self._publish_with_delay(out)
+        self._publish_with_delay(out, self.get_clock().now().to_msg())
 
-    def _publish_with_delay(self, out: Point) -> None:
+    def _publish_with_delay(self, out: Point, stamp) -> None:
         """Publish ``out`` immediately, or after ``delay_mean ± jitter`` via a one-shot timer.
 
         Using a one-shot timer keeps the executor non-blocking and lets multiple delayed
         publishes coexist; if both knobs are 0 we just publish synchronously.
         """
         if self._delay_mean_s <= 0.0 and self._delay_jitter_s <= 0.0:
-            self._pub.publish(out)
+            self._publish_pair(out, stamp)
             return
         jitter = random.uniform(-self._delay_jitter_s, self._delay_jitter_s)
         delay_s = max(0.0, self._delay_mean_s + jitter)
         if delay_s <= 1e-4:
-            self._pub.publish(out)
+            self._publish_pair(out, stamp)
             return
 
         captured = Point()
@@ -119,13 +120,21 @@ class RadarSimNode(Node):
         timer_holder: list = [None]
 
         def _fire() -> None:
-            self._pub.publish(captured)
+            self._publish_pair(captured, stamp)
             t = timer_holder[0]
             if t is not None:
                 t.cancel()
                 self.destroy_timer(t)
 
         timer_holder[0] = self.create_timer(delay_s, _fire)
+
+    def _publish_pair(self, out: Point, stamp) -> None:
+        self._pub.publish(out)
+        stamped = PointStamped()
+        stamped.header.stamp = stamp
+        stamped.header.frame_id = 'map'
+        stamped.point = out
+        self._pub_stamped.publish(stamped)
 
 
 def main(args=None) -> None:

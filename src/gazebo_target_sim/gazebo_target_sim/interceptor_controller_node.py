@@ -8,7 +8,6 @@ import queue
 import shutil
 import subprocess
 import threading
-from collections import deque
 from typing import Sequence
 
 import rclpy
@@ -23,6 +22,14 @@ from gazebo_target_sim_interfaces.msg import ImpactEvent
 
 from gazebo_target_sim.clock_reset import subscribe_sim_time_reset
 from gazebo_target_sim.gz_pose_tools import fmt_pose_req_full, quat_align_body_x_to_velocity
+from gazebo_target_sim.kinematic_plant import (
+    KinematicPlantMemory,
+    KinematicPlantParams,
+    KinematicPlantState,
+    PlantCommand,
+    reset_plant_memory,
+    step_kinematic_plant,
+)
 
 
 def _gz_local_ip() -> str:
@@ -91,6 +98,9 @@ class InterceptorControllerNode(Node):
         # a bounded FIFO sized by ``ceil(cmd_delay_s / dt)``.  Use to characterise how robust
         # the guidance loop is to extra plant delay on top of sensor latency.
         self.declare_parameter('autopilot.cmd_delay_s', 0.0)
+        self.declare_parameter('plant.max_accel_m_s2', 0.0)
+        self.declare_parameter('plant.max_turn_rate_rad_s', 0.0)
+        self.declare_parameter('plant.use_measured_dt', False)
         # Hide this Gazebo model off-world when interception_logic publishes ImpactEvent for it.
         self.declare_parameter('impact_event_topic', '/interception/impact_event')
         self.declare_parameter('hide_model_on_impact', True)
@@ -125,6 +135,9 @@ class InterceptorControllerNode(Node):
         self._v_orient_floor = max(float(self.get_parameter('orient_min_speed_m_s').value), 1e-3)
         self._ap_tau_s = max(0.0, float(self.get_parameter('autopilot.tau_s').value))
         self._ap_delay_s = max(0.0, float(self.get_parameter('autopilot.cmd_delay_s').value))
+        self._plant_max_accel = max(0.0, float(self.get_parameter('plant.max_accel_m_s2').value))
+        self._plant_max_turn_rate = max(0.0, float(self.get_parameter('plant.max_turn_rate_rad_s').value))
+        self._plant_use_measured_dt = bool(self.get_parameter('plant.use_measured_dt').value)
         self._hid_impact = (
             float(self.get_parameter('impact_hide_x_m').value),
             float(self.get_parameter('impact_hide_y_m').value),
@@ -135,9 +148,6 @@ class InterceptorControllerNode(Node):
         self._vx_s = 0.0
         self._vy_s = 0.0
         self._vz_s = 0.0
-        # Command FIFO for the autopilot transport delay model (length 0 disables).
-        self._cmd_buf: deque[tuple[float, float, float]] = deque()
-        self._cmd_buf_len = 0  # set after _dt is known, below.
 
         self._cmd = Vector3()
         self._have_cmd = False
@@ -149,12 +159,9 @@ class InterceptorControllerNode(Node):
 
         rate = max(float(self.get_parameter('rate_hz').value), 0.5)
         self._dt = 1.0 / rate
-        # Size the transport-delay FIFO so it matches ``cmd_delay_s`` at the configured rate.
-        self._cmd_buf_len = int(math.ceil(self._ap_delay_s / self._dt)) if self._ap_delay_s > 0 else 0
-        if self._cmd_buf_len > 0:
-            zero = (0.0, 0.0, 0.0)
-            for _ in range(self._cmd_buf_len):
-                self._cmd_buf.append(zero)
+        self._plant_state = KinematicPlantState(position=(self._px, self._py, self._pz))
+        self._plant_memory = reset_plant_memory(self._plant_params(self._dt))
+        self._last_timer_time: Time | None = None
         self._gz = shutil.which('gz')
         if not self._gz:
             self.get_logger().fatal('gz CLI not found in PATH.')
@@ -207,6 +214,9 @@ class InterceptorControllerNode(Node):
         self._assigned_target = ''
         self._impact_hidden = False
         self._cmd_stamp = self.get_clock().now()
+        self._plant_state = KinematicPlantState(position=(self._px, self._py, self._pz))
+        self._plant_memory = reset_plant_memory(self._plant_params(self._dt))
+        self._last_timer_time = None
         # Physically move the Gazebo model back to origin so it doesn't float.
         self._call_set_pose(self._px, self._py, self._pz, 0.0, 0.0, 0.0, 1.0)
 
@@ -220,11 +230,8 @@ class InterceptorControllerNode(Node):
         self._idle = True
         self._vx_s = self._vy_s = self._vz_s = 0.0
         self._px, self._py, self._pz = hx, hy, hz
-        if self._cmd_buf_len > 0:
-            self._cmd_buf.clear()
-            zero = (0.0, 0.0, 0.0)
-            for _ in range(self._cmd_buf_len):
-                self._cmd_buf.append(zero)
+        self._plant_state = KinematicPlantState(position=(self._px, self._py, self._pz))
+        self._plant_memory = reset_plant_memory(self._plant_params(self._dt))
         self._call_set_pose(hx, hy, hz, 0.0, 0.0, 0.0, 1.0)
         print(f'[IMPACT_HIDE] {self._model} moved off-world (kinetic removal)', flush=True)
 
@@ -257,6 +264,8 @@ class InterceptorControllerNode(Node):
             oy = float(self.get_parameter('origin_y').value)
             oz = float(self.get_parameter('origin_z').value)
             self._px, self._py, self._pz = ox, oy, oz
+            self._plant_state = KinematicPlantState(position=(self._px, self._py, self._pz))
+            self._plant_memory = reset_plant_memory(self._plant_params(self._dt))
             self._call_set_pose(ox, oy, oz, 0.0, 0.0, 0.0, 1.0)
             print(f'[STANDBY] {self._model} (selection cleared)', flush=True)
         elif not self._idle and new_sel != self._model:
@@ -269,6 +278,8 @@ class InterceptorControllerNode(Node):
             oy = float(self.get_parameter('origin_y').value)
             oz = float(self.get_parameter('origin_z').value)
             self._px, self._py, self._pz = ox, oy, oz
+            self._plant_state = KinematicPlantState(position=(self._px, self._py, self._pz))
+            self._plant_memory = reset_plant_memory(self._plant_params(self._dt))
             self._call_set_pose(ox, oy, oz, 0.0, 0.0, 0.0, 1.0)
             print(f'[STANDBY] {self._model}', flush=True)
 
@@ -283,57 +294,32 @@ class InterceptorControllerNode(Node):
         else:
             self._idle = True
 
-    @staticmethod
-    def _norm3(vx: float, vy: float, vz: float) -> float:
-        return math.sqrt(vx * vx + vy * vy + vz * vz)
+    def _plant_params(self, dt_s: float) -> KinematicPlantParams:
+        return KinematicPlantParams(
+            dt_s=max(float(dt_s), 1e-6),
+            max_speed_m_s=self._vmax,
+            max_accel_m_s2=self._plant_max_accel,
+            max_turn_rate_rad_s=self._plant_max_turn_rate,
+            autopilot_tau_s=self._ap_tau_s,
+            use_legacy_ema=self._smooth,
+            legacy_ema_alpha=self._salpha,
+            cmd_delay_s=self._ap_delay_s,
+            cmd_timeout_s=self._cmd_timeout,
+            fallback_velocity=(self._fb_vx, self._fb_vy, self._fb_vz),
+        )
 
-    def _applied_vel(self) -> tuple[float, float, float]:
-        if self._assigned_topic and not self._assigned_target:
-            return (0.0, 0.0, 0.0)
-        if self._idle:
-            return (0.0, 0.0, 0.0)
-        now = self.get_clock().now()
-        age = (now - self._cmd_stamp).nanoseconds * 1e-9
-        if self._have_cmd and age <= self._cmd_timeout:
-            vx, vy, vz = float(self._cmd.x), float(self._cmd.y), float(self._cmd.z)
-        else:
-            vx, vy, vz = self._fb_vx, self._fb_vy, self._fb_vz
-        n = self._norm3(vx, vy, vz)
-        if n > self._vmax and n > 1e-9:
-            s = self._vmax / n
-            vx, vy, vz = vx * s, vy * s, vz * s
-        return (vx, vy, vz)
-
-    def _smooth_vel(self, vx: float, vy: float, vz: float) -> tuple[float, float, float]:
-        if self._ap_tau_s > 0.0:
-            # First-order autopilot bandwidth: x_{k+1} = x_k + (dt/tau) * (cmd - x_k).
-            # Equivalent to an EMA with alpha = dt/(dt+tau); deriving alpha from tau lets the
-            # response curve be specified by a single physically meaningful number.
-            tau = self._ap_tau_s
-            a = self._dt / (self._dt + tau)
-            self._vx_s = self._vx_s + a * (vx - self._vx_s)
-            self._vy_s = self._vy_s + a * (vy - self._vy_s)
-            self._vz_s = self._vz_s + a * (vz - self._vz_s)
-            return (self._vx_s, self._vy_s, self._vz_s)
-        if not self._smooth:
-            return (vx, vy, vz)
-        a = self._salpha
-        self._vx_s = a * vx + (1.0 - a) * self._vx_s
-        self._vy_s = a * vy + (1.0 - a) * self._vy_s
-        self._vz_s = a * vz + (1.0 - a) * self._vz_s
-        return (self._vx_s, self._vy_s, self._vz_s)
-
-    def _apply_cmd_delay(self, vx: float, vy: float, vz: float) -> tuple[float, float, float]:
-        """Push current command into a fixed-length FIFO and pop the delayed sample to act on.
-
-        With ``autopilot.cmd_delay_s = 0`` the FIFO is empty and we return the input unchanged.
-        At each tick we add the freshly received command and consume the oldest, so the consumer
-        sees a delay of ``cmd_buf_len * dt`` seconds.
-        """
-        if self._cmd_buf_len <= 0:
-            return (vx, vy, vz)
-        self._cmd_buf.append((vx, vy, vz))
-        return self._cmd_buf.popleft()
+    def _effective_dt(self, now: Time) -> float:
+        if not self._plant_use_measured_dt:
+            self._last_timer_time = now
+            return self._dt
+        if self._last_timer_time is None:
+            self._last_timer_time = now
+            return self._dt
+        dt = (now - self._last_timer_time).nanoseconds * 1e-9
+        self._last_timer_time = now
+        if not math.isfinite(dt) or dt <= 1e-4:
+            return self._dt
+        return max(1e-4, min(0.5, dt))
 
     def _quat_from_motion(self, vx: float, vy: float, vz: float, idle: bool) -> tuple[float, float, float, float]:
         if idle or self._norm3(vx, vy, vz) < self._v_orient_floor:
@@ -441,29 +427,35 @@ class InterceptorControllerNode(Node):
         )
 
     def _on_timer(self) -> None:
-        vx, vy, vz = self._applied_vel()
+        now = self.get_clock().now()
         idle = self._idle
         if self._assigned_topic and not self._assigned_target:
             idle = True
+        age = (now - self._cmd_stamp).nanoseconds * 1e-9
+        params = self._plant_params(self._effective_dt(now))
+        result = step_kinematic_plant(
+            self._plant_state,
+            self._plant_memory,
+            PlantCommand(
+                velocity=(float(self._cmd.x), float(self._cmd.y), float(self._cmd.z)),
+                has_command=self._have_cmd,
+                age_s=age,
+                idle=idle,
+            ),
+            params,
+        )
+        self._plant_state = result.state
+        self._plant_memory = result.memory
+        self._px, self._py, self._pz = result.state.position
+        vx, vy, vz = result.state.applied_velocity
+        self._vx_s, self._vy_s, self._vz_s = self._plant_memory.smoothed_velocity
         if idle:
-            self._vx_s = self._vy_s = self._vz_s = 0.0
-            # Reset the autopilot transport buffer too so the next launch starts cleanly.
-            if self._cmd_buf_len > 0:
-                self._cmd_buf.clear()
-                zero = (0.0, 0.0, 0.0)
-                for _ in range(self._cmd_buf_len):
-                    self._cmd_buf.append(zero)
             # Skip set_pose while idle — avoids Gazebo jitter on non-selected interceptors.
             p = Point()
             p.x, p.y, p.z = float(self._px), float(self._py), float(self._pz)
             self._pub_pt.publish(p)
             self._maybe_log(vx, vy, vz)
             return
-        vx, vy, vz = self._apply_cmd_delay(vx, vy, vz)
-        vx, vy, vz = self._smooth_vel(vx, vy, vz)
-        self._px += vx * self._dt
-        self._py += vy * self._dt
-        self._pz += vz * self._dt
         qx, qy, qz, qw = self._quat_from_motion(vx, vy, vz, idle)
         self._call_set_pose(self._px, self._py, self._pz, qx, qy, qz, qw)
         p = Point()

@@ -96,6 +96,8 @@ def main() -> None:
         ),
     )
     p.add_argument('--rollout-dt', type=float, default=0.05, help='Kinematic rollout timestep for P(hit) MC.')
+    p.add_argument('--rollout-autopilot-tau-s', type=float, default=0.0, help='Shared plant first-order autopilot tau for rollout (s).')
+    p.add_argument('--rollout-cmd-delay-s', type=float, default=0.0, help='Shared plant command delay for rollout (s).')
     p.add_argument('--stamp-svg', action='store_true', help='also write intercept_heatmap_prob_stamped.*')
     p.add_argument('--png-3d', action='store_true', help='also write intercept_heatmap_prob_latest_3d.png (matplotlib)')
     p.add_argument(
@@ -189,6 +191,8 @@ def main() -> None:
             rollout_dt=float(args.rollout_dt),
             rollout_max_turn_rate_rad_s=float(args.rollout_max_turn_rate_rad_s),
             rollout_max_accel_m_s2=float(args.rollout_max_accel_m_s2),
+            rollout_autopilot_tau_s=float(args.rollout_autopilot_tau_s),
+            rollout_cmd_delay_s=float(args.rollout_cmd_delay_s),
         )
         lbl.append((tx, ty, tz, prob))
     elapsed = time.monotonic() - t0

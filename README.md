@@ -104,6 +104,8 @@ Parses a small synthetic log with `scripts/analyze_run.py` so metric extraction 
 - `scripts/run_capture.py`, `scripts/analyze_run.py` — log capture and metrics.
 - `scripts/validate_heatmap_vs_gazebo.py` — heatmap vs Gazebo trials.
 - `research/phase*.md` — baseline metrics and experiment notes.
+- [`docs/autonomous_counter_uas_interception_report.md`](docs/autonomous_counter_uas_interception_report.md) — repository-grounded architecture, guidance, and validation limitations report.
+- [`docs/offline_defense_pipeline_review_split.md`](docs/offline_defense_pipeline_review_split.md) — review grouping and validation notes for the offline defense pipeline branch.
 - **Scenario catalog & replay:** see [`docs/scenarios/`](docs/scenarios/) (interface split sim vs production).
 
 ## Message types (roadmap)

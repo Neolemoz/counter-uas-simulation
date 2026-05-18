@@ -71,6 +71,25 @@ def _load_fusion_module():  # noqa: ANN201
             log.warning = MagicMock()
             return log
 
+        def get_clock(self):  # noqa: ANN201
+            class _Now:
+                nanoseconds = 0
+
+                @staticmethod
+                def to_msg():  # noqa: ANN201
+                    class _Stamp:
+                        sec = 0
+                        nanosec = 0
+
+                    return _Stamp()
+
+            class _Clock:
+                @staticmethod
+                def now() -> _Now:
+                    return _Now()
+
+            return _Clock()
+
     rclpy_node_mod.Node = _StubNode  # type: ignore[attr-defined]
 
     geom_mod = types.ModuleType('geometry_msgs.msg')
@@ -83,7 +102,22 @@ def _load_fusion_module():  # noqa: ANN201
             self.y = 0.0
             self.z = 0.0
 
+    class _Header:
+        __slots__ = ('stamp', 'frame_id')
+
+        def __init__(self) -> None:
+            self.stamp = types.SimpleNamespace(sec=0, nanosec=0)
+            self.frame_id = ''
+
+    class _PointStamped:
+        __slots__ = ('header', 'point')
+
+        def __init__(self) -> None:
+            self.header = _Header()
+            self.point = _Point()
+
     geom_mod.Point = _Point  # type: ignore[attr-defined]
+    geom_mod.PointStamped = _PointStamped  # type: ignore[attr-defined]
     geom_pkg = types.ModuleType('geometry_msgs')
     geom_pkg.msg = geom_mod  # type: ignore[attr-defined]
 

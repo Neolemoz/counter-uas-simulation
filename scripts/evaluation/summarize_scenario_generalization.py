@@ -11,6 +11,12 @@ import subprocess
 import sys
 from pathlib import Path
 
+_EVAL = Path(__file__).resolve().parent
+if str(_EVAL) not in sys.path:
+    sys.path.insert(0, str(_EVAL))
+
+import stats_helpers as stats  # noqa: E402
+
 
 def _load_json(path: Path) -> dict | None:
     if not path.is_file():
@@ -22,6 +28,15 @@ def _fmt_float(value: float | None, digits: int = 3) -> str:
     if value is None or not math.isfinite(float(value)):
         return ""
     return f"{float(value):.{digits}f}"
+
+
+def _ci_bound(ci: object, key: str) -> float | None:
+    if isinstance(ci, dict) and key in ci:
+        try:
+            return float(ci[key])
+        except (TypeError, ValueError):
+            return None
+    return None
 
 
 def _maybe_make_failure_hist(csv_path: Path, hist_path: Path, *, enabled: bool) -> None:
@@ -56,10 +71,17 @@ def _summary_row(
             "status": "missing",
             "n_runs": "",
             "success_rate_pct": "",
+            "success_rate_ci95_low_pct": "",
+            "success_rate_ci95_high_pct": "",
+            "cohort_tier": "",
             "miss_p95_m": "",
+            "miss_p95_ci95_low_m": "",
+            "miss_p95_ci95_high_m": "",
             "miss_mean_m": "",
             "miss_median_m": "",
             "intercept_time_p95_s": "",
+            "intercept_time_p95_ci95_low_s": "",
+            "intercept_time_p95_ci95_high_s": "",
             "intercept_time_mean_s": "",
             "json_path": str(json_path.resolve()),
             "csv_path": str(csv_path.resolve()),
@@ -67,17 +89,28 @@ def _summary_row(
         }
     miss = data.get("miss_distance_m", {})
     tint = data.get("intercept_time_s", {})
+    sr_ci = data.get("success_rate_ci95", {})
+    miss_p95_ci = miss.get("p95_ci95", {})
+    tint_p95_ci = tint.get("p95_ci95", {})
+    n_runs = int(data.get("n_runs") or 0)
     return {
         "cell_tag": cell_tag,
         "arm": arm,
         "label": label,
         "status": "ok",
-        "n_runs": str(data.get("n_runs", "")),
+        "n_runs": str(n_runs),
         "success_rate_pct": _fmt_float(100.0 * float(data.get("success_rate", float("nan"))), 1),
+        "success_rate_ci95_low_pct": _fmt_float(100.0 * _ci_bound(sr_ci, "lower"), 1) if _ci_bound(sr_ci, "lower") is not None else "",
+        "success_rate_ci95_high_pct": _fmt_float(100.0 * _ci_bound(sr_ci, "upper"), 1) if _ci_bound(sr_ci, "upper") is not None else "",
+        "cohort_tier": str(data.get("cohort_tier") or stats.cohort_tier(n_runs)),
         "miss_p95_m": _fmt_float(miss.get("p95")),
+        "miss_p95_ci95_low_m": _fmt_float(_ci_bound(miss_p95_ci, "lower")),
+        "miss_p95_ci95_high_m": _fmt_float(_ci_bound(miss_p95_ci, "upper")),
         "miss_mean_m": _fmt_float(miss.get("mean")),
         "miss_median_m": _fmt_float(miss.get("median")),
         "intercept_time_p95_s": _fmt_float(tint.get("p95")),
+        "intercept_time_p95_ci95_low_s": _fmt_float(_ci_bound(tint_p95_ci, "lower")),
+        "intercept_time_p95_ci95_high_s": _fmt_float(_ci_bound(tint_p95_ci, "upper")),
         "intercept_time_mean_s": _fmt_float(tint.get("mean")),
         "json_path": str(json_path.resolve()),
         "csv_path": str(csv_path.resolve()),
@@ -88,7 +121,7 @@ def _summary_row(
 def _worst(rows: list[dict[str, str]], arm: str) -> dict[str, str]:
     ok = [r for r in rows if r["arm"] == arm and r["status"] == "ok"]
     if not ok:
-        return {"arm": arm, "worst_sr_cell": "", "worst_sr_pct": "", "worst_miss_cell": "", "worst_miss_p95_m": "", "worst_tint_cell": "", "worst_tint_p95_s": ""}
+        return {"arm": arm, "worst_sr_cell": "", "worst_sr_pct": "", "worst_sr_ci95_low_pct": "", "worst_miss_cell": "", "worst_miss_p95_m": "", "worst_miss_p95_ci95_high_m": "", "worst_tint_cell": "", "worst_tint_p95_s": "", "worst_tint_p95_ci95_high_s": ""}
     sr_cell = min(ok, key=lambda r: float(r["success_rate_pct"]))
     miss_cell = max(ok, key=lambda r: float(r["miss_p95_m"]))
     tint_cell = max(ok, key=lambda r: float(r["intercept_time_p95_s"]))
@@ -96,10 +129,13 @@ def _worst(rows: list[dict[str, str]], arm: str) -> dict[str, str]:
         "arm": arm,
         "worst_sr_cell": sr_cell["cell_tag"],
         "worst_sr_pct": sr_cell["success_rate_pct"],
+        "worst_sr_ci95_low_pct": sr_cell.get("success_rate_ci95_low_pct", ""),
         "worst_miss_cell": miss_cell["cell_tag"],
         "worst_miss_p95_m": miss_cell["miss_p95_m"],
+        "worst_miss_p95_ci95_high_m": miss_cell.get("miss_p95_ci95_high_m", ""),
         "worst_tint_cell": tint_cell["cell_tag"],
         "worst_tint_p95_s": tint_cell["intercept_time_p95_s"],
+        "worst_tint_p95_ci95_high_s": tint_cell.get("intercept_time_p95_ci95_high_s", ""),
     }
 
 

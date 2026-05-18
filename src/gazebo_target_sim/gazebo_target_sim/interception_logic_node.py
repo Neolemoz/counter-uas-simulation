@@ -1,5 +1,5 @@
 """
-Multi-interceptor: hysteresis TTI reassignment + predictive intercept + PN on the committed unit only.
+Multi-interceptor: hysteresis TTI reassignment + predictive intercept + PN-inspired steering on the committed unit only.
 
 **Three-layer dome:** ตามนโยบาย ``engagement_layer`` — ค่า ``select`` จำกัด HIT ให้เกิดเมื่อ ``d_threat``
 อยู่ใน **select+engage** (``d ≤ dome_middle_m``) เท่านั้น; ค่า ``detect`` อนุญาต HIT ตั้งแต่ **detect annulus**
@@ -39,9 +39,24 @@ from visualization_msgs.msg import Marker
 from gazebo_target_sim_interfaces.msg import ImpactEvent
 
 from gazebo_target_sim.clock_reset import subscribe_sim_time_reset
+from gazebo_target_sim.guidance_kernel import (
+    GuidanceInput,
+    GuidanceMemory,
+    GuidanceParams,
+    InterceptorKinematics,
+    TargetKinematics,
+    compute_guidance_command,
+)
 from gazebo_target_sim.guidance_lib import (
     compute_intercept as _guidance_compute_intercept,
     solve_intercept_time as _guidance_solve_intercept_time,
+)
+from gazebo_target_sim.kinematic_plant import (
+    KinematicPlantParams,
+    KinematicPlantState,
+    PlantCommand,
+    reset_plant_memory,
+    step_kinematic_plant,
 )
 
 if TYPE_CHECKING:
@@ -76,14 +91,6 @@ def compute_required_speed(
 
 def _dot(ax: float, ay: float, az: float, bx: float, by: float, bz: float) -> float:
     return ax * bx + ay * by + az * bz
-
-
-def _cross(ax: float, ay: float, az: float, bx: float, by: float, bz: float) -> tuple[float, float, float]:
-    return (
-        ay * bz - az * by,
-        az * bx - ax * bz,
-        ax * by - ay * bx,
-    )
 
 
 def _unit(dx: float, dy: float, dz: float, eps: float = 1e-9) -> tuple[float, float, float]:
@@ -316,37 +323,6 @@ def _trail_push(
     lx, ly, lz = d[-1]
     if _norm(x - lx, y - ly, z - lz) >= min_step:
         d.append((x, y, z))
-
-
-def _pn_steering_vector(
-    rx: float,
-    ry: float,
-    rz: float,
-    v_rx: float,
-    v_ry: float,
-    v_rz: float,
-    pn_n: float,
-    min_vc: float,
-) -> tuple[float, float, float, float, bool]:
-    rn = _norm(rx, ry, rz)
-    if rn < 1e-6:
-        return (0.0, 0.0, 0.0, 0.0, False)
-    rhx, rhy, rhz = rx / rn, ry / rn, rz / rn
-    inv_r2 = 1.0 / (rn * rn + 1e-12)
-    lrx, lry, lrz = _cross(rx, ry, rz, v_rx, v_ry, v_rz)
-    lrx *= inv_r2
-    lry *= inv_r2
-    lrz *= inv_r2
-    vc = -_dot(rhx, rhy, rhz, v_rx, v_ry, v_rz)
-    if vc < min_vc:
-        return (0.0, 0.0, 0.0, vc, False)
-    sx, sy, sz = _cross(lrx, lry, lrz, rhx, rhy, rhz)
-    sx *= pn_n * vc
-    sy *= pn_n * vc
-    sz *= pn_n * vc
-    if _norm(sx, sy, sz) < 1e-12:
-        return (0.0, 0.0, 0.0, vc, False)
-    return (sx, sy, sz, vc, True)
 
 
 def _tti_feasible(
@@ -714,27 +690,18 @@ def _apply_rollout_velocity_step(
     max_accel_m_s2: float,
     dt: float,
 ) -> tuple[float, float, float]:
-    """
-    One-step velocity limiter matching ``InterceptionLogicNode._accel_limit_velocity`` order:
-    turn-rate cap on direction, then acceleration cap on delta-v.
-    """
-    nx, ny, nz = vx, vy, vz
-    if max_turn_rate_rad_s > 1e-9:
-        p_spd = _norm(pvx, pvy, pvz)
-        d_spd = _norm(vx, vy, vz)
-        if p_spd > 1e-6 and d_spd > 1e-6:
-            max_angle = max_turn_rate_rad_s * dt
-            pdx, pdy, pdz = pvx / p_spd, pvy / p_spd, pvz / p_spd
-            ddx, ddy, ddz = vx / d_spd, vy / d_spd, vz / d_spd
-            rdx, rdy, rdz = _rotate_dir_toward(pdx, pdy, pdz, ddx, ddy, ddz, max_angle)
-            nx, ny, nz = rdx * d_spd, rdy * d_spd, rdz * d_spd
-    dvx, dvy, dvz = nx - pvx, ny - pvy, nz - pvz
-    dv = _norm(dvx, dvy, dvz)
-    max_dv = max_accel_m_s2 * dt
-    if max_dv > 1e-12 and dv > max_dv and dv > 1e-9:
-        s = max_dv / dv
-        dvx, dvy, dvz = dvx * s, dvy * s, dvz * s
-    return pvx + dvx, pvy + dvy, pvz + dvz
+    """Compatibility wrapper around the shared Layer-B kinematic plant limiter."""
+    params = KinematicPlantParams(
+        dt_s=dt,
+        max_speed_m_s=max(_norm(vx, vy, vz), _norm(pvx, pvy, pvz), 1e-6),
+        max_turn_rate_rad_s=max_turn_rate_rad_s,
+        max_accel_m_s2=max_accel_m_s2,
+    )
+    state = KinematicPlantState(position=(0.0, 0.0, 0.0), applied_velocity=(pvx, pvy, pvz))
+    memory = reset_plant_memory(params)
+    memory = type(memory)(smoothed_velocity=(pvx, pvy, pvz), previous_velocity=(pvx, pvy, pvz), command_buffer=memory.command_buffer)
+    result = step_kinematic_plant(state, memory, PlantCommand((vx, vy, vz)), params)
+    return result.state.applied_velocity
 
 
 def _monte_carlo_kinematic_hit_rollout(
@@ -754,6 +721,9 @@ def _monte_carlo_kinematic_hit_rollout(
     dt: float,
     max_turn_rate_rad_s: float = 0.0,
     max_accel_m_s2: float = 0.0,
+    autopilot_tau_s: float = 0.0,
+    cmd_delay_s: float = 0.0,
+    initial_velocity: tuple[float, float, float] = (0.0, 0.0, 0.0),
 ) -> bool:
     """
     Closed-loop rollout: each step aim with ``_compute_intercept`` (same aim law as MC rollout).
@@ -768,10 +738,28 @@ def _monte_carlo_kinematic_hit_rollout(
     vm = max(float(v_i_max), 1e-6)
     steps = max(8, int(math.ceil(max(0.5, t_horizon) / dt_e)) + 4)
     ht = max(0.05, float(hit_thresh_m))
-    use_dyn = max_turn_rate_rad_s > 1e-9 or max_accel_m_s2 > 1e-9
-    ivx, ivy, ivz = 0.0, 0.0, 0.0
+    plant_params = KinematicPlantParams(
+        dt_s=dt_e,
+        max_speed_m_s=vm,
+        max_turn_rate_rad_s=max_turn_rate_rad_s,
+        max_accel_m_s2=max_accel_m_s2,
+        autopilot_tau_s=max(0.0, float(autopilot_tau_s)),
+        cmd_delay_s=max(0.0, float(cmd_delay_s)),
+        cmd_timeout_s=max(t_horizon + dt_e, dt_e),
+    )
+    plant_state = KinematicPlantState(
+        position=(px_i, py_i, pz_i),
+        applied_velocity=initial_velocity,
+    )
+    plant_memory = reset_plant_memory(plant_params)
+    plant_memory = type(plant_memory)(
+        smoothed_velocity=initial_velocity,
+        previous_velocity=initial_velocity,
+        command_buffer=plant_memory.command_buffer,
+    )
 
     for _ in range(steps):
+        px_i, py_i, pz_i = plant_state.position
         if _norm(px_t - px_i, py_t - py_i, pz_t - pz_i) <= ht:
             return True
         sol = _compute_intercept(px_t, py_t, pz_t, v_tx, v_ty, v_tz, px_i, py_i, pz_i, vm)
@@ -781,29 +769,18 @@ def _monte_carlo_kinematic_hit_rollout(
             _tg, _phx, _phy, _phz, ux, uy, uz = sol
             if _norm(ux, uy, uz) < 1e-9:
                 ux, uy, uz = _unit(px_t - px_i, py_t - py_i, pz_t - pz_i)
-        if use_dyn:
-            dvx_des, dvy_des, dvz_des = ux * vm, uy * vm, uz * vm
-            ivx, ivy, ivz = _apply_rollout_velocity_step(
-                ivx,
-                ivy,
-                ivz,
-                dvx_des,
-                dvy_des,
-                dvz_des,
-                max_turn_rate_rad_s=max_turn_rate_rad_s,
-                max_accel_m_s2=max_accel_m_s2,
-                dt=dt_e,
-            )
-            px_i += ivx * dt_e
-            py_i += ivy * dt_e
-            pz_i += ivz * dt_e
-        else:
-            px_i += ux * vm * dt_e
-            py_i += uy * vm * dt_e
-            pz_i += uz * vm * dt_e
+        plant_result = step_kinematic_plant(
+            plant_state,
+            plant_memory,
+            PlantCommand((ux * vm, uy * vm, uz * vm)),
+            plant_params,
+        )
+        plant_state = plant_result.state
+        plant_memory = plant_result.memory
         px_t += v_tx * dt_e
         py_t += v_ty * dt_e
         pz_t += v_tz * dt_e
+    px_i, py_i, pz_i = plant_state.position
     return _norm(px_t - px_i, py_t - py_i, pz_t - pz_i) <= ht
 
 
@@ -832,6 +809,9 @@ def simulate_intercept_once(
     rollout_dt: float,
     rollout_max_turn_rate_rad_s: float = 0.0,
     rollout_max_accel_m_s2: float = 0.0,
+    rollout_autopilot_tau_s: float = 0.0,
+    rollout_cmd_delay_s: float = 0.0,
+    interceptor_initial_velocity: tuple[float, float, float] = (0.0, 0.0, 0.0),
 ) -> bool:
     """
     One stochastic draw: noisy target track, interceptor pose, delay; then feasibility or short rollout “hit”.
@@ -867,6 +847,9 @@ def simulate_intercept_once(
             dt=rollout_dt,
             max_turn_rate_rad_s=float(rollout_max_turn_rate_rad_s),
             max_accel_m_s2=float(rollout_max_accel_m_s2),
+            autopilot_tau_s=float(rollout_autopilot_tau_s),
+            cmd_delay_s=float(rollout_cmd_delay_s),
+            initial_velocity=interceptor_initial_velocity,
         )
 
     ok, _, _ = is_intercept_feasible(
@@ -997,6 +980,9 @@ def estimate_hit_probability(
     rollout_dt: float,
     rollout_max_turn_rate_rad_s: float = 0.0,
     rollout_max_accel_m_s2: float = 0.0,
+    rollout_autopilot_tau_s: float = 0.0,
+    rollout_cmd_delay_s: float = 0.0,
+    interceptor_initial_velocity: tuple[float, float, float] = (0.0, 0.0, 0.0),
 ) -> float:
     n = max(0, int(n_samples))
     if n == 0:
@@ -1019,6 +1005,9 @@ def estimate_hit_probability(
             rollout_dt=rollout_dt,
             rollout_max_turn_rate_rad_s=rollout_max_turn_rate_rad_s,
             rollout_max_accel_m_s2=rollout_max_accel_m_s2,
+            rollout_autopilot_tau_s=rollout_autopilot_tau_s,
+            rollout_cmd_delay_s=rollout_cmd_delay_s,
+            interceptor_initial_velocity=interceptor_initial_velocity,
         )
         if hit:
             success += 1
@@ -1332,6 +1321,8 @@ class InterceptionLogicNode(Node):
         self.declare_parameter('intercept_heatmap_prob_use_cmd_vel', False)
         self.declare_parameter('intercept_heatmap_prob_use_kinematic_rollout', True)
         self.declare_parameter('intercept_heatmap_prob_rollout_dt_s', 0.05)
+        self.declare_parameter('intercept_heatmap_prob_rollout_autopilot_tau_s', 0.0)
+        self.declare_parameter('intercept_heatmap_prob_rollout_cmd_delay_s', 0.0)
         self.declare_parameter('intercept_heatmap_prob_rollout_mc_cap', 12)
         # Per-cell LOS toward dome center (matches ``target_controller_node`` attack_los_to_origin).
         self.declare_parameter('intercept_heatmap_prob_use_cell_los_velocity', True)
@@ -1447,7 +1438,8 @@ class InterceptionLogicNode(Node):
         self.declare_parameter('t_go_filter_max_step_s', 0.0)
         # If True, align_speed range uses smoothed P_hit (matches direction state); else raw.
         self.declare_parameter('align_speed_use_smooth_hit_range', False)
-        # Scale PN blend to zero outside this range (m); 0 = full pn_blend everywhere (legacy).
+        # Scale PN-inspired direction blend to zero outside this range (m);
+        # 0 = full pn_blend everywhere (legacy).
         self.declare_parameter('pn_blend_terminal_range_m', 0.0)
         # Structured [ENG_METRIC] stdout (evaluation / failure classification); 0 = disabled.
         self.declare_parameter('eng_metrics_period_s', 0.0)
@@ -1764,6 +1756,12 @@ class InterceptionLogicNode(Node):
         self._heatmap_prob_rollout_dt = max(
             0.02, min(0.5, float(self.get_parameter('intercept_heatmap_prob_rollout_dt_s').value)),
         )
+        self._heatmap_prob_rollout_tau = max(
+            0.0, float(self.get_parameter('intercept_heatmap_prob_rollout_autopilot_tau_s').value),
+        )
+        self._heatmap_prob_rollout_cmd_delay = max(
+            0.0, float(self.get_parameter('intercept_heatmap_prob_rollout_cmd_delay_s').value),
+        )
         self._heatmap_prob_rollout_mc_cap = max(
             4, min(30, int(self.get_parameter('intercept_heatmap_prob_rollout_mc_cap').value)),
         )
@@ -2056,7 +2054,7 @@ class InterceptionLogicNode(Node):
             )
         else:
             self.get_logger().info(
-                f'Multi-interception (predict + PN, TTI+hysteresis): {tgt_topic} + '
+                f'Multi-interception (predict + PN-inspired steering, TTI+hysteresis): {tgt_topic} + '
                 f'{[f"/{i}/position" for i in self._ids]} -> cmd per id; '
                 f'margin={self._tti_margin}s window={self._switch_window_s}s lost_timeout={self._lost_timeout_s}s '
                 f'({rate:.0f} Hz) | 3-layer dome: outer={self._r_outer} mid={self._r_mid} inner={self._r_inner} m '
@@ -2141,6 +2139,8 @@ class InterceptionLogicNode(Node):
                 rollout_dt=self._heatmap_prob_rollout_dt,
                 rollout_max_turn_rate_rad_s=self._max_turn_rate,
                 rollout_max_accel_m_s2=self._max_accel,
+                rollout_autopilot_tau_s=self._heatmap_prob_rollout_tau,
+                rollout_cmd_delay_s=self._heatmap_prob_rollout_cmd_delay,
             ),
         )
 
@@ -2483,6 +2483,8 @@ class InterceptionLogicNode(Node):
                         rollout_dt=self._heatmap_prob_rollout_dt,
                         rollout_max_turn_rate_rad_s=self._max_turn_rate,
                         rollout_max_accel_m_s2=self._max_accel,
+                        rollout_autopilot_tau_s=self._heatmap_prob_rollout_tau,
+                        rollout_cmd_delay_s=self._heatmap_prob_rollout_cmd_delay,
                     )
                 elif self._intercept_mc_use_light:
                     prob = estimate_hit_probability_light(
@@ -2695,6 +2697,8 @@ class InterceptionLogicNode(Node):
             rollout_dt=self._heatmap_prob_rollout_dt,
             rollout_max_turn_rate_rad_s=self._max_turn_rate if use_roll else 0.0,
             rollout_max_accel_m_s2=self._max_accel if use_roll else 0.0,
+            rollout_autopilot_tau_s=self._heatmap_prob_rollout_tau if use_roll else 0.0,
+            rollout_cmd_delay_s=self._heatmap_prob_rollout_cmd_delay if use_roll else 0.0,
         )
 
     def _maybe_warn_mc_high_p_no_hit(self, iid: str, p: float) -> None:
@@ -3329,37 +3333,6 @@ class InterceptionLogicNode(Node):
             clr.ns = ns
             clr.action = Marker.DELETEALL
             self._pub_intercept_viz.publish(clr)
-
-    def _command_speed(self, dist: float, t_go: float | None = None) -> float:
-        """
-        Time-to-go aware speed controller.
-
-        Formula (predict mode — t_go known):
-            v = k1 * dist + k2 * dist / max(t_go, tgo_min)
-
-        Formula (pursuit mode — t_go = None):
-            v = k1 * dist   (distance-proportional fallback)
-
-        Both branches are clamped to [speed_vmin, max_speed_m_s].
-
-        Design intent:
-          • k1*dist   — baseline speed; naturally ramps up far away and
-                        slows down as the interceptor closes in.
-          • k2*dist/t_go — urgency term; equals the average closing rate
-                        required to reach the intercept point on time.
-                        Drives higher speed when t_go is short.
-          • speed_vmin  — hard floor so the interceptor never crawls.
-          • speed_tgo_min — guards against near-zero t_go producing an
-                        infinite desired speed.
-        """
-        if not math.isfinite(dist) or dist <= 0.0:
-            return float(self._speed_vmin)
-        if t_go is not None and math.isfinite(t_go) and t_go > 0.0:
-            t_eff = max(float(t_go), self._speed_tgo_min)
-            v = self._speed_k1 * dist + self._speed_k2 * dist / t_eff
-        else:
-            v = self._speed_k1 * dist
-        return float(min(self._vmax, max(self._speed_vmin, v)))
 
     def _on_gz_sim_reset(self) -> None:
         """กด Reset ใน Gazebo -> เวลาจำลองย้อน — เคลียร์ HIT/pause/ล็อกให้รันรอบใหม่ได้."""
@@ -4263,6 +4236,105 @@ class InterceptionLogicNode(Node):
             rows.append((iid, ok, tti))
         return rows
 
+    def _guidance_params_snapshot(self) -> GuidanceParams:
+        """Package live ROS parameters for the pure kinematic guidance kernel."""
+        return GuidanceParams(
+            interceptor_max_speed_m_s=self._interceptor_max_speed,
+            max_speed_m_s=self._vmax,
+            speed_k1=self._speed_k1,
+            speed_k2=self._speed_k2,
+            speed_vmin_m_s=self._speed_vmin,
+            speed_tgo_min_s=self._speed_tgo_min,
+            t_hit_min_s=self._t_hit_min,
+            t_hit_max_s=self._t_hit_max,
+            pursuit_lead_blend=self._pursuit_lead_blend,
+            naive_lead_time_s=self._naive_lead,
+            predict_enter_frames=self._predict_enter_frames,
+            predict_exit_frames=self._predict_exit_frames,
+            intercept_smoothing_alpha=self._intercept_alpha,
+            align_speed_to_solver=self._align_speed_to_solver,
+            t_go_filter_alpha=self._t_go_alpha,
+            t_go_filter_max_step_s=self._t_go_filter_max_step,
+            align_speed_use_smooth_hit_range=self._align_speed_smooth_range,
+            guidance_u_max_step_rad=self._guidance_u_max_step,
+            guidance_terminal_range_m=self._guidance_terminal_r,
+            guidance_terminal_pursuit_blend=self._guidance_terminal_pursuit_blend,
+            use_pn_inspired=self._use_pn,
+            pn_navigation_constant=self._pn_n,
+            pn_blend_gain=self._pn_blend,
+            pn_blend_terminal_range_m=self._pn_terminal_r,
+            pn_min_closing_speed_m_s=self._pn_min_vc,
+            debug_speed_margin_m_s=self._dbg_spd_margin,
+        )
+
+    def _guidance_memory_snapshot(self, key: str) -> GuidanceMemory:
+        return GuidanceMemory(
+            mode=self._guidance_mode.get(key, 'pursuit'),
+            predict_valid_count=int(self._valid_streak.get(key, 0)),
+            predict_invalid_count=int(self._invalid_streak.get(key, 0)),
+            filtered_t_go_s=self._t_go_filtered.get(key),
+            smoothed_intercept_point=self._intercept_point_filtered.get(key),
+            previous_unit_command=self._guidance_unit_prev.get(key),
+        )
+
+    def _store_guidance_memory(self, key: str, memory: GuidanceMemory, transition: tuple[str, str] | None) -> None:
+        if transition is not None:
+            old, new = transition
+            if new == 'predict':
+                print(
+                    f'[MODE] {key!r}: {old} → {new} '
+                    f'({self._predict_enter_frames} consecutive valid frames)',
+                    flush=True,
+                )
+            else:
+                print(
+                    f'[MODE] {key!r}: {old} → {new} '
+                    f'({self._predict_exit_frames} consecutive invalid frames)',
+                    flush=True,
+                )
+        self._guidance_mode[key] = memory.mode
+        self._valid_streak[key] = int(memory.predict_valid_count)
+        self._invalid_streak[key] = int(memory.predict_invalid_count)
+        self._t_go_filtered[key] = memory.filtered_t_go_s
+        self._intercept_point_filtered[key] = memory.smoothed_intercept_point
+        if memory.previous_unit_command is not None:
+            self._guidance_unit_prev[key] = memory.previous_unit_command
+        else:
+            self._guidance_unit_prev.pop(key, None)
+
+    def _compute_guidance_command_for_pair(
+        self,
+        *,
+        key: str,
+        tx: float,
+        ty: float,
+        tz: float,
+        v_tx: float,
+        v_ty: float,
+        v_tz: float,
+        ix: float,
+        iy: float,
+        iz: float,
+        v_ix: float,
+        v_iy: float,
+        v_iz: float,
+        aim_x: float,
+        aim_y: float,
+        aim_z: float,
+    ):
+        cmd = compute_guidance_command(
+            GuidanceInput(
+                target=TargetKinematics((tx, ty, tz), (v_tx, v_ty, v_tz)),
+                interceptor=InterceptorKinematics((ix, iy, iz), (v_ix, v_iy, v_iz)),
+                params=self._guidance_params_snapshot(),
+                memory=self._guidance_memory_snapshot(key),
+                aim_point_override=(aim_x, aim_y, aim_z),
+                debug_predictive_override=self._dbg_predictive,
+            ),
+        )
+        self._store_guidance_memory(key, cmd.memory_next, cmd.mode_transition)
+        return cmd
+
     def _run_ram_guidance(
         self,
         tx: float,
@@ -4448,220 +4520,51 @@ class InterceptionLogicNode(Node):
             )
             return
 
-        # ── Predict direction ────────────────────────────────────────────────
-        # Initialise raw-point variables to nan so the debug log is safe even
-        # when no fresh solve is available this cycle.
-        t_hit: float | None = None
-        phx_raw = phy_raw = phz_raw = float('nan')
-        phx = phy = phz = 0.0
-        ux_pred = uy_pred = uz_pred = 0.0
-        sol_valid = False
-
-        # ── Iterative intercept solve (2-pass) ───────────────────────────────
-        # Pass 1: rough t_go using distance-only speed (k1*dist, no urgency term).
-        # Pass 2: recompute with actual commanded speed sp_actual = k1*d + k2*d/t_go
-        #         so the interceptor's real flight speed matches the solver assumption.
-        # Without this, the interceptor arrives at the predicted point BEFORE the target
-        # (because the urgency term k2*d/t_go makes it fly faster than the solver expected)
-        # → overshoot.
-        # s_for_model tracks which constant closing speed s_i was used in |r0+v_T t|=s_i t.
-        sp_plan = self._command_speed(dist)   # k1*dist — no t_go yet
-        s_for_model = sp_plan
-        sol = _compute_intercept(tx, ty, tz, v_tx, v_ty, v_tz, ix, iy, iz, sp_plan)
-        if sol is not None:
-            t_rough = sol[0]
-            if self._t_hit_min <= t_rough <= self._t_hit_max:
-                sp_actual = self._command_speed(dist, t_go=t_rough)
-                if abs(sp_actual - sp_plan) > 0.05:     # re-solve only if speed differs
-                    sol2 = _compute_intercept(tx, ty, tz, v_tx, v_ty, v_tz, ix, iy, iz, sp_actual)
-                    if sol2 is not None:
-                        sol = sol2
-                        s_for_model = sp_actual
-        if sol is not None:
-            t_hit, phx, phy, phz, ux_pred, uy_pred, uz_pred = sol
-            if self._t_hit_min <= t_hit <= self._t_hit_max and _norm(ux_pred, uy_pred, uz_pred) > 1e-6:
-                sol_valid = True
-                # EMA filter on raw intercept point; keep raw for debug log.
-                phx_raw, phy_raw, phz_raw = phx, phy, phz
-                phx, phy, phz = self._smooth_intercept_point(selected, phx, phy, phz)
-                ux_f, uy_f, uz_f = _unit(phx - ix, phy - iy, phz - iz)
-                if _norm(ux_f, uy_f, uz_f) > 1e-6:
-                    ux_pred, uy_pred, uz_pred = ux_f, uy_f, uz_f
-
-        dbg_cmd_override = False
-        v_req_dbg = float('nan')
-        ux_d = uy_d = uz_d = 0.0
-        sp_dbg = 0.0
-        if self._dbg_predictive and sol_valid and t_hit is not None:
-            phu_x, phu_y, phu_z = phx_raw, phy_raw, phz_raw
-            dx = phu_x - ix
-            dy = phu_y - iy
-            dz = phu_z - iz
-            unr = _norm(dx, dy, dz)
-            if unr > 1e-9:
-                v_req_dbg = compute_required_speed(ix, iy, iz, phu_x, phu_y, phu_z, t_hit)
-                if math.isfinite(v_req_dbg) and v_req_dbg < float('inf'):
-                    ux_d, uy_d, uz_d = _unit(dx, dy, dz)
-                    sp_dbg = min(
-                        self._interceptor_max_speed,
-                        max(0.0, v_req_dbg + self._dbg_spd_margin),
-                    )
-                    dbg_cmd_override = True
-
-        blend = self._update_guidance_mode(selected, sol_valid)
-        if (
-            self._guidance_terminal_r > 1e-6
-            and dist > 1e-9
-            and self._guidance_terminal_pursuit_blend > 1e-9
-        ):
-            frac = max(0.0, min(1.0, 1.0 - dist / self._guidance_terminal_r))
-            blend *= 1.0 - self._guidance_terminal_pursuit_blend * frac
-        committed_mode = self._guidance_mode[selected]
-
-        pn_active = False
-        vc_log = 0.0
-        mode = committed_mode
-        if dbg_cmd_override:
-            ux, uy, uz = ux_d, uy_d, uz_d
-            mode = 'predict_dbg'
+        guidance_cmd = self._compute_guidance_command_for_pair(
+            key=selected,
+            tx=tx,
+            ty=ty,
+            tz=tz,
+            v_tx=v_tx,
+            v_ty=v_ty,
+            v_tz=v_tz,
+            ix=ix,
+            iy=iy,
+            iz=iz,
+            v_ix=v_ix,
+            v_iy=v_iy,
+            v_iz=v_iz,
+            aim_x=gx,
+            aim_y=gy,
+            aim_z=gz,
+        )
+        vx, vy, vz = guidance_cmd.velocity_cmd
+        sp = guidance_cmd.speed_cmd_m_s
+        t_hit = guidance_cmd.t_go_raw_s
+        sol_valid = guidance_cmd.solution_valid
+        mode = guidance_cmd.mode
+        pn_active = guidance_cmd.pn_inspired_active
+        vc_log = 0.0 if guidance_cmd.closing_speed_m_s is None else guidance_cmd.closing_speed_m_s
+        dbg_cmd_override = guidance_cmd.debug_predictive_override_active
+        v_req_dbg = (
+            float('nan')
+            if guidance_cmd.debug_required_speed_m_s is None
+            else guidance_cmd.debug_required_speed_m_s
+        )
+        if guidance_cmd.intercept_point_raw is not None:
+            phx_raw, phy_raw, phz_raw = guidance_cmd.intercept_point_raw
         else:
-            # ── Pursuit direction (always computed — needed for blending) ─────────
-            # ใน strike + aim_mid_shell ใช้จุดบนเปลือก r_mid เป็นทิศ LOS (ขอบชั้น 1–2)
-            losx, losy, losz = _unit(gx - ix, gy - iy, gz - iz)
-            bl = self._pursuit_lead_blend
-            spv = abs(v_tx) + abs(v_ty) + abs(v_tz)
-            if bl > 1e-6 and spv > 0.02:
-                lx = tx + v_tx * self._naive_lead
-                ly = ty + v_ty * self._naive_lead
-                lz = tz + v_tz * self._naive_lead
-                lox, loy, loz = _unit(lx - ix, ly - iy, lz - iz)
-                if _norm(lox, loy, loz) > 1e-9:
-                    ux_pur = (1.0 - bl) * losx + bl * lox
-                    uy_pur = (1.0 - bl) * losy + bl * loy
-                    uz_pur = (1.0 - bl) * losz + bl * loz
-                    un = _norm(ux_pur, uy_pur, uz_pur)
-                    if un > 1e-9:
-                        ux_pur, uy_pur, uz_pur = ux_pur / un, uy_pur / un, uz_pur / un
-                    else:
-                        ux_pur, uy_pur, uz_pur = losx, losy, losz
-                else:
-                    ux_pur, uy_pur, uz_pur = losx, losy, losz
-            else:
-                ux_pur, uy_pur, uz_pur = losx, losy, losz
-            if _norm(ux_pur, uy_pur, uz_pur) < 1e-9:
-                ux_pur, uy_pur, uz_pur = losx, losy, losz
-
-            # ── Mode hysteresis + direction blending ──────────────────────────────
-            # blend=0 → full pursuit; blend=1 → full predict.
-            # Transitions are spread over enter/exit_frames to prevent rapid switching.
-
-            # During exit transition (blend > 0 but no fresh solve), fall back to
-            # the last known filtered intercept point to maintain a predict direction.
-            if not sol_valid and blend > 1e-6:
-                flt = self._intercept_point_filtered[selected]
-                if flt is not None:
-                    ux_f, uy_f, uz_f = _unit(flt[0] - ix, flt[1] - iy, flt[2] - iz)
-                    if _norm(ux_f, uy_f, uz_f) > 1e-6:
-                        ux_pred, uy_pred, uz_pred = ux_f, uy_f, uz_f
-                    else:
-                        blend = 0.0  # filter point is at interceptor location — use pursuit
-                else:
-                    blend = 0.0  # no filter history — use pursuit
-
-            if blend > 1e-6:
-                bx = (1.0 - blend) * ux_pur + blend * ux_pred
-                by = (1.0 - blend) * uy_pur + blend * uy_pred
-                bz = (1.0 - blend) * uz_pur + blend * uz_pred
-                un = _norm(bx, by, bz)
-                ux, uy, uz = (bx / un, by / un, bz / un) if un > 1e-9 else (ux_pur, uy_pur, uz_pur)
-            else:
-                ux, uy, uz = ux_pur, uy_pur, uz_pur
-
-            mode = committed_mode          # 'predict' or 'pursuit' — reported in logs
-            if not sol_valid:
-                t_hit = None
-                phx = phy = phz = float('nan')
-
-            if self._use_pn and self._pn_blend > 1e-9 and dist > 1e-6:
-                # เมื่อ aim shell: ใช้เวกเตอร์สัมพัธ์ไปจุดบนเปลือกเพื่อให้สอดคล้อง pursuit
-                px, py, pz = (gx, gy, gz) if (strike_ok_eff and self._dome_enabled and self._aim_mid_shell) else (tx, ty, tz)
-                rx, ry, rz = px - ix, py - iy, pz - iz
-                v_rx = v_tx - v_ix
-                v_ry = v_ty - v_iy
-                v_rz = v_tz - v_iz
-                sx, sy, sz, vc_log, pn_ok = _pn_steering_vector(
-                    rx, ry, rz, v_rx, v_ry, v_rz, self._pn_n, self._pn_min_vc,
-                )
-                if pn_ok:
-                    pn_w = self._effective_pn_blend(dist)
-                    bx = ux + pn_w * sx
-                    by = uy + pn_w * sy
-                    bz = uz + pn_w * sz
-                    un = _norm(bx, by, bz)
-                    if un > 1e-9:
-                        ux, uy, uz = bx / un, by / un, bz / un
-                        pn_active = True
-
-        ucmdx, ucmdy, ucmdz = (ux_d, uy_d, uz_d) if dbg_cmd_override else (ux, uy, uz)
-        prev_u = self._guidance_unit_prev.get(selected)
-        if prev_u is not None and self._guidance_u_max_step < math.pi - 1e-9:
-            pu, pv, pw = prev_u
-            ucmdx, ucmdy, ucmdz = _rotate_dir_toward(pu, pv, pw, ucmdx, ucmdy, ucmdz, self._guidance_u_max_step)
-        self._guidance_unit_prev[selected] = (ucmdx, ucmdy, ucmdz)
-        if dbg_cmd_override:
-            ux_d, uy_d, uz_d = ucmdx, ucmdy, ucmdz
-            ux, uy, uz = ucmdx, ucmdy, ucmdz
+            phx_raw = phy_raw = phz_raw = float('nan')
+        if guidance_cmd.intercept_point_smoothed is not None:
+            phx, phy, phz = guidance_cmd.intercept_point_smoothed
         else:
-            ux, uy, uz = ucmdx, ucmdy, ucmdz
-
-        if dbg_cmd_override:
-            sp = sp_dbg
-        elif (
-            self._align_speed_to_solver
-            and sol_valid
-            and t_hit is not None
-            and math.isfinite(t_hit)
-            and t_hit > 0.0
-            and all(math.isfinite(v) for v in (phx_raw, phy_raw, phz_raw))
-        ):
-            # Phase 2: replace heuristic distance-based speed with the constant ``s`` that the
-            # CV intercept quadratic implicitly assumes: s = |P_hit - P_I| / t_go, capped to
-            # the interceptor speed limit. Filter t_go first so a single noisy frame cannot
-            # whip the commanded magnitude. ``ux,uy,uz`` already point at (smoothed) P_hit.
-            t_go_raw = float(t_hit)
-            t_go_filt = self._t_go_filtered.get(selected)
-            t_go_eff = t_go_raw if t_go_filt is None else (
-                self._t_go_alpha * t_go_raw + (1.0 - self._t_go_alpha) * t_go_filt
-            )
-            if t_go_filt is not None and self._t_go_filter_max_step > 1e-12:
-                dc = t_go_eff - float(t_go_filt)
-                if abs(dc) > self._t_go_filter_max_step:
-                    t_go_eff = float(t_go_filt) + math.copysign(self._t_go_filter_max_step, dc)
-            self._t_go_filtered[selected] = t_go_eff
-            if self._align_speed_smooth_range and all(
-                math.isfinite(v) for v in (phx, phy, phz)
-            ):
-                range_to_phit = _norm(phx - ix, phy - iy, phz - iz)
-            else:
-                range_to_phit = _norm(phx_raw - ix, phy_raw - iy, phz_raw - iz)
-            t_go_use = max(t_go_eff, self._speed_tgo_min)
-            s_solver = max(self._speed_vmin, min(self._vmax, range_to_phit / t_go_use))
-            sp = s_solver
-        else:
-            # Pursuit fallback (no fresh solve) — keep the legacy distance-only law and reset the
-            # filter so the next predict cycle starts cleanly without stale t_go.
-            self._t_go_filtered[selected] = None
-            sp = self._command_speed(dist, t_go=t_hit)
-        vx = ux * sp
-        vy = uy * sp
-        vz = uz * sp
-        vx, vy, vz = self._clamp_speed(vx, vy, vz)
+            phx = phy = phz = float('nan')
         cmd = Vector3()
         cmd.x, cmd.y, cmd.z = vx, vy, vz
         out_map[selected] = cmd
         self._publish_all(out_map)
 
-        solver_s_plot = s_for_model if sol_valid else None
+        solver_s_plot = guidance_cmd.solver_speed_m_s if sol_valid else None
         v_cmd_mag = _norm(vx, vy, vz)
 
         start_h = self._inter_start_pos.get(selected)
@@ -4883,105 +4786,6 @@ class InterceptionLogicNode(Node):
         if dt < 1e-3:
             return (0.0, 0.0, 0.0)
         return ((ix - px) / dt, (iy - py) / dt, (iz - pz) / dt)
-
-    def _clamp_speed(self, vx: float, vy: float, vz: float) -> tuple[float, float, float]:
-        n = _norm(vx, vy, vz)
-        if n < 1e-9 or n <= self._vmax:
-            return (vx, vy, vz)
-        s = self._vmax / n
-        return (vx * s, vy * s, vz * s)
-
-    def _effective_pn_blend(self, dist_to_target: float) -> float:
-        """Scale PN mix-in toward zero beyond ``pn_blend_terminal_range_m`` (legacy when range is 0)."""
-        if self._pn_terminal_r <= 1e-6:
-            return self._pn_blend
-        d = float(dist_to_target)
-        scale = max(0.0, min(1.0, 1.0 - d / self._pn_terminal_r))
-        return self._pn_blend * scale
-
-    def _update_guidance_mode(self, iid: str, sol_valid: bool) -> float:
-        """
-        Hysteresis state machine for pursuit ↔ predict mode transitions.
-
-        Requires *predict_enter_frames* consecutive valid-solution frames to
-        enter predict mode and *predict_exit_frames* consecutive invalid frames
-        to return to pursuit.  This prevents a single noisy frame from flipping
-        guidance.
-
-        Returns *blend_alpha* in [0.0, 1.0]:
-          0.0 = full pursuit direction
-          1.0 = full predict direction
-
-        The blend ramps linearly across the transition window so the output
-        direction rotates smoothly rather than snapping between modes.
-
-        Blend derivation:
-          Entering predict (committed='pursuit', valid_streak growing):
-            blend = valid_streak / enter_frames   (0 → 1 as we count up)
-          Exiting predict (committed='predict', invalid_streak growing):
-            blend = 1 - invalid_streak / exit_frames  (1 → 0 as we count up)
-        """
-        # Update streaks: one resets whenever the other increments.
-        if sol_valid:
-            self._valid_streak[iid] = min(self._valid_streak[iid] + 1, self._predict_enter_frames)
-            self._invalid_streak[iid] = 0
-        else:
-            self._invalid_streak[iid] = min(self._invalid_streak[iid] + 1, self._predict_exit_frames)
-            self._valid_streak[iid] = 0
-
-        # State transitions (only after threshold is met).
-        prev = self._guidance_mode[iid]
-        if prev == 'pursuit' and self._valid_streak[iid] >= self._predict_enter_frames:
-            self._guidance_mode[iid] = 'predict'
-            print(
-                f'[MODE] {iid!r}: pursuit → predict '
-                f'({self._predict_enter_frames} consecutive valid frames)',
-                flush=True,
-            )
-        elif prev == 'predict' and self._invalid_streak[iid] >= self._predict_exit_frames:
-            self._guidance_mode[iid] = 'pursuit'
-            print(
-                f'[MODE] {iid!r}: predict → pursuit '
-                f'({self._predict_exit_frames} consecutive invalid frames)',
-                flush=True,
-            )
-
-        # Compute blend factor for smooth direction interpolation.
-        committed = self._guidance_mode[iid]
-        if committed == 'predict':
-            # Entering: valid_streak ramps from 0→enter_frames → blend 0→1.
-            # Exiting:  invalid_streak ramps from 0→exit_frames → blend 1→0.
-            blend = 1.0 - self._invalid_streak[iid] / max(self._predict_exit_frames, 1)
-        else:  # 'pursuit'
-            # Counting toward predict: valid_streak ramps 0→enter_frames → blend 0→1.
-            # Stable in pursuit (valid_streak == 0): blend stays 0.
-            blend = self._valid_streak[iid] / max(self._predict_enter_frames, 1)
-
-        return max(0.0, min(1.0, blend))
-
-    def _smooth_intercept_point(
-        self, iid: str, phx: float, phy: float, phz: float
-    ) -> tuple[float, float, float]:
-        """
-        Exponential Moving Average (EMA) filter on the predicted intercept point.
-
-        Reduces frame-to-frame jitter caused by noise in target-velocity estimates
-        and mode switching between predict / pursuit.  The filtered point is used
-        for computing the guidance direction; the raw value is preserved for logs.
-
-        On the first valid solve the filter is seeded with the raw value so there
-        is no lag on engagement start.  alpha=1.0 disables smoothing (raw pass-through).
-        """
-        prev = self._intercept_point_filtered.get(iid)
-        if prev is None:
-            self._intercept_point_filtered[iid] = (phx, phy, phz)
-            return (phx, phy, phz)
-        a = self._intercept_alpha
-        fx = a * phx + (1.0 - a) * prev[0]
-        fy = a * phy + (1.0 - a) * prev[1]
-        fz = a * phz + (1.0 - a) * prev[2]
-        self._intercept_point_filtered[iid] = (fx, fy, fz)
-        return (fx, fy, fz)
 
     def _accel_limit_velocity(
         self, iid: str, vx: float, vy: float, vz: float
@@ -5267,154 +5071,39 @@ class InterceptionLogicNode(Node):
                 selected, iid_h, ix, iy, iz, tx, ty, tz, feas_m, v_cmd=0.0,
             )
             return zero
-        # ── Predict direction (2-pass iterative solve) ───────────────────────
-        ux_pred = uy_pred = uz_pred = 0.0
-        sol_valid_m = False
-        _t_hit_m: float | None = None
-        _phx = _phy = _phz = float('nan')   # always defined for marker / log safety
-        _phx_raw_m = _phy_raw_m = _phz_raw_m = float('nan')
-        # Pass 1: rough estimate with distance-only planning speed.
-        _sp_plan_m = self._command_speed(dist)
-        s_for_model_m = _sp_plan_m
-        sol = _compute_intercept(tx, ty, tz, v_tx, v_ty, v_tz, ix, iy, iz, _sp_plan_m)
-        if sol is not None:
-            _t_rough_m = sol[0]
-            if self._t_hit_min <= _t_rough_m <= self._t_hit_max:
-                _sp_actual_m = self._command_speed(dist, t_go=_t_rough_m)
-                if abs(_sp_actual_m - _sp_plan_m) > 0.05:
-                    _sol2_m = _compute_intercept(tx, ty, tz, v_tx, v_ty, v_tz, ix, iy, iz, _sp_actual_m)
-                    if _sol2_m is not None:
-                        sol = _sol2_m
-                        s_for_model_m = _sp_actual_m
-        if sol is not None:
-            _t_hit_m, _phx, _phy, _phz, ux_pred, uy_pred, uz_pred = sol
-            if self._t_hit_min <= _t_hit_m <= self._t_hit_max and _norm(ux_pred, uy_pred, uz_pred) > 1e-6:
-                sol_valid_m = True
-                _phx_raw_m, _phy_raw_m, _phz_raw_m = _phx, _phy, _phz
-                # EMA filter on raw intercept point.
-                _phx_f, _phy_f, _phz_f = self._smooth_intercept_point(selected, _phx, _phy, _phz)
-                ux_f, uy_f, uz_f = _unit(_phx_f - ix, _phy_f - iy, _phz_f - iz)
-                if _norm(ux_f, uy_f, uz_f) > 1e-6:
-                    ux_pred, uy_pred, uz_pred = ux_f, uy_f, uz_f
-
-        dbg_cmd_override_m = False
-        v_req_dbg_m = float('nan')
-        ux_dm = uy_dm = uz_dm = 0.0
-        sp_dbg_m = 0.0
-        if self._dbg_predictive and sol_valid_m and _t_hit_m is not None:
-            dxm = _phx_raw_m - ix
-            dym = _phy_raw_m - iy
-            dzm = _phz_raw_m - iz
-            unrm = _norm(dxm, dym, dzm)
-            if unrm > 1e-9:
-                v_req_dbg_m = compute_required_speed(ix, iy, iz, _phx_raw_m, _phy_raw_m, _phz_raw_m, _t_hit_m)
-                if math.isfinite(v_req_dbg_m) and v_req_dbg_m < float('inf'):
-                    ux_dm, uy_dm, uz_dm = _unit(dxm, dym, dzm)
-                    sp_dbg_m = min(
-                        self._interceptor_max_speed,
-                        max(0.0, v_req_dbg_m + self._dbg_spd_margin),
-                    )
-                    dbg_cmd_override_m = True
-
-        blend_m = self._update_guidance_mode(selected, sol_valid_m)
-        if (
-            self._guidance_terminal_r > 1e-6
-            and dist > 1e-9
-            and self._guidance_terminal_pursuit_blend > 1e-9
-        ):
-            frac_t = max(0.0, min(1.0, 1.0 - dist / self._guidance_terminal_r))
-            blend_m *= 1.0 - self._guidance_terminal_pursuit_blend * frac_t
-        committed_mode_m = self._guidance_mode[selected]
-
-        if dbg_cmd_override_m:
-            ux, uy, uz = ux_dm, uy_dm, uz_dm
-            mode_m = 'predict_dbg'
+        guidance_cmd_m = self._compute_guidance_command_for_pair(
+            key=selected,
+            tx=tx,
+            ty=ty,
+            tz=tz,
+            v_tx=v_tx,
+            v_ty=v_ty,
+            v_tz=v_tz,
+            ix=ix,
+            iy=iy,
+            iz=iz,
+            v_ix=v_ix,
+            v_iy=v_iy,
+            v_iz=v_iz,
+            aim_x=gx,
+            aim_y=gy,
+            aim_z=gz,
+        )
+        vx, vy, vz = guidance_cmd_m.velocity_cmd
+        v_cmd_m = guidance_cmd_m.speed_cmd_m_s
+        sol_valid_m = guidance_cmd_m.solution_valid
+        _t_hit_m = guidance_cmd_m.t_go_raw_s
+        mode_m = guidance_cmd_m.mode
+        dbg_cmd_override_m = guidance_cmd_m.debug_predictive_override_active
+        v_req_dbg_m = (
+            float('nan')
+            if guidance_cmd_m.debug_required_speed_m_s is None
+            else guidance_cmd_m.debug_required_speed_m_s
+        )
+        if guidance_cmd_m.intercept_point_raw is not None:
+            _phx_raw_m, _phy_raw_m, _phz_raw_m = guidance_cmd_m.intercept_point_raw
         else:
-            # ── Pursuit direction (always computed) ──────────────────────────────
-            losx, losy, losz = _unit(gx - ix, gy - iy, gz - iz)
-            bl = self._pursuit_lead_blend
-            spv = abs(v_tx) + abs(v_ty) + abs(v_tz)
-            if bl > 1e-6 and spv > 0.02:
-                lx = tx + v_tx * self._naive_lead
-                ly = ty + v_ty * self._naive_lead
-                lz = tz + v_tz * self._naive_lead
-                lox, loy, loz = _unit(lx - ix, ly - iy, lz - iz)
-                if _norm(lox, loy, loz) > 1e-9:
-                    ux_pur = (1.0 - bl) * losx + bl * lox
-                    uy_pur = (1.0 - bl) * losy + bl * loy
-                    uz_pur = (1.0 - bl) * losz + bl * loz
-                    un = _norm(ux_pur, uy_pur, uz_pur)
-                    if un > 1e-9:
-                        ux_pur, uy_pur, uz_pur = ux_pur / un, uy_pur / un, uz_pur / un
-                    else:
-                        ux_pur, uy_pur, uz_pur = losx, losy, losz
-                else:
-                    ux_pur, uy_pur, uz_pur = losx, losy, losz
-            else:
-                ux_pur, uy_pur, uz_pur = losx, losy, losz
-            if _norm(ux_pur, uy_pur, uz_pur) < 1e-9:
-                ux_pur, uy_pur, uz_pur = losx, losy, losz
-
-            # ── Mode hysteresis + direction blending ──────────────────────────────
-            if not sol_valid_m and blend_m > 1e-6:
-                flt = self._intercept_point_filtered[selected]
-                if flt is not None:
-                    ux_f, uy_f, uz_f = _unit(flt[0] - ix, flt[1] - iy, flt[2] - iz)
-                    if _norm(ux_f, uy_f, uz_f) > 1e-6:
-                        ux_pred, uy_pred, uz_pred = ux_f, uy_f, uz_f
-                    else:
-                        blend_m = 0.0
-                else:
-                    blend_m = 0.0
-
-            if blend_m > 1e-6:
-                bx = (1.0 - blend_m) * ux_pur + blend_m * ux_pred
-                by = (1.0 - blend_m) * uy_pur + blend_m * uy_pred
-                bz = (1.0 - blend_m) * uz_pur + blend_m * uz_pred
-                un = _norm(bx, by, bz)
-                ux, uy, uz = (bx / un, by / un, bz / un) if un > 1e-9 else (ux_pur, uy_pur, uz_pur)
-            else:
-                ux, uy, uz = ux_pur, uy_pur, uz_pur
-            mode_m = committed_mode_m
-            if not sol_valid_m:
-                _t_hit_m = None
-
-            if self._use_pn and self._pn_blend > 1e-9 and dist > 1e-6:
-                px, py, pz = (gx, gy, gz) if (strike_ok_eff and self._dome_enabled and self._aim_mid_shell) else (tx, ty, tz)
-                rx, ry, rz = px - ix, py - iy, pz - iz
-                v_rx = v_tx - v_ix
-                v_ry = v_ty - v_iy
-                v_rz = v_tz - v_iz
-                sx, sy, sz, _vc_log, pn_ok = _pn_steering_vector(
-                    rx, ry, rz, v_rx, v_ry, v_rz, self._pn_n, self._pn_min_vc,
-                )
-                if pn_ok:
-                    pn_wm = self._effective_pn_blend(dist)
-                    bx = ux + pn_wm * sx
-                    by = uy + pn_wm * sy
-                    bz = uz + pn_wm * sz
-                    un = _norm(bx, by, bz)
-                    if un > 1e-9:
-                        ux, uy, uz = bx / un, by / un, bz / un
-        ucmmx, ucmmy, ucmmz = (ux, uy, uz)
-        prev_um = self._guidance_unit_prev.get(selected)
-        if prev_um is not None and self._guidance_u_max_step < math.pi - 1e-9:
-            pu, pv, pw = prev_um
-            ucmmx, ucmmy, ucmmz = _rotate_dir_toward(
-                pu, pv, pw, ucmmx, ucmmy, ucmmz, self._guidance_u_max_step,
-            )
-        self._guidance_unit_prev[selected] = (ucmmx, ucmmy, ucmmz)
-        ux, uy, uz = ucmmx, ucmmy, ucmmz
-        if dbg_cmd_override_m:
-            sp = sp_dbg_m
-        else:
-            # Pass t_go only when a fresh predict solution is available; None → pursuit fallback.
-            sp = self._command_speed(dist, t_go=_t_hit_m if sol_valid_m else None)
-        vx = ux * sp
-        vy = uy * sp
-        vz = uz * sp
-        vx, vy, vz = self._clamp_speed(vx, vy, vz)
-        v_cmd_m = _norm(vx, vy, vz)
+            _phx_raw_m = _phy_raw_m = _phz_raw_m = float('nan')
         # Accel limit is applied by the caller (_publish_all), not here, so that
         # _prev_velocity is written exactly once per cycle per interceptor.
 
@@ -5485,7 +5174,7 @@ class InterceptionLogicNode(Node):
         _vis_phx_m = _phx_raw_m if sol_valid_m else float('nan')
         _vis_phy_m = _phy_raw_m if sol_valid_m else float('nan')
         _vis_phz_m = _phz_raw_m if sol_valid_m else float('nan')
-        _solver_m = s_for_model_m if sol_valid_m else None
+        _solver_m = guidance_cmd_m.solver_speed_m_s if sol_valid_m else None
         _raw_mcm = (
             self._mc_p_last.get(selected)
             if (self._intercept_mc_trail_by_prob or self._intercept_mc_engagement)
@@ -6282,7 +5971,7 @@ class InterceptionLogicNode(Node):
         """
         r = P_T - P_I, v_cmd = commanded velocity.
         alignment = dot(unit(r), unit(v_cmd)) — ~1 means cmd parallel to LOS (pure chase);
-        lower values mean intercept geometry (lead / PN) off the instantaneous LOS.
+        lower values mean intercept geometry (lead / PN-inspired steering) off the instantaneous LOS.
         """
         rx = tx - ix
         ry = ty - iy

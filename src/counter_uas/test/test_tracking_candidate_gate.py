@@ -25,6 +25,7 @@ so the fixes are locked in by CI.
 from __future__ import annotations
 
 import importlib.util
+import math
 import sys
 from pathlib import Path
 
@@ -32,6 +33,17 @@ _REPO_ROOT = Path(__file__).resolve().parents[3]
 
 
 def _load_tracking_module():  # noqa: ANN201
+    # Some ROS-free tests stub geometry_msgs.msg for isolated imports.  Ensure
+    # tracking sees the real ROS message package so nav_msgs/Odometry can import
+    # PoseWithCovariance and TwistWithCovariance.
+    geom_msg = sys.modules.get('geometry_msgs.msg')
+    if geom_msg is not None and not hasattr(geom_msg, 'PoseWithCovariance'):
+        sys.modules.pop('geometry_msgs.msg', None)
+        sys.modules.pop('geometry_msgs', None)
+    rclpy_mod = sys.modules.get('rclpy')
+    if rclpy_mod is not None and not hasattr(rclpy_mod, 'time'):
+        sys.modules.pop('rclpy', None)
+        sys.modules.pop('rclpy.node', None)
     path = _REPO_ROOT / 'src' / 'tracking' / 'tracking' / 'tracking_node.py'
     assert path.is_file(), f'missing {path}'
     spec = importlib.util.spec_from_file_location('tracking_node_under_test', path)
@@ -169,3 +181,43 @@ def test_candidate_miss_tolerance_keeps_candidate_alive() -> None:
     # the field is wired through.
     assert hasattr(cand, 'missed_frames')
     assert cand.missed_frames == 3
+
+
+def test_tracks_state_odometry_carries_finite_position_velocity_and_covariance() -> None:
+    mod = _load_tracking_module()
+    tr = mod.Track.new_from_position(7, 10.0, -2.0, 3.0, vx=38.0, vy=-1.5, vz=-2.0)
+
+    class _Stamp:
+        def to_msg(self):  # noqa: ANN201
+            return mod.rclpy.time.Time().to_msg()
+
+    class _Clock:
+        @staticmethod
+        def now() -> _Stamp:
+            return _Stamp()
+
+    class _FakeNode:
+        _tracks_state_frame_id = 'map'
+
+        @staticmethod
+        def get_clock() -> _Clock:
+            return _Clock()
+
+    msg = mod.TrackingNode._track_to_odometry(_FakeNode(), tr)
+
+    vals = (
+        msg.pose.pose.position.x,
+        msg.pose.pose.position.y,
+        msg.pose.pose.position.z,
+        msg.twist.twist.linear.x,
+        msg.twist.twist.linear.y,
+        msg.twist.twist.linear.z,
+        *msg.pose.covariance,
+        *msg.twist.covariance,
+    )
+    assert msg.header.frame_id == 'map'
+    assert msg.child_frame_id == 'track_7'
+    assert msg.twist.twist.linear.x == 38.0
+    assert all(math.isfinite(float(v)) for v in vals)
+    assert msg.pose.covariance[0] > 0.0
+    assert msg.twist.covariance[0] > 0.0

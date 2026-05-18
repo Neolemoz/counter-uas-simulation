@@ -6,7 +6,7 @@ import math
 import random
 
 import rclpy
-from geometry_msgs.msg import Point
+from geometry_msgs.msg import Point, PointStamped
 from rclpy.node import Node
 
 
@@ -22,6 +22,7 @@ class NoisyMeasurementNode(Node):
         super().__init__("noisy_measurement_node")
         self.declare_parameter("input_topic", "/drone/position")
         self.declare_parameter("output_topic", "/drone/position_noisy")
+        self.declare_parameter("output_stamped_topic", "")
         self.declare_parameter("rate_hz", 10.0)
         self.declare_parameter("noise_std_m", 0.0)
         self.declare_parameter("dropout_prob", 0.0)
@@ -29,6 +30,10 @@ class NoisyMeasurementNode(Node):
 
         self._in_topic = str(self.get_parameter("input_topic").value).strip() or "/drone/position"
         self._out_topic = str(self.get_parameter("output_topic").value).strip() or "/drone/position_noisy"
+        self._out_stamped_topic = (
+            str(self.get_parameter("output_stamped_topic").value).strip()
+            or f"{self._out_topic}_stamped"
+        )
         self._rate_hz = max(float(self.get_parameter("rate_hz").value), 0.1)
         self._noise_std = max(float(self.get_parameter("noise_std_m").value), 0.0)
         self._dropout = float(self.get_parameter("dropout_prob").value)
@@ -37,8 +42,10 @@ class NoisyMeasurementNode(Node):
 
         self._rng = random.Random(self._seed)
         self._last_gt: Point | None = None
+        self._last_stamp = self.get_clock().now().to_msg()
 
         self._pub = self.create_publisher(Point, self._out_topic, 10)
+        self._pub_stamped = self.create_publisher(PointStamped, self._out_stamped_topic, 10)
         self.create_subscription(Point, self._in_topic, self._on_gt, 10)
         self.create_timer(1.0 / self._rate_hz, self._tick)
 
@@ -49,6 +56,7 @@ class NoisyMeasurementNode(Node):
 
     def _on_gt(self, msg: Point) -> None:
         self._last_gt = msg
+        self._last_stamp = self.get_clock().now().to_msg()
 
     def _gauss(self) -> float:
         # random.Random.gauss is deterministic for a given seed.
@@ -68,6 +76,11 @@ class NoisyMeasurementNode(Node):
         if not (math.isfinite(p.x) and math.isfinite(p.y) and math.isfinite(p.z)):
             return
         self._pub.publish(p)
+        stamped = PointStamped()
+        stamped.header.stamp = self._last_stamp
+        stamped.header.frame_id = "map"
+        stamped.point = p
+        self._pub_stamped.publish(stamped)
 
 
 def main(args: list[str] | None = None) -> None:

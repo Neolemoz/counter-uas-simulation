@@ -34,6 +34,32 @@ _MISS_LOG = """
 def _write_synthetic_logs(tmp_dir: Path) -> None:
     (tmp_dir / 'run_a.log').write_text(_HIT_LOG, encoding='utf-8')
     (tmp_dir / 'run_b.log').write_text(_MISS_LOG, encoding='utf-8')
+    (tmp_dir / 'run_a.meta.json').write_text(
+        json.dumps(
+            {
+                'cohort': 'unit_cohort',
+                'git_commit': 'abc123',
+                'git_dirty': False,
+                'notes': 'mc_label=unit seed=100 geometry_id="cell_a"',
+                'launch_args_raw': 'use_gazebo_gui:=false noise_seed:=100',
+                'launch_args_kv': {'noise_seed': '100'},
+            },
+        ),
+        encoding='utf-8',
+    )
+    (tmp_dir / 'run_b.meta.json').write_text(
+        json.dumps(
+            {
+                'cohort': 'unit_cohort',
+                'git_commit': 'abc123',
+                'git_dirty': False,
+                'notes': 'mc_label=unit seed=101 geometry_id="cell_a"',
+                'launch_args_raw': 'use_gazebo_gui:=false noise_seed:=101',
+                'launch_args_kv': {'noise_seed': '101'},
+            },
+        ),
+        encoding='utf-8',
+    )
 
 
 def test_summarise_counts_success_and_misses(tmp_path) -> None:
@@ -54,10 +80,13 @@ def test_summarise_counts_success_and_misses(tmp_path) -> None:
     assert summary['n_runs'] == 2
     assert summary['n_success'] == 1
     assert summary['success_rate'] == 0.5
+    assert summary['success_rate_ci95']['method'] == 'wilson'
+    assert summary['cohort_tier'] == 'smoke'
     miss = summary['miss_distance_m']
     assert miss['n'] == 2
     assert miss['min'] < 0.5
     assert miss['max'] > 7.0
+    assert 'p95_ci95' in miss
 
 
 def test_aggregate_writes_outputs(tmp_path) -> None:
@@ -88,6 +117,9 @@ def test_aggregate_writes_outputs(tmp_path) -> None:
     assert payload['label'] == 'unit'
     assert payload['n_runs'] == 2
     assert 0.0 <= payload['success_rate'] <= 1.0
+    assert payload['success_rate_ci95']['method'] == 'wilson'
     csv_text = csv_path.read_text(encoding='utf-8')
     assert 'run_id' in csv_text and 'miss_distance_m' in csv_text
+    assert 'noise_seed_mc' in csv_text and 'cohort' in csv_text and 'meta_path' in csv_text
+    assert 'unit_cohort' in csv_text and 'cell_a' in csv_text
     assert 'run_a' in csv_text and 'run_b' in csv_text

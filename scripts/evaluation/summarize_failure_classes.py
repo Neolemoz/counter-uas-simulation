@@ -11,11 +11,12 @@ from collections import Counter
 from pathlib import Path
 
 _EVAL = Path(__file__).resolve().parent
-for parent in (_EVAL.parent,):
+for parent in (_EVAL, _EVAL.parent):
     if str(parent) not in sys.path:
         sys.path.insert(0, str(parent))
 
-from classify_run import classify_run_failure  # noqa: E402
+import stats_helpers as stats  # noqa: E402
+from classify_run import classify_run_failure_evidence  # noqa: E402
 
 
 def main() -> int:
@@ -41,11 +42,16 @@ def main() -> int:
 
     hist: Counter[str] = Counter()
     cohorts: set[str] = set()
+    evidence_rows: list[dict[str, object]] = []
+    missing_logs: list[str] = []
     for row in rows:
         lp = (row.get('log_path') or '').strip()
         if not lp:
             continue
         log_path = Path(lp)
+        if not log_path.is_file():
+            missing_logs.append(lp)
+            continue
         mp = log_path.with_suffix('.meta.json')
         if mp.is_file():
             try:
@@ -55,12 +61,26 @@ def main() -> int:
                     cohorts.add(str(co).strip())
             except (OSError, json.JSONDecodeError):
                 pass
-        hist[classify_run_failure(log_path, capture_rc=None)] += 1
+        evidence = classify_run_failure_evidence(log_path, capture_rc=None)
+        hist[str(evidence['failure_class'])] += 1
+        evidence_rows.append(evidence)
+
+    total = int(sum(hist.values()))
+    class_ci95 = {
+        name: stats.wilson_ci(count, total)
+        for name, count in sorted(hist.items())
+    }
+    f5_count = int(hist.get('F5_unknown', 0))
 
     payload = {
         'csv': str(p.resolve()),
-        'n_classified': int(sum(hist.values())),
+        'n_classified': total,
         'failure_hist': dict(sorted(hist.items())),
+        'failure_class_ci95': class_ci95,
+        'f5_unknown_rate': (f5_count / total) if total else None,
+        'f5_unknown_ci95': stats.wilson_ci(f5_count, total),
+        'evidence_rows': evidence_rows,
+        'missing_logs': missing_logs,
         'meta_cohorts_seen': sorted(cohorts),
     }
     txt = json.dumps(payload, indent=2, sort_keys=True) + '\n'

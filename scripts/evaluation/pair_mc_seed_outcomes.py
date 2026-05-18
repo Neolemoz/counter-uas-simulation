@@ -14,8 +14,15 @@ import argparse
 import csv
 import json
 import re
+import sys
 from collections import defaultdict
 from pathlib import Path
+
+_EVAL = Path(__file__).resolve().parent
+if str(_EVAL) not in sys.path:
+    sys.path.insert(0, str(_EVAL))
+
+from statistical_validation import paired_report, seed_for_row  # noqa: E402
 
 
 def seed_from_meta(log_path: str) -> int | None:
@@ -38,14 +45,21 @@ def load_by_seed(csv_path: Path) -> dict[int, dict[str, object]]:
     out: dict[int, dict[str, object]] = {}
     with csv_path.open(encoding='utf-8', newline='') as f:
         for row in csv.DictReader(f):
-            lp = (row.get('log_path') or '').strip()
-            if not lp:
-                continue
-            sid = seed_from_meta(lp)
+            sid = seed_for_row(dict(row))
+            if sid is None:
+                lp = (row.get('log_path') or '').strip()
+                if not lp:
+                    continue
+                sid = seed_from_meta(lp)
             if sid is None:
                 continue
             out[sid] = dict(row)
     return out
+
+
+def _load_rows(csv_path: Path) -> list[dict[str, str]]:
+    with csv_path.open(encoding='utf-8', newline='') as f:
+        return [dict(r) for r in csv.DictReader(f)]
 
 
 def main() -> int:
@@ -57,6 +71,12 @@ def main() -> int:
         type=Path,
         default=None,
         help='Write paired table with bucket column',
+    )
+    ap.add_argument(
+        '--out-json',
+        type=Path,
+        default=None,
+        help='Write Layer C paired statistics JSON with confidence intervals and failure transitions',
     )
     ap.add_argument(
         '--miss-delta',
@@ -75,6 +95,8 @@ def main() -> int:
     base_map = load_by_seed(args.baseline_csv)
     cand_map = load_by_seed(args.candidate_csv)
     seeds = sorted(set(base_map) & set(cand_map))
+    stats_payload, stats_rows = paired_report(_load_rows(args.baseline_csv), _load_rows(args.candidate_csv))
+    stats_by_seed = {int(r['seed']): r for r in stats_rows}
 
     buckets: defaultdict[str, list[int]] = defaultdict(list)
     rows_out: list[dict[str, object]] = []
@@ -107,24 +129,34 @@ def main() -> int:
             bucket = 'G_unexpected'
 
         buckets[bucket].append(seed)
-        rows_out.append(
-            {
-                'seed': seed,
-                'bucket': bucket,
-                'base_ok': bs,
-                'cand_ok': cs,
-                'miss_b': miss_b,
-                'miss_c': miss_c,
-                'tint_b': tint_b,
-                'tint_c': tint_c,
-                'log_b': b.get('log_path', ''),
-                'log_c': c.get('log_path', ''),
-            }
-        )
+        row_out = {
+            'seed': seed,
+            'bucket': bucket,
+            'base_ok': bs,
+            'cand_ok': cs,
+            'miss_b': miss_b,
+            'miss_c': miss_c,
+            'miss_delta_c_minus_b': miss_c - miss_b,
+            'tint_b': tint_b,
+            'tint_c': tint_c,
+            'tint_delta_c_minus_b': tint_c - tint_b,
+            'failure_b': stats_by_seed.get(seed, {}).get('failure_b', ''),
+            'failure_c': stats_by_seed.get(seed, {}).get('failure_c', ''),
+            'log_b': b.get('log_path', ''),
+            'log_c': c.get('log_path', ''),
+        }
+        rows_out.append(row_out)
 
     print('Paired seeds:', len(seeds))
     for name in sorted(buckets):
         print(f'  {name}: {len(buckets[name])}  {buckets[name][:20]}{"..." if len(buckets[name]) > 20 else ""}')
+    ps = stats_payload.get('paired_success', {})
+    print(
+        'Paired success delta:',
+        f"{float(ps.get('paired_success_delta', 0.0)):.4f}",
+        'CI95=',
+        ps.get('paired_success_delta_ci95', {}),
+    )
 
     if args.out_csv:
         args.out_csv.parent.mkdir(parents=True, exist_ok=True)
@@ -138,8 +170,12 @@ def main() -> int:
                     'cand_ok',
                     'miss_b',
                     'miss_c',
+                    'miss_delta_c_minus_b',
                     'tint_b',
                     'tint_c',
+                    'tint_delta_c_minus_b',
+                    'failure_b',
+                    'failure_c',
                     'log_b',
                     'log_c',
                 ],
@@ -147,6 +183,13 @@ def main() -> int:
             w.writeheader()
             w.writerows(rows_out)
         print('Wrote', args.out_csv.resolve())
+
+    if args.out_json:
+        stats_payload['legacy_buckets'] = {name: len(vals) for name, vals in sorted(buckets.items())}
+        stats_payload['legacy_bucket_seeds'] = {name: vals for name, vals in sorted(buckets.items())}
+        args.out_json.parent.mkdir(parents=True, exist_ok=True)
+        args.out_json.write_text(json.dumps(stats_payload, indent=2, sort_keys=True) + '\n', encoding='utf-8')
+        print('Wrote', args.out_json.resolve())
 
     return 0
 

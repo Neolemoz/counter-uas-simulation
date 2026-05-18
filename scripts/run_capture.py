@@ -33,6 +33,8 @@ class RunMeta:
     git_dirty: bool | None = None
     notes: str | None = None
     cohort: str | None = None
+    launch_args_raw: str | None = None
+    launch_args_kv: dict[str, str] | None = None
 
 
 def _utc_ts() -> str:
@@ -69,6 +71,20 @@ def _git_dirty() -> bool | None:
 def _bash_cmd(source_setup: Path, inner_cmd: str) -> list[str]:
     # Use bash -lc so `source` works and ROS env is loaded.
     return ["bash", "-lc", f"source {source_setup} && {inner_cmd}"]
+
+
+def _parse_launch_args(raw: str | None) -> dict[str, str]:
+    out: dict[str, str] = {}
+    if not raw:
+        return out
+    for tok in str(raw).split():
+        if ':=' not in tok:
+            continue
+        k, v = tok.split(':=', 1)
+        k = k.strip()
+        if k:
+            out[k] = v.strip()
+    return out
 
 
 def run_capture(
@@ -145,6 +161,8 @@ def run_capture(
         git_dirty=_git_dirty(),
         notes=notes_combined,
         cohort=cohort,
+        launch_args_raw=launch_args,
+        launch_args_kv=_parse_launch_args(launch_args),
     )
     meta_dict = asdict(meta)
     meta_path.write_text(json.dumps(meta_dict, indent=2, sort_keys=True) + "\n", encoding="utf-8")

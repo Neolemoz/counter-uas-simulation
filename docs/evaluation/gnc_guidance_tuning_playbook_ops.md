@@ -1,6 +1,6 @@
 # GNC tuning playbook — Phase 0 frozen reference + operator checklist
 
-Companion to the Cursor plan **Systematic guidance tuning playbook (physics-aware)**. Implements **Phase 0** snapshot and forwards **Phases 1–4** to [`run_gnc_tuning_playbook.sh`](../scripts/evaluation/run_gnc_tuning_playbook.sh).
+Companion to the Cursor plan **Systematic guidance tuning playbook (physics-aware)**. Implements **Phase 0** snapshot and forwards **Phases 1–4** to [`run_gnc_tuning_playbook.sh`](../../scripts/evaluation/run_gnc_tuning_playbook.sh).
 
 ## Phase 0 — Frozen reference (no guidance tweaks)
 

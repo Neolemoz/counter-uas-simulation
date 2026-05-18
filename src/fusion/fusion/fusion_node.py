@@ -13,7 +13,7 @@ from __future__ import annotations
 import math
 
 import rclpy
-from geometry_msgs.msg import Point
+from geometry_msgs.msg import Point, PointStamped
 from rclpy.node import Node
 
 
@@ -42,6 +42,9 @@ class FusionNode(Node):
         # Defaults to True (correct for paired-sensor scenarios).  Set False to restore the
         # legacy "publish on every callback" path (e.g. radar-only or camera-only sims).
         self.declare_parameter('fusion.require_paired_inputs', True)
+        self.declare_parameter('fusion.use_stamped_inputs', False)
+        self.declare_parameter('fusion.max_stamp_skew_s', 0.25)
+        self.declare_parameter('fusion.output_stamped_topic', '/fused_detections_stamped')
 
         self._distance_threshold = float(self.get_parameter('fusion.distance_threshold').value)
         self._w_r = max(float(self.get_parameter('fusion.radar_weight').value), 1e-9)
@@ -54,19 +57,29 @@ class FusionNode(Node):
             strat = 'prefer_radar'
         self._disagree = strat
         self._require_paired = bool(self.get_parameter('fusion.require_paired_inputs').value)
+        self._use_stamped = bool(self.get_parameter('fusion.use_stamped_inputs').value)
+        self._max_stamp_skew_s = max(0.0, float(self.get_parameter('fusion.max_stamp_skew_s').value))
+        self._out_stamped_topic = str(self.get_parameter('fusion.output_stamped_topic').value).strip()
 
         self._pub = self.create_publisher(Point, '/fused_detections', 10)
+        self._pub_stamped = self.create_publisher(PointStamped, self._out_stamped_topic, 10)
 
         self._latest_radar: Point | None = None
         self._latest_camera: Point | None = None
+        self._latest_radar_stamp_s: float | None = None
+        self._latest_camera_stamp_s: float | None = None
         # Freshness flags: cleared after each publish, set when a new sample arrives.
         # Used by ``_publish_fused`` when ``require_paired_inputs`` is True so that we
         # emit exactly one fused point per (radar, camera) pair.
         self._radar_fresh: bool = False
         self._camera_fresh: bool = False
 
-        self.create_subscription(Point, '/radar/detections', self._on_radar, 10)
-        self.create_subscription(Point, '/camera/detections', self._on_camera, 10)
+        if self._use_stamped:
+            self.create_subscription(PointStamped, '/radar/detections_stamped', self._on_radar_stamped, 10)
+            self.create_subscription(PointStamped, '/camera/detections_stamped', self._on_camera_stamped, 10)
+        else:
+            self.create_subscription(Point, '/radar/detections', self._on_radar, 10)
+            self.create_subscription(Point, '/camera/detections', self._on_camera, 10)
 
         self.get_logger().info(
             f'Fusion: distance_threshold={self._distance_threshold:.2f}m  '
@@ -76,11 +89,25 @@ class FusionNode(Node):
 
     def _on_radar(self, msg: Point) -> None:
         self._latest_radar = self._copy_point(msg)
+        self._latest_radar_stamp_s = self.get_clock().now().nanoseconds * 1e-9
         self._radar_fresh = True
         self._publish_fused()
 
     def _on_camera(self, msg: Point) -> None:
         self._latest_camera = self._copy_point(msg)
+        self._latest_camera_stamp_s = self.get_clock().now().nanoseconds * 1e-9
+        self._camera_fresh = True
+        self._publish_fused()
+
+    def _on_radar_stamped(self, msg: PointStamped) -> None:
+        self._latest_radar = self._copy_point(msg.point)
+        self._latest_radar_stamp_s = self._stamp_to_seconds(msg)
+        self._radar_fresh = True
+        self._publish_fused()
+
+    def _on_camera_stamped(self, msg: PointStamped) -> None:
+        self._latest_camera = self._copy_point(msg.point)
+        self._latest_camera_stamp_s = self._stamp_to_seconds(msg)
         self._camera_fresh = True
         self._publish_fused()
 
@@ -103,10 +130,16 @@ class FusionNode(Node):
             # and removes the duplicate-candidate failure mode in tracking.
             if self._require_paired and not (self._radar_fresh and self._camera_fresh):
                 return
+            stamp_s = self._fused_stamp_seconds()
+            if self._use_stamped and not self._stamp_skew_ok():
+                self.get_logger().info('Dropped stale radar/camera pair (timestamp skew)')
+                self._radar_fresh = False
+                self._camera_fresh = False
+                return
             d = math.sqrt((r.x - c.x) ** 2 + (r.y - c.y) ** 2 + (r.z - c.z) ** 2)
             if d < self._distance_threshold:
                 out = self._fuse_points(r, c)
-                self._pub.publish(out)
+                self._publish_pair(out, stamp_s)
                 self.get_logger().info(
                     f'Fused radar+camera (weighted mean)  delta={d:.2f}m',
                 )
@@ -115,12 +148,12 @@ class FusionNode(Node):
                 return
             # Sensors disagree: emit at most one point so downstream sees one coherent measurement.
             if self._disagree == 'prefer_radar':
-                self._pub.publish(r)
+                self._publish_pair(r, self._latest_radar_stamp_s)
                 self.get_logger().info(
                     f'Disagreement (delta={d:.2f}m): published radar (prefer_radar)',
                 )
             elif self._disagree == 'prefer_camera':
-                self._pub.publish(c)
+                self._publish_pair(c, self._latest_camera_stamp_s)
                 self.get_logger().info(
                     f'Disagreement (delta={d:.2f}m): published camera (prefer_camera)',
                 )
@@ -136,11 +169,11 @@ class FusionNode(Node):
         # mode we wait for the partner — if it never arrives the next callback simply re-checks.
         if not self._require_paired:
             if r is not None:
-                self._pub.publish(r)
+                self._publish_pair(r, self._latest_radar_stamp_s)
                 self.get_logger().info('Radar only')
                 return
             if c is not None:
-                self._pub.publish(c)
+                self._publish_pair(c, self._latest_camera_stamp_s)
                 self.get_logger().info('Camera only')
 
     @staticmethod
@@ -148,6 +181,32 @@ class FusionNode(Node):
         p = Point()
         p.x, p.y, p.z = msg.x, msg.y, msg.z
         return p
+
+    @staticmethod
+    def _stamp_to_seconds(msg: PointStamped) -> float:
+        return float(msg.header.stamp.sec) + float(msg.header.stamp.nanosec) * 1e-9
+
+    def _stamp_skew_ok(self) -> bool:
+        if self._latest_radar_stamp_s is None or self._latest_camera_stamp_s is None:
+            return True
+        return abs(self._latest_radar_stamp_s - self._latest_camera_stamp_s) <= self._max_stamp_skew_s
+
+    def _fused_stamp_seconds(self) -> float | None:
+        stamps = [s for s in (self._latest_radar_stamp_s, self._latest_camera_stamp_s) if s is not None]
+        return max(stamps) if stamps else None
+
+    def _publish_pair(self, point: Point, stamp_s: float | None) -> None:
+        self._pub.publish(point)
+        stamped = PointStamped()
+        if stamp_s is None:
+            stamped.header.stamp = self.get_clock().now().to_msg()
+        else:
+            sec = int(math.floor(stamp_s))
+            stamped.header.stamp.sec = sec
+            stamped.header.stamp.nanosec = int(round((stamp_s - sec) * 1e9))
+        stamped.header.frame_id = 'map'
+        stamped.point = point
+        self._pub_stamped.publish(stamped)
 
 
 def main(args=None) -> None:

@@ -52,6 +52,7 @@ import csv
 import importlib.util
 import json
 import math
+import re
 import statistics
 import subprocess
 import sys
@@ -59,6 +60,11 @@ from pathlib import Path
 
 WORKSPACE = Path(__file__).resolve().parents[1]
 DEFAULT_OUT = WORKSPACE / "runs" / "mc"
+EVAL_DIR = WORKSPACE / "scripts" / "evaluation"
+if str(EVAL_DIR) not in sys.path:
+    sys.path.insert(0, str(EVAL_DIR))
+
+import stats_helpers as layer_c_stats  # noqa: E402
 
 
 def _load_analyze_run():  # noqa: ANN201
@@ -122,14 +128,27 @@ def _summarise(results: list[dict], label: str) -> dict:
         "n_runs": n,
         "n_success": len(successes),
         "success_rate": (len(successes) / n) if n else float("nan"),
+        "success_rate_ci95": layer_c_stats.wilson_ci(len(successes), n),
+        "cohort_tier": layer_c_stats.cohort_tier(n),
+        "small_n_warning": (
+            "smoke runs are wiring checks only; do not promote statistical claims"
+            if n < 10
+            else (
+                "pilot cohort only; N>=40 is required for research-grade validation guidance"
+                if n < 40
+                else ""
+            )
+        ),
         "miss_distance_m": {
             "n": len(miss),
             "mean": statistics.fmean(miss) if miss else float("nan"),
             "median": statistics.median(miss) if miss else float("nan"),
             "stdev": statistics.pstdev(miss) if len(miss) > 1 else float("nan"),
             "p50": _percentile(miss, 50.0),
+            "p50_ci95": layer_c_stats.bootstrap_quantile_ci(miss, 50.0, seed=101),
             "p90": _percentile(miss, 90.0),
             "p95": _percentile(miss, 95.0),
+            "p95_ci95": layer_c_stats.bootstrap_quantile_ci(miss, 95.0, seed=103),
             "min": min(miss) if miss else float("nan"),
             "max": max(miss) if miss else float("nan"),
             "cdf": _empirical_cdf(miss),
@@ -139,7 +158,9 @@ def _summarise(results: list[dict], label: str) -> dict:
             "mean": statistics.fmean(times) if times else float("nan"),
             "stdev": statistics.pstdev(times) if len(times) > 1 else float("nan"),
             "p50": _percentile(times, 50.0),
+            "p50_ci95": layer_c_stats.bootstrap_quantile_ci(times, 50.0, seed=201),
             "p95": _percentile(times, 95.0),
+            "p95_ci95": layer_c_stats.bootstrap_quantile_ci(times, 95.0, seed=203),
         },
     }
     return summary
@@ -153,8 +174,15 @@ def _print_summary(summary: dict) -> None:
     n = summary["n_runs"]
     ns = summary["n_success"]
     sr = summary["success_rate"]
+    sr_ci = summary.get("success_rate_ci95", {})
     print(f"  Runs        : {n}")
-    print(f"  Successes   : {ns} ({100.0 * sr:.1f}%)")
+    print(
+        f"  Successes   : {ns} ({100.0 * sr:.1f}%)"
+        f"  CI95=[{100.0 * float(sr_ci.get('lower', float('nan'))):.1f}, "
+        f"{100.0 * float(sr_ci.get('upper', float('nan'))):.1f}]%"
+    )
+    if summary.get("small_n_warning"):
+        print(f"  Evidence    : {summary['cohort_tier']} ({summary['small_n_warning']})")
     md = summary["miss_distance_m"]
     print(
         f"  Miss dist   : n={md['n']}  mean={md['mean']:.3f} m  "
@@ -201,7 +229,23 @@ def _write_outputs(out_dir: Path, label: str, summary: dict, rows: list[dict]) -
     json_path = out_dir / f"{label}.json"
     csv_path = out_dir / f"{label}.csv"
     json_path.write_text(json.dumps(summary, indent=2) + "\n", encoding="utf-8")
-    fields = ["run_id", "success", "miss_distance_m", "intercept_time_s", "layer_at_hit", "log_path"]
+    fields = [
+        "run_id",
+        "success",
+        "miss_distance_m",
+        "intercept_time_s",
+        "layer_at_hit",
+        "noise_seed_mc",
+        "seed",
+        "geometry_id",
+        "cohort",
+        "meta_path",
+        "git_commit",
+        "git_dirty",
+        "launch_args_raw",
+        "notes",
+        "log_path",
+    ]
     with csv_path.open("w", encoding="utf-8", newline="") as f:
         w = csv.DictWriter(f, fieldnames=fields)
         w.writeheader()
@@ -224,6 +268,39 @@ def _load_log_meta(log_path: Path) -> dict:
         return json.loads(mp.read_text(encoding='utf-8'))
     except (json.JSONDecodeError, OSError):
         return {}
+
+
+def _note_value(notes: str, key: str) -> str:
+    quoted = re.search(rf'\b{re.escape(key)}="([^"]+)"', notes)
+    if quoted:
+        return quoted.group(1)
+    bare = re.search(rf'\b{re.escape(key)}=([^\s]+)', notes)
+    if bare:
+        return bare.group(1)
+    return ""
+
+
+def _enrich_result_with_meta(result: dict, log_path: Path) -> dict:
+    """Attach replay/provenance fields needed for Layer C paired cohorts."""
+    md = _load_log_meta(log_path)
+    notes = str(md.get("notes") or "")
+    launch_args = md.get("launch_args_kv") if isinstance(md.get("launch_args_kv"), dict) else {}
+    seed_text = str(result.get("noise_seed_mc") or result.get("seed") or "")
+    if not seed_text:
+        seed_text = _note_value(notes, "seed") or str(launch_args.get("noise_seed") or "")
+    geometry_id = str(result.get("geometry_id") or _note_value(notes, "geometry_id") or "")
+    result.setdefault("meta_path", str(log_path.with_suffix(".meta.json")))
+    result.setdefault("cohort", md.get("cohort") or "")
+    result.setdefault("git_commit", md.get("git_commit") or "")
+    result.setdefault("git_dirty", md.get("git_dirty") if md.get("git_dirty") is not None else "")
+    result.setdefault("launch_args_raw", md.get("launch_args_raw") or "")
+    result.setdefault("notes", notes)
+    if seed_text:
+        result.setdefault("noise_seed_mc", seed_text)
+        result.setdefault("seed", seed_text)
+    if geometry_id:
+        result.setdefault("geometry_id", geometry_id)
+    return result
 
 
 def _log_matches_aggregate_filters(
@@ -275,6 +352,7 @@ def cmd_aggregate(args: argparse.Namespace) -> int:
         result = analyze.parse_run_to_result(str(log))
         result["run_id"] = log.stem
         result["log_path"] = str(log)
+        _enrich_result_with_meta(result, log)
         rows.append(result)
     summary = _summarise(rows, args.label)
     _print_summary(summary)
@@ -341,6 +419,7 @@ def cmd_run(args: argparse.Namespace) -> int:
         gid_str = gid.strip()
         if gid_str:
             result["geometry_id"] = gid_str
+        _enrich_result_with_meta(result, log_path)
         rows.append(result)
     if not rows:
         print("no successful runs collected", file=sys.stderr)

@@ -19,6 +19,55 @@ _ENG_DELTA_RE = re.compile(r'delta_t_go_raw=([+-]?\d+(?:\.\d+)?(?:[eE][+-]?\d+)?
 _REASSIGN_RE = re.compile(r'reassign|assignment_switch|switch_tti', re.IGNORECASE)
 
 
+def classify_run_failure_evidence(
+    log_path: Path,
+    *,
+    capture_rc: int | None = None,
+) -> dict[str, object]:
+    """Return the F1-F5 bucket plus machine-readable evidence fields."""
+    text = log_path.read_text(encoding='utf-8', errors='replace')
+    low = text.lower()
+    run_id = log_path.stem
+    summary = summarize_run.parse_log(text, run_id=run_id)
+
+    deltas: list[float] = []
+    for m in _ENG_DELTA_RE.finditer(text):
+        try:
+            deltas.append(float(m.group(1)))
+        except ValueError:
+            continue
+
+    timeout_seen = '=== timeout ===' in low or (capture_rc is not None and int(capture_rc) == 124)
+    assignment_switch_count = len(_REASSIGN_RE.findall(text))
+    feasible_geom_seen = 'feasible_geom=true' in text or '[feas_warn]' in low
+    has_eng_metric = '[eng_metric]' in low
+    max_abs_delta = max((abs(d) for d in deltas), default=None)
+
+    failure_class = 'F5_unknown'
+    if timeout_seen:
+        failure_class = 'F1_timeout'
+    elif assignment_switch_count > 0:
+        failure_class = 'F4_assignment'
+    elif deltas and (max(abs(d) for d in deltas) > 8.0 or len(deltas) > 15):
+        failure_class = 'F3_track_instability'
+    elif not summary.hit and feasible_geom_seen:
+        failure_class = 'F2_geom_not_dyn'
+
+    return {
+        'failure_class': failure_class,
+        'log': str(log_path),
+        'capture_rc': capture_rc,
+        'timeout_seen': timeout_seen,
+        'has_eng_metric': has_eng_metric,
+        'max_abs_delta_t_go': max_abs_delta,
+        'delta_t_go_count': len(deltas),
+        'assignment_switch_count': assignment_switch_count,
+        'feasible_geom_seen': feasible_geom_seen,
+        'hit_seen': bool(summary.hit),
+        'parser_warnings': [] if summary.hit or failure_class != 'F5_unknown' else ['insufficient_failure_evidence'],
+    }
+
+
 def classify_run_failure(
     log_path: Path,
     *,
@@ -33,30 +82,7 @@ def classify_run_failure(
     F4_assignment — multi-assignment / switch hints in log.
     F5_unknown — default.
     """
-    text = log_path.read_text(encoding='utf-8', errors='replace')
-    low = text.lower()
-    run_id = log_path.stem
-    summary = summarize_run.parse_log(text, run_id=run_id)
-
-    if '=== timeout ===' in low or (capture_rc is not None and int(capture_rc) == 124):
-        return 'F1_timeout'
-
-    if _REASSIGN_RE.search(text):
-        return 'F4_assignment'
-
-    deltas: list[float] = []
-    for m in _ENG_DELTA_RE.finditer(text):
-        try:
-            deltas.append(float(m.group(1)))
-        except ValueError:
-            continue
-    if deltas and (max(abs(d) for d in deltas) > 8.0 or len(deltas) > 15):
-        return 'F3_track_instability'
-
-    if not summary.hit and ('feasible_geom=true' in text or '[feas_warn]' in low):
-        return 'F2_geom_not_dyn'
-
-    return 'F5_unknown'
+    return str(classify_run_failure_evidence(log_path, capture_rc=capture_rc)['failure_class'])
 
 
 def main() -> int:
@@ -70,8 +96,8 @@ def main() -> int:
         return 2
     if args.meta is not None and args.meta.is_file():
         _ = json.loads(args.meta.read_text(encoding='utf-8'))
-    bucket = classify_run_failure(args.log, capture_rc=args.capture_rc)
-    print(json.dumps({'failure_class': bucket, 'log': str(args.log)}, sort_keys=True))
+    evidence = classify_run_failure_evidence(args.log, capture_rc=args.capture_rc)
+    print(json.dumps(evidence, sort_keys=True))
     return 0
 
 
