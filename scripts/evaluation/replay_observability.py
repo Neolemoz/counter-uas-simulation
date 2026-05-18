@@ -46,6 +46,12 @@ EVIDENCE_ROLES = {
     "derived_evaluation_artifact": "Additive, replay-safe evaluation-side derivation.",
     "explanatory_visualization_layer": "Reviewer convenience projection with preserved lineage.",
 }
+REVIEWER_INTERPRETATION_RULES = [
+    "Keep raw evidence, parser-visible summaries, derived artifacts, and explanatory views separate.",
+    "Treat provenance as lineage for review, not certification of validity or comparability.",
+    "Treat temporal adjacency as non-causal unless a separate governed analysis establishes causality.",
+    "Treat matched-seed buckets as descriptive comparability aids, not superiority or ranking claims.",
+]
 CANONICAL_SUMMARY_FIELDS = (
     "run_id",
     "success",
@@ -327,6 +333,7 @@ def build_divergence_trace(log_path: Path, *, meta_path: Path | None = None) -> 
             "Block indices and line indices localize replay-side evidence only.",
             "Divergence classes are additive evaluation taxonomy labels, not authority semantics.",
             "Oracle comparison does not replace runtime selected-id authority surfaces.",
+            "Fragmented-gap adjacency is non-causal review context unless separately analyzed.",
         ],
     }
 
@@ -366,6 +373,7 @@ def build_lifecycle_timeline(log_path: Path) -> dict[str, Any]:
         "interpretation_caveats": [
             "Timeline events are explanatory overlays over original log lines.",
             "Lifecycle/churn counters are not proof of tracker robustness.",
+            "Lifecycle/churn counters are not tracker lifecycle truth or runtime lifecycle semantics.",
             "Original event names and raw line provenance are preserved.",
         ],
     }
@@ -529,6 +537,7 @@ def build_matched_seed_report(
         "warnings": warnings,
         "interpretation_caveats": [
             "Matched seeds support descriptive comparison, not statistical superiority claims.",
+            "Matched seeds preserve comparability, not bitwise identity or general robustness ranking.",
             "Seed, cohort, geometry, and launch assumptions must remain visible for review.",
             "Notes-derived seed lineage is lower confidence than structured row seed fields.",
         ],
@@ -613,6 +622,7 @@ def build_topology_index(
         "interpretation_caveats": [
             "Profile IDs and launch arguments remain the source lineage for topology/timing labels.",
             "Timing groups are descriptive evaluation groupings, not new runtime timing semantics.",
+            "Profile labels are lineage-linked shorthand, not certified topology semantics.",
             "Transferability findings must remain linked to geometry/profile evidence.",
         ],
     }
@@ -635,11 +645,30 @@ def lint_governance_artifact(payload: dict[str, Any]) -> dict[str, Any]:
         for required in ("evaluation-side only", "additive-only", "parser-safe", "replay-safe", "non-authoritative"):
             if required not in constraints:
                 issues.append(f"missing governance constraint: {required}")
+        anti_claims = set(governance.get("anti_claims") or [])
+        for required in (
+            "not operational readiness evidence",
+            "not a tactical authority surface",
+            "not a lifecycle semantic replacement",
+            "not a parser contract",
+        ):
+            if required not in anti_claims:
+                issues.append(f"missing governance anti-claim: {required}")
     if not payload.get("artifact_type"):
         issues.append("missing artifact_type")
     text = json.dumps(payload, sort_keys=True, default=str)
     if "operational readiness" in text and "not operational readiness evidence" not in text:
         issues.append("operational-readiness language lacks explicit anti-claim")
+    artifact_type = str(payload.get("artifact_type") or "")
+    caveat_text = " ".join(str(c) for c in payload.get("interpretation_caveats") or [])
+    if artifact_type == "matched_seed_comparison_report" and "statistical superiority" not in caveat_text:
+        issues.append("matched-seed report must reject statistical superiority interpretation")
+    if artifact_type == "topology_timing_analytics_index" and "runtime timing semantics" not in caveat_text:
+        issues.append("topology index must reject runtime timing semantic interpretation")
+    if artifact_type == "divergence_trace" and "authority semantics" not in caveat_text:
+        issues.append("divergence trace must reject authority-semantic interpretation")
+    if artifact_type == "lifecycle_churn_timeline" and "not proof of tracker robustness" not in caveat_text:
+        issues.append("lifecycle timeline must reject tracker-robustness interpretation")
     return {
         "artifact_type": "governance_lint_result",
         "governance": _governance_block(),
@@ -657,7 +686,24 @@ def render_static_markdown(payload: dict[str, Any]) -> str:
         "",
         f"**Governance:** {NON_AUTHORITATIVE_NOTICE}",
         "",
+        "**Derived artifact watermark:** Derived evaluation artifact only; reviewer guidance, not validation or certification.",
+        "",
+        "## Reviewer Interpretation Rules",
+        "",
     ]
+    lines.extend(f"- {rule}" for rule in REVIEWER_INTERPRETATION_RULES)
+    lines.append("")
+    lines.extend(
+        [
+            "## Evidence Layer Labels",
+            "",
+            "- Raw runtime evidence: original logs and sidecar metadata.",
+            "- Canonical parser-visible summary: existing success/miss/intercept-time fields.",
+            "- Derived evaluation artifact: additive replay observability JSON.",
+            "- Explanatory visualization layer: static reviewer convenience with preserved lineage.",
+            "",
+        ]
+    )
     if "lineage" in payload:
         lines.extend(["## Lineage", "", "```json", json.dumps(payload["lineage"], indent=2, sort_keys=True, default=str), "```", ""])
     if "summary" in payload:
@@ -674,17 +720,23 @@ def render_static_markdown(payload: dict[str, Any]) -> str:
             [
                 "## Single Run Evidence",
                 "",
+                "Evidence layer: raw runtime lineage plus parser-visible summary pointers. Reviewer guidance: verify log, meta_path, seed_source, cohort, and git state before comparing or generalizing.",
+                "",
                 "```json",
                 json.dumps(bundle.get("lineage", {}), indent=2, sort_keys=True, default=str),
                 "```",
                 "",
                 "## Divergence",
                 "",
+                "Evidence layer: derived evaluation artifact. Reviewer guidance: block and line indices localize replay evidence only; fragmented-gap adjacency is non-causal and does not override tactical authority.",
+                "",
                 "```json",
                 json.dumps(trace.get("summary", {}), indent=2, sort_keys=True, default=str),
                 "```",
                 "",
                 "## Lifecycle / Churn",
+                "",
+                "Evidence layer: explanatory visualization layer. Reviewer guidance: counts are overlays over raw log lines and are not tracker truth or robustness proof.",
                 "",
                 "```json",
                 json.dumps(timeline.get("summary", {}).get("event_counts", {}), indent=2, sort_keys=True, default=str),
@@ -901,36 +953,64 @@ def render_dashboard_markdown(
         "",
         f"**Governance:** {NON_AUTHORITATIVE_NOTICE}",
         "",
+        "**Derived artifact watermark:** Derived evaluation artifact only; reviewer convenience, not validation, certification, or readiness evidence.",
+        "",
         "This dashboard is an explanatory visualization layer. It is not a parser contract, "
         "runtime authority surface, lifecycle semantic replacement, or operational readiness claim.",
         "",
-        "## Evidence Layer Labels",
-        "",
-        "- Raw runtime evidence: original logs and sidecar metadata.",
-        "- Canonical parser-visible summary: existing success/miss/intercept-time fields.",
-        "- Derived evaluation artifact: additive replay observability JSON.",
-        "- Explanatory visualization layer: this static dashboard.",
-        "",
-        "## Warning Panel",
+        "## Reviewer Interpretation Rules",
         "",
     ]
+    lines.extend(f"- {rule}" for rule in REVIEWER_INTERPRETATION_RULES)
+    lines.extend(
+        [
+            "",
+            "## Evidence Layer Labels",
+            "",
+            "- Raw runtime evidence: original logs and sidecar metadata.",
+            "- Canonical parser-visible summary: existing success/miss/intercept-time fields.",
+            "- Derived evaluation artifact: additive replay observability JSON.",
+            "- Explanatory visualization layer: this static dashboard.",
+            "",
+            "## Warning Panel",
+            "",
+            "Review warnings as provenance and interpretation prompts, not readiness severity or approval status.",
+            "",
+        ]
+    )
     lines.extend(f"- {w}" for w in warnings or ["No warnings reported by supplied artifacts."])
     lines.append("")
     lines.extend(["## Provenance / Evidence Map", ""])
+    lines.append("Provenance fields preserve lineage for review; they do not certify validity, comparability, or authority.")
+    lines.append("")
     input_rows = [[k, v] for k, v in sorted(data["input_paths"].items())]
     lines.extend(_markdown_table(["artifact", "path"], input_rows))
     lines.extend(["## Single-Run Replay Card", ""])
+    lines.append(
+        "Evidence layer: raw runtime lineage plus parser-visible summary pointers. "
+        "Reviewer guidance: confirm log path, meta path, seed source, cohort, git state, and warnings before comparing or generalizing."
+    )
+    lines.append("")
     lines.extend(_markdown_table(["field", "value"], single_card))
     lines.extend(["## Divergence Timeline Table", ""])
-    lines.append("Temporal context only: fragmented-gap adjacency is not causal proof.")
+    lines.append(
+        "Evidence layer: derived evaluation artifact. Temporal context only: fragmented-gap adjacency is non-causal and not causal proof. "
+        "Divergence labels do not replace tactical authority surfaces."
+    )
     lines.append("")
     lines.extend(_markdown_table(["block", "line", "selected", "oracle_ids", "match", "after_fragmented_gap"], divergence_rows))
     lines.extend(["## Lifecycle / Churn Overlay", ""])
-    lines.append("Explanatory overlay only: lifecycle/churn counters are not tracker truth.")
+    lines.append(
+        "Evidence layer: explanatory visualization layer. Lifecycle/churn counters are overlays over raw log lines, "
+        "not tracker truth, not runtime lifecycle semantics, and not robustness proof."
+    )
     lines.append("")
     lines.extend(_markdown_table(["event_type", "count"], lifecycle_rows))
     lines.extend(["## Matched-Seed Comparison", ""])
-    lines.append("Descriptive comparison only: no statistical superiority claim is made.")
+    lines.append(
+        "Evidence layer: derived evaluation artifact. Descriptive comparison only: matched seeds preserve comparability, "
+        "not bitwise identity, statistical superiority, or general robustness ranking."
+    )
     lines.append("")
     lines.extend(_markdown_table(["bucket", "count"], bucket_rows))
     lines.extend(
@@ -951,7 +1031,10 @@ def render_dashboard_markdown(
         )
     )
     lines.extend(["## Topology / Timing Summary", ""])
-    lines.append("Descriptive grouping only: profile labels do not replace topology semantics.")
+    lines.append(
+        "Evidence layer: derived evaluation artifact. Descriptive grouping only: profile labels are lineage-linked shorthand "
+        "and do not replace topology semantics, runtime timing semantics, or certified operating regions."
+    )
     lines.append("")
     lines.extend(_markdown_table(["timing_group", "profile_ids"], timing_rows))
     lines.extend(
@@ -1029,6 +1112,7 @@ def render_dashboard_html(markdown_text: str) -> str:
         "th{font-weight:bold;}"
         "</style></head><body>"
         "<div class=\"banner\"><strong>Non-authoritative reviewer dashboard.</strong> "
+        "<span>Derived evaluation artifact only; not validation, certification, or readiness evidence.</span> "
         + html.escape(NON_AUTHORITATIVE_NOTICE)
         + "</div>"
         + "".join(body)

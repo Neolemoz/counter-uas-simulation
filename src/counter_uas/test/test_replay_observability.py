@@ -195,6 +195,10 @@ def test_governance_lint_and_static_markdown_accept_derived_artifacts(tmp_path) 
     assert lint['ok'] is True
     assert '# Replay Evidence Bundle' in markdown
     assert 'Derived evaluation artifact only' in markdown
+    assert 'Reviewer Interpretation Rules' in markdown
+    assert 'Keep raw evidence, parser-visible summaries, derived artifacts, and explanatory views separate.' in markdown
+    assert 'Treat provenance as lineage for review, not certification of validity or comparability.' in markdown
+    assert 'Evidence Layer Labels' in markdown
 
 
 def test_governance_lint_rejects_missing_labels() -> None:
@@ -204,6 +208,28 @@ def test_governance_lint_rejects_missing_labels() -> None:
 
     assert lint['ok'] is False
     assert 'missing governance block' in lint['issues']
+
+
+def test_governance_lint_rejects_authority_and_readiness_overread() -> None:
+    mod = _load_module()
+    governance = mod._governance_block()
+    governance['anti_claims'] = [
+        claim for claim in governance['anti_claims'] if claim != 'not operational readiness evidence'
+    ]
+
+    lint = mod.lint_governance_artifact(
+        {
+            'artifact_type': 'matched_seed_comparison_report',
+            'governance': governance,
+            'summary': {'claim': 'operational readiness improved'},
+            'interpretation_caveats': ['Matched seeds support descriptive comparison only.'],
+        }
+    )
+
+    assert lint['ok'] is False
+    assert 'missing governance anti-claim: not operational readiness evidence' in lint['issues']
+    assert 'operational-readiness language lacks explicit anti-claim' in lint['issues']
+    assert 'matched-seed report must reject statistical superiority interpretation' in lint['issues']
 
 
 def test_dashboard_renderer_preserves_governance_and_lineage(tmp_path) -> None:
@@ -279,9 +305,24 @@ def test_dashboard_renderer_preserves_governance_and_lineage(tmp_path) -> None:
 
     assert 'Replay Reviewer Static Dashboard' in markdown
     assert 'Derived evaluation artifact only' in markdown
+    assert 'Derived artifact watermark' in markdown
+    assert 'Reviewer Interpretation Rules' in markdown
+    assert 'Keep raw evidence, parser-visible summaries, derived artifacts, and explanatory views separate.' in markdown
+    assert 'Treat provenance as lineage for review, not certification of validity or comparability.' in markdown
+    assert 'Treat temporal adjacency as non-causal unless a separate governed analysis establishes causality.' in markdown
+    assert 'Treat matched-seed buckets as descriptive comparability aids, not superiority or ranking claims.' in markdown
     assert 'Explanatory visualization layer' in markdown
     assert 'Temporal context only' in markdown
+    assert 'fragmented-gap adjacency is non-causal and not causal proof' in markdown
     assert 'not a parser contract' in markdown
+    assert 'not a tactical authority surface' in markdown
+    assert 'not a lifecycle semantic replacement' in markdown
+    assert 'not operational readiness evidence' in markdown
+    assert 'Review warnings as provenance and interpretation prompts, not readiness severity or approval status.' in markdown
+    assert 'Provenance fields preserve lineage for review; they do not certify validity, comparability, or authority.' in markdown
+    assert 'not tracker truth, not runtime lifecycle semantics, and not robustness proof' in markdown
+    assert 'not bitwise identity, statistical superiority, or general robustness ranking' in markdown
+    assert 'do not replace topology semantics, runtime timing semantics, or certified operating regions' in markdown
     assert str(log) in markdown
     assert 'meta_path' in markdown
     assert 'seed_source' in markdown
@@ -295,6 +336,7 @@ def test_dashboard_renderer_preserves_governance_and_lineage(tmp_path) -> None:
     assert 'bounded fragmented point' in markdown
     assert 'No warnings reported by supplied artifacts.' in markdown
     assert '<strong>Non-authoritative reviewer dashboard.</strong>' in html
+    assert 'Derived evaluation artifact only; not validation, certification, or readiness evidence.' in html
 
 
 def test_dashboard_renderer_is_deterministic(tmp_path) -> None:

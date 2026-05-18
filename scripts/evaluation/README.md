@@ -278,6 +278,15 @@ python3 scripts/evaluation/replay_observability.py dashboard \
 
 These reports are review conveniences: they do not create a unified authoritative replay state and must not be used as operational readiness, hardware readiness, tactical authority, or lifecycle robustness claims.
 
+Reviewer interpretation guidance:
+
+- Keep raw runtime evidence, canonical parser-visible summaries, derived evaluation artifacts, and explanatory visualization layers separate when reading dashboard sections.
+- Treat provenance fields (`log_path`, `meta_path`, seed source, cohort, git state, launch args) as lineage for review, not certification of validity or comparability.
+- Treat fragmented-gap adjacency and divergence timing as non-causal localization evidence unless a separate governed analysis establishes causality.
+- Treat matched-seed buckets as descriptive comparability aids, not statistical superiority, ranking, or general robustness claims.
+- Treat topology/profile labels as lineage-linked shorthand, not runtime topology semantics or certified operating regions.
+- Treat lifecycle/churn counters as explanatory overlays over raw log lines, not tracker lifecycle truth or robustness proof.
+
 ### Engagement metrics (`[ENG_METRIC]`)
 
 When `eng_metrics_period_s` > 0 on `interception_logic_node`, the node prints occasional single-line snapshots (`range_m`, `v_closing`, `t_go_raw` / `t_go_filt`, `delta_t_go_raw`, `feasible_geom`, `rollout_gate_ok`, commanded speed). Default **0** leaves behavior unchanged.
