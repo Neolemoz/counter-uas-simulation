@@ -66,6 +66,9 @@ _LAYER_IN_HIT_RE = re.compile(r"\blayer=(?P<layer>\S+)\b")
 _MARGIN_RE = re.compile(r"\bmargin\s*=\s*(?P<v>-?[0-9]+(?:\.[0-9]+)?)\s*s\b")
 _TTI_TARGET_RE = re.compile(r"\bTTI_target\s*[:=]\s*(?P<v>-?[0-9]+(?:\.[0-9]+)?)\b")
 _T_REQUIRED_RE = re.compile(r"\bT_required\s*[:=]\s*(?P<v>-?[0-9]+(?:\.[0-9]+)?)\b")
+_RESULT_INTERCEPT_TIME_RE = re.compile(
+    r"\bintercept_time\s*=\s*(?P<v>-?[0-9]+(?:\.[0-9]+)?)\s*s?\b",
+)
 
 
 def _strip_ros_prefix(line: str) -> str:
@@ -210,10 +213,20 @@ def parse_run_to_result(log_path: str) -> dict:
         mm_val = float(mm)
         mm_note = "miss_distance from [min_miss]"
 
+    result_intercept_times: list[float] = []
+    for raw_line in text.splitlines():
+        s = _strip_ros_prefix(raw_line)
+        rt = _RESULT_INTERCEPT_TIME_RE.search(s)
+        if rt:
+            result_intercept_times.append(float(rt.group("v")))
+
     tgo = data.get("tgo_series", []) or []
     thit = data.get("thit_series", []) or []
     intercept_time_s: float | None
-    if tgo:
+    if result_intercept_times:
+        intercept_time_s = float(result_intercept_times[-1])
+        t_note = "intercept_time from [RESULT]"
+    elif tgo:
         intercept_time_s = float(tgo[-1])
         t_note = "intercept_time from last t_go sample"
     elif thit:

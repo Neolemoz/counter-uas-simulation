@@ -29,6 +29,10 @@ _GOLDEN_LOG = r"""
 [interception_logic_node-1] cmd_vel=(1.1,2.0,0.4)
 [interception_logic_node-1] mode=predict
 [interception_logic_node-1] [HIT] min_miss=0.42 m layer=detect
+[interception_logic_node-1] [RESULT]
+[interception_logic_node-1] success=True
+[interception_logic_node-1] miss_distance=0.42 m
+[interception_logic_node-1] intercept_time=9.876s
 """.strip()
 
 
@@ -51,6 +55,24 @@ def test_parse_run_to_result_shape(tmp_path: Path) -> None:
     r = ar.parse_run_to_result(str(p))
     assert r['success'] is True
     assert r['miss_distance_m'] == pytest.approx(0.42)
+    assert r['intercept_time_s'] == pytest.approx(9.876)
+
+
+def test_parse_run_to_result_falls_back_to_tgo_without_result(tmp_path: Path) -> None:
+    ar = _load_analyze_run()
+    p = tmp_path / 'run.log'
+    p.write_text(
+        '\n'.join(
+            [
+                '[interception_logic_node-1] [METRICS] id=interceptor_0  | '
+                'dist=1200.500 m | t_go=45.2 s | vel=55.0 m/s | mode=predict',
+                '[interception_logic_node-1] [HIT] min_miss=0.42 m layer=detect',
+            ],
+        )
+        + '\n',
+        encoding='utf-8',
+    )
+    r = ar.parse_run_to_result(str(p))
     assert r['intercept_time_s'] == pytest.approx(45.2)
 
 
