@@ -36,11 +36,14 @@ from selection_audit import selection_audit_summary  # noqa: E402
 
 
 SCHEMA_VERSION = "replay_observability_v1"
+NARRATIVE_SCHEMA_VERSION = "replay_narrative_v1"
 NON_AUTHORITATIVE_NOTICE = (
     "Derived evaluation artifact only. Does not replace parser-visible summaries, "
     "runtime topics, tactical authority, lifecycle semantics, or replay contracts."
 )
 EVIDENCE_ROLES = {
+    "authoritative_state": "Scoped runtime or parser authority remains in existing topics and parser-visible summaries, not in this artifact.",
+    "mirrored_state": "Copied or summarized source values remain mirrors and do not become stronger than source evidence.",
     "raw_runtime_evidence": "Original log/meta/topic-derived evidence captured from a run.",
     "canonical_parser_visible_summary": "Existing parser-visible success/miss/intercept-time surface.",
     "derived_evaluation_artifact": "Additive, replay-safe evaluation-side derivation.",
@@ -81,6 +84,20 @@ LIFECYCLE_EVENT_PATTERNS: tuple[tuple[str, re.Pattern[str]], ...] = (
     ("track_coast", re.compile(r"Track\s+\d+\s+NOT updated \(missed_frames=\d+\)")),
     ("track_recovery", re.compile(r"Track\s+\d+\s+updated \(valid match\)")),
 )
+EVENT_TIME_PATTERNS: tuple[re.Pattern[str], ...] = (
+    re.compile(r"\b(?:elapsed_s|time_s|sim_time|stamp)=(?P<time>\d+(?:\.\d+)?)\b"),
+    re.compile(r"\bt=(?P<time>\d+(?:\.\d+)?)\b"),
+)
+NARRATIVE_CATEGORY_ORDER = {
+    "detection": 0,
+    "selection": 1,
+    "commitment": 2,
+    "ambiguity": 3,
+    "lifecycle": 4,
+    "divergence": 5,
+    "outcome": 6,
+    "provenance_warning": 7,
+}
 
 
 def _read_json(path: Path | None) -> dict[str, Any]:
@@ -213,6 +230,7 @@ def _governance_block() -> dict[str, Any]:
             "not a tactical authority surface",
             "not a lifecycle semantic replacement",
             "not a parser contract",
+            "not governance approval",
         ],
     }
 
@@ -389,6 +407,336 @@ def build_single_run_report(log_path: Path, *, meta_path: Path | None = None) ->
         "bundle": build_evidence_bundle(Path(log_path), meta_path=meta_path),
         "divergence_trace": build_divergence_trace(Path(log_path), meta_path=meta_path),
         "lifecycle_timeline": build_lifecycle_timeline(Path(log_path)),
+    }
+
+
+def _event_time_s(raw_line: str) -> float | None:
+    for pattern in EVENT_TIME_PATTERNS:
+        match = pattern.search(raw_line)
+        if match:
+            return _maybe_float(match.group("time"))
+    return None
+
+
+def _format_event_time(time_s: float | None, line_index: Any = None) -> str:
+    if time_s is None:
+        return f"line {line_index}" if line_index not in (None, "") else "time unavailable"
+    minutes = int(time_s // 60)
+    seconds = int(time_s % 60)
+    return f"{minutes:02d}:{seconds:02d}"
+
+
+def _narrative_category(event_type: str) -> str:
+    if event_type == "candidate_spawn":
+        return "detection"
+    if event_type.startswith("realism_"):
+        return "ambiguity"
+    if event_type.startswith("selection_"):
+        return "selection"
+    return "lifecycle"
+
+
+def _narrative_label(event_type: str, details: dict[str, Any]) -> str:
+    labels = {
+        "candidate_spawn": "track candidate first observed",
+        "candidate_discard": "track candidate discarded",
+        "duplicate_track_merge": "duplicate-track merge evidence observed",
+        "track_coast": "track coast evidence observed",
+        "track_recovery": "track recovery evidence observed",
+        "track_continuity_gap": "track continuity gap observed",
+        "track_continuity_change": "track id change observed",
+        "track_persistence_boundary": "track persistence boundary observed",
+        "lifecycle_observer_summary": "lifecycle observer summary recorded",
+        "lifecycle_observer_selected_id": "selected-id observer evidence recorded",
+        "selection_proxy_window": "selection proxy window recorded",
+        "realism_fragmented_gap_start": "fragmented gap entered",
+        "realism_fragmented_gap_end": "fragmented gap exited",
+        "realism_delayed_detection": "delayed detection evidence observed",
+        "realism_stale_detection": "stale detection evidence observed",
+        "realism_dropout_burst_start": "dropout burst evidence observed",
+        "realism_ghost_detection": "ghost detection evidence observed",
+    }
+    if event_type == "selection_block":
+        return f"selected {details.get('selected')} in replay selection block {details.get('block_index')}"
+    if event_type == "selection_oracle_mismatch":
+        return f"selection/oracle mismatch localized at block {details.get('block_index')}"
+    if event_type == "divergence_class":
+        return f"divergence class recorded: {details.get('selection_oracle_divergence_class')}"
+    if event_type == "outcome_hit":
+        return "hit outcome recorded by existing parser-visible summary"
+    if event_type == "outcome_miss_distance":
+        return f"minimum miss distance recorded: {details.get('miss_distance_m')} m"
+    if event_type == "outcome_intercept_time":
+        return f"intercept time recorded: {details.get('intercept_time_s')} s"
+    if event_type == "provenance_warning":
+        return f"provenance warning: {details.get('warning')}"
+    return labels.get(event_type, event_type.replace("_", " "))
+
+
+def _narrative_caveat(category: str) -> str:
+    caveats = {
+        "detection": "Detection events are replay-local evidence markers, not runtime truth claims.",
+        "selection": "Selection events mirror replay evidence and do not replace tactical authority surfaces.",
+        "commitment": "Commitment wording is reviewer shorthand only and not an operator or authority state.",
+        "ambiguity": "Ambiguity events are explanatory replay context and not causal proof.",
+        "lifecycle": "Lifecycle events are overlays over raw log lines and not tracker lifecycle truth or robustness proof.",
+        "divergence": "Divergence events localize replay-side disagreement and are non-causal unless separately governed.",
+        "outcome": "Outcome events copy existing parser-visible summaries and do not expand parser contracts.",
+        "provenance_warning": "Warnings are interpretation prompts, not approval, severity, or readiness status.",
+    }
+    return caveats.get(category, "Derived narrative event; preserve source lineage when interpreting.")
+
+
+def _make_narrative_event(
+    *,
+    category: str,
+    event_type: str,
+    source_artifact: str,
+    details: dict[str, Any] | None = None,
+    line_index: Any = None,
+    block_index: Any = None,
+    raw_line: str = "",
+) -> dict[str, Any]:
+    details = details or {}
+    time_s = _event_time_s(raw_line)
+    return {
+        "category": category,
+        "event_type": event_type,
+        "time_s": time_s,
+        "time_label": _format_event_time(time_s, line_index),
+        "line_index": line_index,
+        "block_index": block_index,
+        "label": _narrative_label(event_type, details),
+        "source_artifact": source_artifact,
+        "source_ref": {
+            "line_index": line_index,
+            "block_index": block_index,
+        },
+        "details": details,
+        "raw_line": raw_line,
+        "evidence_role": "derived_evaluation_artifact",
+        "interpretation_caveat": _narrative_caveat(category),
+    }
+
+
+def _narrative_sort_key(event: dict[str, Any]) -> tuple[Any, ...]:
+    time_s = event.get("time_s")
+    line_index = event.get("line_index")
+    block_index = event.get("block_index")
+    return (
+        time_s is None,
+        time_s if time_s is not None else 0.0,
+        line_index if isinstance(line_index, int) else 10**9,
+        block_index if isinstance(block_index, int) else 10**9,
+        NARRATIVE_CATEGORY_ORDER.get(str(event.get("category")), 99),
+        str(event.get("event_type") or ""),
+        str(event.get("label") or ""),
+    )
+
+
+def _assign_narrative_event_ids(events: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    out: list[dict[str, Any]] = []
+    for idx, event in enumerate(sorted(events, key=_narrative_sort_key), start=1):
+        event = dict(event)
+        event["event_id"] = f"narrative_event_{idx:04d}_{event['category']}_{event['event_type']}"
+        out.append(event)
+    return out
+
+
+def _build_fragmentation_windows(events: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    windows: list[dict[str, Any]] = []
+    open_start: dict[str, Any] | None = None
+    for event in events:
+        if event.get("event_type") == "realism_fragmented_gap_start":
+            open_start = event
+        elif event.get("event_type") == "realism_fragmented_gap_end" and open_start is not None:
+            windows.append(
+                {
+                    "window_type": "ambiguity_fragmented_gap",
+                    "start_event_id": open_start.get("event_id"),
+                    "end_event_id": event.get("event_id"),
+                    "start_line_index": open_start.get("line_index"),
+                    "end_line_index": event.get("line_index"),
+                    "interpretation_caveat": "Fragmented-gap windows are replay-local context, not causal proof.",
+                }
+            )
+            open_start = None
+    if open_start is not None:
+        windows.append(
+            {
+                "window_type": "ambiguity_fragmented_gap_open",
+                "start_event_id": open_start.get("event_id"),
+                "end_event_id": None,
+                "start_line_index": open_start.get("line_index"),
+                "end_line_index": None,
+                "interpretation_caveat": "Open fragmented-gap windows indicate missing end evidence, not severity or readiness status.",
+            }
+        )
+    return windows
+
+
+def build_replay_narrative(single_run_report: dict[str, Any]) -> dict[str, Any]:
+    """Build a deterministic, static replay narrative from existing observability JSON."""
+
+    bundle = single_run_report.get("bundle", {}) if isinstance(single_run_report, dict) else {}
+    trace = single_run_report.get("divergence_trace", {}) if isinstance(single_run_report, dict) else {}
+    timeline = single_run_report.get("lifecycle_timeline", {}) if isinstance(single_run_report, dict) else {}
+    lineage = bundle.get("lineage", {}) if isinstance(bundle, dict) else {}
+    canonical = (
+        bundle.get("evidence_layers", {}).get("canonical_parser_visible_summary", {})
+        if isinstance(bundle, dict)
+        else {}
+    )
+
+    events: list[dict[str, Any]] = []
+    for item in timeline.get("events", []) if isinstance(timeline, dict) else []:
+        event_type = str(item.get("event_type") or "lifecycle_event")
+        events.append(
+            _make_narrative_event(
+                category=_narrative_category(event_type),
+                event_type=event_type,
+                source_artifact="lifecycle_churn_timeline",
+                line_index=item.get("line_index"),
+                raw_line=str(item.get("raw_line") or ""),
+                details={"event_type": event_type},
+            )
+        )
+
+    trace_summary = trace.get("summary", {}) if isinstance(trace, dict) else {}
+    div_class = trace_summary.get("selection_oracle_divergence_class")
+    if div_class:
+        events.append(
+            _make_narrative_event(
+                category="divergence",
+                event_type="divergence_class",
+                source_artifact="divergence_trace",
+                details={"selection_oracle_divergence_class": div_class},
+            )
+        )
+    for block in trace.get("blocks", []) if isinstance(trace, dict) else []:
+        selected = block.get("selected")
+        if selected:
+            events.append(
+                _make_narrative_event(
+                    category="selection",
+                    event_type="selection_block",
+                    source_artifact="divergence_trace",
+                    line_index=block.get("line_index"),
+                    block_index=block.get("block_index"),
+                    details={
+                        "block_index": block.get("block_index"),
+                        "selected": selected,
+                        "oracle_ids": block.get("oracle_ids"),
+                        "oracle_match": block.get("oracle_match"),
+                        "after_fragmented_gap": block.get("after_fragmented_gap"),
+                    },
+                )
+            )
+        if block.get("oracle_match") is False:
+            events.append(
+                _make_narrative_event(
+                    category="divergence",
+                    event_type="selection_oracle_mismatch",
+                    source_artifact="divergence_trace",
+                    line_index=block.get("line_index"),
+                    block_index=block.get("block_index"),
+                    details={
+                        "block_index": block.get("block_index"),
+                        "selected": selected,
+                        "oracle_ids": block.get("oracle_ids"),
+                        "after_fragmented_gap": block.get("after_fragmented_gap"),
+                    },
+                )
+            )
+
+    if canonical.get("hit") is not None or canonical.get("success") is not None:
+        events.append(
+            _make_narrative_event(
+                category="outcome",
+                event_type="outcome_hit",
+                source_artifact="canonical_parser_visible_summary",
+                details={"hit": canonical.get("hit"), "success": canonical.get("success"), "layer_at_hit": canonical.get("layer_at_hit")},
+            )
+        )
+    if canonical.get("miss_distance_m") is not None:
+        events.append(
+            _make_narrative_event(
+                category="outcome",
+                event_type="outcome_miss_distance",
+                source_artifact="canonical_parser_visible_summary",
+                details={"miss_distance_m": canonical.get("miss_distance_m")},
+            )
+        )
+    if canonical.get("intercept_time_s") is not None:
+        events.append(
+            _make_narrative_event(
+                category="outcome",
+                event_type="outcome_intercept_time",
+                source_artifact="canonical_parser_visible_summary",
+                details={"intercept_time_s": canonical.get("intercept_time_s")},
+            )
+        )
+
+    warnings: list[str] = []
+    for source in (bundle, single_run_report):
+        if isinstance(source, dict):
+            warnings.extend(str(w) for w in source.get("warnings") or [])
+    if trace_summary.get("selection_oracle_divergence_class") == "D5_inconclusive_visibility_limited":
+        warnings.append("divergence classification is visibility-limited")
+    for warning in sorted(dict.fromkeys(warnings)):
+        events.append(
+            _make_narrative_event(
+                category="provenance_warning",
+                event_type="provenance_warning",
+                source_artifact="replay_narrative_builder",
+                details={"warning": warning},
+            )
+        )
+
+    events = _assign_narrative_event_ids(events)
+    counts = Counter(str(e["category"]) for e in events)
+    windows = _build_fragmentation_windows(events)
+    mismatch_events = [e for e in events if e.get("event_type") == "selection_oracle_mismatch"]
+    if mismatch_events:
+        windows.append(
+            {
+                "window_type": "divergence_mismatch_window",
+                "start_event_id": mismatch_events[0].get("event_id"),
+                "end_event_id": mismatch_events[-1].get("event_id"),
+                "start_line_index": mismatch_events[0].get("line_index"),
+                "end_line_index": mismatch_events[-1].get("line_index"),
+                "interpretation_caveat": "Divergence windows localize replay-side disagreement and are not causal explanations.",
+            }
+        )
+
+    return {
+        "artifact_type": "replay_narrative_report",
+        "narrative_schema_version": NARRATIVE_SCHEMA_VERSION,
+        "governance": _governance_block(),
+        "lineage": lineage,
+        "source_artifacts": {
+            "single_run_report_type": single_run_report.get("artifact_type") if isinstance(single_run_report, dict) else None,
+            "log_path": lineage.get("log_path"),
+            "meta_path": lineage.get("meta_path"),
+        },
+        "summary": {
+            "run_id": lineage.get("run_id"),
+            "event_count": len(events),
+            "event_counts_by_category": dict(sorted(counts.items())),
+            "window_count": len(windows),
+            "selection_oracle_divergence_class": div_class,
+            "lifecycle_event_counts": timeline.get("summary", {}).get("event_counts", {}) if isinstance(timeline, dict) else {},
+            "canonical_parser_visible_summary": canonical,
+        },
+        "events": events,
+        "windows": windows,
+        "warnings": sorted(dict.fromkeys(warnings)),
+        "interpretation_caveats": [
+            "Replay narrative reports are derived evaluation artifacts, not a unified authoritative replay state.",
+            "Narrative event ordering is reviewer-facing sequence context, not causal proof.",
+            "Narrative labels do not replace parser-visible summaries, runtime topics, tactical authority, or lifecycle semantics.",
+            "Warnings are interpretation prompts, not approval, severity, readiness, or governance status.",
+        ],
     }
 
 
@@ -669,6 +1017,13 @@ def lint_governance_artifact(payload: dict[str, Any]) -> dict[str, Any]:
         issues.append("divergence trace must reject authority-semantic interpretation")
     if artifact_type == "lifecycle_churn_timeline" and "not proof of tracker robustness" not in caveat_text:
         issues.append("lifecycle timeline must reject tracker-robustness interpretation")
+    if artifact_type == "replay_narrative_report":
+        if payload.get("narrative_schema_version") != NARRATIVE_SCHEMA_VERSION:
+            issues.append("replay narrative must declare replay_narrative_v1 schema")
+        if "unified authoritative replay state" not in caveat_text:
+            issues.append("replay narrative must reject unified authoritative replay-state interpretation")
+        if "causal proof" not in caveat_text:
+            issues.append("replay narrative must reject causal-proof interpretation")
     return {
         "artifact_type": "governance_lint_result",
         "governance": _governance_block(),
@@ -697,6 +1052,8 @@ def render_static_markdown(payload: dict[str, Any]) -> str:
         [
             "## Evidence Layer Labels",
             "",
+            "- Authoritative state: existing runtime topics or parser-visible summaries only; this report does not create it.",
+            "- Mirrored state: copied or summarized values retain source lineage and do not become authority.",
             "- Raw runtime evidence: original logs and sidecar metadata.",
             "- Canonical parser-visible summary: existing success/miss/intercept-time fields.",
             "- Derived evaluation artifact: additive replay observability JSON.",
@@ -743,6 +1100,61 @@ def render_static_markdown(payload: dict[str, Any]) -> str:
                 "```",
                 "",
             ]
+        )
+    if artifact_type == "replay_narrative_report":
+        lines.extend(
+            [
+                "## Replay Narrative Summary",
+                "",
+                "Evidence layer: derived evaluation artifact. Reviewer guidance: narrative sequence supports interpretation flow only; it is not causal proof or a unified authoritative replay state.",
+                "",
+                "```json",
+                json.dumps(payload.get("summary", {}), indent=2, sort_keys=True, default=str),
+                "```",
+                "",
+                "## Narrative Timeline",
+                "",
+                "Read each event as replay-local evidence with preserved source references.",
+                "",
+            ]
+        )
+        rows = []
+        for event in payload.get("events", []):
+            rows.append(
+                [
+                    event.get("time_label"),
+                    event.get("category"),
+                    event.get("event_type"),
+                    event.get("label"),
+                    event.get("source_artifact"),
+                    event.get("line_index"),
+                    event.get("block_index"),
+                ]
+            )
+        lines.extend(
+            _markdown_table(
+                ["time", "category", "event_type", "label", "source", "line", "block"],
+                rows,
+            )
+        )
+        lines.extend(["## Narrative Windows", ""])
+        window_rows = []
+        for window in payload.get("windows", []):
+            window_rows.append(
+                [
+                    window.get("window_type"),
+                    window.get("start_event_id"),
+                    window.get("end_event_id"),
+                    window.get("start_line_index"),
+                    window.get("end_line_index"),
+                    window.get("interpretation_caveat"),
+                ]
+            )
+        lines.extend(
+            _markdown_table(
+                ["window_type", "start_event", "end_event", "start_line", "end_line", "caveat"],
+                window_rows,
+            )
         )
     lines.extend(["## Caveats", ""])
     caveats = payload.get("interpretation_caveats") or payload.get("governance", {}).get("anti_claims") or []
@@ -967,6 +1379,8 @@ def render_dashboard_markdown(
             "",
             "## Evidence Layer Labels",
             "",
+            "- Authoritative state: existing runtime topics or parser-visible summaries only; this dashboard does not create it.",
+            "- Mirrored state: copied or summarized values retain source lineage and do not become authority.",
             "- Raw runtime evidence: original logs and sidecar metadata.",
             "- Canonical parser-visible summary: existing success/miss/intercept-time fields.",
             "- Derived evaluation artifact: additive replay observability JSON.",
@@ -974,7 +1388,7 @@ def render_dashboard_markdown(
             "",
             "## Warning Panel",
             "",
-            "Review warnings as provenance and interpretation prompts, not readiness severity or approval status.",
+            "Review warnings as provenance and interpretation prompts, not readiness severity, governance approval, or operational status.",
             "",
         ]
     )
@@ -1134,6 +1548,20 @@ def _cmd_single_run_report(args: argparse.Namespace) -> int:
     return 0
 
 
+def _cmd_narrative(args: argparse.Namespace) -> int:
+    if args.single_run_json:
+        single_run = _read_json(args.single_run_json)
+    elif args.log:
+        single_run = build_single_run_report(args.log, meta_path=args.meta)
+    else:
+        print("narrative requires --single-run-json or --log", file=sys.stderr)
+        return 2
+    payload = build_replay_narrative(single_run)
+    _write_json(args.out_json, payload)
+    print(f"Wrote {args.out_json.resolve()}")
+    return 0
+
+
 def _cmd_paired_comparison(args: argparse.Namespace) -> int:
     payload = build_matched_seed_report(
         args.baseline_csv,
@@ -1217,6 +1645,13 @@ def main() -> int:
     p_single.add_argument("--meta", type=Path, default=None)
     p_single.add_argument("--out-json", type=Path, required=True)
     p_single.set_defaults(func=_cmd_single_run_report)
+
+    p_narrative = sub.add_parser("narrative", help="Create a static replay narrative JSON from existing evidence.")
+    p_narrative.add_argument("--single-run-json", type=Path, default=None)
+    p_narrative.add_argument("--log", type=Path, default=None)
+    p_narrative.add_argument("--meta", type=Path, default=None)
+    p_narrative.add_argument("--out-json", type=Path, required=True)
+    p_narrative.set_defaults(func=_cmd_narrative)
 
     p_pair = sub.add_parser("paired-comparison", help="Create a matched-seed comparison report JSON.")
     p_pair.add_argument("baseline_csv", type=Path)

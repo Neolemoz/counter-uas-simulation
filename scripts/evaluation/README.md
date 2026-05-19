@@ -7,6 +7,8 @@ This folder supports the roadmap for **spatial DOE**, **heatmap surrogate valida
 See [`metrics_definitions.yaml`](metrics_definitions.yaml) for field semantics (`success`, `hit`, oracle selection).
 
 For the current freeze registry, layer map, and meta-governance review guidance, see [`docs/evaluation/meta_governance_maturity_review_r1.md`](../../docs/evaluation/meta_governance_maturity_review_r1.md).
+For the Phase 2 replay narrative UX scope and freeze boundaries, see [`docs/evaluation/replay_narrative_ux_phase2_plan.md`](../../docs/evaluation/replay_narrative_ux_phase2_plan.md).
+For the Phase 2 replay narrative UX freeze audit, see [`docs/evaluation/replay_narrative_ux_freeze_audit.md`](../../docs/evaluation/replay_narrative_ux_freeze_audit.md).
 For the Phase 3 replay narrative validation scope, reviewer matrix/rubric, and freeze audit, see [`docs/evaluation/replay_narrative_validation_phase3_plan.md`](../../docs/evaluation/replay_narrative_validation_phase3_plan.md), [`docs/evaluation/replay_narrative_validation_phase3_review.md`](../../docs/evaluation/replay_narrative_validation_phase3_review.md), and [`docs/evaluation/replay_narrative_validation_phase3_freeze_audit.md`](../../docs/evaluation/replay_narrative_validation_phase3_freeze_audit.md).
 
 ## Scripts (repo root vs this folder)
@@ -32,7 +34,7 @@ For the Phase 3 replay narrative validation scope, reviewer matrix/rubric, and f
 | [`run_ambiguity_sweep.py`](run_ambiguity_sweep.py) | Small matched-seed sensing-ambiguity sweep over additive ghost/fragmentation overlays |
 | [`classify_ambiguity_failure.py`](classify_ambiguity_failure.py) | Additive ambiguity taxonomy (A0–A5) layered on top of existing F1–F5 and R0–R5 buckets |
 | [`classify_selection_oracle_divergence.py`](classify_selection_oracle_divergence.py) | Additive selection/oracle divergence taxonomy (D0–D5), evidence-only and non-authoritative |
-| [`replay_observability.py`](replay_observability.py) | Additive replay evidence bundles, divergence traces, lifecycle timelines, matched-seed reports, topology/timing indexes, governance linting, and static reviewer reports |
+| [`replay_observability.py`](replay_observability.py) | Additive replay evidence bundles, divergence traces, lifecycle timelines, replay narratives, matched-seed reports, topology/timing indexes, governance linting, and static reviewer reports |
 | [`fixtures/sample_heatmap_for_validate.csv`](fixtures/sample_heatmap_for_validate.csv) | Tiny heatmap for `--dry-run` / CI |
 
 ### Launch knobs (evaluation)
@@ -255,6 +257,10 @@ python3 scripts/evaluation/replay_observability.py single-run-report \
   --meta runs/logs/YOUR_RUN.meta.json \
   --out-json runs/evaluation/YOUR_RUN.replay_observability.json
 
+python3 scripts/evaluation/replay_observability.py narrative \
+  --single-run-json runs/evaluation/YOUR_RUN.replay_observability.json \
+  --out-json runs/evaluation/YOUR_RUN.replay_narrative.json
+
 python3 scripts/evaluation/replay_observability.py paired-comparison \
   runs/mc/baseline.csv runs/mc/candidate.csv \
   --out-json runs/evaluation/baseline_vs_candidate.replay_observability.json
@@ -267,8 +273,9 @@ python3 scripts/evaluation/replay_observability.py governance-lint \
   runs/evaluation/YOUR_RUN.replay_observability.json
 
 python3 scripts/evaluation/replay_observability.py static-report \
-  runs/evaluation/YOUR_RUN.replay_observability.json \
-  --out-markdown runs/evaluation/YOUR_RUN.replay_observability.md
+  runs/evaluation/YOUR_RUN.replay_narrative.json \
+  --out-markdown runs/evaluation/YOUR_RUN.replay_narrative.md \
+  --out-html runs/evaluation/YOUR_RUN.replay_narrative.html
 
 python3 scripts/evaluation/replay_observability.py dashboard \
   --single-run-json runs/evaluation/YOUR_RUN.replay_observability.json \
@@ -280,6 +287,8 @@ python3 scripts/evaluation/replay_observability.py dashboard \
 ```
 
 These reports are review conveniences: they do not create a unified authoritative replay state and must not be used as operational readiness, hardware readiness, tactical authority, or lifecycle robustness claims.
+
+Replay narrative reports (`artifact_type: replay_narrative_report`, `narrative_schema_version: replay_narrative_v1`) group existing lifecycle, selection, divergence, ambiguity, outcome, and provenance-warning evidence into deterministic static sequence summaries. Narrative event order is reviewer-facing sequence context only; it is not causal proof, a parser contract, tactical authority, lifecycle truth, governance approval, or readiness evidence.
 
 Reviewer interpretation guidance:
 

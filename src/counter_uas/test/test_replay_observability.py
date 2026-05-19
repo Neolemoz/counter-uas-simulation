@@ -199,6 +199,8 @@ def test_governance_lint_and_static_markdown_accept_derived_artifacts(tmp_path) 
     assert 'Keep raw evidence, parser-visible summaries, derived artifacts, and explanatory views separate.' in markdown
     assert 'Treat provenance as lineage for review, not certification of validity or comparability.' in markdown
     assert 'Evidence Layer Labels' in markdown
+    assert 'Authoritative state: existing runtime topics or parser-visible summaries only; this report does not create it.' in markdown
+    assert 'Mirrored state: copied or summarized values retain source lineage and do not become authority.' in markdown
 
 
 def test_governance_lint_rejects_missing_labels() -> None:
@@ -318,7 +320,8 @@ def test_dashboard_renderer_preserves_governance_and_lineage(tmp_path) -> None:
     assert 'not a tactical authority surface' in markdown
     assert 'not a lifecycle semantic replacement' in markdown
     assert 'not operational readiness evidence' in markdown
-    assert 'Review warnings as provenance and interpretation prompts, not readiness severity or approval status.' in markdown
+    assert 'not governance approval' in markdown
+    assert 'Review warnings as provenance and interpretation prompts, not readiness severity, governance approval, or operational status.' in markdown
     assert 'Provenance fields preserve lineage for review; they do not certify validity, comparability, or authority.' in markdown
     assert 'not tracker truth, not runtime lifecycle semantics, and not robustness proof' in markdown
     assert 'not bitwise identity, statistical superiority, or general robustness ranking' in markdown
@@ -358,3 +361,44 @@ def test_dashboard_renderer_is_deterministic(tmp_path) -> None:
 
     assert first_md == second_md
     assert mod.render_dashboard_html(first_md) == mod.render_dashboard_html(second_md)
+
+
+def test_replay_narrative_groups_existing_evidence_without_new_authority(tmp_path) -> None:
+    mod = _load_module()
+    log, meta = _write_log_and_meta(tmp_path)
+    single = mod.build_single_run_report(log, meta_path=meta)
+
+    narrative = mod.build_replay_narrative(single)
+    lint = mod.lint_governance_artifact(narrative)
+
+    assert narrative['artifact_type'] == 'replay_narrative_report'
+    assert narrative['narrative_schema_version'] == 'replay_narrative_v1'
+    assert narrative['lineage']['run_id'] == 'replay_obs_unit'
+    assert narrative['summary']['selection_oracle_divergence_class'] == 'D1_late_stage_divergence'
+    assert narrative['summary']['event_counts_by_category']['selection'] >= 1
+    assert narrative['summary']['event_counts_by_category']['divergence'] >= 1
+    assert narrative['summary']['event_counts_by_category']['ambiguity'] >= 1
+    assert any(e['event_type'] == 'selection_oracle_mismatch' for e in narrative['events'])
+    assert any(e['label'] == 'fragmented gap entered' for e in narrative['events'])
+    assert any(w['window_type'] == 'ambiguity_fragmented_gap_open' for w in narrative['windows'])
+    assert 'not a unified authoritative replay state' in narrative['interpretation_caveats'][0]
+    assert lint['ok'] is True
+
+
+def test_replay_narrative_static_report_is_deterministic(tmp_path) -> None:
+    mod = _load_module()
+    log, meta = _write_log_and_meta(tmp_path)
+    single = mod.build_single_run_report(log, meta_path=meta)
+
+    first = mod.build_replay_narrative(single)
+    second = mod.build_replay_narrative(single)
+    first_md = mod.render_static_markdown(first)
+    second_md = mod.render_static_markdown(second)
+
+    assert first == second
+    assert first_md == second_md
+    assert mod.render_static_html(first_md) == mod.render_static_html(second_md)
+    assert 'Replay Narrative Summary' in first_md
+    assert 'Narrative Timeline' in first_md
+    assert 'selection/oracle mismatch localized at block 2' in first_md
+    assert 'Replay narrative reports are derived evaluation artifacts' in first_md
