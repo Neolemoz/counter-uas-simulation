@@ -7,6 +7,7 @@ This folder supports the roadmap for **spatial DOE**, **heatmap surrogate valida
 See [`metrics_definitions.yaml`](metrics_definitions.yaml) for field semantics (`success`, `hit`, oracle selection).
 
 For the current freeze registry, layer map, and meta-governance review guidance, see [`docs/evaluation/meta_governance_maturity_review_r1.md`](../../docs/evaluation/meta_governance_maturity_review_r1.md).
+For reviewer-facing layer definitions, loaded-term guidance, and causal-language boundaries, see [`docs/evaluation/reviewer_interpretation_guide.md`](../../docs/evaluation/reviewer_interpretation_guide.md).
 For the Phase 2 replay narrative UX scope and freeze boundaries, see [`docs/evaluation/replay_narrative_ux_phase2_plan.md`](../../docs/evaluation/replay_narrative_ux_phase2_plan.md).
 For the Phase 2 replay narrative UX planning context, see [`docs/evaluation/replay_narrative_ux_freeze_audit.md`](../../docs/evaluation/replay_narrative_ux_freeze_audit.md) (superseded for implementation sign-off).
 For the Replay Narrative Tooling R1 post-implementation freeze audit (`56c7185`), see [`docs/evaluation/replay_narrative_tooling_r1_freeze_audit.md`](../../docs/evaluation/replay_narrative_tooling_r1_freeze_audit.md).
@@ -299,6 +300,31 @@ Reviewer interpretation guidance:
 - Treat matched-seed buckets as descriptive comparability aids, not statistical superiority, ranking, or general robustness claims.
 - Treat topology/profile labels as lineage-linked shorthand, not runtime topology semantics or certified operating regions.
 - Treat lifecycle/churn counters as explanatory overlays over raw log lines, not tracker lifecycle truth or robustness proof.
+- Before sharing reviewer artifacts, confirm input paths, seed/cohort lineage, git dirty state, warning-panel contents, caveat visibility, and static non-authoritative dashboard framing.
+- For the canonical reviewer checklist and glossary, use [`docs/evaluation/reviewer_interpretation_guide.md`](../../docs/evaluation/reviewer_interpretation_guide.md).
+
+### Static replay visualization (R1)
+
+`replay_static_visualization.py` emits deterministic static figures and composite HTML from frozen replay narrative and observability JSON. Outputs are explanatory visualization layers only—not live dashboards, operational displays, or readiness evidence. See [`docs/evaluation/replay_static_visualization_r1_plan.md`](../../docs/evaluation/replay_static_visualization_r1_plan.md).
+
+**Comprehension R1** extends the composite report with a reviewer digest, reordered HTML sections, and improved figure labels (`render_profile: static_viz_comprehension_r1_v1`). Optional engagement and sparse top-down figures auto-enable when lineage `log_path` is readable; use `--no-optional-figures` to disable. See [`docs/evaluation/replay_static_visualization_comprehension_r1_plan.md`](../../docs/evaluation/replay_static_visualization_comprehension_r1_plan.md).
+
+```bash
+python3 scripts/evaluation/replay_static_visualization.py composite \
+  --narrative-json runs/evaluation/YOUR_RUN.replay_narrative.json \
+  --observability-json runs/evaluation/YOUR_RUN.replay_observability.json \
+  --out-dir runs/evaluation/YOUR_RUN.replay_viz/
+```
+
+Optional evidence-gated figures (skipped when log evidence is absent):
+
+```bash
+python3 scripts/evaluation/replay_static_visualization.py composite \
+  --narrative-json runs/evaluation/YOUR_RUN.replay_narrative.json \
+  --out-dir runs/evaluation/YOUR_RUN.replay_viz/ \
+  --engagement-series \
+  --sparse-topdown
+```
 
 ### Engagement metrics (`[ENG_METRIC]`)
 

@@ -21,6 +21,7 @@ Governance capabilities now include:
 
 - primary governance principles in [AGENTS.md](../../AGENTS.md): additive-only evolution, replay-safe realism, parser-safe evolution, freeze-before-expansion, governance before implementation, compatibility-path preservation, and no architecture creep;
 - scoped freeze audits for replay observability and reviewer interpretation hardening in [replay_observability_freeze_audit.md](replay_observability_freeze_audit.md) and [reviewer_interpretation_hardening_freeze_audit.md](reviewer_interpretation_hardening_freeze_audit.md);
+- reviewer-facing layer, glossary, and causal-language guidance in [reviewer_interpretation_guide.md](reviewer_interpretation_guide.md);
 - explicit separation between raw runtime evidence, canonical parser-visible summaries, derived evaluation artifacts, and explanatory visualization layers;
 - repeated warnings that replay annotations, lifecycle/churn counters, topology labels, and dashboards are explanatory review aids, not authoritative runtime state or robustness proof.
 
@@ -101,6 +102,13 @@ This inventory describes frozen layers as documentation and governance surfaces.
 - Artifact surfaces: [replay_narrative_validation_phase3_plan.md](replay_narrative_validation_phase3_plan.md), [replay_narrative_validation_phase3_review.md](replay_narrative_validation_phase3_review.md), [replay_narrative_validation_phase3_freeze_audit.md](replay_narrative_validation_phase3_freeze_audit.md), [reviewer_interpretation_guide.md](reviewer_interpretation_guide.md), and [scripts/evaluation/README.md](../../scripts/evaluation/README.md).
 - Governance assumptions: validation findings are qualitative reviewer notes; narrative summaries remain sequence-oriented and evidence-oriented, not causal-assertive or authoritative.
 - Maintenance implication: future generated reports, if separately scoped, should stay static, deterministic, replay-side, and non-authoritative, with repeated caveats centralized through the reviewer guide.
+
+### Static Replay Visualization Comprehension R1
+
+- Purpose: improve reviewer scanability of frozen static replay visualization outputs (digest blocks, figure labels, HTML section order) without changing narrative or observability builder contracts.
+- Authority boundary: explanatory visualization layer only; extends [replay_static_visualization_r1_freeze_audit.md](replay_static_visualization_r1_freeze_audit.md), does not replace it.
+- Artifact surfaces: [replay_static_visualization_comprehension_r1_plan.md](replay_static_visualization_comprehension_r1_plan.md), [replay_static_visualization_comprehension_r1_freeze_audit.md](replay_static_visualization_comprehension_r1_freeze_audit.md), `replay_viz_comprehension.py`, and comprehension-aware composite HTML from `replay_static_visualization.py`.
+- Governance assumptions: `comprehension` manifest fields and scan guides are derived presentation only; `render_profile: static_viz_comprehension_r1_v1` marks figure/HTML output generation.
 
 ## 3. Structural Risk Map
 
@@ -189,6 +197,7 @@ Frozen semantics remain separated today. The next risk is a well-intentioned rev
 ### Governance Glossary Normalization
 
 - Purpose: define canonical meanings for authority, parser contract, replay evidence, derived artifact, explanatory visualization, readiness, robustness, provenance, lineage, and freeze.
+- Status: Phase 1 reviewer interpretation guidance is centralized in [reviewer_interpretation_guide.md](reviewer_interpretation_guide.md).
 - Expected value: reduces ambiguous reviewer language.
 - Governance benefit: lowers authority reinterpretation risk.
 - Maintenance benefit: gives future audits shared vocabulary.

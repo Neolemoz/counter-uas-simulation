@@ -1,0 +1,298 @@
+{
+  "artifact_type": "replay_narrative_report",
+  "events": [
+    {
+      "block_index": null,
+      "category": "detection",
+      "details": {
+        "event_type": "candidate_spawn"
+      },
+      "event_id": "narrative_event_0001_detection_candidate_spawn",
+      "event_type": "candidate_spawn",
+      "evidence_role": "derived_evaluation_artifact",
+      "interpretation_caveat": "Detection events are replay-local evidence markers, not runtime truth claims.",
+      "label": "track candidate first observed",
+      "line_index": 3,
+      "raw_line": "[tracking_node-1] Candidate detected: track_id=7",
+      "source_artifact": "lifecycle_churn_timeline",
+      "source_ref": {
+        "block_index": null,
+        "line_index": 3
+      },
+      "time_label": "line 3",
+      "time_s": null
+    },
+    {
+      "block_index": 1,
+      "category": "selection",
+      "details": {
+        "after_fragmented_gap": true,
+        "block_index": 1,
+        "oracle_ids": [
+          "interceptor_0"
+        ],
+        "oracle_match": true,
+        "selected": "interceptor_0"
+      },
+      "event_id": "narrative_event_0002_selection_selection_block",
+      "event_type": "selection_block",
+      "evidence_role": "derived_evaluation_artifact",
+      "interpretation_caveat": "Selection events mirror replay evidence and do not replace tactical authority surfaces.",
+      "label": "selected interceptor_0 in replay selection block 1",
+      "line_index": 4,
+      "raw_line": "",
+      "source_artifact": "divergence_trace",
+      "source_ref": {
+        "block_index": 1,
+        "line_index": 4
+      },
+      "time_label": "line 4",
+      "time_s": null
+    },
+    {
+      "block_index": null,
+      "category": "ambiguity",
+      "details": {
+        "event_type": "realism_fragmented_gap_start"
+      },
+      "event_id": "narrative_event_0003_ambiguity_realism_fragmented_gap_start",
+      "event_type": "realism_fragmented_gap_start",
+      "evidence_role": "derived_evaluation_artifact",
+      "interpretation_caveat": "Ambiguity events are explanatory replay context and not causal proof.",
+      "label": "fragmented gap entered",
+      "line_index": 8,
+      "raw_line": "[noisy_measurement_node-1] [REALISM_EVENT] fragmented_gap_start fragmentation_index=1 gap_ticks=3",
+      "source_artifact": "lifecycle_churn_timeline",
+      "source_ref": {
+        "block_index": null,
+        "line_index": 8
+      },
+      "time_label": "line 8",
+      "time_s": null
+    },
+    {
+      "block_index": 2,
+      "category": "selection",
+      "details": {
+        "after_fragmented_gap": true,
+        "block_index": 2,
+        "oracle_ids": [
+          "interceptor_2"
+        ],
+        "oracle_match": false,
+        "selected": "interceptor_0"
+      },
+      "event_id": "narrative_event_0004_selection_selection_block",
+      "event_type": "selection_block",
+      "evidence_role": "derived_evaluation_artifact",
+      "interpretation_caveat": "Selection events mirror replay evidence and do not replace tactical authority surfaces.",
+      "label": "selected interceptor_0 in replay selection block 2",
+      "line_index": 9,
+      "raw_line": "",
+      "source_artifact": "divergence_trace",
+      "source_ref": {
+        "block_index": 2,
+        "line_index": 9
+      },
+      "time_label": "line 9",
+      "time_s": null
+    },
+    {
+      "block_index": 2,
+      "category": "divergence",
+      "details": {
+        "after_fragmented_gap": true,
+        "block_index": 2,
+        "oracle_ids": [
+          "interceptor_2"
+        ],
+        "selected": "interceptor_0"
+      },
+      "event_id": "narrative_event_0005_divergence_selection_oracle_mismatch",
+      "event_type": "selection_oracle_mismatch",
+      "evidence_role": "derived_evaluation_artifact",
+      "interpretation_caveat": "Divergence events localize replay-side disagreement and are non-causal unless separately governed.",
+      "label": "selection/oracle mismatch localized at block 2",
+      "line_index": 9,
+      "raw_line": "",
+      "source_artifact": "divergence_trace",
+      "source_ref": {
+        "block_index": 2,
+        "line_index": 9
+      },
+      "time_label": "line 9",
+      "time_s": null
+    },
+    {
+      "block_index": null,
+      "category": "divergence",
+      "details": {
+        "selection_oracle_divergence_class": "D5_inconclusive_visibility_limited"
+      },
+      "event_id": "narrative_event_0006_divergence_divergence_class",
+      "event_type": "divergence_class",
+      "evidence_role": "derived_evaluation_artifact",
+      "interpretation_caveat": "Divergence events localize replay-side disagreement and are non-causal unless separately governed.",
+      "label": "divergence class recorded: D5_inconclusive_visibility_limited",
+      "line_index": null,
+      "raw_line": "",
+      "source_artifact": "divergence_trace",
+      "source_ref": {
+        "block_index": null,
+        "line_index": null
+      },
+      "time_label": "time unavailable",
+      "time_s": null
+    },
+    {
+      "block_index": null,
+      "category": "outcome",
+      "details": {
+        "hit": false,
+        "layer_at_hit": "unknown",
+        "success": null
+      },
+      "event_id": "narrative_event_0007_outcome_outcome_hit",
+      "event_type": "outcome_hit",
+      "evidence_role": "derived_evaluation_artifact",
+      "interpretation_caveat": "Outcome events copy existing parser-visible summaries and do not expand parser contracts.",
+      "label": "hit outcome recorded by existing parser-visible summary",
+      "line_index": null,
+      "raw_line": "",
+      "source_artifact": "canonical_parser_visible_summary",
+      "source_ref": {
+        "block_index": null,
+        "line_index": null
+      },
+      "time_label": "time unavailable",
+      "time_s": null
+    },
+    {
+      "block_index": null,
+      "category": "provenance_warning",
+      "details": {
+        "warning": "divergence classification is visibility-limited"
+      },
+      "event_id": "narrative_event_0008_provenance_warning_provenance_warning",
+      "event_type": "provenance_warning",
+      "evidence_role": "derived_evaluation_artifact",
+      "interpretation_caveat": "Warnings are interpretation prompts, not approval, severity, or readiness status.",
+      "label": "provenance warning: divergence classification is visibility-limited",
+      "line_index": null,
+      "raw_line": "",
+      "source_artifact": "replay_narrative_builder",
+      "source_ref": {
+        "block_index": null,
+        "line_index": null
+      },
+      "time_label": "time unavailable",
+      "time_s": null
+    }
+  ],
+  "governance": {
+    "anti_claims": [
+      "not operational readiness evidence",
+      "not hardware readiness evidence",
+      "not a tactical authority surface",
+      "not a lifecycle semantic replacement",
+      "not a parser contract",
+      "not governance approval"
+    ],
+    "artifact_roles": {
+      "authoritative_state": "Scoped runtime or parser authority remains in existing topics and parser-visible summaries, not in this artifact.",
+      "canonical_parser_visible_summary": "Existing parser-visible success/miss/intercept-time surface.",
+      "derived_evaluation_artifact": "Additive, replay-safe evaluation-side derivation.",
+      "explanatory_visualization_layer": "Reviewer convenience projection with preserved lineage.",
+      "mirrored_state": "Copied or summarized source values remain mirrors and do not become stronger than source evidence.",
+      "raw_runtime_evidence": "Original log/meta/topic-derived evidence captured from a run."
+    },
+    "constraints": [
+      "evaluation-side only",
+      "additive-only",
+      "parser-safe",
+      "replay-safe",
+      "non-authoritative",
+      "preserve original replay lineage"
+    ],
+    "notice": "Derived evaluation artifact only. Does not replace parser-visible summaries, runtime topics, tactical authority, lifecycle semantics, or replay contracts.",
+    "schema_version": "replay_observability_v1"
+  },
+  "interpretation_caveats": [
+    "Replay narrative reports are derived evaluation artifacts, not a unified authoritative replay state.",
+    "Narrative event ordering is reviewer-facing sequence context, not causal proof.",
+    "Narrative labels do not replace parser-visible summaries, runtime topics, tactical authority, or lifecycle semantics.",
+    "Warnings are interpretation prompts, not approval, severity, readiness, or governance status."
+  ],
+  "lineage": {
+    "cohort": "unit_cohort",
+    "created_utc": null,
+    "evaluation_row_path": null,
+    "git_commit": null,
+    "git_dirty": null,
+    "launch_command": [
+      "ros2",
+      "launch",
+      "counter_uas",
+      "bringup.launch.py",
+      "target_start_x_m:=-1500.0",
+      "target_start_y_m:=0.0",
+      "noise_seed:=101"
+    ],
+    "log_path": "/tmp/tmpdpgl1_gp/replay_obs_unit.log",
+    "meta_path": "/tmp/tmpdpgl1_gp/replay_obs_unit.meta.json",
+    "notes": null,
+    "run_id": "replay_obs_unit",
+    "seed": 101,
+    "seed_source": "meta.cmd"
+  },
+  "narrative_schema_version": "replay_narrative_v1",
+  "source_artifacts": {
+    "log_path": "/tmp/tmpdpgl1_gp/replay_obs_unit.log",
+    "meta_path": "/tmp/tmpdpgl1_gp/replay_obs_unit.meta.json",
+    "single_run_report_type": "single_run_replay_observability_report"
+  },
+  "summary": {
+    "canonical_parser_visible_summary": {
+      "hit": false,
+      "layer_at_hit": "unknown",
+      "run_id": "replay_obs_unit"
+    },
+    "event_count": 8,
+    "event_counts_by_category": {
+      "ambiguity": 1,
+      "detection": 1,
+      "divergence": 2,
+      "outcome": 1,
+      "provenance_warning": 1,
+      "selection": 2
+    },
+    "lifecycle_event_counts": {
+      "candidate_spawn": 1,
+      "realism_fragmented_gap_start": 1
+    },
+    "run_id": "replay_obs_unit",
+    "selection_oracle_divergence_class": "D5_inconclusive_visibility_limited",
+    "window_count": 2
+  },
+  "warnings": [
+    "divergence classification is visibility-limited"
+  ],
+  "windows": [
+    {
+      "end_event_id": null,
+      "end_line_index": null,
+      "interpretation_caveat": "Open fragmented-gap windows indicate missing end evidence, not severity or readiness status.",
+      "start_event_id": "narrative_event_0003_ambiguity_realism_fragmented_gap_start",
+      "start_line_index": 8,
+      "window_type": "ambiguity_fragmented_gap_open"
+    },
+    {
+      "end_event_id": "narrative_event_0005_divergence_selection_oracle_mismatch",
+      "end_line_index": 9,
+      "interpretation_caveat": "Divergence windows localize replay-side disagreement and are not causal explanations.",
+      "start_event_id": "narrative_event_0005_divergence_selection_oracle_mismatch",
+      "start_line_index": 9,
+      "window_type": "divergence_mismatch_window"
+    }
+  ]
+}
