@@ -3360,14 +3360,18 @@ class InterceptionLogicNode(Node):
         self._last_feas_log = None
         self._last_class_warn = None
         self._v_tgt_smooth = (0.0, 0.0, 0.0)
+        self._target = None
+        self._target_filter_velocity = None
         self._prev_target = None
         self._prev_target_time = None
         self._hit_snap_target_prev = None
         self._hit_snap_target_prev_multi.clear()
         self._target_detect_time = None
         for iid in self._ids:
+            self._inter_pos[iid] = None
             self._prev_inter_pos[iid] = None
             self._prev_inter_time[iid] = None
+        self._inter_start_pos.clear()
         if self._multi_enabled:
             for lab in self._multi_labels:
                 self._hits_multi[lab] = False
