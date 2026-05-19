@@ -81,6 +81,6 @@ This audit does **not** authorize runtime redesign, parser/schema changes, live 
 | Branch | `codex/replay-narrative-tooling-r1` |
 | Freeze date | 2026-05-19 |
 | Parent baseline | Static Replay Visualization R1 (co-shipped evaluation modules on this branch) |
-| Lineage SHA | _recorded at freeze commit_ |
+| Lineage SHA | `c22ee85b5a6c938190ebffd8b0384de32dfdd066` |
 
 **Final verdict:** frozen at Comprehension R1 scope. Further visualization expansion requires a new scoped wave and audit.
