@@ -8,7 +8,8 @@ See [`metrics_definitions.yaml`](metrics_definitions.yaml) for field semantics (
 
 For the current freeze registry, layer map, and meta-governance review guidance, see [`docs/evaluation/meta_governance_maturity_review_r1.md`](../../docs/evaluation/meta_governance_maturity_review_r1.md).
 For the Phase 2 replay narrative UX scope and freeze boundaries, see [`docs/evaluation/replay_narrative_ux_phase2_plan.md`](../../docs/evaluation/replay_narrative_ux_phase2_plan.md).
-For the Phase 2 replay narrative UX freeze audit, see [`docs/evaluation/replay_narrative_ux_freeze_audit.md`](../../docs/evaluation/replay_narrative_ux_freeze_audit.md).
+For the Phase 2 replay narrative UX planning context, see [`docs/evaluation/replay_narrative_ux_freeze_audit.md`](../../docs/evaluation/replay_narrative_ux_freeze_audit.md) (superseded for implementation sign-off).
+For the Replay Narrative Tooling R1 post-implementation freeze audit (`56c7185`), see [`docs/evaluation/replay_narrative_tooling_r1_freeze_audit.md`](../../docs/evaluation/replay_narrative_tooling_r1_freeze_audit.md).
 For the Phase 3 replay narrative validation scope, reviewer matrix/rubric, and freeze audit, see [`docs/evaluation/replay_narrative_validation_phase3_plan.md`](../../docs/evaluation/replay_narrative_validation_phase3_plan.md), [`docs/evaluation/replay_narrative_validation_phase3_review.md`](../../docs/evaluation/replay_narrative_validation_phase3_review.md), and [`docs/evaluation/replay_narrative_validation_phase3_freeze_audit.md`](../../docs/evaluation/replay_narrative_validation_phase3_freeze_audit.md).
 
 ## Scripts (repo root vs this folder)
