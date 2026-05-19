@@ -216,9 +216,13 @@ Wave 7 then completed the selection/oracle divergence audit and is now frozen st
 
 - selection/oracle divergence is replay-classifiable
 - divergence onset is late-stage and replay-localizable
-- divergence follows fragmentation-gap / churn escalation
+- divergence is associated with fragmented-gap / churn escalation in replay-local evidence
 - fragmented timing remains locally useful but not robustly transferable
 - failures are geometry-sensitive instability signatures, not proof of missing lifecycle capability
+
+Reviewer-facing interpretation guidance for replay artifacts, static dashboards, and derived evaluation labels lives in [`docs/evaluation/reviewer_interpretation_guide.md`](docs/evaluation/reviewer_interpretation_guide.md).
+
+Platform replay workflow (demo, freeze registry, UI planning): [`docs/evaluation/freeze_registry_r1.md`](docs/evaluation/freeze_registry_r1.md), [`docs/evaluation/replay_demo_review_workflow_r1.md`](docs/evaluation/replay_demo_review_workflow_r1.md).
 
 Frozen Wave 7 evaluation fields:
 

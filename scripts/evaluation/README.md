@@ -6,7 +6,8 @@ This folder supports the roadmap for **spatial DOE**, **heatmap surrogate valida
 
 See [`metrics_definitions.yaml`](metrics_definitions.yaml) for field semantics (`success`, `hit`, oracle selection).
 
-For the current freeze registry, layer map, and meta-governance review guidance, see [`docs/evaluation/meta_governance_maturity_review_r1.md`](../../docs/evaluation/meta_governance_maturity_review_r1.md).
+For the maintained freeze registry and layer map, see [`docs/evaluation/freeze_registry_r1.md`](../../docs/evaluation/freeze_registry_r1.md). For meta-governance risk analysis, see [`docs/evaluation/meta_governance_maturity_review_r1.md`](../../docs/evaluation/meta_governance_maturity_review_r1.md).
+For replay demo, mentor workflow, and showcase cases, see [`docs/evaluation/replay_demo_review_workflow_r1.md`](../../docs/evaluation/replay_demo_review_workflow_r1.md) and [`docs/evaluation/demo_cases/README.md`](../../docs/evaluation/demo_cases/README.md).
 For reviewer-facing layer definitions, loaded-term guidance, and causal-language boundaries, see [`docs/evaluation/reviewer_interpretation_guide.md`](../../docs/evaluation/reviewer_interpretation_guide.md).
 For the Phase 2 replay narrative UX scope and freeze boundaries, see [`docs/evaluation/replay_narrative_ux_phase2_plan.md`](../../docs/evaluation/replay_narrative_ux_phase2_plan.md).
 For the Phase 2 replay narrative UX planning context, see [`docs/evaluation/replay_narrative_ux_freeze_audit.md`](../../docs/evaluation/replay_narrative_ux_freeze_audit.md) (superseded for implementation sign-off).
@@ -308,6 +309,8 @@ Reviewer interpretation guidance:
 `replay_static_visualization.py` emits deterministic static figures and composite HTML from frozen replay narrative and observability JSON. Outputs are explanatory visualization layers only—not live dashboards, operational displays, or readiness evidence. See [`docs/evaluation/replay_static_visualization_r1_plan.md`](../../docs/evaluation/replay_static_visualization_r1_plan.md).
 
 **Comprehension R1** extends the composite report with a reviewer digest, reordered HTML sections, and improved figure labels (`render_profile: static_viz_comprehension_r1_v1`). Optional engagement and sparse top-down figures auto-enable when lineage `log_path` is readable; use `--no-optional-figures` to disable. See [`docs/evaluation/replay_static_visualization_comprehension_r1_plan.md`](../../docs/evaluation/replay_static_visualization_comprehension_r1_plan.md).
+
+**Planning (not implemented):** Static Viz R2 — [`replay_static_visualization_r2_plan.md`](../../docs/evaluation/replay_static_visualization_r2_plan.md). SA UI — [`situational_awareness_ui_planning_r1.md`](../../docs/evaluation/situational_awareness_ui_planning_r1.md) (plan-only freeze audit).
 
 ```bash
 python3 scripts/evaluation/replay_static_visualization.py composite \

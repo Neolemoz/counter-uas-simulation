@@ -6,6 +6,8 @@ Build recommendation: **no-build**. This review is documentation and audit focus
 
 `AGENTS.md` remains the primary authority for repository direction and frozen governance. This document is an index and review aid; it does not replace source docs, freeze audits, parser contracts, runtime contracts, or scenario documentation.
 
+**Maintained freeze index:** [freeze_registry_r1.md](freeze_registry_r1.md) — update that registry when adding freezes; avoid duplicating full wave narratives here.
+
 ## 1. Current Repository Maturity Assessment
 
 The repository has crossed from feature growth into governance maturity. It is no longer just a simulation stack with evaluation scripts; it now behaves as a governance-aware replay-analysis and autonomy evaluation platform with frozen runtime-realism waves, parser-safe evaluation surfaces, replay observability artifacts, static reviewer UX, and scoped freeze audits.

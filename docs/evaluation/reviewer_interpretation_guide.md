@@ -4,6 +4,8 @@ This guide is a reviewer-facing map for replay analysis, evaluation artifacts, a
 
 `AGENTS.md` remains the primary governance authority for repository direction. This guide only clarifies how to read existing evidence-side artifacts without collapsing them into a single authority layer.
 
+For the maintained freeze index and mentor/demo replay workflow, see [freeze_registry_r1.md](freeze_registry_r1.md) and [replay_demo_review_workflow_r1.md](replay_demo_review_workflow_r1.md).
+
 ## Layer Map
 
 | Layer | Role | Examples | Correct Reading | Common Misread |
