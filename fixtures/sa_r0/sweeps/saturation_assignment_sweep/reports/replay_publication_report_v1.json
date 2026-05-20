@@ -1,0 +1,103 @@
+{
+  "artifact_type": "replay_publication_report_v1",
+  "chapters": [
+    {
+      "chapter_index": null,
+      "kind": "analytics_panel",
+      "label": "Sweep overview",
+      "step_id": "overview"
+    },
+    {
+      "chapter_index": null,
+      "kind": "cohort_filmstrip",
+      "label": "LOS-fragmented replay concentration",
+      "step_id": "cohort_los_fragmented_replay_cohort"
+    },
+    {
+      "chapter_index": null,
+      "kind": "compare_pair",
+      "label": "Baseline comparison",
+      "step_id": "baseline_compare"
+    },
+    {
+      "chapter_index": 0,
+      "kind": "chapter",
+      "label": "Member 1: Ingress",
+      "step_id": "member_0_chapter"
+    },
+    {
+      "chapter_index": 0,
+      "kind": "chapter",
+      "label": "Member 2: Ingress",
+      "step_id": "member_1_chapter"
+    },
+    {
+      "chapter_index": 0,
+      "kind": "chapter",
+      "label": "Member 3: Ingress",
+      "step_id": "member_2_chapter"
+    }
+  ],
+  "citations": [
+    {
+      "label": "[Replay: saturation_assignment_sweep]",
+      "url": "?sweep=saturation_assignment_sweep"
+    },
+    {
+      "label": "[Replay: saturation_assignment_sweep/seed_9230_saturation]",
+      "url": "?sweep=saturation_assignment_sweep&member=seed_9230_saturation"
+    },
+    {
+      "label": "[Replay: saturation_assignment_sweep/seed_9231_corridor]",
+      "url": "?sweep=saturation_assignment_sweep&member=seed_9231_corridor"
+    },
+    {
+      "label": "[Replay: saturation_assignment_sweep/seed_9232_saturation_b]",
+      "url": "?sweep=saturation_assignment_sweep&member=seed_9232_saturation_b"
+    },
+    {
+      "label": "[Replay: saturation_assignment_sweep/seed_9233_corridor_b]",
+      "url": "?sweep=saturation_assignment_sweep&member=seed_9233_corridor_b"
+    }
+  ],
+  "cross_sweep_appendix": {
+    "included": true,
+    "synthesis_artifact": "cross_sweep_synthesis_v1.json"
+  },
+  "figures": [
+    {
+      "caption": "Ambiguity hotspot spatial grid",
+      "label": "saturation_assignment_sweep_ambiguity_hotspot.png",
+      "path": "/home/neociel/drone/codex-a01-phase2/fixtures/sa_r0/sweeps/saturation_assignment_sweep/reports/figures/saturation_assignment_sweep_ambiguity_hotspot.png"
+    },
+    {
+      "caption": "LOS degradation spatial grid",
+      "label": "saturation_assignment_sweep_los_degraded.png",
+      "path": "/home/neociel/drone/codex-a01-phase2/fixtures/sa_r0/sweeps/saturation_assignment_sweep/reports/figures/saturation_assignment_sweep_los_degraded.png"
+    },
+    {
+      "caption": "Topology sensitivity spatial grid",
+      "label": "saturation_assignment_sweep_topology_sensitivity.png",
+      "path": "/home/neociel/drone/codex-a01-phase2/fixtures/sa_r0/sweeps/saturation_assignment_sweep/reports/figures/saturation_assignment_sweep_topology_sensitivity.png"
+    },
+    {
+      "caption": "Cohort pattern strip",
+      "label": "saturation_assignment_sweep_cohort_strip.png",
+      "path": "/home/neociel/drone/codex-a01-phase2/fixtures/sa_r0/sweeps/saturation_assignment_sweep/reports/figures/saturation_assignment_sweep_cohort_strip.png"
+    }
+  ],
+  "governance": {
+    "anti_claims": [
+      "Sweep aggregates are not parser authority.",
+      "Spatial layers are replay concentration, not probability or readiness.",
+      "No deployment confidence or tactical superiority implied."
+    ],
+    "notice": "Deterministic replay sweep for spatial analytics exploration only \u2014 explanatory replay family, not operational planning."
+  },
+  "interpretation_caveats": [
+    "Publication packet \u2014 explanatory replay review only.",
+    "Figure numbering is for documentation; not operational scoring."
+  ],
+  "schema_version": "replay_publication_report_v1",
+  "sweep_id": "saturation_assignment_sweep"
+}

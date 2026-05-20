@@ -1,0 +1,54 @@
+{
+  "annotations": [
+    {
+      "annotation_id": "anno_west_mask",
+      "body": "First ridge masks threat track — replay-local association only.",
+      "kind": "los_blockage",
+      "linked_event_ids": [
+        "narrative_event_0003_ambiguity_realism_fragmented_gap_start"
+      ],
+      "narrative_rank": 1,
+      "title": "West ridge mask"
+    },
+    {
+      "annotation_id": "anno_mid_chain",
+      "body": "Visibility fragments as threat crosses mid ridge — not causal proof.",
+      "kind": "los_blockage",
+      "linked_event_ids": [
+        "narrative_event_0003_ambiguity_realism_fragmented_gap_start"
+      ],
+      "narrative_rank": 2,
+      "title": "Chained ridge transition"
+    },
+    {
+      "annotation_id": "anno_delayed_reacq",
+      "body": "Track reacquired after east ridge gap — explanatory evidence only.",
+      "kind": "los_blockage",
+      "linked_event_ids": [
+        "narrative_event_0003_ambiguity_realism_fragmented_gap_start"
+      ],
+      "narrative_rank": 2,
+      "title": "Delayed reacquisition"
+    },
+    {
+      "annotation_id": "anno_ambiguity_esc",
+      "body": "Overlapping mask windows increase replay interpretation difficulty.",
+      "kind": "visibility_degraded",
+      "linked_event_ids": [
+        "narrative_event_0003_ambiguity_realism_fragmented_gap_start"
+      ],
+      "narrative_rank": 2,
+      "title": "Spatial ambiguity escalation"
+    },
+    {
+      "annotation_id": "anno_selection_post_gap",
+      "body": "Selection evidence after reacquisition — not tactical authority.",
+      "kind": "tti_explanation",
+      "linked_event_ids": [
+        "narrative_event_0002_selection_selection_block"
+      ],
+      "narrative_rank": 1,
+      "title": "Post-gap selection"
+    }
+  ]
+}

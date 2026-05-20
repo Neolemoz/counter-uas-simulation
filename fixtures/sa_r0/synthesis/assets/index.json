@@ -1,0 +1,30 @@
+{
+  "artifact_type": "presentation_assets_index_v1",
+  "pattern_cards": [
+    "los_fragmented_replay",
+    "assignment_instability_replay",
+    "delayed_detection_replay",
+    "corridor_pressure_replay",
+    "saturation_driven_ambiguity",
+    "topology_sensitive_divergence"
+  ],
+  "schema_version": "presentation_assets_index_v1",
+  "sweeps": [
+    {
+      "sweep_id": "valley_sensor_sweep",
+      "topology_card": "valley_sensor_sweep_topology_card.png"
+    },
+    {
+      "sweep_id": "ridge_overlap_sweep",
+      "topology_card": "ridge_overlap_sweep_topology_card.png"
+    },
+    {
+      "sweep_id": "delayed_detection_sweep",
+      "topology_card": "delayed_detection_sweep_topology_card.png"
+    },
+    {
+      "sweep_id": "saturation_assignment_sweep",
+      "topology_card": "saturation_assignment_sweep_topology_card.png"
+    }
+  ]
+}

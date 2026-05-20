@@ -1,0 +1,24 @@
+{
+  "artifact_type": "storyline_linkage_overlay_v1",
+  "schema_version": "storyline_linkage_overlay_v1",
+  "edges": [
+    {
+      "source": "ridge_overlap_sweep",
+      "target": "delayed_detection_sweep",
+      "detail": "both sweeps appear in topology-divergence showcase decks",
+      "evidence": { "storyboard_id": "showcase_topology_divergence" }
+    },
+    {
+      "source": "delayed_detection_sweep",
+      "target": "saturation_assignment_sweep",
+      "detail": "ingress-timing variation themes in assignment instability walkthrough",
+      "evidence": { "storyboard_id": "walkthrough_assignment_instability" }
+    },
+    {
+      "source": "valley_sensor_sweep",
+      "target": "ridge_overlap_sweep",
+      "detail": "valley and ridge fixture families share LOS-fragmented replay exploration themes",
+      "evidence": { "storyboard_id": "showcase_cross_sweep_synthesis" }
+    }
+  ]
+}

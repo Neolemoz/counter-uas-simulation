@@ -1,0 +1,85 @@
+{
+  "entities_static": [
+    {
+      "authoritative": false,
+      "entity_id": "radar_01",
+      "kind": "radar",
+      "label": "Radar west",
+      "position_enu_m": [
+        0.0,
+        0.0,
+        15.0
+      ]
+    },
+    {
+      "authoritative": false,
+      "entity_id": "radar_02",
+      "kind": "radar",
+      "label": "Radar east",
+      "position_enu_m": [
+        400.0,
+        200.0,
+        15.0
+      ]
+    },
+    {
+      "authoritative": false,
+      "entity_id": "fusion_center",
+      "kind": "fusion_center",
+      "label": "Fusion center",
+      "position_enu_m": [
+        200.0,
+        100.0,
+        0.0
+      ]
+    },
+    {
+      "authoritative": false,
+      "entity_id": "int_base_01",
+      "kind": "interceptor_base",
+      "label": "INT-01",
+      "position_enu_m": [
+        200.0,
+        100.0,
+        0.0
+      ]
+    }
+  ],
+  "georef_anchor": {
+    "h_m": 0.0,
+    "lat_deg": 35.2,
+    "lon_deg": -116.2
+  },
+  "zones": [
+    {
+      "caveat": "Scenario policy overlay only.",
+      "display_label": "Protected core",
+      "geometry": {
+        "center_enu_m": [
+          200.0,
+          100.0,
+          0.0
+        ],
+        "radius_m": 550.0,
+        "type": "circle"
+      },
+      "kind": "protected",
+      "zone_id": "protected_core"
+    },
+    {
+      "caveat": "Explanatory risk localization only.",
+      "display_label": "Threat risk (east approach)",
+      "geometry": {
+        "center_enu_m": [
+          -300.0,
+          150.0,
+          0.0
+        ],
+        "radius_m": 400.0,
+        "type": "circle"
+      },
+      "kind": "threat_risk",
+      "zone_id": "threat_risk_east"
+    }
+  ]
+}

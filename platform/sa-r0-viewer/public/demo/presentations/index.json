@@ -1,0 +1,45 @@
+{
+  "artifact_type": "replay_storyboard_index_v1",
+  "governance": {
+    "notice": "Derived replay presentation artifact \u2014 explanatory review only, not operational authority."
+  },
+  "schema_version": "replay_storyboard_index_v1",
+  "storyboards": [
+    {
+      "estimated_minutes": 18,
+      "storyboard_id": "showcase_best_narratives",
+      "storyboard_url": "/demo/presentations/showcase_best_narratives.json",
+      "title": "Showcase: strongest replay narratives"
+    },
+    {
+      "estimated_minutes": 15,
+      "storyboard_id": "showcase_topology_divergence",
+      "storyboard_url": "/demo/presentations/showcase_topology_divergence.json",
+      "title": "Showcase: topology-sensitive divergence"
+    },
+    {
+      "estimated_minutes": 16,
+      "storyboard_id": "showcase_ambiguity_heavy",
+      "storyboard_url": "/demo/presentations/showcase_ambiguity_heavy.json",
+      "title": "Showcase: ambiguity-heavy sweeps"
+    },
+    {
+      "estimated_minutes": 20,
+      "storyboard_id": "walkthrough_valley_ingress_long",
+      "storyboard_url": "/demo/presentations/walkthrough_valley_ingress_long.json",
+      "title": "Long-form valley ingress walkthrough"
+    },
+    {
+      "estimated_minutes": 17,
+      "storyboard_id": "walkthrough_assignment_instability",
+      "storyboard_url": "/demo/presentations/walkthrough_assignment_instability.json",
+      "title": "Assignment instability walkthrough"
+    },
+    {
+      "estimated_minutes": 14,
+      "storyboard_id": "showcase_cross_sweep_synthesis",
+      "storyboard_url": "/demo/presentations/showcase_cross_sweep_synthesis.json",
+      "title": "Showcase: cross-sweep synthesis corpus"
+    }
+  ]
+}

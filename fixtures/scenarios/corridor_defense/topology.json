@@ -1,0 +1,70 @@
+{
+  "entities_static": [
+    {
+      "authoritative": false,
+      "entity_id": "radar_north",
+      "kind": "radar",
+      "label": "Radar north",
+      "position_enu_m": [
+        0.0,
+        300.0,
+        14.0
+      ]
+    },
+    {
+      "authoritative": false,
+      "entity_id": "radar_south",
+      "kind": "radar",
+      "label": "Radar south",
+      "position_enu_m": [
+        0.0,
+        -300.0,
+        14.0
+      ]
+    },
+    {
+      "authoritative": false,
+      "entity_id": "eoir_01",
+      "kind": "eoir",
+      "label": "EO/IR corridor watch",
+      "position_enu_m": [
+        150.0,
+        0.0,
+        18.0
+      ]
+    },
+    {
+      "authoritative": false,
+      "entity_id": "int_base_01",
+      "kind": "interceptor_base",
+      "label": "INT-01",
+      "position_enu_m": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    }
+  ],
+  "georef_anchor": {
+    "h_m": 0.0,
+    "lat_deg": 35.05,
+    "lon_deg": -116.05
+  },
+  "zones": [
+    {
+      "caveat": "Narrow protected corridor \u2014 policy overlay only.",
+      "display_label": "Protected corridor core",
+      "geometry": {
+        "center_enu_m": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "radius_m": 280.0,
+        "type": "circle"
+      },
+      "kind": "protected",
+      "zone_id": "protected_corridor"
+    }
+  ]
+}

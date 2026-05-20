@@ -1,0 +1,17 @@
+{
+  "cmd": [
+    "ros2",
+    "launch",
+    "counter_uas",
+    "bringup.launch.py",
+    "target_start_x_m:=-1800.0",
+    "target_start_y_m:=80.0",
+    "target_start_z_m:=120.0",
+    "noise_seed:=101"
+  ],
+  "cohort": "sa_b2_demo",
+  "evaluation": {
+    "cohort": "saturation_assignment_sweep"
+  },
+  "run_id": "replay_saturation_ingress_demo"
+}

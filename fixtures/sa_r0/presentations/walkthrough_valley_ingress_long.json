@@ -1,0 +1,56 @@
+{
+  "artifact_type": "replay_storyboard_v1",
+  "estimated_minutes": 20,
+  "governance": {
+    "anti_claims": [
+      "Not deployment readiness or validated effectiveness.",
+      "Not causal proof of runtime behavior."
+    ],
+    "notice": "Derived replay presentation artifact \u2014 explanatory review only, not operational authority."
+  },
+  "scenes": [
+    {
+      "chapter": 0,
+      "copy": "Chapter 1: ingress geometry and initial detection markers.",
+      "importance_tags": [
+        "topology"
+      ],
+      "label": "Ingress",
+      "scene_id": "ingress",
+      "target_url": "?demo=valley_ingress&presentation=walkthrough_valley_ingress_long&chapter=0"
+    },
+    {
+      "chapter": 1,
+      "copy": "Chapter 2: LOS instability near terrain masking.",
+      "importance_tags": [
+        "los"
+      ],
+      "label": "LOS degradation",
+      "scene_id": "los",
+      "target_url": "?demo=valley_ingress&presentation=walkthrough_valley_ingress_long&chapter=1"
+    },
+    {
+      "chapter": 2,
+      "copy": "Chapter 3: ambiguity window concentration.",
+      "importance_tags": [
+        "ambiguity"
+      ],
+      "label": "Ambiguity",
+      "scene_id": "ambiguity",
+      "target_url": "?demo=valley_ingress&presentation=walkthrough_valley_ingress_long&chapter=2"
+    },
+    {
+      "chapter": 4,
+      "copy": "Final chapter: replay outcome summary.",
+      "importance_tags": [
+        "pacing"
+      ],
+      "label": "Outcome",
+      "scene_id": "outcome",
+      "target_url": "?demo=valley_ingress&presentation=walkthrough_valley_ingress_long&chapter=4"
+    }
+  ],
+  "schema_version": "replay_storyboard_v1",
+  "storyboard_id": "walkthrough_valley_ingress_long",
+  "title": "Long-form valley ingress walkthrough"
+}

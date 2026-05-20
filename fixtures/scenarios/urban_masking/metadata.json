@@ -1,0 +1,54 @@
+{
+  "ambiguity_profile": {
+    "focus_tags": [
+      "fragmented_tracking",
+      "urban_clutter"
+    ],
+    "level": "high"
+  },
+  "artifact_type": "scenario_topology_v1",
+  "governance": {
+    "anti_claims": [
+      "not deployed geography",
+      "not operational effectiveness",
+      "not tactical authority"
+    ],
+    "constraints": [
+      "replay-safe",
+      "explanatory-only",
+      "non-authoritative",
+      "parser-safe"
+    ],
+    "notice": "Fictional scenario topology for replay visualization only."
+  },
+  "ingress_archetype": "open",
+  "narrative_focus": [
+    "urban_clutter",
+    "fragmented_tracking"
+  ],
+  "overlay_descriptors": [
+    {
+      "count": 8,
+      "kind": "degraded_visibility"
+    }
+  ],
+  "provenance": {
+    "fictional_disclaimer": "Lightweight fictional blocks only — not photorealistic urban simulation.",
+    "fixture_source": "fixtures/scenarios/urban_masking"
+  },
+  "replay_duration_class": "medium",
+  "replay_tags": [
+    "fragmented_tracking",
+    "cluttered_replay",
+    "urban_clutter"
+  ],
+  "scenario_id": "urban_masking_demo",
+  "schema_version": "scenario_topology_v1",
+  "terrain_profile": "urban_clutter",
+  "title": "Urban masking fictional obstruction replay",
+  "topology_tags": [
+    "urban_masking",
+    "fragmented_tracking",
+    "cluttered_replay"
+  ]
+}

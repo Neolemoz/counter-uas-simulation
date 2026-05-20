@@ -8,6 +8,7 @@ See [`metrics_definitions.yaml`](metrics_definitions.yaml) for field semantics (
 
 For the maintained freeze registry and layer map, see [`docs/evaluation/freeze_registry_r1.md`](../../docs/evaluation/freeze_registry_r1.md). For meta-governance risk analysis, see [`docs/evaluation/meta_governance_maturity_review_r1.md`](../../docs/evaluation/meta_governance_maturity_review_r1.md).
 For replay demo, mentor workflow, and showcase cases, see [`docs/evaluation/replay_demo_review_workflow_r1.md`](../../docs/evaluation/replay_demo_review_workflow_r1.md) and [`docs/evaluation/demo_cases/README.md`](../../docs/evaluation/demo_cases/README.md).
+For SA platform integrity audits and `tier0-sa-r0` maintenance, see [`docs/evaluation/sa_stabilization_plan.md`](../../docs/evaluation/sa_stabilization_plan.md) and [`docs/evaluation/sa_stabilization_freeze_audit.md`](../../docs/evaluation/sa_stabilization_freeze_audit.md).
 For reviewer-facing layer definitions, loaded-term guidance, and causal-language boundaries, see [`docs/evaluation/reviewer_interpretation_guide.md`](../../docs/evaluation/reviewer_interpretation_guide.md).
 For the Phase 2 replay narrative UX scope and freeze boundaries, see [`docs/evaluation/replay_narrative_ux_phase2_plan.md`](../../docs/evaluation/replay_narrative_ux_phase2_plan.md).
 For the Phase 2 replay narrative UX planning context, see [`docs/evaluation/replay_narrative_ux_freeze_audit.md`](../../docs/evaluation/replay_narrative_ux_freeze_audit.md) (superseded for implementation sign-off).
@@ -308,9 +309,23 @@ Reviewer interpretation guidance:
 
 `replay_static_visualization.py` emits deterministic static figures and composite HTML from frozen replay narrative and observability JSON. Outputs are explanatory visualization layers only—not live dashboards, operational displays, or readiness evidence. See [`docs/evaluation/replay_static_visualization_r1_plan.md`](../../docs/evaluation/replay_static_visualization_r1_plan.md).
 
-**Comprehension R1** extends the composite report with a reviewer digest, reordered HTML sections, and improved figure labels (`render_profile: static_viz_comprehension_r1_v1`). Optional engagement and sparse top-down figures auto-enable when lineage `log_path` is readable; use `--no-optional-figures` to disable. See [`docs/evaluation/replay_static_visualization_comprehension_r1_plan.md`](../../docs/evaluation/replay_static_visualization_comprehension_r1_plan.md).
+**Comprehension R1** extends the composite report with a reviewer digest, reordered HTML sections, and improved figure labels. **UX Refinement R2** (`render_profile: static_viz_ux_refinement_r2_v1`) adds outcome/near-miss wording, collapsed selection incidents, salient timeline tables, and D-class human labels without changing frozen narrative JSON. Optional engagement and sparse top-down figures auto-enable when lineage `log_path` is readable; use `--no-optional-figures` to disable. Pass `--observability-json` for richest selection mismatch summary. See [`docs/evaluation/replay_ux_refinement_r2_freeze_audit.md`](../../docs/evaluation/replay_ux_refinement_r2_freeze_audit.md).
 
-**Planning (not implemented):** Static Viz R2 — [`replay_static_visualization_r2_plan.md`](../../docs/evaluation/replay_static_visualization_r2_plan.md). SA UI — [`situational_awareness_ui_planning_r1.md`](../../docs/evaluation/situational_awareness_ui_planning_r1.md) (plan-only freeze audit).
+**Planning (not implemented):** Static Viz R2 — [`replay_static_visualization_r2_plan.md`](../../docs/evaluation/replay_static_visualization_r2_plan.md). **SA-R0 replay platform (frozen):** [`replay_sa_bundle.py`](replay_sa_bundle.py) + [`platform/sa-r0-viewer/`](../../platform/sa-r0-viewer/) — [`sa_r0_freeze_audit.md`](../../docs/evaluation/sa_r0_freeze_audit.md). **SA B1 geometry replay (frozen):** [`sa_b1_geometry_freeze_audit.md`](../../docs/evaluation/sa_b1_geometry_freeze_audit.md). **SA C1a scenario schema (frozen):** [`scenario_schema_v1.md`](../../docs/evaluation/scenario_schema_v1.md), [`validate_scenario.py`](validate_scenario.py), [`fixtures/scenarios/`](../../fixtures/scenarios/) — pack with `--scenario-pack fixtures/scenarios/ridge_defense` (legacy `--scenario-overlay` still supported). **SA C1b scenario authoring (frozen):** [`sa_c1b_scenario_authoring_refinement_freeze_audit.md`](../../docs/evaluation/sa_c1b_scenario_authoring_refinement_freeze_audit.md), [`sync_sa_catalog.py`](sync_sa_catalog.py), [`comparison_foundations.md`](../../docs/evaluation/comparison_foundations.md). **SA D1 comparative replay (frozen):** [`sa_d1_comparative_replay_freeze_audit.md`](../../docs/evaluation/sa_d1_comparative_replay_freeze_audit.md), [`replay_compare_v1.md`](../../docs/evaluation/replay_compare_v1.md), [`gen_d1_experiment_packs.py`](gen_d1_experiment_packs.py) — viewer compare mode (`?pair=`, `?compare=`), [`compare_pairs_v1.json`](../../fixtures/scenarios/compare_pairs_v1.json). **SA UI planning (docs only):** [`situational_awareness_ui_planning_r1.md`](../../docs/evaluation/situational_awareness_ui_planning_r1.md).
+
+Validate a scenario pack:
+
+```bash
+python3 scripts/evaluation/validate_scenario.py fixtures/scenarios/ridge_defense
+```
+
+```bash
+python3 scripts/evaluation/replay_sa_bundle.py pack \
+  --narrative-json runs/evaluation/YOUR_RUN.replay_narrative.json \
+  --observability-json runs/evaluation/YOUR_RUN.replay_observability.json \
+  --viz-manifest runs/evaluation/YOUR_RUN.replay_viz/replay_static_visualization.json \
+  --out-dir runs/evaluation/YOUR_RUN.sa_bundle/
+```
 
 ```bash
 python3 scripts/evaluation/replay_static_visualization.py composite \

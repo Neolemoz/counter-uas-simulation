@@ -1,0 +1,54 @@
+{
+  "entities_static": [
+    {
+      "authoritative": false,
+      "entity_id": "radar_01",
+      "kind": "radar",
+      "label": "Radar site (shifted north \u2014 experiment)",
+      "position_enu_m": [
+        0.0,
+        120.0,
+        14.0
+      ]
+    },
+    {
+      "authoritative": false,
+      "entity_id": "eoir_01",
+      "kind": "eoir",
+      "label": "EO/IR site (valley fixture)",
+      "position_enu_m": [
+        180.0,
+        -60.0,
+        20.0
+      ]
+    },
+    {
+      "authoritative": false,
+      "entity_id": "fusion_center",
+      "kind": "fusion_center",
+      "label": "Fusion center (valley fixture)",
+      "position_enu_m": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "authoritative": false,
+      "entity_id": "int_base_01",
+      "kind": "interceptor_base",
+      "label": "Interceptor base INT-01",
+      "position_enu_m": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    }
+  ],
+  "georef_anchor": {
+    "h_m": 0.0,
+    "lat_deg": 35.1,
+    "lon_deg": -116.1
+  },
+  "zones": []
+}

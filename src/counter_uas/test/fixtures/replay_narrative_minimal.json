@@ -71,6 +71,33 @@
       "time_s": null
     },
     {
+      "block_index": 3,
+      "category": "selection",
+      "details": {
+        "after_fragmented_gap": false,
+        "block_index": 3,
+        "oracle_ids": [
+          "interceptor_0"
+        ],
+        "oracle_match": true,
+        "selected": "interceptor_0"
+      },
+      "event_id": "narrative_event_0004_selection_selection_block",
+      "event_type": "selection_block",
+      "evidence_role": "derived_evaluation_artifact",
+      "interpretation_caveat": "Selection events mirror replay evidence and do not replace tactical authority surfaces.",
+      "label": "selected interceptor_0 in replay selection block 3",
+      "line_index": 10,
+      "raw_line": "",
+      "source_artifact": "divergence_trace",
+      "source_ref": {
+        "block_index": 3,
+        "line_index": 10
+      },
+      "time_label": "line 10",
+      "time_s": null
+    },
+    {
       "block_index": 2,
       "category": "selection",
       "details": {
@@ -82,7 +109,7 @@
         "oracle_match": false,
         "selected": "interceptor_0"
       },
-      "event_id": "narrative_event_0004_selection_selection_block",
+      "event_id": "narrative_event_0005_selection_selection_block",
       "event_type": "selection_block",
       "evidence_role": "derived_evaluation_artifact",
       "interpretation_caveat": "Selection events mirror replay evidence and do not replace tactical authority surfaces.",
@@ -108,7 +135,7 @@
         ],
         "selected": "interceptor_0"
       },
-      "event_id": "narrative_event_0005_divergence_selection_oracle_mismatch",
+      "event_id": "narrative_event_0006_divergence_selection_oracle_mismatch",
       "event_type": "selection_oracle_mismatch",
       "evidence_role": "derived_evaluation_artifact",
       "interpretation_caveat": "Divergence events localize replay-side disagreement and are non-causal unless separately governed.",
@@ -129,7 +156,7 @@
       "details": {
         "selection_oracle_divergence_class": "D5_inconclusive_visibility_limited"
       },
-      "event_id": "narrative_event_0006_divergence_divergence_class",
+      "event_id": "narrative_event_0007_divergence_divergence_class",
       "event_type": "divergence_class",
       "evidence_role": "derived_evaluation_artifact",
       "interpretation_caveat": "Divergence events localize replay-side disagreement and are non-causal unless separately governed.",
@@ -152,7 +179,7 @@
         "layer_at_hit": "unknown",
         "success": null
       },
-      "event_id": "narrative_event_0007_outcome_outcome_hit",
+      "event_id": "narrative_event_0008_outcome_outcome_hit",
       "event_type": "outcome_hit",
       "evidence_role": "derived_evaluation_artifact",
       "interpretation_caveat": "Outcome events copy existing parser-visible summaries and do not expand parser contracts.",
@@ -169,11 +196,32 @@
     },
     {
       "block_index": null,
+      "category": "outcome",
+      "details": {
+        "miss_distance_m": 7.812
+      },
+      "event_id": "narrative_event_0009_outcome_outcome_miss_distance",
+      "event_type": "outcome_miss_distance",
+      "evidence_role": "derived_evaluation_artifact",
+      "interpretation_caveat": "Outcome events copy existing parser-visible summaries and do not expand parser contracts.",
+      "label": "minimum miss distance recorded: 7.812 m",
+      "line_index": null,
+      "raw_line": "",
+      "source_artifact": "canonical_parser_visible_summary",
+      "source_ref": {
+        "block_index": null,
+        "line_index": null
+      },
+      "time_label": "time unavailable",
+      "time_s": null
+    },
+    {
+      "block_index": null,
       "category": "provenance_warning",
       "details": {
         "warning": "divergence classification is visibility-limited"
       },
-      "event_id": "narrative_event_0008_provenance_warning_provenance_warning",
+      "event_id": "narrative_event_0010_provenance_warning_provenance_warning",
       "event_type": "provenance_warning",
       "evidence_role": "derived_evaluation_artifact",
       "interpretation_caveat": "Warnings are interpretation prompts, not approval, severity, or readiness status.",
@@ -255,16 +303,17 @@
     "canonical_parser_visible_summary": {
       "hit": false,
       "layer_at_hit": "unknown",
+      "miss_distance_m": 7.812,
       "run_id": "replay_obs_unit"
     },
-    "event_count": 8,
+    "event_count": 10,
     "event_counts_by_category": {
       "ambiguity": 1,
       "detection": 1,
       "divergence": 2,
-      "outcome": 1,
+      "outcome": 2,
       "provenance_warning": 1,
-      "selection": 2
+      "selection": 3
     },
     "lifecycle_event_counts": {
       "candidate_spawn": 1,
@@ -287,10 +336,10 @@
       "window_type": "ambiguity_fragmented_gap_open"
     },
     {
-      "end_event_id": "narrative_event_0005_divergence_selection_oracle_mismatch",
+      "end_event_id": "narrative_event_0006_divergence_selection_oracle_mismatch",
       "end_line_index": 9,
       "interpretation_caveat": "Divergence windows localize replay-side disagreement and are not causal explanations.",
-      "start_event_id": "narrative_event_0005_divergence_selection_oracle_mismatch",
+      "start_event_id": "narrative_event_0006_divergence_selection_oracle_mismatch",
       "start_line_index": 9,
       "window_type": "divergence_mismatch_window"
     }

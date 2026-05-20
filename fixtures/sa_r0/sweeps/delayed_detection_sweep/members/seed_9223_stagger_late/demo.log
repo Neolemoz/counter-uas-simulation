@@ -1,0 +1,37 @@
+=== run_id: replay_delayed_detection_demo ===
+[interception_logic_node-1] noop warmup line 1
+[interception_logic_node-1] noop warmup line 2
+[interception_logic_node-1] noop warmup line 3
+[interception_logic_node-1] noop warmup line 4
+[interception_logic_node-1] noop warmup line 5
+[interception_logic_node-1] noop warmup line 6
+[interception_logic_node-1] noop warmup line 7
+[interception_logic_node-1] noop warmup line 8
+[interception_logic_node-1] noop warmup line 9
+[interception_logic_node-1] noop warmup line 10
+[interception_logic_node-1] noop warmup line 11
+[interception_logic_node-1] noop warmup line 12
+[interception_logic_node-1] noop warmup line 13
+[interception_logic_node-1] noop warmup line 14
+[interception_logic_node-1] [P_HEATMAP] pos=(-1120.000, 25.000, 95.000)
+[noisy_measurement_node-1] [REALISM_EVENT] delayed_detection count=1 delay_s=0.250
+[tracking_node-1] Candidate detected: track_id=41
+[interception_logic_node-1] [P_HEATMAP] pos=(-780.000, 30.000, 90.000)
+[interception_logic_node-1] [P_HEATMAP] pos=(-740.000, 30.000, 90.000)
+[interception_logic_node-1] [P_HEATMAP] pos=(-700.000, 30.000, 90.000)
+[interception_logic_node-1] [P_HEATMAP] pos=(-660.000, 30.000, 90.000)
+[interception_logic_node-1] [P_HEATMAP] pos=(-620.000, 30.000, 90.000)
+[interception_logic_node-1] [P_HEATMAP] pos=(-580.000, 30.000, 90.000)
+[interception_logic_node-1] [P_HEATMAP] pos=(-540.000, 30.000, 90.000)
+[interception_logic_node-1] [P_HEATMAP] pos=(-500.000, 30.000, 90.000)
+[interception_logic_node-1] [P_HEATMAP] pos=(-460.000, 30.000, 90.000)
+[interception_logic_node-1] [P_HEATMAP] pos=(-420.000, 30.000, 90.000)
+[interception_logic_node-1] [P_HEATMAP] pos=(-380.000, 30.000, 90.000)
+[interception_logic_node-1] [P_HEATMAP] pos=(-340.000, 30.000, 90.000)
+[interception_logic_node-1] [P_HEATMAP] pos=(-300.000, 30.000, 90.000)
+[interception_logic_node-1] [P_HEATMAP] pos=(-260.000, 30.000, 90.000)
+[interception_logic_node-1] [P_HEATMAP] pos=(-220.000, 30.000, 90.000)
+[interception_logic_node-1] [METRICS] id=interceptor_0  | dist=45.000 m | t_go=6.0 s | vel=17.0 m/s | mode=predict
+[interception_logic_node-1] interceptor_pos=(-35.000, 4.000, 40.000) target_pos=(-220.000, 32.000, 88.000)
+[interception_logic_node-1] [METRICS] id=interceptor_0  | dist=14.000 m | t_go=1.5 s | vel=19.5 m/s | mode=predict
+[interception_logic_node-1] [METRICS] id=interceptor_0  | dist=6.000 m | t_go=0.8 s | vel=20.0 m/s | mode=predict

@@ -1,0 +1,2131 @@
+{
+  "artifact_type": "replay_sa_bundle",
+  "bundle_schema_version": "replay_sa_bundle_v1",
+  "clock": {
+    "domain": "log_line_index",
+    "duration": {
+      "end": 14,
+      "start": 2,
+      "step": 1
+    },
+    "markers": [
+      {
+        "category": "detection",
+        "event_id": "narrative_event_0001_detection_candidate_spawn",
+        "label": "track candidate first observed",
+        "t": 5
+      },
+      {
+        "category": "ambiguity",
+        "event_id": "narrative_event_0003_ambiguity_realism_fragmented_gap_start",
+        "label": "fragmented gap entered",
+        "t": 7
+      },
+      {
+        "category": "window",
+        "event_id": "narrative_event_0003_ambiguity_realism_fragmented_gap_start",
+        "label": "ambiguity_fragmented_gap_open",
+        "t": 7
+      },
+      {
+        "category": "selection",
+        "event_id": "narrative_event_0002_selection_selection_block",
+        "label": "selected interceptor_0 in replay selection block 1",
+        "t": 9
+      },
+      {
+        "category": "selection",
+        "event_id": "narrative_event_0004_selection_selection_block",
+        "label": "selected interceptor_0 in replay selection block 3",
+        "t": 9
+      },
+      {
+        "category": "selection",
+        "event_id": "narrative_event_0005_selection_selection_block",
+        "label": "selected interceptor_0 in replay selection block 2",
+        "t": 9
+      },
+      {
+        "category": "divergence",
+        "event_id": "narrative_event_0006_divergence_selection_oracle_mismatch",
+        "label": "selection/oracle mismatch localized at block 2",
+        "t": 9
+      },
+      {
+        "category": "window",
+        "event_id": "narrative_event_0006_divergence_selection_oracle_mismatch",
+        "label": "divergence_mismatch_window",
+        "t": 9
+      }
+    ]
+  },
+  "comparison_hints": {
+    "catalog_entry_id": "saturation_ingress",
+    "comparison_ready": true,
+    "duration_class": "medium",
+    "scenario_id": "saturation_ingress_demo",
+    "seed": 101,
+    "sensor_layout_id": "sha256:d1004b0b7eb8aa14",
+    "topology_key": "saturation_ingress"
+  },
+  "comprehension": {
+    "at_a_glance": {
+      "cards": [
+        {
+          "label": "Run",
+          "value": "replay_saturation_ingress_demo"
+        },
+        {
+          "label": "Divergence class",
+          "value": "Inconclusive (visibility-limited evidence)"
+        },
+        {
+          "label": "Taxonomy ID (parser-visible)",
+          "value": "D5_inconclusive_visibility_limited"
+        },
+        {
+          "label": "Parser-visible outcome",
+          "value": "Parser-visible miss recorded (no hit in summary)"
+        },
+        {
+          "label": "Minimum miss distance (m)",
+          "value": "7.812"
+        },
+        {
+          "label": "Narrative events",
+          "value": "10"
+        },
+        {
+          "label": "Localized windows",
+          "value": "2"
+        },
+        {
+          "label": "Warnings",
+          "value": "1"
+        }
+      ],
+      "summary": {
+        "canonical_parser_visible_summary": {
+          "hit": false,
+          "layer_at_hit": "unknown",
+          "miss_distance_m": 7.812,
+          "run_id": "replay_saturation_ingress_demo"
+        },
+        "event_count": 10,
+        "event_counts_by_category": {
+          "ambiguity": 1,
+          "detection": 1,
+          "divergence": 2,
+          "outcome": 2,
+          "provenance_warning": 1,
+          "selection": 3
+        },
+        "lifecycle_event_counts": {
+          "candidate_spawn": 1,
+          "realism_fragmented_gap_start": 1
+        },
+        "run_id": "replay_saturation_ingress_demo",
+        "selection_oracle_divergence_class": "D5_inconclusive_visibility_limited",
+        "window_count": 2
+      }
+    },
+    "headline": "Derived replay summary for replay_saturation_ingress_demo: 10 narrative events, 2 localized windows, divergence Inconclusive (visibility-limited evidence). Outcome: Parser-visible miss recorded (no hit in summary).",
+    "scan_guide": [
+      "This report is an explanatory visualization layer only; it does not replace parser-visible summaries or runtime authority.",
+      "Start with At a glance and summary cards, then Key incidents and Figures to localize evidence along the replay log index.",
+      "Divergence shading and labels localize replay-side disagreement; they are not causal proof.",
+      "D-class labels are replay-local taxonomy (D0\u2013D5); D5 indicates visibility-limited evidence, not operational severity.",
+      "Sparse position and engagement panels show log-evidenced samples only when present; they are not continuous trajectories.",
+      "Read Warnings and Interpretation caveats before drawing conclusions about readiness or robustness."
+    ]
+  },
+  "entities_static": [
+    {
+      "authoritative": false,
+      "entity_id": "radar_01",
+      "kind": "radar",
+      "label": "Radar 01",
+      "position_enu_m": [
+        0.0,
+        0.0,
+        14.0
+      ]
+    },
+    {
+      "authoritative": false,
+      "entity_id": "radar_02",
+      "kind": "radar",
+      "label": "Radar 02",
+      "position_enu_m": [
+        280.0,
+        -120.0,
+        14.0
+      ]
+    },
+    {
+      "authoritative": false,
+      "entity_id": "int_base_01",
+      "kind": "interceptor_base",
+      "label": "INT-01",
+      "position_enu_m": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "authoritative": false,
+      "entity_id": "int_base_02",
+      "kind": "interceptor_base",
+      "label": "INT-02",
+      "position_enu_m": [
+        220.0,
+        60.0,
+        0.0
+      ]
+    },
+    {
+      "authoritative": false,
+      "entity_id": "int_base_03",
+      "kind": "interceptor_base",
+      "label": "INT-03",
+      "position_enu_m": [
+        -80.0,
+        180.0,
+        0.0
+      ]
+    }
+  ],
+  "georef_display": {
+    "anchor": {
+      "h_m": 0.0,
+      "lat_deg": 35.15,
+      "lon_deg": -116.15
+    },
+    "caveat": "Fictional georef for visualization only \u2014 not deployed geography.",
+    "frame": "scenario_enu",
+    "origin_enu_m": [
+      0.0,
+      0.0,
+      0.0
+    ]
+  },
+  "governance": {
+    "anti_claims": [
+      "not operational readiness evidence",
+      "not a tactical authority surface",
+      "not a live dashboard",
+      "not deployed geography",
+      "not governance approval"
+    ],
+    "constraints": [
+      "evaluation-side only",
+      "additive-only",
+      "parser-safe",
+      "replay-safe",
+      "non-authoritative",
+      "read_only_viewer",
+      "static-rendered"
+    ],
+    "notice": "Derived evaluation artifact only. Does not replace parser-visible summaries, runtime topics, tactical authority, lifecycle semantics, or replay contracts.",
+    "schema_version": "replay_sa_bundle_v1"
+  },
+  "interpretation_caveats": [
+    "SA replay bundle is an explanatory visualization layer, not a unified authoritative replay state.",
+    "Map geometry uses scenario-local ENU with fictional georef display anchor.",
+    "Dashed trajectories connect log-evidenced samples only.",
+    "LOS segments and masking overlays are replay-local topology proxies \u2014 not sensor physics."
+  ],
+  "lineage": {
+    "cohort": "sa_b2_demo",
+    "created_utc": null,
+    "evaluation_row_path": null,
+    "git_commit": null,
+    "git_dirty": null,
+    "launch_command": [
+      "ros2",
+      "launch",
+      "counter_uas",
+      "bringup.launch.py",
+      "target_start_x_m:=-1500.0",
+      "target_start_y_m:=0.0",
+      "noise_seed:=101"
+    ],
+    "log_path": "fixtures/sa_r0/demo_saturation_ingress/demo.log",
+    "meta_path": "fixtures/sa_r0/demo_saturation_ingress/demo.meta.json",
+    "notes": null,
+    "run_id": "replay_saturation_ingress_demo",
+    "seed": 101,
+    "seed_source": "meta.cmd"
+  },
+  "los_segments": [
+    {
+      "caveat": "Replay-local LOS association from fixture topology \u2014 not sensor truth or causal proof.",
+      "from_entity_id": "radar_01",
+      "from_kind": "site",
+      "linked_event_ids": [],
+      "polyline_enu_m": [
+        [
+          0.0,
+          0.0,
+          14.0
+        ],
+        [
+          -120.0,
+          5.333,
+          20.4
+        ],
+        [
+          -240.0,
+          10.667,
+          26.8
+        ],
+        [
+          -360.0,
+          16.0,
+          33.2
+        ],
+        [
+          -480.0,
+          21.333,
+          39.6
+        ],
+        [
+          -600.0,
+          26.667,
+          46.0
+        ],
+        [
+          -720.0,
+          32.0,
+          52.4
+        ],
+        [
+          -840.0,
+          37.333,
+          58.8
+        ],
+        [
+          -960.0,
+          42.667,
+          65.2
+        ],
+        [
+          -1080.0,
+          48.0,
+          71.6
+        ],
+        [
+          -1200.0,
+          53.333,
+          78.0
+        ],
+        [
+          -1320.0,
+          58.667,
+          84.4
+        ],
+        [
+          -1440.0,
+          64.0,
+          90.8
+        ],
+        [
+          -1560.0,
+          69.333,
+          97.2
+        ],
+        [
+          -1680.0,
+          74.667,
+          103.6
+        ],
+        [
+          -1800.0,
+          80.0,
+          110.0
+        ]
+      ],
+      "segment_id": "los_radar_01_threat_uav_0_t2",
+      "status": "partially_occluded",
+      "t": 2,
+      "to_track_id": "threat_uav_0"
+    },
+    {
+      "caveat": "Replay-local LOS association from fixture topology \u2014 not sensor truth or causal proof.",
+      "from_entity_id": "radar_02",
+      "from_kind": "site",
+      "linked_event_ids": [],
+      "polyline_enu_m": [
+        [
+          280.0,
+          -120.0,
+          14.0
+        ],
+        [
+          141.333,
+          -106.667,
+          20.4
+        ],
+        [
+          2.667,
+          -93.333,
+          26.8
+        ],
+        [
+          -136.0,
+          -80.0,
+          33.2
+        ],
+        [
+          -274.667,
+          -66.667,
+          39.6
+        ],
+        [
+          -413.333,
+          -53.333,
+          46.0
+        ],
+        [
+          -552.0,
+          -40.0,
+          52.4
+        ],
+        [
+          -690.667,
+          -26.667,
+          58.8
+        ],
+        [
+          -829.333,
+          -13.333,
+          65.2
+        ],
+        [
+          -968.0,
+          0.0,
+          71.6
+        ],
+        [
+          -1106.667,
+          13.333,
+          78.0
+        ],
+        [
+          -1245.333,
+          26.667,
+          84.4
+        ],
+        [
+          -1384.0,
+          40.0,
+          90.8
+        ],
+        [
+          -1522.667,
+          53.333,
+          97.2
+        ],
+        [
+          -1661.333,
+          66.667,
+          103.6
+        ],
+        [
+          -1800.0,
+          80.0,
+          110.0
+        ]
+      ],
+      "segment_id": "los_radar_02_threat_uav_0_t2",
+      "status": "partially_occluded",
+      "t": 2,
+      "to_track_id": "threat_uav_0"
+    },
+    {
+      "caveat": "Replay-local LOS association from fixture topology \u2014 not sensor truth or causal proof.",
+      "from_entity_id": "radar_01",
+      "from_kind": "site",
+      "linked_event_ids": [],
+      "polyline_enu_m": [
+        [
+          0.0,
+          0.0,
+          14.0
+        ],
+        [
+          -113.333,
+          5.667,
+          20.267
+        ],
+        [
+          -226.667,
+          11.333,
+          26.533
+        ],
+        [
+          -340.0,
+          17.0,
+          32.8
+        ],
+        [
+          -453.333,
+          22.667,
+          39.067
+        ],
+        [
+          -566.667,
+          28.333,
+          45.333
+        ],
+        [
+          -680.0,
+          34.0,
+          51.6
+        ],
+        [
+          -793.333,
+          39.667,
+          57.867
+        ],
+        [
+          -906.667,
+          45.333,
+          64.133
+        ],
+        [
+          -1020.0,
+          51.0,
+          70.4
+        ],
+        [
+          -1133.333,
+          56.667,
+          76.667
+        ],
+        [
+          -1246.667,
+          62.333,
+          82.933
+        ],
+        [
+          -1360.0,
+          68.0,
+          89.2
+        ],
+        [
+          -1473.333,
+          73.667,
+          95.467
+        ],
+        [
+          -1586.667,
+          79.333,
+          101.733
+        ],
+        [
+          -1700.0,
+          85.0,
+          108.0
+        ]
+      ],
+      "segment_id": "los_radar_01_threat_uav_0_t4",
+      "status": "partially_occluded",
+      "t": 4,
+      "to_track_id": "threat_uav_0"
+    },
+    {
+      "caveat": "Replay-local LOS association from fixture topology \u2014 not sensor truth or causal proof.",
+      "from_entity_id": "radar_02",
+      "from_kind": "site",
+      "linked_event_ids": [],
+      "polyline_enu_m": [
+        [
+          280.0,
+          -120.0,
+          14.0
+        ],
+        [
+          148.0,
+          -106.333,
+          20.267
+        ],
+        [
+          16.0,
+          -92.667,
+          26.533
+        ],
+        [
+          -116.0,
+          -79.0,
+          32.8
+        ],
+        [
+          -248.0,
+          -65.333,
+          39.067
+        ],
+        [
+          -380.0,
+          -51.667,
+          45.333
+        ],
+        [
+          -512.0,
+          -38.0,
+          51.6
+        ],
+        [
+          -644.0,
+          -24.333,
+          57.867
+        ],
+        [
+          -776.0,
+          -10.667,
+          64.133
+        ],
+        [
+          -908.0,
+          3.0,
+          70.4
+        ],
+        [
+          -1040.0,
+          16.667,
+          76.667
+        ],
+        [
+          -1172.0,
+          30.333,
+          82.933
+        ],
+        [
+          -1304.0,
+          44.0,
+          89.2
+        ],
+        [
+          -1436.0,
+          57.667,
+          95.467
+        ],
+        [
+          -1568.0,
+          71.333,
+          101.733
+        ],
+        [
+          -1700.0,
+          85.0,
+          108.0
+        ]
+      ],
+      "segment_id": "los_radar_02_threat_uav_0_t4",
+      "status": "partially_occluded",
+      "t": 4,
+      "to_track_id": "threat_uav_0"
+    },
+    {
+      "caveat": "Replay-local LOS association from fixture topology \u2014 not sensor truth or causal proof.",
+      "from_entity_id": "radar_01",
+      "from_kind": "site",
+      "linked_event_ids": [],
+      "polyline_enu_m": [
+        [
+          0.0,
+          0.0,
+          14.0
+        ],
+        [
+          -106.667,
+          5.467,
+          20.067
+        ],
+        [
+          -213.333,
+          10.933,
+          26.133
+        ],
+        [
+          -320.0,
+          16.4,
+          32.2
+        ],
+        [
+          -426.667,
+          21.867,
+          38.267
+        ],
+        [
+          -533.333,
+          27.333,
+          44.333
+        ],
+        [
+          -640.0,
+          32.8,
+          50.4
+        ],
+        [
+          -746.667,
+          38.267,
+          56.467
+        ],
+        [
+          -853.333,
+          43.733,
+          62.533
+        ],
+        [
+          -960.0,
+          49.2,
+          68.6
+        ],
+        [
+          -1066.667,
+          54.667,
+          74.667
+        ],
+        [
+          -1173.333,
+          60.133,
+          80.733
+        ],
+        [
+          -1280.0,
+          65.6,
+          86.8
+        ],
+        [
+          -1386.667,
+          71.067,
+          92.867
+        ],
+        [
+          -1493.333,
+          76.533,
+          98.933
+        ],
+        [
+          -1600.0,
+          82.0,
+          105.0
+        ]
+      ],
+      "segment_id": "los_radar_01_threat_uav_0_t10",
+      "status": "partially_occluded",
+      "t": 10,
+      "to_track_id": "threat_uav_0"
+    },
+    {
+      "caveat": "Replay-local LOS association from fixture topology \u2014 not sensor truth or causal proof.",
+      "from_entity_id": "radar_02",
+      "from_kind": "site",
+      "linked_event_ids": [],
+      "polyline_enu_m": [
+        [
+          280.0,
+          -120.0,
+          14.0
+        ],
+        [
+          154.667,
+          -106.533,
+          20.067
+        ],
+        [
+          29.333,
+          -93.067,
+          26.133
+        ],
+        [
+          -96.0,
+          -79.6,
+          32.2
+        ],
+        [
+          -221.333,
+          -66.133,
+          38.267
+        ],
+        [
+          -346.667,
+          -52.667,
+          44.333
+        ],
+        [
+          -472.0,
+          -39.2,
+          50.4
+        ],
+        [
+          -597.333,
+          -25.733,
+          56.467
+        ],
+        [
+          -722.667,
+          -12.267,
+          62.533
+        ],
+        [
+          -848.0,
+          1.2,
+          68.6
+        ],
+        [
+          -973.333,
+          14.667,
+          74.667
+        ],
+        [
+          -1098.667,
+          28.133,
+          80.733
+        ],
+        [
+          -1224.0,
+          41.6,
+          86.8
+        ],
+        [
+          -1349.333,
+          55.067,
+          92.867
+        ],
+        [
+          -1474.667,
+          68.533,
+          98.933
+        ],
+        [
+          -1600.0,
+          82.0,
+          105.0
+        ]
+      ],
+      "segment_id": "los_radar_02_threat_uav_0_t10",
+      "status": "partially_occluded",
+      "t": 10,
+      "to_track_id": "threat_uav_0"
+    },
+    {
+      "caveat": "Replay-local LOS association from fixture topology \u2014 not sensor truth or causal proof.",
+      "from_entity_id": "interceptor_0",
+      "from_kind": "track",
+      "linked_event_ids": [],
+      "polyline_enu_m": [
+        [
+          -50.0,
+          5.0,
+          40.0
+        ],
+        [
+          -153.333,
+          10.133,
+          44.333
+        ],
+        [
+          -256.667,
+          15.267,
+          48.667
+        ],
+        [
+          -360.0,
+          20.4,
+          53.0
+        ],
+        [
+          -463.333,
+          25.533,
+          57.333
+        ],
+        [
+          -566.667,
+          30.667,
+          61.667
+        ],
+        [
+          -670.0,
+          35.8,
+          66.0
+        ],
+        [
+          -773.333,
+          40.933,
+          70.333
+        ],
+        [
+          -876.667,
+          46.067,
+          74.667
+        ],
+        [
+          -980.0,
+          51.2,
+          79.0
+        ],
+        [
+          -1083.333,
+          56.333,
+          83.333
+        ],
+        [
+          -1186.667,
+          61.467,
+          87.667
+        ],
+        [
+          -1290.0,
+          66.6,
+          92.0
+        ],
+        [
+          -1393.333,
+          71.733,
+          96.333
+        ],
+        [
+          -1496.667,
+          76.867,
+          100.667
+        ],
+        [
+          -1600.0,
+          82.0,
+          105.0
+        ]
+      ],
+      "segment_id": "los_interceptor_0_threat_uav_0_t10",
+      "status": "partially_occluded",
+      "t": 10,
+      "to_track_id": "threat_uav_0"
+    },
+    {
+      "caveat": "Replay-local LOS association from fixture topology \u2014 not sensor truth or causal proof.",
+      "from_entity_id": "radar_01",
+      "from_kind": "site",
+      "linked_event_ids": [],
+      "polyline_enu_m": [
+        [
+          0.0,
+          0.0,
+          14.0
+        ],
+        [
+          -116.667,
+          -8.0,
+          20.067
+        ],
+        [
+          -233.333,
+          -16.0,
+          26.133
+        ],
+        [
+          -350.0,
+          -24.0,
+          32.2
+        ],
+        [
+          -466.667,
+          -32.0,
+          38.267
+        ],
+        [
+          -583.333,
+          -40.0,
+          44.333
+        ],
+        [
+          -700.0,
+          -48.0,
+          50.4
+        ],
+        [
+          -816.667,
+          -56.0,
+          56.467
+        ],
+        [
+          -933.333,
+          -64.0,
+          62.533
+        ],
+        [
+          -1050.0,
+          -72.0,
+          68.6
+        ],
+        [
+          -1166.667,
+          -80.0,
+          74.667
+        ],
+        [
+          -1283.333,
+          -88.0,
+          80.733
+        ],
+        [
+          -1400.0,
+          -96.0,
+          86.8
+        ],
+        [
+          -1516.667,
+          -104.0,
+          92.867
+        ],
+        [
+          -1633.333,
+          -112.0,
+          98.933
+        ],
+        [
+          -1750.0,
+          -120.0,
+          105.0
+        ]
+      ],
+      "segment_id": "los_radar_01_threat_uav_1_t3",
+      "status": "partially_occluded",
+      "t": 3,
+      "to_track_id": "threat_uav_1"
+    },
+    {
+      "caveat": "Replay-local LOS association from fixture topology \u2014 not sensor truth or causal proof.",
+      "from_entity_id": "radar_02",
+      "from_kind": "site",
+      "linked_event_ids": [],
+      "polyline_enu_m": [
+        [
+          280.0,
+          -120.0,
+          14.0
+        ],
+        [
+          144.667,
+          -120.0,
+          20.067
+        ],
+        [
+          9.333,
+          -120.0,
+          26.133
+        ],
+        [
+          -126.0,
+          -120.0,
+          32.2
+        ],
+        [
+          -261.333,
+          -120.0,
+          38.267
+        ],
+        [
+          -396.667,
+          -120.0,
+          44.333
+        ],
+        [
+          -532.0,
+          -120.0,
+          50.4
+        ],
+        [
+          -667.333,
+          -120.0,
+          56.467
+        ],
+        [
+          -802.667,
+          -120.0,
+          62.533
+        ],
+        [
+          -938.0,
+          -120.0,
+          68.6
+        ],
+        [
+          -1073.333,
+          -120.0,
+          74.667
+        ],
+        [
+          -1208.667,
+          -120.0,
+          80.733
+        ],
+        [
+          -1344.0,
+          -120.0,
+          86.8
+        ],
+        [
+          -1479.333,
+          -120.0,
+          92.867
+        ],
+        [
+          -1614.667,
+          -120.0,
+          98.933
+        ],
+        [
+          -1750.0,
+          -120.0,
+          105.0
+        ]
+      ],
+      "segment_id": "los_radar_02_threat_uav_1_t3",
+      "status": "partially_occluded",
+      "t": 3,
+      "to_track_id": "threat_uav_1"
+    },
+    {
+      "caveat": "Replay-local LOS association from fixture topology \u2014 not sensor truth or causal proof.",
+      "from_entity_id": "radar_01",
+      "from_kind": "site",
+      "linked_event_ids": [],
+      "polyline_enu_m": [
+        [
+          0.0,
+          0.0,
+          14.0
+        ],
+        [
+          -110.0,
+          -7.667,
+          19.867
+        ],
+        [
+          -220.0,
+          -15.333,
+          25.733
+        ],
+        [
+          -330.0,
+          -23.0,
+          31.6
+        ],
+        [
+          -440.0,
+          -30.667,
+          37.467
+        ],
+        [
+          -550.0,
+          -38.333,
+          43.333
+        ],
+        [
+          -660.0,
+          -46.0,
+          49.2
+        ],
+        [
+          -770.0,
+          -53.667,
+          55.067
+        ],
+        [
+          -880.0,
+          -61.333,
+          60.933
+        ],
+        [
+          -990.0,
+          -69.0,
+          66.8
+        ],
+        [
+          -1100.0,
+          -76.667,
+          72.667
+        ],
+        [
+          -1210.0,
+          -84.333,
+          78.533
+        ],
+        [
+          -1320.0,
+          -92.0,
+          84.4
+        ],
+        [
+          -1430.0,
+          -99.667,
+          90.267
+        ],
+        [
+          -1540.0,
+          -107.333,
+          96.133
+        ],
+        [
+          -1650.0,
+          -115.0,
+          102.0
+        ]
+      ],
+      "segment_id": "los_radar_01_threat_uav_1_t5",
+      "status": "partially_occluded",
+      "t": 5,
+      "to_track_id": "threat_uav_1"
+    },
+    {
+      "caveat": "Replay-local LOS association from fixture topology \u2014 not sensor truth or causal proof.",
+      "from_entity_id": "radar_02",
+      "from_kind": "site",
+      "linked_event_ids": [],
+      "polyline_enu_m": [
+        [
+          280.0,
+          -120.0,
+          14.0
+        ],
+        [
+          151.333,
+          -119.667,
+          19.867
+        ],
+        [
+          22.667,
+          -119.333,
+          25.733
+        ],
+        [
+          -106.0,
+          -119.0,
+          31.6
+        ],
+        [
+          -234.667,
+          -118.667,
+          37.467
+        ],
+        [
+          -363.333,
+          -118.333,
+          43.333
+        ],
+        [
+          -492.0,
+          -118.0,
+          49.2
+        ],
+        [
+          -620.667,
+          -117.667,
+          55.067
+        ],
+        [
+          -749.333,
+          -117.333,
+          60.933
+        ],
+        [
+          -878.0,
+          -117.0,
+          66.8
+        ],
+        [
+          -1006.667,
+          -116.667,
+          72.667
+        ],
+        [
+          -1135.333,
+          -116.333,
+          78.533
+        ],
+        [
+          -1264.0,
+          -116.0,
+          84.4
+        ],
+        [
+          -1392.667,
+          -115.667,
+          90.267
+        ],
+        [
+          -1521.333,
+          -115.333,
+          96.133
+        ],
+        [
+          -1650.0,
+          -115.0,
+          102.0
+        ]
+      ],
+      "segment_id": "los_radar_02_threat_uav_1_t5",
+      "status": "partially_occluded",
+      "t": 5,
+      "to_track_id": "threat_uav_1"
+    },
+    {
+      "caveat": "Replay-local LOS association from fixture topology \u2014 not sensor truth or causal proof.",
+      "from_entity_id": "radar_01",
+      "from_kind": "site",
+      "linked_event_ids": [],
+      "polyline_enu_m": [
+        [
+          0.0,
+          0.0,
+          14.0
+        ],
+        [
+          -105.333,
+          -7.333,
+          19.733
+        ],
+        [
+          -210.667,
+          -14.667,
+          25.467
+        ],
+        [
+          -316.0,
+          -22.0,
+          31.2
+        ],
+        [
+          -421.333,
+          -29.333,
+          36.933
+        ],
+        [
+          -526.667,
+          -36.667,
+          42.667
+        ],
+        [
+          -632.0,
+          -44.0,
+          48.4
+        ],
+        [
+          -737.333,
+          -51.333,
+          54.133
+        ],
+        [
+          -842.667,
+          -58.667,
+          59.867
+        ],
+        [
+          -948.0,
+          -66.0,
+          65.6
+        ],
+        [
+          -1053.333,
+          -73.333,
+          71.333
+        ],
+        [
+          -1158.667,
+          -80.667,
+          77.067
+        ],
+        [
+          -1264.0,
+          -88.0,
+          82.8
+        ],
+        [
+          -1369.333,
+          -95.333,
+          88.533
+        ],
+        [
+          -1474.667,
+          -102.667,
+          94.267
+        ],
+        [
+          -1580.0,
+          -110.0,
+          100.0
+        ]
+      ],
+      "segment_id": "los_radar_01_threat_uav_1_t12",
+      "status": "partially_occluded",
+      "t": 12,
+      "to_track_id": "threat_uav_1"
+    }
+  ],
+  "mode": "replay_static",
+  "narrative": {
+    "annotations": [
+      {
+        "annotation_id": "anno_prioritization",
+        "body": "Multiple threats create replay prioritization pressure \u2014 not assignment authority.",
+        "kind": "tti_explanation",
+        "linked_event_ids": [
+          "narrative_event_0002_selection_selection_block"
+        ],
+        "narrative_rank": 1,
+        "title": "Prioritization pressure"
+      },
+      {
+        "annotation_id": "anno_assignment_switch",
+        "body": "Selection evidence shifts between interceptors \u2014 explanatory only.",
+        "kind": "tti_explanation",
+        "linked_event_ids": [
+          "narrative_event_0005_selection_selection_block"
+        ],
+        "narrative_rank": 1,
+        "title": "Assignment switching"
+      },
+      {
+        "annotation_id": "anno_overlap_tracks",
+        "body": "Overlapping ingress paths increase narrative complexity in replay.",
+        "kind": "visibility_degraded",
+        "linked_event_ids": [
+          "narrative_event_0003_ambiguity_realism_fragmented_gap_start"
+        ],
+        "narrative_rank": 2,
+        "title": "Overlapping trajectories"
+      },
+      {
+        "annotation_id": "anno_ambiguity_heavy",
+        "body": "Concurrent tracks during gap window \u2014 not fusion truth.",
+        "kind": "visibility_degraded",
+        "linked_event_ids": [
+          "narrative_event_0003_ambiguity_realism_fragmented_gap_start"
+        ],
+        "narrative_rank": 2,
+        "title": "Ambiguity-heavy window"
+      },
+      {
+        "annotation_id": "anno_oracle_mismatch",
+        "body": "Replay-local oracle mismatch under saturation \u2014 not tactical doctrine.",
+        "kind": "tti_explanation",
+        "linked_event_ids": [
+          "narrative_event_0006_divergence_selection_oracle_mismatch"
+        ],
+        "narrative_rank": 1,
+        "title": "Oracle disagreement"
+      }
+    ],
+    "bookmarks": [
+      {
+        "bookmark_id": "bookmark_000",
+        "event_id": "narrative_event_0003_ambiguity_realism_fragmented_gap_start",
+        "label": "ambiguity_fragmented_gap_open",
+        "t": 7
+      },
+      {
+        "bookmark_id": "bookmark_001",
+        "event_id": "narrative_event_0006_divergence_selection_oracle_mismatch",
+        "label": "divergence_mismatch_window",
+        "t": 9
+      }
+    ],
+    "events": [
+      {
+        "block_index": null,
+        "category": "detection",
+        "details": {
+          "event_type": "candidate_spawn"
+        },
+        "event_id": "narrative_event_0001_detection_candidate_spawn",
+        "event_type": "candidate_spawn",
+        "evidence_role": "derived_evaluation_artifact",
+        "interpretation_caveat": "Detection events are replay-local evidence markers, not runtime truth claims.",
+        "label": "track candidate first observed",
+        "line_index": 5,
+        "raw_line": "[tracking_node-1] Candidate detected: track_id=7",
+        "source_artifact": "lifecycle_churn_timeline",
+        "source_ref": {
+          "block_index": null,
+          "line_index": 5
+        },
+        "time_label": "line 5",
+        "time_s": null
+      },
+      {
+        "block_index": 1,
+        "category": "selection",
+        "details": {
+          "after_fragmented_gap": true,
+          "block_index": 1,
+          "oracle_ids": [
+            "interceptor_0"
+          ],
+          "oracle_match": true,
+          "selected": "interceptor_0"
+        },
+        "event_id": "narrative_event_0002_selection_selection_block",
+        "event_type": "selection_block",
+        "evidence_role": "derived_evaluation_artifact",
+        "interpretation_caveat": "Selection events mirror replay evidence and do not replace tactical authority surfaces.",
+        "label": "selected interceptor_0 in replay selection block 1",
+        "line_index": 9,
+        "raw_line": "",
+        "source_artifact": "divergence_trace",
+        "source_ref": {
+          "block_index": 1,
+          "line_index": 9
+        },
+        "time_label": "line 9",
+        "time_s": null
+      },
+      {
+        "block_index": null,
+        "category": "ambiguity",
+        "details": {
+          "event_type": "realism_fragmented_gap_start"
+        },
+        "event_id": "narrative_event_0003_ambiguity_realism_fragmented_gap_start",
+        "event_type": "realism_fragmented_gap_start",
+        "evidence_role": "derived_evaluation_artifact",
+        "interpretation_caveat": "Ambiguity events are explanatory replay context and not causal proof.",
+        "label": "fragmented gap entered",
+        "line_index": 7,
+        "raw_line": "[noisy_measurement_node-1] [REALISM_EVENT] fragmented_gap_start fragmentation_index=1 gap_ticks=3",
+        "source_artifact": "lifecycle_churn_timeline",
+        "source_ref": {
+          "block_index": null,
+          "line_index": 7
+        },
+        "time_label": "line 7",
+        "time_s": null
+      },
+      {
+        "block_index": 3,
+        "category": "selection",
+        "details": {
+          "after_fragmented_gap": false,
+          "block_index": 3,
+          "oracle_ids": [
+            "interceptor_0"
+          ],
+          "oracle_match": true,
+          "selected": "interceptor_0"
+        },
+        "event_id": "narrative_event_0004_selection_selection_block",
+        "event_type": "selection_block",
+        "evidence_role": "derived_evaluation_artifact",
+        "interpretation_caveat": "Selection events mirror replay evidence and do not replace tactical authority surfaces.",
+        "label": "selected interceptor_0 in replay selection block 3",
+        "line_index": 9,
+        "raw_line": "",
+        "source_artifact": "divergence_trace",
+        "source_ref": {
+          "block_index": 3,
+          "line_index": 9
+        },
+        "time_label": "line 9",
+        "time_s": null
+      },
+      {
+        "block_index": 2,
+        "category": "selection",
+        "details": {
+          "after_fragmented_gap": true,
+          "block_index": 2,
+          "oracle_ids": [
+            "interceptor_2"
+          ],
+          "oracle_match": false,
+          "selected": "interceptor_0"
+        },
+        "event_id": "narrative_event_0005_selection_selection_block",
+        "event_type": "selection_block",
+        "evidence_role": "derived_evaluation_artifact",
+        "interpretation_caveat": "Selection events mirror replay evidence and do not replace tactical authority surfaces.",
+        "label": "selected interceptor_0 in replay selection block 2",
+        "line_index": 9,
+        "raw_line": "",
+        "source_artifact": "divergence_trace",
+        "source_ref": {
+          "block_index": 2,
+          "line_index": 9
+        },
+        "time_label": "line 9",
+        "time_s": null
+      },
+      {
+        "block_index": 2,
+        "category": "divergence",
+        "details": {
+          "after_fragmented_gap": true,
+          "block_index": 2,
+          "oracle_ids": [
+            "interceptor_2"
+          ],
+          "selected": "interceptor_0"
+        },
+        "event_id": "narrative_event_0006_divergence_selection_oracle_mismatch",
+        "event_type": "selection_oracle_mismatch",
+        "evidence_role": "derived_evaluation_artifact",
+        "interpretation_caveat": "Divergence events localize replay-side disagreement and are non-causal unless separately governed.",
+        "label": "selection/oracle mismatch localized at block 2",
+        "line_index": 9,
+        "raw_line": "",
+        "source_artifact": "divergence_trace",
+        "source_ref": {
+          "block_index": 2,
+          "line_index": 9
+        },
+        "time_label": "line 9",
+        "time_s": null
+      },
+      {
+        "block_index": null,
+        "category": "divergence",
+        "details": {
+          "selection_oracle_divergence_class": "D5_inconclusive_visibility_limited"
+        },
+        "event_id": "narrative_event_0007_divergence_divergence_class",
+        "event_type": "divergence_class",
+        "evidence_role": "derived_evaluation_artifact",
+        "interpretation_caveat": "Divergence events localize replay-side disagreement and are non-causal unless separately governed.",
+        "label": "divergence class recorded: D5_inconclusive_visibility_limited",
+        "line_index": null,
+        "raw_line": "",
+        "source_artifact": "divergence_trace",
+        "source_ref": {
+          "block_index": null,
+          "line_index": null
+        },
+        "time_label": "time unavailable",
+        "time_s": null
+      },
+      {
+        "block_index": null,
+        "category": "outcome",
+        "details": {
+          "hit": false,
+          "layer_at_hit": "unknown",
+          "success": null
+        },
+        "event_id": "narrative_event_0008_outcome_outcome_hit",
+        "event_type": "outcome_hit",
+        "evidence_role": "derived_evaluation_artifact",
+        "interpretation_caveat": "Outcome events copy existing parser-visible summaries and do not expand parser contracts.",
+        "label": "hit outcome recorded by existing parser-visible summary",
+        "line_index": null,
+        "raw_line": "",
+        "source_artifact": "canonical_parser_visible_summary",
+        "source_ref": {
+          "block_index": null,
+          "line_index": null
+        },
+        "time_label": "time unavailable",
+        "time_s": null
+      },
+      {
+        "block_index": null,
+        "category": "outcome",
+        "details": {
+          "miss_distance_m": 7.812
+        },
+        "event_id": "narrative_event_0009_outcome_outcome_miss_distance",
+        "event_type": "outcome_miss_distance",
+        "evidence_role": "derived_evaluation_artifact",
+        "interpretation_caveat": "Outcome events copy existing parser-visible summaries and do not expand parser contracts.",
+        "label": "minimum miss distance recorded: 7.812 m",
+        "line_index": null,
+        "raw_line": "",
+        "source_artifact": "canonical_parser_visible_summary",
+        "source_ref": {
+          "block_index": null,
+          "line_index": null
+        },
+        "time_label": "time unavailable",
+        "time_s": null
+      },
+      {
+        "block_index": null,
+        "category": "provenance_warning",
+        "details": {
+          "warning": "divergence classification is visibility-limited"
+        },
+        "event_id": "narrative_event_0010_provenance_warning_provenance_warning",
+        "event_type": "provenance_warning",
+        "evidence_role": "derived_evaluation_artifact",
+        "interpretation_caveat": "Warnings are interpretation prompts, not approval, severity, or readiness status.",
+        "label": "provenance warning: divergence classification is visibility-limited",
+        "line_index": null,
+        "raw_line": "",
+        "source_artifact": "replay_narrative_builder",
+        "source_ref": {
+          "block_index": null,
+          "line_index": null
+        },
+        "time_label": "time unavailable",
+        "time_s": null
+      }
+    ],
+    "windows": [
+      {
+        "end_event_id": null,
+        "end_line_index": null,
+        "interpretation_caveat": "Open fragmented-gap windows indicate missing end evidence, not severity or readiness status.",
+        "start_event_id": "narrative_event_0003_ambiguity_realism_fragmented_gap_start",
+        "start_line_index": 7,
+        "window_type": "ambiguity_fragmented_gap_open"
+      },
+      {
+        "end_event_id": "narrative_event_0006_divergence_selection_oracle_mismatch",
+        "end_line_index": 9,
+        "interpretation_caveat": "Divergence windows localize replay-side disagreement and are not causal explanations.",
+        "start_event_id": "narrative_event_0006_divergence_selection_oracle_mismatch",
+        "start_line_index": 9,
+        "window_type": "divergence_mismatch_window"
+      }
+    ]
+  },
+  "overlays": [
+    {
+      "active_t_range": [
+        0,
+        30
+      ],
+      "caveat": "Threat A ingress.",
+      "geometry": {
+        "type": "polygon",
+        "vertices_enu_m": [
+          [
+            -1900,
+            60,
+            0
+          ],
+          [
+            -1100,
+            40,
+            0
+          ],
+          [
+            -1080,
+            200,
+            0
+          ],
+          [
+            -1880,
+            220,
+            0
+          ]
+        ]
+      },
+      "kind": "ingress_corridor",
+      "overlay_id": "ingress_a"
+    },
+    {
+      "active_t_range": [
+        6,
+        32
+      ],
+      "caveat": "Threat B ingress.",
+      "geometry": {
+        "type": "polygon",
+        "vertices_enu_m": [
+          [
+            -1850,
+            -220,
+            0
+          ],
+          [
+            -1050,
+            -200,
+            0
+          ],
+          [
+            -1030,
+            -40,
+            0
+          ],
+          [
+            -1830,
+            -20,
+            0
+          ]
+        ]
+      },
+      "kind": "ingress_corridor",
+      "overlay_id": "ingress_b"
+    },
+    {
+      "active_t_range": [
+        14,
+        28
+      ],
+      "caveat": "Trajectory overlap pocket.",
+      "geometry": {
+        "type": "polygon",
+        "vertices_enu_m": [
+          [
+            -1200,
+            -80,
+            0
+          ],
+          [
+            -900,
+            -90,
+            0
+          ],
+          [
+            -880,
+            120,
+            0
+          ],
+          [
+            -1180,
+            130,
+            0
+          ]
+        ]
+      },
+      "kind": "degraded_visibility",
+      "overlay_id": "overlap_ambiguity"
+    }
+  ],
+  "panels": {
+    "telemetry_series": [
+      {
+        "dist_m": 42.0,
+        "interceptor_id": "interceptor_0",
+        "source": "log_evidence",
+        "t": 9,
+        "t_go_s": 7.5,
+        "vel_m_s": 16.0
+      },
+      {
+        "dist_m": 48.0,
+        "interceptor_id": "interceptor_1",
+        "source": "log_evidence",
+        "t": 11,
+        "t_go_s": 8.2,
+        "vel_m_s": 15.5
+      },
+      {
+        "dist_m": 28.0,
+        "interceptor_id": "interceptor_0",
+        "source": "log_evidence",
+        "t": 15,
+        "t_go_s": 4.5,
+        "vel_m_s": 17.0
+      },
+      {
+        "dist_m": 32.0,
+        "interceptor_id": "interceptor_1",
+        "source": "log_evidence",
+        "t": 16,
+        "t_go_s": 5.1,
+        "vel_m_s": 16.5
+      }
+    ],
+    "threat_assessment": [
+      {
+        "caveat": "Replay-local taxonomy label only \u2014 not threat score or WEZ validity.",
+        "label": "D5_inconclusive_visibility_limited",
+        "t": 14
+      }
+    ]
+  },
+  "presentation": {
+    "chapters": [
+      {
+        "chapter_id": "ingress",
+        "focus_event_ids": [
+          "narrative_event_0001_detection_candidate_spawn"
+        ],
+        "narrative_emphasis": "topology",
+        "spatial_declutter": "top_k",
+        "summary": "Review ingress geometry and initial threat track appearance in this replay variant \u2014 explanatory orientation only.",
+        "t_end": 5,
+        "t_start": 2,
+        "title": "Ingress",
+        "topology_highlight": "assignment"
+      },
+      {
+        "chapter_id": "los_degradation",
+        "los_scope": "selected_track",
+        "narrative_emphasis": "los",
+        "spatial_declutter": "top_k",
+        "summary": "LOS instability concentrates near terrain masking in this replay \u2014 review degraded segments as explanatory evidence only.",
+        "t_end": 11,
+        "t_start": 5,
+        "title": "LOS degradation",
+        "topology_highlight": "assignment"
+      },
+      {
+        "chapter_id": "ambiguity",
+        "narrative_emphasis": "ambiguity",
+        "spatial_declutter": "threshold",
+        "summary": "Ambiguity windows cluster in overlapping ingress phases \u2014 not evidence of validated operational performance.",
+        "t_end": 13,
+        "t_start": 7,
+        "title": "Ambiguity concentration"
+      },
+      {
+        "chapter_id": "assignment_instability",
+        "focus_event_ids": [
+          "narrative_event_0006_divergence_selection_oracle_mismatch",
+          "narrative_event_0007_divergence_divergence_class",
+          "narrative_event_0002_selection_selection_block"
+        ],
+        "narrative_emphasis": "assignment",
+        "summary": "Selection and divergence events appear in replay-local sequence \u2014 localized mismatch language only; not causal proof.",
+        "t_end": 14,
+        "t_start": 8,
+        "title": "Assignment instability"
+      },
+      {
+        "chapter_id": "replay_outcome",
+        "focus_event_ids": [
+          "narrative_event_0008_outcome_outcome_hit",
+          "narrative_event_0009_outcome_outcome_miss_distance"
+        ],
+        "narrative_emphasis": "pacing",
+        "summary": "Review replay outcome markers and final track states \u2014 derived summary only; not deployment readiness.",
+        "t_end": 14,
+        "t_start": 8,
+        "title": "Replay outcome summary"
+      }
+    ],
+    "walkthrough_id": "saturation_ingress_demo_walkthrough"
+  },
+  "scenario": {
+    "ambiguity_profile": {
+      "focus_tags": [
+        "assignment_ambiguity",
+        "multi_threat"
+      ],
+      "level": "saturation"
+    },
+    "catalog_pack_id": "saturation_ingress",
+    "ingress_archetype": "open",
+    "launch_geometry": {
+      "noise_seed": 101.0,
+      "target_start_x_m": -1800.0,
+      "target_start_y_m": 80.0,
+      "target_start_z_m": 120.0
+    },
+    "narrative_focus": [
+      "assignment_ambiguity",
+      "prioritization_pressure"
+    ],
+    "overlay_descriptors": [
+      {
+        "count": 1,
+        "kind": "degraded_visibility"
+      },
+      {
+        "count": 2,
+        "kind": "ingress_corridor"
+      }
+    ],
+    "provenance": {
+      "fictional_disclaimer": "Fictional replay fixture.",
+      "fixture_source": "fixtures/scenarios/saturation_ingress"
+    },
+    "replay_duration_class": "medium",
+    "replay_tags": [
+      "multi_threat",
+      "assignment_ambiguity",
+      "compressed_intercept_window"
+    ],
+    "scenario_id": "saturation_ingress_demo",
+    "scenario_pack_id": "saturation_ingress_demo",
+    "terrain_profile": "flat",
+    "title": "Saturation ingress multi-threat replay",
+    "topology_tags": [
+      "saturation_ingress",
+      "multi_threat",
+      "assignment_ambiguity"
+    ]
+  },
+  "source_artifacts": {
+    "embedded": true,
+    "narrative_schema_version": "replay_narrative_v1",
+    "observability_artifact_type": "single_run_replay_observability_report",
+    "scenario_pack": "fixtures/scenarios/saturation_ingress",
+    "scenario_pack_metadata": {
+      "governance": {
+        "anti_claims": [
+          "not deployed geography",
+          "not operational effectiveness",
+          "not tactical authority"
+        ],
+        "constraints": [
+          "replay-safe",
+          "explanatory-only",
+          "non-authoritative",
+          "parser-safe"
+        ],
+        "notice": "Fictional scenario topology for replay visualization only."
+      },
+      "provenance": {
+        "fictional_disclaimer": "Fictional replay fixture.",
+        "fixture_source": "fixtures/scenarios/saturation_ingress"
+      }
+    },
+    "visualization_schema_version": "replay_static_visualization_v1"
+  },
+  "tracks": [
+    {
+      "interpretation_caveat": "Log-evidenced samples only; not continuous path truth.",
+      "role": "threat",
+      "samples": [
+        {
+          "source": "log_evidence",
+          "t": 2,
+          "x_m": -1800.0,
+          "y_m": 80.0,
+          "z_m": 110.0
+        },
+        {
+          "source": "log_evidence",
+          "t": 4,
+          "x_m": -1700.0,
+          "y_m": 85.0,
+          "z_m": 108.0
+        },
+        {
+          "source": "log_evidence",
+          "t": 10,
+          "x_m": -1600.0,
+          "y_m": 82.0,
+          "z_m": 105.0
+        },
+        {
+          "source": "log_evidence",
+          "t": 13,
+          "x_m": -1500.0,
+          "y_m": 90.0,
+          "z_m": 100.0
+        }
+      ],
+      "style": {
+        "authoritative": false,
+        "polyline": "dashed"
+      },
+      "track_id": "threat_uav_0"
+    },
+    {
+      "interpretation_caveat": "Log-evidenced samples only; not continuous path truth.",
+      "role": "threat",
+      "samples": [
+        {
+          "source": "log_evidence",
+          "t": 3,
+          "x_m": -1750.0,
+          "y_m": -120.0,
+          "z_m": 105.0
+        },
+        {
+          "source": "log_evidence",
+          "t": 5,
+          "x_m": -1650.0,
+          "y_m": -115.0,
+          "z_m": 102.0
+        },
+        {
+          "source": "log_evidence",
+          "t": 12,
+          "x_m": -1580.0,
+          "y_m": -110.0,
+          "z_m": 100.0
+        },
+        {
+          "source": "log_evidence",
+          "t": 14,
+          "x_m": -1480.0,
+          "y_m": -105.0,
+          "z_m": 98.0
+        }
+      ],
+      "style": {
+        "authoritative": false,
+        "polyline": "dashed"
+      },
+      "track_id": "threat_uav_1"
+    },
+    {
+      "interpretation_caveat": "Log-evidenced samples only; not continuous path truth.",
+      "role": "interceptor",
+      "samples": [
+        {
+          "source": "log_evidence",
+          "t": 10,
+          "x_m": -50.0,
+          "y_m": 5.0,
+          "z_m": 40.0
+        }
+      ],
+      "style": {
+        "authoritative": false,
+        "polyline": "dashed"
+      },
+      "track_id": "interceptor_0"
+    },
+    {
+      "interpretation_caveat": "Log-evidenced samples only; not continuous path truth.",
+      "role": "interceptor",
+      "samples": [
+        {
+          "source": "log_evidence",
+          "t": 12,
+          "x_m": 90.0,
+          "y_m": -15.0,
+          "z_m": 42.0
+        }
+      ],
+      "style": {
+        "authoritative": false,
+        "polyline": "dashed"
+      },
+      "track_id": "interceptor_1"
+    }
+  ],
+  "views": {
+    "eoir_mock": {
+      "fov_deg": 45,
+      "thumbnail_frames": []
+    },
+    "onboard_mock": {
+      "camera_id": "int_cam_0",
+      "caveat": "Recorded replay frame mock \u2014 not live video.",
+      "frames": []
+    },
+    "radar_mock": {
+      "linked_track_ids": [
+        "threat_uav_0",
+        "threat_uav_1",
+        "interceptor_0",
+        "interceptor_1"
+      ],
+      "sweep_sector_deg": 120
+    }
+  },
+  "zones": [
+    {
+      "caveat": "Policy overlay only.",
+      "display_label": "Protected core",
+      "geometry": {
+        "center_enu_m": [
+          100.0,
+          50.0,
+          0.0
+        ],
+        "radius_m": 450.0,
+        "type": "circle"
+      },
+      "kind": "protected",
+      "zone_id": "protected_core"
+    }
+  ]
+}

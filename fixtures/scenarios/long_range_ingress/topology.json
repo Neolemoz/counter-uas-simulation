@@ -1,0 +1,48 @@
+{
+  "entities_static": [
+    {
+      "authoritative": false,
+      "entity_id": "radar_01",
+      "kind": "radar",
+      "label": "Radar",
+      "position_enu_m": [
+        0.0,
+        0.0,
+        14.0
+      ]
+    },
+    {
+      "authoritative": false,
+      "entity_id": "int_base_01",
+      "kind": "interceptor_base",
+      "label": "INT-01",
+      "position_enu_m": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    }
+  ],
+  "georef_anchor": {
+    "h_m": 0.0,
+    "lat_deg": 35.35,
+    "lon_deg": -116.35
+  },
+  "zones": [
+    {
+      "caveat": "Long-form replay policy overlay.",
+      "display_label": "Wide protected area",
+      "geometry": {
+        "center_enu_m": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "radius_m": 700.0,
+        "type": "circle"
+      },
+      "kind": "protected",
+      "zone_id": "protected_wide"
+    }
+  ]
+}

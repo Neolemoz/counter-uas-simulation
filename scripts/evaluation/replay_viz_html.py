@@ -95,6 +95,44 @@ def _render_at_a_glance(comprehension: dict[str, Any]) -> str:
     )
 
 
+def _render_summary_cards(comprehension: dict[str, Any]) -> str:
+    blocks: list[str] = []
+    selection = comprehension.get("selection_summary")
+    if isinstance(selection, dict) and selection.get("summary_line"):
+        blocks.append(
+            f'<div class="summary-card" id="selection-summary">'
+            f"<h3>Selection summary</h3>"
+            f"<p>{_cell(selection.get('summary_line'))}</p>"
+            f"<p class=\"section-note\">Mismatch count: {_cell(selection.get('mismatch_count'))}; "
+            f"first block: {_cell(selection.get('first_mismatch_block', '—'))}.</p>"
+            f"</div>"
+        )
+    divergence = comprehension.get("divergence_context")
+    if isinstance(divergence, dict) and divergence.get("human_label"):
+        note = divergence.get("note") or ""
+        note_html = f"<p class=\"section-note\">{_cell(note)}</p>" if note else ""
+        blocks.append(
+            f'<div class="summary-card" id="divergence-summary">'
+            f"<h3>Divergence summary</h3>"
+            f"<p><strong>{_cell(divergence.get('human_label'))}</strong></p>"
+            f"<p class=\"section-note\">Taxonomy ID: {_cell(divergence.get('taxonomy_id'))}</p>"
+            f"{note_html}"
+            f"</div>"
+        )
+    if not blocks:
+        return ""
+    return f'<section id="summaries"><h2>Summary cards</h2>{"".join(blocks)}</section>'
+
+
+def _row_class(row: dict[str, Any]) -> str:
+    classes: list[str] = []
+    if row.get("salient") == "true":
+        classes.append("row-salient")
+    if row.get("warning") == "true":
+        classes.append("row-warning")
+    return f' class="{" ".join(classes)}"' if classes else ""
+
+
 def _render_incidents(comprehension: dict[str, Any]) -> str:
     groups = comprehension.get("incident_groups") or []
     if not groups:
@@ -105,7 +143,8 @@ def _render_incidents(comprehension: dict[str, Any]) -> str:
         chip = CATEGORY_DISPLAY_LABELS.get(category, category)
         rows = group.get("rows") or []
         row_html = "".join(
-            "<tr>"
+            "<tr"
+            f"{_row_class(r)}>"
             f"<td>{_cell(r.get('time_label'))}</td>"
             f"<td>{_cell(r.get('label'))}</td>"
             f"<td>{_cell(r.get('line_index'))}</td>"
@@ -142,11 +181,16 @@ def _render_key_windows(comprehension: dict[str, Any]) -> str:
 
 
 def _render_timeline_table(comprehension: dict[str, Any]) -> str:
-    rows_data = comprehension.get("timeline_rows") or []
+    rows_data = comprehension.get("timeline_rows_salient") or comprehension.get("timeline_rows") or []
     if not rows_data:
         return ""
+    overflow = comprehension.get("timeline_overflow")
+    overflow_note = ""
+    if isinstance(overflow, dict) and overflow.get("note"):
+        overflow_note = f'<p class="section-note">{_cell(overflow.get("note"))}</p>'
     rows = "".join(
-        "<tr>"
+        "<tr"
+        f"{_row_class(r)}>"
         f"<td>{_cell(r.get('time_label'))}</td>"
         f"<td>{_cell(r.get('category_label'))}</td>"
         f"<td>{_cell(r.get('label'))}</td>"
@@ -155,8 +199,9 @@ def _render_timeline_table(comprehension: dict[str, Any]) -> str:
         for r in rows_data
     )
     return (
-        '<section id="timeline-table"><h2>Event timeline (table)</h2>'
-        '<p class="section-note">Chronological narrative events for text-first review; not causal proof.</p>'
+        '<section id="timeline-table"><h2>Event timeline (salient)</h2>'
+        '<p class="section-note">Prioritized narrative events for text-first review; not causal proof.</p>'
+        f"{overflow_note}"
         "<table><thead><tr><th>When</th><th>Category</th><th>Event</th><th>Line</th></tr></thead>"
         f"<tbody>{rows}</tbody></table></section>"
     )
@@ -209,7 +254,9 @@ def render_composite_html(
         [
             _nav_link("read-first", "Read first"),
             _nav_link("at-a-glance", "At a glance"),
+            _nav_link("summaries", "Summaries"),
             _nav_link("incidents", "Incidents"),
+            _nav_link("windows", "Windows"),
             _nav_link("figures", "Figures"),
             _nav_link("timeline-table", "Timeline"),
             _nav_link("lineage", "Lineage"),
@@ -219,6 +266,7 @@ def render_composite_html(
 
     scan_section = _render_scan_guide(comprehension) if comprehension else ""
     glance_section = _render_at_a_glance(comprehension) if comprehension else ""
+    summaries_section = _render_summary_cards(comprehension) if comprehension else ""
     incidents_section = _render_incidents(comprehension) if comprehension else ""
     windows_section = _render_key_windows(comprehension) if comprehension else ""
     timeline_section = _render_timeline_table(comprehension) if comprehension else ""
@@ -242,13 +290,15 @@ def render_composite_html(
     table {{ border-collapse: collapse; width: 100%; font-size: 0.92rem; }}
     th, td {{ border: 1px solid #ddd; padding: 0.4rem 0.6rem; text-align: left; vertical-align: top; }}
     th {{ background: #f6f8fa; }}
+    tr.row-salient td {{ background: #f0f6ff; }}
+    tr.row-warning td {{ background: #fff8f0; }}
     img {{ max-width: 100%; height: auto; border: 1px solid #ddd; margin: 0.5rem 0; }}
     .figure-id {{ color: #666; font-weight: normal; font-size: 0.85rem; }}
     .caveat, .look-for, .section-note {{ color: #444; font-size: 0.92rem; }}
     .headline {{ font-size: 1.05rem; margin: 0.5rem 0 1rem; }}
     ul.scan-guide {{ padding-left: 1.25rem; }}
     .glance-grid {{ display: grid; grid-template-columns: repeat(auto-fill, minmax(10rem, 1fr)); gap: 0.75rem; }}
-    .glance-card {{ border: 1px solid #e0e0e0; border-radius: 4px; padding: 0.6rem 0.75rem; background: #fafbfc; }}
+    .glance-card, .summary-card {{ border: 1px solid #e0e0e0; border-radius: 4px; padding: 0.6rem 0.75rem; background: #fafbfc; margin-bottom: 0.75rem; }}
     .glance-label {{ display: block; font-size: 0.8rem; color: #666; text-transform: uppercase; letter-spacing: 0.02em; }}
     .glance-value {{ display: block; font-weight: 600; margin-top: 0.2rem; }}
     .incident-group {{ margin-bottom: 1.25rem; }}
@@ -263,6 +313,7 @@ def render_composite_html(
   <nav class="report-nav" aria-label="Report sections">{nav}</nav>
   {scan_section}
   {glance_section}
+  {summaries_section}
   {incidents_section}
   {windows_section}
   <section id="figures"><h2>Figures</h2>

@@ -1,0 +1,59 @@
+{
+  "entities_static": [
+    {
+      "authoritative": false,
+      "entity_id": "radar_01",
+      "kind": "radar",
+      "label": "Radar urban fixture",
+      "position_enu_m": [
+        0.0,
+        0.0,
+        16.0
+      ]
+    },
+    {
+      "authoritative": false,
+      "entity_id": "eoir_01",
+      "kind": "eoir",
+      "label": "EO/IR fixture",
+      "position_enu_m": [
+        120.0,
+        80.0,
+        20.0
+      ]
+    },
+    {
+      "authoritative": false,
+      "entity_id": "int_base_01",
+      "kind": "interceptor_base",
+      "label": "INT-01",
+      "position_enu_m": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    }
+  ],
+  "georef_anchor": {
+    "h_m": 0.0,
+    "lat_deg": 35.25,
+    "lon_deg": -116.25
+  },
+  "zones": [
+    {
+      "caveat": "Explanatory only.",
+      "display_label": "Cluttered approach risk",
+      "geometry": {
+        "center_enu_m": [
+          -200.0,
+          80.0,
+          0.0
+        ],
+        "radius_m": 350.0,
+        "type": "circle"
+      },
+      "kind": "threat_risk",
+      "zone_id": "threat_risk_clutter"
+    }
+  ]
+}

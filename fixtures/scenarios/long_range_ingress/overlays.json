@@ -1,0 +1,84 @@
+{
+  "overlays": [
+    {
+      "active_t_range": [
+        0,
+        65
+      ],
+      "caveat": "Extended ingress path.",
+      "geometry": {
+        "type": "polygon",
+        "vertices_enu_m": [
+          [
+            -2400,
+            -150,
+            0
+          ],
+          [
+            -400,
+            -180,
+            0
+          ],
+          [
+            -380,
+            220,
+            0
+          ],
+          [
+            -2380,
+            250,
+            0
+          ]
+        ]
+      },
+      "kind": "ingress_corridor",
+      "overlay_id": "long_ingress_corridor"
+    },
+    {
+      "active_t_range": [
+        30,
+        50
+      ],
+      "caveat": "Terrain-following ridge mask.",
+      "geometry": {
+        "ridge_outline_enu_m": [
+          [
+            -1500,
+            40,
+            38
+          ],
+          [
+            -1250,
+            120,
+            48
+          ]
+        ],
+        "type": "polygon",
+        "vertices_enu_m": [
+          [
+            -1600,
+            -100,
+            0
+          ],
+          [
+            -1200,
+            -80,
+            0
+          ],
+          [
+            -1180,
+            200,
+            0
+          ],
+          [
+            -1580,
+            220,
+            0
+          ]
+        ]
+      },
+      "kind": "ridge_mask",
+      "overlay_id": "ridge_mask_lr"
+    }
+  ]
+}

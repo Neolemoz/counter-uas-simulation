@@ -1,0 +1,265 @@
+{
+  "ambiguity_concentration_comparison": {
+    "shared_hotspot_cells": [
+      173,
+      207,
+      212,
+      213
+    ],
+    "top_cells_by_sweep": {
+      "delayed_detection_sweep": [
+        {
+          "cell_index": 216,
+          "count": 6
+        },
+        {
+          "cell_index": 213,
+          "count": 3
+        },
+        {
+          "cell_index": 215,
+          "count": 3
+        }
+      ],
+      "ridge_overlap_sweep": [
+        {
+          "cell_index": 207,
+          "count": 3
+        },
+        {
+          "cell_index": 213,
+          "count": 3
+        },
+        {
+          "cell_index": 212,
+          "count": 2
+        },
+        {
+          "cell_index": 214,
+          "count": 2
+        },
+        {
+          "cell_index": 173,
+          "count": 1
+        }
+      ],
+      "saturation_assignment_sweep": [
+        {
+          "cell_index": 208,
+          "count": 4
+        },
+        {
+          "cell_index": 212,
+          "count": 4
+        },
+        {
+          "cell_index": 173,
+          "count": 2
+        },
+        {
+          "cell_index": 209,
+          "count": 2
+        }
+      ],
+      "valley_sensor_sweep": [
+        {
+          "cell_index": 207,
+          "count": 15
+        }
+      ]
+    }
+  },
+  "artifact_type": "cross_sweep_synthesis_v1",
+  "cognition_rollup": {
+    "artifact_type": "replay_cognition_rollup_v1",
+    "bullets": [
+      {
+        "bullet_id": "los_instability_concentration",
+        "caveat": "derived from replay pattern tags and spatial LOS layers only",
+        "observation": "LOS-fragmented replay concentration appears most strongly in `delayed_detection_sweep` and related ridge-transition fixture variants",
+        "related_sweep_ids": [
+          "delayed_detection_sweep",
+          "ridge_overlap_sweep"
+        ],
+        "topology_group": "ridge_transition"
+      },
+      {
+        "bullet_id": "ambiguity_hotspot_overlap",
+        "caveat": "spatial grid overlap is explanatory concentration, not sensor physics proof",
+        "observation": "Ambiguity-heavy sweeps share 4 spatial hotspot cell(s) in overlapping ingress windows across fixture replays",
+        "related_sweep_ids": [
+          "valley_sensor_sweep",
+          "ridge_overlap_sweep",
+          "delayed_detection_sweep"
+        ],
+        "topology_group": "ingress_overlap"
+      },
+      {
+        "bullet_id": "topology_sensitive_divergence_clusters",
+        "caveat": "divergence tags reflect replay taxonomy on fixture members only",
+        "observation": "Topology-sensitive replay instability clusters in `valley_sensor_sweep`, `ridge_overlap_sweep`, `saturation_assignment_sweep` cohorts",
+        "related_sweep_ids": [
+          "valley_sensor_sweep",
+          "ridge_overlap_sweep",
+          "saturation_assignment_sweep"
+        ],
+        "topology_group": "delayed_detection_cohort"
+      },
+      {
+        "bullet_id": "shared_topology_families",
+        "caveat": "shared keys indicate fixture lineage overlap, not operational equivalence",
+        "observation": "Multiple sweep families reference shared topology keys (`corridor_defense`, `valley_ingress`) in linkage exploration",
+        "related_sweep_ids": [
+          "valley_sensor_sweep",
+          "ridge_overlap_sweep",
+          "delayed_detection_sweep",
+          "saturation_assignment_sweep"
+        ],
+        "topology_group": "cross_topology"
+      }
+    ],
+    "groupings": [
+      "cross_topology",
+      "delayed_detection_cohort",
+      "ingress_overlap",
+      "ridge_transition"
+    ],
+    "schema_version": "replay_cognition_rollup_v1"
+  },
+  "divergence_rollup": {
+    "member_divergence_count": 9,
+    "sweeps_with_divergence": [
+      "valley_sensor_sweep",
+      "ridge_overlap_sweep",
+      "saturation_assignment_sweep"
+    ]
+  },
+  "governance": {
+    "anti_claims": [
+      "Synthesis aggregates are not parser authority.",
+      "Cross-sweep comparisons are replay-local concentration summaries only.",
+      "No deployment confidence or tactical superiority implied."
+    ],
+    "notice": "Cross-sweep replay synthesis for mentor review and research documentation only \u2014 explanatory replay rollups, not operational planning or validated doctrine."
+  },
+  "interpretation_caveats": [
+    "Cross-sweep synthesis is replay-local and explanatory only.",
+    "Shared spatial cells indicate concentration overlap in reviewer exploration \u2014 not causal proof.",
+    "Pattern frequency counts reflect taxonomy tags on fixture members, not operational doctrine."
+  ],
+  "los_instability_rollup": {
+    "by_sweep": {
+      "delayed_detection_sweep": {
+        "max_los_count": 8,
+        "member_los_totals": [
+          5,
+          5,
+          5,
+          5
+        ]
+      },
+      "ridge_overlap_sweep": {
+        "max_los_count": 7,
+        "member_los_totals": [
+          11,
+          9,
+          4,
+          12
+        ]
+      },
+      "saturation_assignment_sweep": {
+        "max_los_count": 6,
+        "member_los_totals": [
+          12,
+          12,
+          12,
+          12
+        ]
+      },
+      "valley_sensor_sweep": {
+        "max_los_count": 5,
+        "member_los_totals": [
+          4,
+          4,
+          8,
+          4,
+          4
+        ]
+      }
+    },
+    "ranked_sweep_ids": [
+      "delayed_detection_sweep",
+      "ridge_overlap_sweep",
+      "saturation_assignment_sweep",
+      "valley_sensor_sweep"
+    ]
+  },
+  "pattern_frequency_rollup": {
+    "by_pattern": {
+      "los_fragmented_replay": {
+        "count": 17,
+        "member_count": 17,
+        "sweep_ids": [
+          "delayed_detection_sweep",
+          "ridge_overlap_sweep",
+          "saturation_assignment_sweep",
+          "valley_sensor_sweep"
+        ]
+      }
+    },
+    "dominant_across_corpus": [
+      "los_fragmented_replay"
+    ]
+  },
+  "schema_version": "cross_sweep_synthesis_v1",
+  "sweep_ids": [
+    "valley_sensor_sweep",
+    "ridge_overlap_sweep",
+    "delayed_detection_sweep",
+    "saturation_assignment_sweep"
+  ],
+  "topology_sensitivity_rollup": {
+    "by_sweep": {
+      "delayed_detection_sweep": {
+        "max_count": 0,
+        "median_count": 0.0,
+        "topology_keys": [
+          "delayed_detection"
+        ]
+      },
+      "ridge_overlap_sweep": {
+        "max_count": 1,
+        "median_count": 1.0,
+        "topology_keys": [
+          "ridge_defense",
+          "multi_ridge",
+          "valley_ingress",
+          "corridor_defense"
+        ]
+      },
+      "saturation_assignment_sweep": {
+        "max_count": 0,
+        "median_count": 0.0,
+        "topology_keys": [
+          "saturation_ingress",
+          "corridor_defense"
+        ]
+      },
+      "valley_sensor_sweep": {
+        "max_count": 0,
+        "median_count": 0.0,
+        "topology_keys": [
+          "valley_ingress",
+          "valley_ingress_radar_shifted_north",
+          "valley_ingress_extra_valley_sensor",
+          "valley_ingress_reduced_overlap_layout",
+          "valley_ingress_delayed_interceptor_base"
+        ]
+      }
+    },
+    "shared_topology_keys": [
+      "corridor_defense",
+      "valley_ingress"
+    ]
+  }
+}

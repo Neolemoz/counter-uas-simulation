@@ -12,11 +12,12 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt  # noqa: E402
 
 from replay_viz_comprehension import CATEGORY_DISPLAY_LABELS  # noqa: E402
+from replay_viz_comprehension import parse_log_outcome_metrics  # noqa: E402
 from replay_viz_comprehension import salient_events_for_annotation  # noqa: E402
 
-matplotlib.rcParams["svg.hashsalt"] = "replay_static_viz_comprehension_r1_v1"
+matplotlib.rcParams["svg.hashsalt"] = "replay_static_viz_ux_refinement_r2_v1"
 
-RENDER_PROFILE = "static_viz_comprehension_r1_v1"
+RENDER_PROFILE = "static_viz_ux_refinement_r2_v1"
 FIG_DPI = 120
 FIG_WIDTH = 10.0
 FIG_HEIGHT_TIMELINE = 4.0
@@ -238,9 +239,11 @@ def _draw_divergence_on_axes(
 ) -> list[str]:
     events = _sorted_events(narrative)
     windows = list(narrative.get("windows") or [])
-    mismatch_events = [
-        e for e in events if e.get("event_type") in ("selection_oracle_mismatch", "selection_block")
-    ]
+    mismatch_events = [e for e in events if e.get("event_type") == "selection_oracle_mismatch"]
+    selection_blocks = [e for e in events if e.get("event_type") == "selection_block"]
+    marker_events: list[dict[str, Any]] = list(mismatch_events)
+    if not mismatch_events and selection_blocks:
+        marker_events = [selection_blocks[0]]
     source_event_ids: list[str] = []
     legend_seen: set[str] = set()
 
@@ -261,7 +264,7 @@ def _draw_divergence_on_axes(
 
     mismatch_labeled = False
     selection_labeled = False
-    for event in mismatch_events:
+    for event in marker_events:
         x = _event_x(event, 0)
         is_mismatch = event.get("event_type") == "selection_oracle_mismatch"
         color = CATEGORY_COLORS["divergence"] if is_mismatch else CATEGORY_COLORS["selection"]
@@ -270,7 +273,7 @@ def _draw_divergence_on_axes(
             label = "Oracle mismatch marker"
             mismatch_labeled = True
         elif not is_mismatch and not selection_labeled:
-            label = "Selection block marker"
+            label = "Selection block marker (representative)"
             selection_labeled = True
         ax.axvline(x, color=color, linestyle="--" if is_mismatch else "-", linewidth=1.2, alpha=0.85, label=label)
         event_id = event.get("event_id")
@@ -454,15 +457,38 @@ def render_engagement_series(log_path: Path, out_path: Path) -> dict[str, Any] |
     if series is None:
         return None
 
+    log_metrics = parse_log_outcome_metrics(log_path)
+    hit_threshold_m = log_metrics.get("hit_threshold_m")
+    min_miss_m = log_metrics.get("min_miss_m")
+
     plt.close("all")
     fig = plt.figure(num=1, clear=True, figsize=(FIG_WIDTH, FIG_HEIGHT_SERIES * 1.4))
     ax_dist = fig.add_subplot(2, 1, 1)
     ax_tgo = fig.add_subplot(2, 1, 2)
     x_dist = list(range(len(series["dist_m"])))
     ax_dist.plot(x_dist, series["dist_m"], color=CATEGORY_COLORS["outcome"], linewidth=1.5)
+    if hit_threshold_m is not None:
+        ax_dist.axhline(
+            hit_threshold_m,
+            color="#888888",
+            linestyle="--",
+            linewidth=1.0,
+            label=f"hit_threshold={hit_threshold_m:.3f} m (log-evidenced)",
+        )
+    if min_miss_m is not None:
+        ax_dist.annotate(
+            f"min_miss={min_miss_m:.3f} m",
+            xy=(max(x_dist) if x_dist else 0, min_miss_m),
+            xytext=(4, 4),
+            textcoords="offset points",
+            fontsize=7,
+            color="#444444",
+        )
     ax_dist.set_ylabel("dist (m)")
     ax_dist.set_title("Engagement distance from [METRICS] (log-evidenced samples only)")
     ax_dist.grid(True, alpha=0.25, linestyle="--")
+    if hit_threshold_m is not None:
+        ax_dist.legend(loc="upper right", fontsize=7, framealpha=0.9)
 
     if series["t_go_s"]:
         x_tgo = list(range(len(series["t_go_s"])))

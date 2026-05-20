@@ -23,17 +23,21 @@ See the command block in [replay_demo_review_workflow_r1.md](../replay_demo_revi
 
 ## Standard figure set
 
-Most demos use the Comprehension R1 composite output:
+Most demos use the UX Refinement R2 composite output (`static_viz_ux_refinement_r2_v1`; see [replay_ux_refinement_r2_freeze_audit.md](../replay_ux_refinement_r2_freeze_audit.md)):
 
 | Figure / section | Role |
 |------------------|------|
 | HTML banner + scan_guide | Framing |
-| at_a_glance | Outcome and taxonomy labels |
-| incident_groups | Log localization |
+| at_a_glance + summary cards | Outcome, near-miss margin, D-class, selection summary |
+| incident_groups | Log localization (selection blocks collapsed; mismatches elevated) |
 | comprehension_panel | Stacked overview |
 | timeline_band | Event/window bands |
 | divergence_overlay | Selection/oracle blocks |
 | lifecycle_strip | Churn/gap localization |
 | lineage appendix | Provenance |
 
-Optional when `log_path` is readable: `engagement_series.png`, `sparse_topdown.png`.
+| timeline (salient) | Prioritized events; overflow note for long logs |
+
+Optional when `log_path` is readable: `engagement_series.png` (threshold line when log-evidenced), `sparse_topdown.png`.
+
+Pass `--observability-json` to composite for richest selection mismatch counts in summary cards.

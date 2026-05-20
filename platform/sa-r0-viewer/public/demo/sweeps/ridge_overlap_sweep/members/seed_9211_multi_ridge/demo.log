@@ -1,0 +1,37 @@
+=== run_id: replay_multi_ridge_demo ===
+[interception_logic_node-1] [P_HEATMAP] pos=(-1400.000, 80.000, 90.000)
+[interception_logic_node-1] [P_HEATMAP] pos=(-1365.000, 88.000, 94.000)
+[interception_logic_node-1] [P_HEATMAP] pos=(-1330.000, 96.000, 98.000)
+[interception_logic_node-1] [P_HEATMAP] pos=(-1295.000, 104.000, 90.000)
+[interception_logic_node-1] [P_HEATMAP] pos=(-1260.000, 112.000, 94.000)
+[interception_logic_node-1] [P_HEATMAP] pos=(-1225.000, 80.000, 98.000)
+[interception_logic_node-1] [P_HEATMAP] pos=(-1190.000, 88.000, 90.000)
+[interception_logic_node-1] [P_HEATMAP] pos=(-1155.000, 96.000, 94.000)
+[tracking_node-1] Candidate detected: track_id=9
+[noisy_measurement_node-1] [REALISM_EVENT] fragmented_gap_start fragmentation_index=1 gap_ticks=4
+[interception_logic_node-1] [P_HEATMAP] pos=(-1120.000, 104.000, 98.000)
+[interception_logic_node-1] [P_HEATMAP] pos=(-1085.000, 112.000, 90.000)
+[interception_logic_node-1] [P_HEATMAP] pos=(-1050.000, 80.000, 94.000)
+[interception_logic_node-1] [P_HEATMAP] pos=(-1015.000, 88.000, 98.000)
+[interception_logic_node-1] [P_HEATMAP] pos=(-980.000, 96.000, 90.000)
+[interception_logic_node-1] [P_HEATMAP] pos=(-945.000, 104.000, 94.000)
+[interception_logic_node-1] [P_HEATMAP] pos=(-910.000, 112.000, 98.000)
+[interception_logic_node-1] [P_HEATMAP] pos=(-875.000, 80.000, 90.000)
+[noisy_measurement_node-1] [REALISM_EVENT] fragmented_gap_end fragmentation_index=1
+[noisy_measurement_node-1] [REALISM_EVENT] fragmented_gap_start fragmentation_index=2 gap_ticks=3
+[interception_logic_node-1] [P_HEATMAP] pos=(-840.000, 88.000, 94.000)
+[interception_logic_node-1] [P_HEATMAP] pos=(-805.000, 96.000, 98.000)
+[interception_logic_node-1] [P_HEATMAP] pos=(-770.000, 104.000, 90.000)
+[interception_logic_node-1] [P_HEATMAP] pos=(-735.000, 112.000, 94.000)
+[interception_logic_node-1] [P_HEATMAP] pos=(-700.000, 80.000, 98.000)
+[interception_logic_node-1] [P_HEATMAP] pos=(-665.000, 88.000, 90.000)
+[interception_logic_node-1] [P_HEATMAP] pos=(-630.000, 96.000, 94.000)
+[interception_logic_node-1] [P_HEATMAP] pos=(-595.000, 104.000, 98.000)
+[noisy_measurement_node-1] [REALISM_EVENT] fragmented_gap_end fragmentation_index=2
+[interception_logic_node-1] [P_HEATMAP] pos=(-560.000, 112.000, 90.000)
+[interception_logic_node-1] [P_HEATMAP] pos=(-525.000, 80.000, 94.000)
+[interception_logic_node-1] [P_HEATMAP] pos=(-490.000, 88.000, 98.000)
+[interception_logic_node-1] [P_HEATMAP] pos=(-455.000, 96.000, 90.000)
+[interception_logic_node-1] [P_HEATMAP] pos=(-420.000, 104.000, 94.000)
+[interception_logic_node-1] interceptor_pos=(-60.000, 8.000, 42.000) target_pos=(-450.000, 120.000, 85.000)
+[interception_logic_node-1] [METRICS] id=interceptor_0  | dist=22.000 m | t_go=5.0 s | vel=17.0 m/s | mode=predict

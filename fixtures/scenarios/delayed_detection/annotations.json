@@ -1,0 +1,40 @@
+{
+  "annotations": [
+    {
+      "annotation_id": "anno_late_radar",
+      "body": "First heatmap evidence appears late in replay \u2014 not sensor specification.",
+      "kind": "visibility_degraded",
+      "linked_event_ids": [
+        "narrative_event_0001_detection_candidate_spawn"
+      ],
+      "title": "Late radar acquisition"
+    },
+    {
+      "annotation_id": "anno_short_window",
+      "body": "Compressed intercept window after late detection \u2014 explanatory urgency only.",
+      "kind": "tti_explanation",
+      "linked_event_ids": [
+        "narrative_event_0002_selection_selection_block"
+      ],
+      "title": "Short decision window"
+    },
+    {
+      "annotation_id": "anno_rapid_tti",
+      "body": "TTI falls quickly in METRICS evidence \u2014 not operational effectiveness.",
+      "kind": "tti_explanation",
+      "linked_event_ids": [
+        "narrative_event_0002_selection_selection_block"
+      ],
+      "title": "Rapid TTI reduction"
+    },
+    {
+      "annotation_id": "anno_zone_escalation",
+      "body": "Threat enters tight protected overlay \u2014 policy visualization only.",
+      "kind": "los_blockage",
+      "linked_event_ids": [
+        "narrative_event_0001_detection_candidate_spawn"
+      ],
+      "title": "Protected-zone escalation"
+    }
+  ]
+}

@@ -75,13 +75,21 @@ Two frontiers are active. Do not merge them in a single wave.
 
 ### Platform frontier (replay analysis and reviewer UX)
 
-Post–Comprehension R1 platform work is **documentation and planning first**:
-
 - [Replay Demo & Review Workflow R1](docs/evaluation/replay_demo_review_workflow_r1.md) — mentor/demo replay review (frozen docs)
 - [Freeze Registry R1](docs/evaluation/freeze_registry_r1.md) — maintained freeze index
-- [Situational Awareness UI Planning R1](docs/evaluation/situational_awareness_ui_planning_r1.md) — plan-only; no live UI implementation authorized here
+- [Situational Awareness UI Planning R1](docs/evaluation/situational_awareness_ui_planning_r1.md) — docs frozen (PLAN-SA-R1); boundaries only
+- [SA-R0 Replay Platform](docs/evaluation/sa_r0_implementation_plan.md) — read-only replay viewer (`platform/sa-r0-viewer/`) + `replay_sa_bundle_v1` packager; see PLAT-SA-R0 in freeze registry
+- [SA B1 Geometry Replay](docs/evaluation/sa_b1_geometry_replay_plan.md) — LOS overlays, valley ingress fixtures; see PLAT-SA-B1 in freeze registry
+- [SA C1a Scenario Schema](docs/evaluation/scenario_schema_v1.md) — portable `fixtures/scenarios/` topology packs + `validate_scenario.py`; see PLAT-SA-C1a in freeze registry
+- [SA B2 Rich Replay Scenario Packs](docs/evaluation/sa_b2_rich_scenario_packs_plan.md) — eight topology packs + synthetic demo bundles; see PLAT-SA-B2 in freeze registry
+- [SA C1b Scenario Authoring Refinement](docs/evaluation/sa_c1b_scenario_authoring_refinement_plan.md) — metadata refinement, catalog picker, provenance, comparison foundations; see PLAT-SA-C1b in freeze registry
+- [SA D1 Comparative Replay](docs/evaluation/sa_d1_comparative_replay_plan.md) — side-by-side compare mode, topology/outcome diff, sensor experiment packs; see PLAT-SA-D1 in freeze registry
+- [SA D2 Monte Carlo Spatial Analytics](docs/evaluation/sa_d2_monte_carlo_spatial_analytics_plan.md) — MC sweep manifests, spatial analytics overlays, sweep catalog, replay variability cognition; see PLAT-SA-D2 in freeze registry
+- [SA D3 Replay Narrative Intelligence](docs/evaluation/sa_d3_replay_narrative_intelligence_plan.md) — narrative summaries, cohort workstation, N-slot filmstrip, pattern taxonomy, review exports; see PLAT-SA-D3 in freeze registry
+- [SA E1 Research Presentation](docs/evaluation/sa_e1_research_presentation_plan.md) — presentation mode, guided walkthroughs, storytelling layer, storyboard fixtures; see PLAT-SA-E1 in freeze registry
+- [SA E2 Replay Knowledge Synthesis](docs/evaluation/sa_e2_replay_knowledge_synthesis_plan.md) — cross-sweep synthesis, linkage index, publication packets, research bundles; see PLAT-SA-E2 in freeze registry
 
-Forbidden on the platform frontier: live dashboards, HITL/operator semantics, readiness scoring, parser/topic changes, runtime redesign.
+Forbidden on the platform frontier: live dashboards, HITL/operator semantics, readiness scoring, parser/topic changes, runtime redesign, rosbridge/WebSocket in eval tooling, extending legacy `web/` rosbridge pages.
 
 ### Runtime research frontier (realism / lifecycle)
 

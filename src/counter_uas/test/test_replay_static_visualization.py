@@ -95,7 +95,7 @@ def test_visualization_manifest_contract() -> None:
 
     assert manifest['artifact_type'] == 'replay_static_visualization_manifest'
     assert manifest['visualization_schema_version'] == 'replay_static_visualization_v1'
-    assert manifest['render_profile'] == 'static_viz_comprehension_r1_v1'
+    assert manifest['render_profile'] == 'static_viz_ux_refinement_r2_v1'
     assert manifest['lineage']['run_id'] == 'replay_obs_unit'
     assert 'unified authoritative replay state' in manifest['interpretation_caveats'][0]
     comprehension = manifest['comprehension']
@@ -154,7 +154,7 @@ def test_composite_report_renders_core_figures(tmp_path) -> None:
     assert 'Read this first' in html
     assert 'At a glance' in html
     assert 'Key incidents' in html
-    assert 'Event timeline (table)' in html
+    assert 'Event timeline (salient)' in html
     timeline_pos = html.index('figure-timeline_band')
     divergence_pos = html.index('figure-divergence_overlay')
     assert timeline_pos < divergence_pos
@@ -256,3 +256,72 @@ def test_governance_lint_rejects_missing_labels() -> None:
     lint = viz.lint_governance_artifact({'artifact_type': 'bad_manifest'})
     assert lint['ok'] is False
     assert 'missing governance block' in lint['issues']
+
+
+def test_outcome_wording_consistent_in_digest() -> None:
+    comprehension = _load_comprehension()
+    narrative = _load_narrative_fixture()
+    digest = comprehension.build_comprehension_digest(narrative)
+
+    glance_text = ' '.join(c['value'] for c in digest['at_a_glance'])
+    assert 'hit outcome recorded' not in glance_text.lower()
+    assert 'Parser-visible miss recorded' in glance_text
+
+    salient_labels = ' '.join(r['label'] for r in digest['timeline_rows_salient'])
+    assert 'hit outcome recorded' not in salient_labels.lower()
+    assert 'Parser-visible miss recorded' in salient_labels
+
+
+def test_selection_incidents_collapsed() -> None:
+    comprehension = _load_comprehension()
+    narrative = _load_narrative_fixture()
+    digest = comprehension.build_comprehension_digest(narrative)
+
+    selection_group = next(g for g in digest['incident_groups'] if g['category'] == 'selection')
+    assert len(selection_group['rows']) == 1
+    assert 'selection block' in selection_group['rows'][0]['label'].lower()
+    assert len(digest['selection_detail_rows']) >= 3
+
+
+def test_timeline_salient_overflow() -> None:
+    comprehension = _load_comprehension()
+    narrative = _load_narrative_fixture()
+    events = list(narrative['events'])
+    for idx in range(50):
+        events.append(
+            {
+                'block_index': None,
+                'category': 'lifecycle',
+                'details': {'event_type': 'track_update'},
+                'event_id': f'narrative_event_fill_{idx:04d}_lifecycle_track_update',
+                'event_type': 'track_update',
+                'label': f'track update filler {idx}',
+                'line_index': 100 + idx,
+                'time_label': f'line {100 + idx}',
+                'time_s': None,
+            }
+        )
+    narrative = dict(narrative)
+    narrative['events'] = events
+    digest = comprehension.build_comprehension_digest(narrative)
+
+    assert len(digest['timeline_rows_salient']) <= comprehension.TIMELINE_SALIENT_LIMIT
+    assert digest['timeline_overflow']['hidden_count'] > 0
+    assert digest['timeline_overflow']['note']
+
+
+def test_divergence_human_label() -> None:
+    comprehension = _load_comprehension()
+    narrative = _load_narrative_fixture()
+    digest = comprehension.build_comprehension_digest(narrative)
+
+    assert 'Inconclusive (visibility-limited evidence)' in digest['headline']
+    assert digest['divergence_context']['note']
+    assert 'localized mismatch' in digest['divergence_context']['note'].lower()
+
+
+def test_render_profile_ux_r2() -> None:
+    viz = _load_visualization()
+    narrative = _load_narrative_fixture()
+    manifest = viz.build_visualization_manifest(narrative)
+    assert manifest['render_profile'] == 'static_viz_ux_refinement_r2_v1'

@@ -30,6 +30,7 @@ raw log + .meta.json
 | 3 | `composite` | `replay_viz/` directory | 30-second scan via comprehension digest |
 | 4 (optional) | `paired-comparison` | matched-seed JSON | A vs B localization only |
 | 5 (before external share) | `governance-lint` | lint JSON | Forbidden-claim check |
+| 6 (optional) | `replay_sa_bundle.py pack` + SA-R0 viewer | `replay_sa_bundle_v1` / spatial replay | Mentor spatial orientation only — not primary surface |
 
 ### Example commands
 
@@ -62,6 +63,25 @@ Open the primary demo surface locally:
 
 ```bash
 xdg-open runs/evaluation/demo/RUN.replay_viz/replay_static_visualization.html
+```
+
+Optional SA-R0 spatial replay (read-only; not a replacement for comprehension HTML):
+
+```bash
+python3 scripts/evaluation/replay_sa_bundle.py pack \
+  --narrative-json runs/evaluation/demo/RUN.replay_narrative.json \
+  --observability-json runs/evaluation/demo/RUN.replay_observability.json \
+  --viz-manifest runs/evaluation/demo/RUN.replay_viz/replay_static_visualization.json \
+  --scenario-pack fixtures/scenarios/ridge_defense \
+  --out-dir runs/evaluation/demo/RUN.sa_bundle/
+
+python3 scripts/evaluation/replay_sa_bundle.py export-portable \
+  --bundle-dir runs/evaluation/demo/RUN.sa_bundle/ \
+  --out-zip runs/evaluation/demo/RUN.sa_bundle.zip
+
+cd platform/sa-r0-viewer && npm run dev
+# open http://localhost:5173 — use scenario catalog picker or ?demo=<pack_id>
+# sync catalog + demo bundles: python3 scripts/evaluation/sync_sa_catalog.py
 ```
 
 ## Recommended replay reading order
@@ -119,6 +139,42 @@ Extended onboarding (three sessions, ~45 minutes): repeat with `paired_seed_delt
 | 12–15 | Optional comparison | Same-seed paired profile; what not to conclude |
 | 15–18 | Governance | Run `governance-lint`; read warnings panel as prompts, not severity |
 | 18–20 | Q&A anchors | Re-state forbidden claims list below |
+
+## SA-R0 presentation mode (PLAT-SA-E1)
+
+Machine-readable storyboard decks live under `fixtures/sa_r0/presentations/` (synced to viewer `public/demo/presentations/`).
+
+Example viewer URLs (static demo server):
+
+- `?demo=valley_ingress&walkthrough=1&chapter=0` — bundle chapter walkthrough
+- `?presentation=walkthrough_valley_ingress_long&demo=valley_ingress&chapter=0` — storyboard deck
+- `?sweep=ridge_overlap_sweep&walkthrough=1` — sweep member with presentation chapters
+
+Storyboard index: `/demo/presentations/index.json`. Review exports: `fixtures/sa_r0/sweeps/<id>/reports/sweep_presentation_packet.md`.
+
+See [sa_e1_research_presentation_plan.md](sa_e1_research_presentation_plan.md) and [replay_storyboard_v1.md](replay_storyboard_v1.md).
+
+## Cross-sweep synthesis and publication (PLAT-SA-E2)
+
+Corpus rollups live under `fixtures/sa_r0/synthesis/` (synced to viewer `public/demo/synthesis/`).
+
+Regenerate:
+
+```bash
+python3 scripts/evaluation/gen_e2_research_fixtures.py
+```
+
+Key artifacts:
+
+- `cross_sweep_synthesis_v1.json` — pattern/ambiguity/topology/LOS/divergence rollups
+- `replay_linkage_index_v1.json` — rule-based sweep linkage
+- `cognition_rollup_summary.md` — reviewer cognition bullets
+- `fixtures/sa_r0/sweeps/<id>/reports/publication_packet.html` — print-ready review packet
+- `fixtures/sa_r0/research_bundles/sa_r0_corpus_r1/` — portable research bundle
+
+Storyboard: `showcase_cross_sweep_synthesis` in `/demo/presentations/index.json`.
+
+See [sa_e2_replay_knowledge_synthesis_plan.md](sa_e2_replay_knowledge_synthesis_plan.md) and [replay_cross_sweep_synthesis_v1.md](replay_cross_sweep_synthesis_v1.md).
 
 ## Replay comparison dos and don'ts
 
@@ -269,12 +325,37 @@ Prefer: “associated with,” “localized near,” “replay-local,” “deri
 - Edits to frozen `replay_observability.py` narrative builders
 - Composite robustness or readiness scoring
 
+## SA-R0 sweep review (PLAT-SA-D3, additive)
+
+For Monte Carlo sweep families under `fixtures/sa_r0/sweeps/`, use the SA-R0 viewer workstation and static exports:
+
+```bash
+python3 scripts/evaluation/gen_d3_sweep_enrichment.py
+python3 scripts/evaluation/export_replay_analytics_report.py --sweep ridge_overlap_sweep --format md,json
+```
+
+Viewer URLs: `?sweep=<id>&member=<n>`, `?sweep=<id>&filmstrip=0,1,2,3`, or `?sweep=<id>&cohort=<cohort_id>`.
+
+Review artifacts in `fixtures/sa_r0/sweeps/<id>/reports/` include `sweep_narrative_summary.md`, `replay_cluster_report.md`, and `replay_review_report_v1.json`. Explanatory replay reasoning only — not operational guidance.
+
+## Platform fixture maintenance (PLAT-SA-STAB)
+
+Before sharing SA-R0 demo fixtures or merging platform changes, run the integrity gate:
+
+```bash
+scripts/ci_eval.sh tier0-sa-r0
+python3 scripts/evaluation/audit_sa_platform_integrity.py --all
+```
+
+If parity or staleness checks fail, regenerate with `sync_sa_catalog.py`, `gen_d3_sweep_enrichment.py`, `gen_e1_presentation_fixtures.py`, or `gen_e2_research_fixtures.py` as indicated in audit stderr. See [sa_stabilization_plan.md](sa_stabilization_plan.md).
+
 ## Related documents
 
 - [freeze_registry_r1.md](freeze_registry_r1.md) — frozen layer index
+- [sa_d3_replay_narrative_intelligence_plan.md](sa_d3_replay_narrative_intelligence_plan.md) — D3 workstation wave
 - [replay_static_visualization_comprehension_r1_freeze_audit.md](replay_static_visualization_comprehension_r1_freeze_audit.md)
 - [replay_observability_freeze_audit.md](replay_observability_freeze_audit.md)
-- [situational_awareness_ui_planning_r1.md](situational_awareness_ui_planning_r1.md) — future UI planning (not demo implementation)
+- [situational_awareness_ui_planning_r1.md](situational_awareness_ui_planning_r1.md) — SA UI architecture plan (docs frozen; not demo implementation)
 
 ## Freeze status
 

@@ -1,0 +1,113 @@
+{
+  "artifact_type": "replay_review_report_v1",
+  "governance": {
+    "anti_claims": [
+      "Sweep aggregates are not parser authority.",
+      "Spatial layers are replay concentration, not probability or readiness.",
+      "No deployment confidence or tactical superiority implied."
+    ],
+    "notice": "Deterministic replay sweep for spatial analytics exploration only \u2014 explanatory replay family, not operational planning."
+  },
+  "interpretation_caveats": [
+    "Replay review artifact \u2014 explanatory only, not parser authority.",
+    "Pattern tags are replay-local taxonomy, not operational recommendations."
+  ],
+  "members": [
+    {
+      "member_id": "seed_9220_baseline",
+      "pack_id": "delayed_detection",
+      "replay_pattern_summary": "LOS-fragmented replay concentration; Assignment instability across replay windows \u2014 explanatory replay characterization only.",
+      "replay_pattern_tags": [
+        "los_fragmented_replay",
+        "assignment_instability_replay"
+      ]
+    },
+    {
+      "member_id": "seed_9221_stagger_early",
+      "pack_id": "delayed_detection",
+      "replay_pattern_summary": "LOS-fragmented replay concentration; Assignment instability across replay windows \u2014 explanatory replay characterization only.",
+      "replay_pattern_tags": [
+        "los_fragmented_replay",
+        "assignment_instability_replay"
+      ]
+    },
+    {
+      "member_id": "seed_9222_stagger_mid",
+      "pack_id": "delayed_detection",
+      "replay_pattern_summary": "LOS-fragmented replay concentration; Assignment instability across replay windows \u2014 explanatory replay characterization only.",
+      "replay_pattern_tags": [
+        "los_fragmented_replay",
+        "assignment_instability_replay"
+      ]
+    },
+    {
+      "member_id": "seed_9223_stagger_late",
+      "pack_id": "delayed_detection",
+      "replay_pattern_summary": "LOS-fragmented replay concentration; Assignment instability across replay windows \u2014 explanatory replay characterization only.",
+      "replay_pattern_tags": [
+        "los_fragmented_replay",
+        "assignment_instability_replay"
+      ]
+    }
+  ],
+  "replay_aggregation": {
+    "dominant_patterns": [
+      "Replay variants under baseline delayed_detection show localized spatial concentration \u2014 explanatory only."
+    ],
+    "outcome_histogram": {
+      "ambiguity_window_count": [
+        2,
+        2,
+        2,
+        2
+      ],
+      "first_detection_t": [
+        17,
+        17,
+        17,
+        17
+      ],
+      "los_degraded_count": [
+        5,
+        5,
+        5,
+        5
+      ]
+    }
+  },
+  "replay_cohorts": [
+    {
+      "anomaly_member_indices": [],
+      "cohort_id": "los_fragmented_replay_cohort",
+      "dominant_summary": "4 replay variant(s) share los-fragmented replay concentration in this sweep family.",
+      "label": "LOS-fragmented replay concentration",
+      "member_indices": [
+        0,
+        1,
+        2,
+        3
+      ],
+      "pattern_tags": [
+        "los_fragmented_replay"
+      ]
+    }
+  ],
+  "replay_narrative_summary": {
+    "bullets": [
+      "Replay variants under baseline delayed_detection show localized spatial concentration \u2014 explanatory only.",
+      "Ambiguity escalation appears in overlapping ingress windows across replay variants.",
+      "Assignment instability increases during selection-heavy replay segments in this sweep.",
+      "Replay event concentration (cell count 6)"
+    ],
+    "headline": "Across 4 replay variants in `delayed_detection_sweep`, deterministic sweep summaries highlight spatial concentration and timing divergence \u2014 explanatory replay review only.",
+    "importance_weights": {
+      "ambiguity": 0.88,
+      "assignment": 0.82,
+      "los": 0.5,
+      "pacing": 0.5,
+      "topology": 0.5
+    }
+  },
+  "schema_version": "replay_review_report_v1",
+  "sweep_id": "delayed_detection_sweep"
+}

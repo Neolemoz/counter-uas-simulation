@@ -122,7 +122,7 @@ R2 may be marked freeze-ready when:
 | 3 | Implementation wave per feature flag (bag → paired → plotly) |
 | 4 | R2 freeze audit + registry update |
 
-Do not start implementation before [situational_awareness_ui_planning_r1.md](situational_awareness_ui_planning_r1.md) authority boundaries are read for geospatial overlap.
+Read [situational_awareness_ui_planning_r1.md](situational_awareness_ui_planning_r1.md) (docs frozen, PLAN-SA-R1) for geospatial and authority boundaries before implementation.
 
 ## Related documents
 

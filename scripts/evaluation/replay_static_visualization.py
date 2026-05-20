@@ -138,7 +138,11 @@ def build_visualization_manifest(
     return {
         "artifact_type": "replay_static_visualization_manifest",
         "visualization_schema_version": VISUALIZATION_SCHEMA_VERSION,
-        "comprehension": build_comprehension_digest(narrative),
+        "comprehension": build_comprehension_digest(
+            narrative,
+            observability,
+            log_path=lineage.get("log_path"),
+        ),
         "governance": _governance_block(),
         "render_profile": RENDER_PROFILE,
         "lineage": lineage,

@@ -1,0 +1,51 @@
+=== run_id: replay_valley_ingress_demo ===
+[interception_logic_node-1] [P_HEATMAP] pos=(-2100.000, 88.000, 75.000)
+[interception_logic_node-1] [P_HEATMAP] pos=(-2045.000, 96.000, 78.000)
+[interception_logic_node-1] [P_HEATMAP] pos=(-1990.000, 104.000, 81.000)
+[interception_logic_node-1] [P_HEATMAP] pos=(-1935.000, 88.000, 84.000)
+[interception_logic_node-1] [P_HEATMAP] pos=(-1880.000, 96.000, 75.000)
+[interception_logic_node-1] [P_HEATMAP] pos=(-1825.000, 104.000, 78.000)
+[interception_logic_node-1] [P_HEATMAP] pos=(-1770.000, 88.000, 81.000)
+[interception_logic_node-1] [P_HEATMAP] pos=(-1715.000, 96.000, 84.000)
+[interception_logic_node-1] [P_HEATMAP] pos=(-1660.000, 104.000, 75.000)
+[interception_logic_node-1] [P_HEATMAP] pos=(-1605.000, 88.000, 78.000)
+[interception_logic_node-1] [P_HEATMAP] pos=(-1550.000, 96.000, 81.000)
+[interception_logic_node-1] [P_HEATMAP] pos=(-1495.000, 104.000, 84.000)
+[interception_logic_node-1] [P_HEATMAP] pos=(-1440.000, 88.000, 75.000)
+[interception_logic_node-1] [P_HEATMAP] pos=(-1385.000, 96.000, 78.000)
+[interception_logic_node-1] [P_HEATMAP] pos=(-1330.000, 104.000, 81.000)
+[interception_logic_node-1] [P_HEATMAP] pos=(-1275.000, 88.000, 84.000)
+[interception_logic_node-1] [P_HEATMAP] pos=(-1220.000, 96.000, 75.000)
+[interception_logic_node-1] [P_HEATMAP] pos=(-1165.000, 104.000, 78.000)
+[interception_logic_node-1] [P_HEATMAP] pos=(-1110.000, 88.000, 81.000)
+[tracking_node-1] Candidate detected: track_id=11
+[noisy_measurement_node-1] [REALISM_EVENT] fragmented_gap_start fragmentation_index=2 gap_ticks=8
+[noisy_measurement_node-1] [REALISM_EVENT] masking_tick tick=1
+[noisy_measurement_node-1] [REALISM_EVENT] masking_tick tick=2
+[noisy_measurement_node-1] [REALISM_EVENT] masking_tick tick=3
+[noisy_measurement_node-1] [REALISM_EVENT] masking_tick tick=4
+[noisy_measurement_node-1] [REALISM_EVENT] masking_tick tick=5
+[noisy_measurement_node-1] [REALISM_EVENT] masking_tick tick=6
+[noisy_measurement_node-1] [REALISM_EVENT] masking_tick tick=7
+[noisy_measurement_node-1] [REALISM_EVENT] masking_tick tick=8
+[interception_logic_node-1] [P_HEATMAP] pos=(-1100.000, 140.000, 68.000)
+[interception_logic_node-1] interceptor_pos=(-90.000, 8.000, 42.000) target_pos=(-1100.000, 140.000, 68.000)
+[interception_logic_node-1] [P_HEATMAP] pos=(-1060.000, 146.000, 69.000)
+[interception_logic_node-1] [P_HEATMAP] pos=(-1020.000, 140.000, 70.000)
+[interception_logic_node-1] [P_HEATMAP] pos=(-980.000, 146.000, 68.000)
+[interception_logic_node-1] [P_HEATMAP] pos=(-940.000, 140.000, 69.000)
+[interception_logic_node-1] interceptor_pos=(-70.000, 8.000, 42.000) target_pos=(-940.000, 140.000, 69.000)
+[interception_logic_node-1] [P_HEATMAP] pos=(-900.000, 146.000, 70.000)
+[interception_logic_node-1] [P_HEATMAP] pos=(-860.000, 140.000, 68.000)
+[interception_logic_node-1] [P_HEATMAP] pos=(-820.000, 146.000, 69.000)
+[interception_logic_node-1] [P_HEATMAP] pos=(-780.000, 140.000, 70.000)
+[interception_logic_node-1] [P_HEATMAP] pos=(-740.000, 146.000, 68.000)
+[interception_logic_node-1] interceptor_pos=(-45.000, 8.000, 42.000) target_pos=(-740.000, 146.000, 68.000)
+[interception_logic_node-1] [P_HEATMAP] pos=(-700.000, 140.000, 69.000)
+[interception_logic_node-1] [P_HEATMAP] pos=(-660.000, 146.000, 70.000)
+[interception_logic_node-1] [P_HEATMAP] pos=(-620.000, 140.000, 68.000)
+[interception_logic_node-1] [P_HEATMAP] pos=(-580.000, 146.000, 69.000)
+[interception_logic_node-1] [P_HEATMAP] pos=(-540.000, 140.000, 70.000)
+[interception_logic_node-1] interceptor_pos=(-20.000, 8.000, 42.000) target_pos=(-540.000, 140.000, 70.000)
+[interception_logic_node-1] [P_HEATMAP] pos=(-500.000, 146.000, 68.000)
+[interception_logic_node-1] [METRICS] id=interceptor_0  | dist=18.200 m | t_go=4.1 s | vel=16.5 m/s | mode=predict

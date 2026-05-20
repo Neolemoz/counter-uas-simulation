@@ -1,0 +1,44 @@
+{
+  "artifact_type": "replay_storyboard_v1",
+  "estimated_minutes": 14,
+  "governance": {
+    "anti_claims": [
+      "Not deployment readiness or validated effectiveness.",
+      "Cross-sweep synthesis is replay-local explanatory rollup only."
+    ],
+    "notice": "Derived replay presentation artifact — explanatory review only, not operational authority."
+  },
+  "scenes": [
+    {
+      "copy": "Open corpus-wide cross-sweep synthesis rollup and cognition bullets.",
+      "importance_tags": ["topology", "ambiguity"],
+      "label": "Cross-sweep synthesis overview",
+      "scene_id": "synthesis_overview",
+      "target_url": "?sweep=ridge_overlap_sweep"
+    },
+    {
+      "copy": "Review ridge overlap sweep with linkage panel showing related replay families.",
+      "importance_tags": ["topology"],
+      "label": "Ridge overlap + linkage",
+      "scene_id": "ridge_linkage",
+      "target_url": "?sweep=ridge_overlap_sweep"
+    },
+    {
+      "copy": "Compare delayed detection ingress variation against saturation assignment cohort.",
+      "importance_tags": ["pacing", "assignment"],
+      "label": "Delayed detection vs saturation",
+      "scene_id": "detection_saturation",
+      "target_url": "?sweep=delayed_detection_sweep"
+    },
+    {
+      "copy": "Inspect publication packet exports under sweep reports for mentor handoff.",
+      "importance_tags": ["topology"],
+      "label": "Publication packet",
+      "scene_id": "publication",
+      "target_url": "?sweep=saturation_assignment_sweep"
+    }
+  ],
+  "schema_version": "replay_storyboard_v1",
+  "storyboard_id": "showcase_cross_sweep_synthesis",
+  "title": "Showcase: cross-sweep synthesis corpus"
+}

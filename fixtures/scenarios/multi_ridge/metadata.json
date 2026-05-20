@@ -1,0 +1,63 @@
+{
+  "ambiguity_profile": {
+    "focus_tags": [
+      "chained_masking",
+      "intermittent_visibility"
+    ],
+    "level": "high"
+  },
+  "artifact_type": "scenario_topology_v1",
+  "governance": {
+    "anti_claims": [
+      "not deployed geography",
+      "not operational effectiveness",
+      "not tactical authority"
+    ],
+    "constraints": [
+      "replay-safe",
+      "explanatory-only",
+      "non-authoritative",
+      "parser-safe"
+    ],
+    "notice": "Fictional scenario topology for replay visualization only."
+  },
+  "ingress_archetype": "open",
+  "narrative_focus": [
+    "chained_masking",
+    "reacquisition"
+  ],
+  "overlay_descriptors": [
+    {
+      "count": 1,
+      "kind": "degraded_visibility"
+    },
+    {
+      "count": 2,
+      "kind": "los_blocked"
+    },
+    {
+      "count": 3,
+      "kind": "ridge_mask"
+    }
+  ],
+  "provenance": {
+    "fictional_disclaimer": "Fictional replay fixture.",
+    "fixture_source": "fixtures/scenarios/multi_ridge"
+  },
+  "replay_duration_class": "medium",
+  "replay_tags": [
+    "chained_masking",
+    "intermittent_visibility",
+    "multi_track"
+  ],
+  "scenario_id": "multi_ridge_demo",
+  "schema_version": "scenario_topology_v1",
+  "terrain_profile": "ridged",
+  "title": "Multi-ridge chained masking replay",
+  "topology_tags": [
+    "multi_ridge",
+    "chained_masking",
+    "reacquisition",
+    "intermittent_visibility"
+  ]
+}

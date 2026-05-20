@@ -1,0 +1,45 @@
+{
+  "artifact_type": "replay_storyboard_v1",
+  "estimated_minutes": 18,
+  "governance": {
+    "anti_claims": [
+      "Not deployment readiness or validated effectiveness.",
+      "Not causal proof of runtime behavior."
+    ],
+    "notice": "Derived replay presentation artifact \u2014 explanatory review only, not operational authority."
+  },
+  "scenes": [
+    {
+      "copy": "Open ridge overlap sweep workstation narrative \u2014 explanatory cohort review.",
+      "importance_tags": [
+        "topology"
+      ],
+      "label": "Ridge defense sweep",
+      "scene_id": "ridge_intro",
+      "target_url": "?sweep=ridge_overlap_sweep&chapter=0"
+    },
+    {
+      "copy": "Follow deterministic ingress chapters on valley ingress demo bundle.",
+      "importance_tags": [
+        "topology",
+        "pacing"
+      ],
+      "label": "Valley ingress walkthrough",
+      "scene_id": "valley_ingress",
+      "target_url": "?demo=valley_ingress&walkthrough=1&chapter=0"
+    },
+    {
+      "copy": "Review saturation assignment sweep narrative headline and cohort patterns.",
+      "importance_tags": [
+        "assignment",
+        "ambiguity"
+      ],
+      "label": "Saturation narrative",
+      "scene_id": "saturation_narrative",
+      "target_url": "?sweep=saturation_assignment_sweep&chapter=0"
+    }
+  ],
+  "schema_version": "replay_storyboard_v1",
+  "storyboard_id": "showcase_best_narratives",
+  "title": "Showcase: strongest replay narratives"
+}

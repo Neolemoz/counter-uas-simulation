@@ -1,0 +1,36 @@
+{
+  "annotations": [
+    {
+      "annotation_id": "anno_replay_pacing",
+      "body": "Extended timeline stresses long-form replay readability.",
+      "kind": "visibility_degraded",
+      "linked_event_ids": [
+        "narrative_event_0001_detection_candidate_spawn"
+      ],
+      "title": "Replay pacing"
+    },
+    {
+      "annotation_id": "anno_launch_visible",
+      "body": "Interceptor launch segment visible in guidance samples \u2014 not live video.",
+      "kind": "tti_explanation",
+      "linked_event_ids": [
+        "narrative_event_0002_selection_selection_block"
+      ],
+      "title": "Launch progression visible"
+    },
+    {
+      "annotation_id": "anno_terrain_follow",
+      "body": "Low-altitude heatmap ingress along fictional corridor.",
+      "kind": "los_blockage",
+      "linked_event_ids": [],
+      "title": "Terrain-following ingress"
+    },
+    {
+      "annotation_id": "anno_spatial_story",
+      "body": "Long trajectory supports topology cognition at multiple clock positions.",
+      "kind": "los_blockage",
+      "linked_event_ids": [],
+      "title": "Spatial storytelling"
+    }
+  ]
+}

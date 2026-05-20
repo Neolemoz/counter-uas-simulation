@@ -22,6 +22,7 @@ ci_eval — layered counter-UAS evaluation (see scripts/evaluation/README.md).
 
 Commands (run from repo root):
   tier0              Fast gate: pytest + validate_heatmap --dry-run (no Gazebo).
+  tier0-sa-r0        SA-R0 viewer: npm test + build (requires Node 20+).
   tier1              One Gazebo capture (headless). Needs install/setup.bash.
   tier2              Full scenario matrix from default CSV (slow).
   tier2-smoke        Single-row matrix (smoke_scenario_matrix.csv).
@@ -60,6 +61,35 @@ tier0() {
   echo "[ci_eval] tier0: OK"
 }
 
+tier0_sa_r0() {
+  if ! command -v npm >/dev/null 2>&1; then
+    die "tier0-sa-r0 requires npm Node 20+"
+  fi
+  echo "[ci_eval] tier0-sa-r0: replay_sa_bundle pytest included in tier0 pytest"
+  echo "[ci_eval] tier0-sa-r0: validate scenario_topology_v1 packs"
+  for pack in ridge_defense valley_ingress multi_ridge corridor_defense saturation_ingress urban_masking delayed_detection long_range_ingress \
+    valley_ingress_radar_shifted_north valley_ingress_extra_valley_sensor valley_ingress_reduced_overlap_layout valley_ingress_delayed_interceptor_base; do
+    "$PY" scripts/evaluation/validate_scenario.py "$ROOT/fixtures/scenarios/$pack"
+  done
+  echo "[ci_eval] tier0-sa-r0: catalog and sweeps sync check"
+  "$PY" scripts/evaluation/check_sa_catalog_sync.py
+  "$PY" -m pytest src/counter_uas/test/test_replay_mc_sweep.py -q
+  echo "[ci_eval] tier0-sa-r0: PLAT-SA-STAB platform integrity audit"
+  "$PY" scripts/evaluation/audit_sa_platform_integrity.py --all
+  echo "[ci_eval] tier0-sa-r0: E2 synthesis and research bundle checks"
+  "$PY" scripts/evaluation/build_cross_sweep_synthesis.py --check
+  "$PY" scripts/evaluation/build_replay_linkage.py --check
+  "$PY" -m pytest \
+    src/counter_uas/test/test_replay_cross_sweep_synthesis.py \
+    src/counter_uas/test/test_replay_linkage.py \
+    src/counter_uas/test/test_replay_publication_export.py \
+    src/counter_uas/test/test_replay_research_bundle.py -q
+  "$PY" scripts/evaluation/export_research_bundle.py --check
+  echo "[ci_eval] tier0-sa-r0: platform/sa-r0-viewer"
+  (cd "$ROOT/platform/sa-r0-viewer" && npm ci && npm test && npm run build)
+  echo "[ci_eval] tier0-sa-r0: OK"
+}
+
 export_libgl_default() {
   if [[ -z "${LIBGL_ALWAYS_SOFTWARE+x}" ]]; then
     export LIBGL_ALWAYS_SOFTWARE=1
@@ -74,7 +104,7 @@ tier1() {
   echo "[ci_eval] tier1: run_capture timeout_s=${timeout_s} launch_args=${launch_extra}"
   "$PY" scripts/run_capture.py --scenario single --timeout-s "$timeout_s" --launch-args "$launch_extra"
   # run_capture exits 0 even when inner timeout returns 124; inspect log + .meta.json under runs/logs/
-  echo "[ci_eval] tier1: done (inspect printed paths above)"
+  echo "[ci_eval] tier1: done - inspect printed paths above"
 }
 
 tier2() {
@@ -312,6 +342,9 @@ case "$cmd" in
     ;;
   tier0)
     tier0
+    ;;
+  tier0-sa-r0)
+    tier0_sa_r0
     ;;
   tier1)
     parse_tier1_args "$@"

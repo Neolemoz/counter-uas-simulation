@@ -1,0 +1,97 @@
+{
+  "artifact_type": "replay_presentation_report_v1",
+  "governance": {
+    "anti_claims": [
+      "Sweep aggregates are not parser authority.",
+      "Spatial layers are replay concentration, not probability or readiness.",
+      "No deployment confidence or tactical superiority implied."
+    ],
+    "notice": "Deterministic replay sweep for spatial analytics exploration only \u2014 explanatory replay family, not operational planning."
+  },
+  "interpretation_caveats": [
+    "Presentation report \u2014 explanatory replay review only.",
+    "Walkthrough steps are deterministic guidance, not tactical recommendations."
+  ],
+  "presentation_walkthrough": {
+    "headline": "Across 5 replay variants in `valley_sensor_sweep`, deterministic sweep summaries highlight spatial concentration and timing divergence \u2014 explanatory replay review only.",
+    "steps": [
+      {
+        "copy": "Most replay variants show LOS degradation concentration near ridge or masking overlays.",
+        "kind": "analytics_panel",
+        "label": "Sweep overview",
+        "step_id": "overview"
+      },
+      {
+        "cohort_id": "los_fragmented_replay_cohort",
+        "copy": "5 replay variant(s) share los-fragmented replay concentration in this sweep family.",
+        "filmstrip_indices": [
+          0,
+          1,
+          2,
+          3
+        ],
+        "kind": "cohort_filmstrip",
+        "label": "LOS-fragmented replay concentration",
+        "step_id": "cohort_los_fragmented_replay_cohort"
+      },
+      {
+        "copy": "Compare baseline and variant replay outcomes side-by-side \u2014 topology divergence is explanatory only.",
+        "kind": "compare_pair",
+        "label": "Baseline comparison",
+        "member_index": 1,
+        "step_id": "baseline_compare"
+      },
+      {
+        "chapter_index": 0,
+        "copy": "Review ingress geometry and initial threat track appearance in this replay variant \u2014 explanatory orientation only.",
+        "kind": "chapter",
+        "label": "Member 1: Ingress",
+        "member_index": 0,
+        "step_id": "member_0_chapter"
+      },
+      {
+        "chapter_index": 0,
+        "copy": "Review ingress geometry and initial threat track appearance in this replay variant \u2014 explanatory orientation only.",
+        "kind": "chapter",
+        "label": "Member 2: Ingress",
+        "member_index": 1,
+        "step_id": "member_1_chapter"
+      },
+      {
+        "chapter_index": 0,
+        "copy": "Review ingress geometry and initial threat track appearance in this replay variant \u2014 explanatory orientation only.",
+        "kind": "chapter",
+        "label": "Member 3: Ingress",
+        "member_index": 2,
+        "step_id": "member_2_chapter"
+      }
+    ],
+    "walkthrough_id": "valley_sensor_sweep_walkthrough"
+  },
+  "replay_narrative_summary": {
+    "bullets": [
+      "Most replay variants show LOS degradation concentration near ridge or masking overlays.",
+      "Most sweep members show LOS degradation concentration near ridge or masking overlays.",
+      "Ambiguity escalation appears in overlapping ingress windows across replay variants.",
+      "Assignment instability increases during selection-heavy replay segments in this sweep.",
+      "Topology-sensitive replay divergence appears across non-baseline scenario packs.",
+      "Replay event concentration (cell count 15)"
+    ],
+    "headline": "Across 5 replay variants in `valley_sensor_sweep`, deterministic sweep summaries highlight spatial concentration and timing divergence \u2014 explanatory replay review only.",
+    "importance_weights": {
+      "ambiguity": 0.88,
+      "assignment": 0.82,
+      "los": 0.9,
+      "pacing": 0.5,
+      "topology": 0.87
+    }
+  },
+  "schema_version": "replay_presentation_report_v1",
+  "storytelling_sections": {
+    "ambiguity_concentration": "Ambiguity density concentrates in shared spatial cells across sweep members \u2014 see ambiguity overlay in presentation mode.",
+    "divergence_summary": "Most replay variants show LOS degradation concentration near ridge or masking overlays.",
+    "los_instability": "LOS degradation replay concentration differs across topology variants in this sweep.",
+    "what_changed": "4 non-baseline pack(s) diverge from `valley_ingress` in this sweep family."
+  },
+  "sweep_id": "valley_sensor_sweep"
+}

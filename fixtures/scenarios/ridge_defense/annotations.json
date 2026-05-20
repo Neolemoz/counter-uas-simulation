@@ -1,0 +1,32 @@
+{
+  "annotations": [
+    {
+      "annotation_id": "anno_ridge_occlusion",
+      "kind": "los_blockage",
+      "title": "Ridge occlusion",
+      "body": "Target occluded behind ridge (replay-local association — not causal proof).",
+      "linked_event_ids": ["narrative_event_0003_ambiguity_realism_fragmented_gap_start"]
+    },
+    {
+      "annotation_id": "anno_tti_selection",
+      "kind": "tti_explanation",
+      "title": "TTI selection",
+      "body": "INT-02 selected due to lowest feasible TTI in replay selection evidence — not tactical authority.",
+      "linked_event_ids": ["narrative_event_0002_selection_selection_block"]
+    },
+    {
+      "annotation_id": "anno_terrain_lost",
+      "kind": "los_blockage",
+      "title": "Terrain loss",
+      "body": "Target temporarily lost behind terrain — localized near fragmented-gap window.",
+      "linked_event_ids": ["narrative_event_0003_ambiguity_realism_fragmented_gap_start"]
+    },
+    {
+      "annotation_id": "anno_track_reacquired",
+      "kind": "los_blockage",
+      "title": "Track reacquired",
+      "body": "Track reacquired after terrain masking — explanatory replay evidence only.",
+      "linked_event_ids": ["narrative_event_0003_ambiguity_realism_fragmented_gap_start"]
+    }
+  ]
+}

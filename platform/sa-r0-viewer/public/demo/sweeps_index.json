@@ -1,0 +1,57 @@
+{
+  "artifact_type": "scenario_sweeps_index_v1",
+  "governance": {
+    "notice": "Deterministic replay sweep for spatial analytics exploration only \u2014 explanatory replay family, not operational planning."
+  },
+  "schema_version": "scenario_sweeps_index_v1",
+  "sweeps": [
+    {
+      "baseline_topology_key": "valley_ingress",
+      "experiment_tags": [
+        "valley",
+        "sensor_placement"
+      ],
+      "member_count": 5,
+      "sweep_id": "valley_sensor_sweep",
+      "sweep_kind": "sensor_placement_sweep",
+      "sweep_manifest_url": "/demo/sweeps/valley_sensor_sweep/sweep.json",
+      "title": "Valley sensor placement sweep (replay family)"
+    },
+    {
+      "baseline_topology_key": "ridge_defense",
+      "experiment_tags": [
+        "ridge",
+        "topology_sweep"
+      ],
+      "member_count": 4,
+      "sweep_id": "ridge_overlap_sweep",
+      "sweep_kind": "topology_sweep",
+      "sweep_manifest_url": "/demo/sweeps/ridge_overlap_sweep/sweep.json",
+      "title": "Ridge overlap topology sweep (replay family)"
+    },
+    {
+      "baseline_topology_key": "delayed_detection",
+      "experiment_tags": [
+        "detection_timing",
+        "ingress_variation"
+      ],
+      "member_count": 4,
+      "sweep_id": "delayed_detection_sweep",
+      "sweep_kind": "ingress_variation",
+      "sweep_manifest_url": "/demo/sweeps/delayed_detection_sweep/sweep.json",
+      "title": "Delayed detection ingress variation sweep"
+    },
+    {
+      "baseline_topology_key": "saturation_ingress",
+      "experiment_tags": [
+        "multi_threat",
+        "matched_seed"
+      ],
+      "member_count": 4,
+      "sweep_id": "saturation_assignment_sweep",
+      "sweep_kind": "matched_seed",
+      "sweep_manifest_url": "/demo/sweeps/saturation_assignment_sweep/sweep.json",
+      "title": "Saturation assignment matched-seed sweep"
+    }
+  ]
+}
