@@ -321,6 +321,10 @@ class InterceptorControllerNode(Node):
             return self._dt
         return max(1e-4, min(0.5, dt))
 
+    @staticmethod
+    def _norm3(vx: float, vy: float, vz: float) -> float:
+        return math.sqrt(vx * vx + vy * vy + vz * vz)
+
     def _quat_from_motion(self, vx: float, vy: float, vz: float, idle: bool) -> tuple[float, float, float, float]:
         if idle or self._norm3(vx, vy, vz) < self._v_orient_floor:
             return (0.0, 0.0, 0.0, 1.0)
