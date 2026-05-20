@@ -82,6 +82,7 @@ Enforced by `sa_integrity_lib.py`:
 
 ## Related
 
+- [sa_platform_release_checkpoint.md](sa_platform_release_checkpoint.md) — merge-ready release gate summary
 - [fixtures/sa_r0/README.md](../../fixtures/sa_r0/README.md) — directory map
 - [replay_demo_review_workflow_r1.md](replay_demo_review_workflow_r1.md) § Platform fixture maintenance
 - [scripts/evaluation/README.md](../../scripts/evaluation/README.md) — evaluation script index

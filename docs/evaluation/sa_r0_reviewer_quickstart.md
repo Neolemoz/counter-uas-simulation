@@ -20,7 +20,7 @@ Open http://localhost:5173 (default bundle: `ridge_defense`).
 |---------|----------|-------|
 | 0–3 | Evidence layers + forbidden wording | [reviewer_interpretation_guide.md](reviewer_interpretation_guide.md) |
 | 3–6 | Default demo spatial orientation | `http://localhost:5173/` |
-| 6–9 | Catalog pack + compare | `?demo=valley_ingress`, then `?pair=valley_vs_saturation` |
+| 6–9 | Catalog pack + compare | `?demo=valley_ingress`, then `?pair=valley_vs_ridge_replay` |
 | 9–12 | Sweep workstation + filmstrip | `?sweep=ridge_overlap_sweep&member=0`, then `?filmstrip=0,1,2` |
 | 12–15 | Storyboard walkthrough | `?presentation=walkthrough_valley_ingress_long&demo=valley_ingress&chapter=0` |
 
@@ -34,11 +34,11 @@ Base URL: `http://localhost:5173`
 |------|--------------|
 | Default demo (`ridge_defense`) | *(none)* |
 | Catalog pack | `?demo=valley_ingress` |
-| Compare (curated pair) | `?pair=valley_vs_saturation` |
+| Compare (curated pair) | `?pair=valley_vs_ridge_replay` |
 | Compare (ad hoc) | `?compare=valley_ingress,saturation_ingress` |
 | Sweep member | `?sweep=ridge_overlap_sweep&member=0` |
 | Cohort filmstrip (2–4 members) | `?sweep=ridge_overlap_sweep&filmstrip=0,1,2` |
-| Predefined cohort | `?sweep=ridge_overlap_sweep&cohort=los_fragmented` |
+| Predefined cohort | `?sweep=ridge_overlap_sweep&cohort=los_fragmented_replay_cohort` |
 | Bundle chapter walkthrough | `?demo=valley_ingress&walkthrough=1&chapter=0` |
 | Storyboard deck | `?presentation=walkthrough_valley_ingress_long&demo=valley_ingress&chapter=0` |
 | Cross-sweep synthesis (viewer) | Open synthesis panel in viewer chrome after loading any sweep |
