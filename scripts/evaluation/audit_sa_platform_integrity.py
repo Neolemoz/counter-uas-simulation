@@ -150,6 +150,17 @@ def check_storyboard_urls() -> list[str]:
     for fix_path, _pub_path in lib.iter_presentation_json_pairs():
         if fix_path.name == "index.json":
             continue
+        file_id = fix_path.stem
+        if file_id not in sb_ids:
+            issues.append(f"storyboard file {fix_path.name} not listed in presentations/index.json")
+
+    for sb_id in sb_ids:
+        if not (lib.FIXTURES_SA / "presentations" / f"{sb_id}.json").is_file():
+            issues.append(f"presentations/index.json lists missing storyboard file {sb_id}.json")
+
+    for fix_path, _pub_path in lib.iter_presentation_json_pairs():
+        if fix_path.name == "index.json":
+            continue
         sb = lib.load_json(fix_path)
         for scene in sb.get("scenes") or []:
             url = str(scene.get("target_url") or "")

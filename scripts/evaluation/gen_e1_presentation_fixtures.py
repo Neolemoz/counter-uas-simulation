@@ -177,6 +177,52 @@ STORYBOARDS: list[dict[str, Any]] = [
             },
         ],
     },
+    {
+        "artifact_type": "replay_storyboard_v1",
+        "schema_version": "replay_storyboard_v1",
+        "storyboard_id": "showcase_cross_sweep_synthesis",
+        "title": "Showcase: cross-sweep synthesis corpus",
+        "estimated_minutes": 14,
+        "governance": {
+            "notice": GOVERNANCE["notice"],
+            "anti_claims": GOVERNANCE["anti_claims"]
+            + ["Cross-sweep synthesis is replay-local explanatory rollup only."],
+        },
+        "scenes": [
+            {
+                "scene_id": "synthesis_overview",
+                "label": "Cross-sweep synthesis overview",
+                "chapter": 0,
+                "target_url": "?sweep=ridge_overlap_sweep&presentation=showcase_cross_sweep_synthesis&chapter=0",
+                "copy": "Load ridge overlap sweep, then open the synthesis panel for corpus-wide rollups — explanatory only.",
+                "importance_tags": ["topology", "ambiguity"],
+            },
+            {
+                "scene_id": "ridge_linkage",
+                "label": "Ridge overlap + linkage",
+                "chapter": 1,
+                "target_url": "?sweep=ridge_overlap_sweep&presentation=showcase_cross_sweep_synthesis&chapter=1",
+                "copy": "Review linkage panel for related replay families — not causal doctrine.",
+                "importance_tags": ["topology"],
+            },
+            {
+                "scene_id": "detection_saturation",
+                "label": "Delayed detection vs saturation",
+                "chapter": 2,
+                "target_url": "?sweep=delayed_detection_sweep&presentation=showcase_cross_sweep_synthesis&chapter=2",
+                "copy": "Compare delayed detection ingress variation against saturation assignment cohort.",
+                "importance_tags": ["pacing", "assignment"],
+            },
+            {
+                "scene_id": "publication",
+                "label": "Publication packet",
+                "chapter": 3,
+                "target_url": "?sweep=saturation_assignment_sweep&presentation=showcase_cross_sweep_synthesis&chapter=3",
+                "copy": "Open `/demo/sweeps/saturation_assignment_sweep/reports/publication_packet.html` for offline mentor handoff.",
+                "importance_tags": ["topology"],
+            },
+        ],
+    },
 ]
 
 

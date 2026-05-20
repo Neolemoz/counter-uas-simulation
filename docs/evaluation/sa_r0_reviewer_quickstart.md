@@ -48,6 +48,31 @@ Base URL: `http://localhost:5173`
 
 **Walkthrough vs storyboard:** Use `walkthrough=1` for bundle `presentation.chapters` on a single demo pack. Use `presentation=<storyboard_id>` for cross-demo storyboard decks under `/demo/presentations/`. Pick one mode per URL — they are not combined.
 
+## Mentor demo sequences (20 minutes)
+
+| Minutes | Activity | URL / artifact |
+|---------|----------|----------------|
+| 0–3 | Evidence layers | [reviewer_interpretation_guide.md](reviewer_interpretation_guide.md) |
+| 3–8 | Valley ingress storyboard | `?presentation=walkthrough_valley_ingress_long&demo=valley_ingress&chapter=0` |
+| 8–12 | Topology divergence showcase | `?presentation=showcase_topology_divergence&sweep=ridge_overlap_sweep&chapter=0` |
+| 12–16 | Cross-sweep synthesis (open synthesis panel on scene 1) | `?presentation=showcase_cross_sweep_synthesis&sweep=ridge_overlap_sweep&chapter=0` |
+| 16–20 | Offline publication handoff | `/demo/sweeps/ridge_overlap_sweep/reports/publication_packet.html` |
+
+Friction notes and pacing guidance: [sa_platform_usability_findings.md](sa_platform_usability_findings.md).
+
+## Curated compare pairs
+
+From `compare_pairs.json`:
+
+| pair_id | Mode | Teaches |
+|---------|------|---------|
+| `valley_vs_ridge_replay` | topology A/B | Different topology + logs |
+| `saturation_vs_corridor` | topology A/B | Multi-threat vs corridor geometry |
+| `valley_radar_shifted_north` | sensor study | Shared log, radar shift |
+| `valley_extra_sensor` | sensor study | Shared log, extra sensor |
+| `valley_reduced_overlap` | sensor study | Shared log, overlap layout |
+| `valley_delayed_interceptor_base` | sensor study | Shared log, interceptor offset |
+
 ## Storyboard decks
 
 Index: `/demo/presentations/index.json` (six decks).
@@ -90,3 +115,4 @@ Valley experiment packs (`valley_ingress_*`) share the valley demo log. See [com
 - [replay_mc_sweep_v1.md](replay_mc_sweep_v1.md) — sweep manifests
 - [replay_storyboard_v1.md](replay_storyboard_v1.md) — storyboard schema
 - [sa_platform_maintainer_checklist.md](sa_platform_maintainer_checklist.md) — maintainer regen (not required for reviewers)
+- [sa_platform_usability_findings.md](sa_platform_usability_findings.md) — mentor friction and pacing notes

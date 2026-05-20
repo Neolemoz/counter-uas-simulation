@@ -292,8 +292,8 @@
     },
     {
       "path": "sweeps/delayed_detection_sweep/reports/sweep_presentation_packet.md",
-      "sha256": "77d723ab19e0040afccdf6315736d3e453672e6672551f056b4251ebad1cd14c",
-      "size_bytes": 3700
+      "sha256": "7dfc21cedee46bbc9a83b3edc829cbc7b321b503c567caf33115e9e5b42b8b53",
+      "size_bytes": 4078
     },
     {
       "path": "sweeps/delayed_detection_sweep/reports/topology_divergence_report.md",
@@ -392,8 +392,8 @@
     },
     {
       "path": "sweeps/ridge_overlap_sweep/reports/sweep_presentation_packet.md",
-      "sha256": "f1563d8435f6d6c478b13c46427145e4f55fd20999c451bf8946cafc1343938b",
-      "size_bytes": 3594
+      "sha256": "4fdb36f43ceec150755c8d2fe0c43a42b298750ebc3128399b4ad70577d6f72e",
+      "size_bytes": 3968
     },
     {
       "path": "sweeps/ridge_overlap_sweep/reports/topology_divergence_report.md",
@@ -492,8 +492,8 @@
     },
     {
       "path": "sweeps/saturation_assignment_sweep/reports/sweep_presentation_packet.md",
-      "sha256": "62202c420dedd82f776776bd06f291b6618b64f98a080b7e5e5d455cd421ac9a",
-      "size_bytes": 3727
+      "sha256": "fb16c96217c9ed33bf8c6e4d56da8660773faf427ae34a10c0d14606f982d475",
+      "size_bytes": 4109
     },
     {
       "path": "sweeps/saturation_assignment_sweep/reports/topology_divergence_report.md",
@@ -592,8 +592,8 @@
     },
     {
       "path": "sweeps/valley_sensor_sweep/reports/sweep_presentation_packet.md",
-      "sha256": "468211db6313c6bc09c6ddc384277bbab40815327988ff84262452c4bf2e5ab7",
-      "size_bytes": 3591
+      "sha256": "3b582719c12b820cd3822d105093d794770e67d06df58761c81bbad07def4bc5",
+      "size_bytes": 3965
     },
     {
       "path": "sweeps/valley_sensor_sweep/reports/topology_divergence_report.md",

@@ -106,12 +106,27 @@ def render_topology_walkthrough_report(manifest: dict[str, Any]) -> str:
 
 
 def render_sweep_presentation_packet(manifest: dict[str, Any]) -> str:
+    sid = manifest.get("sweep_id")
+    header = [
+        f"# Sweep presentation packet — `{sid}`",
+        "",
+        manifest.get("governance", {}).get("notice", ""),
+        "",
+        "Combined export for mentor review:",
+        "",
+        "1. Presentation summary (headline + walkthrough steps)",
+        "2. Guided walkthrough report (step-by-step)",
+        "3. Topology walkthrough report (storytelling sections)",
+        "",
+        "---",
+        "",
+    ]
     parts = [
         render_presentation_summary(manifest),
         render_guided_walkthrough_report(manifest),
         render_topology_walkthrough_report(manifest),
     ]
-    return "\n---\n\n".join(parts)
+    return "\n".join(header) + "\n---\n\n".join(parts)
 
 
 def render_presentation_report_v1(manifest: dict[str, Any]) -> dict[str, Any]:

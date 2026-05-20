@@ -174,7 +174,9 @@ Key artifacts:
 - `fixtures/sa_r0/sweeps/<id>/reports/publication_packet.html` — print-ready review packet
 - `fixtures/sa_r0/research_bundles/sa_r0_corpus_r1/` — portable research bundle
 
-Storyboard: `showcase_cross_sweep_synthesis` in `/demo/presentations/index.json`.
+Storyboard: `showcase_cross_sweep_synthesis` in `/demo/presentations/index.json` (six decks — see [sa_r0_reviewer_quickstart.md](sa_r0_reviewer_quickstart.md) § Storyboard decks).
+
+Usability and mentor pacing: [sa_platform_usability_findings.md](sa_platform_usability_findings.md).
 
 See [sa_e2_replay_knowledge_synthesis_plan.md](sa_e2_replay_knowledge_synthesis_plan.md) and [replay_cross_sweep_synthesis_v1.md](replay_cross_sweep_synthesis_v1.md).
 

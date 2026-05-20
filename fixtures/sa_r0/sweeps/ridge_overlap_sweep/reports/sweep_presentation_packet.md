@@ -1,3 +1,14 @@
+# Sweep presentation packet — `ridge_overlap_sweep`
+
+Deterministic replay sweep for spatial analytics exploration only — explanatory replay family, not operational planning.
+
+Combined export for mentor review:
+
+1. Presentation summary (headline + walkthrough steps)
+2. Guided walkthrough report (step-by-step)
+3. Topology walkthrough report (storytelling sections)
+
+---
 # Presentation summary — `ridge_overlap_sweep`
 
 Deterministic replay sweep for spatial analytics exploration only — explanatory replay family, not operational planning.

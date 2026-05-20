@@ -1,7 +1,7 @@
 # SA Platform Release Checkpoint
 
 **Branch:** `codex/replay-narrative-tooling-r1`  
-**Checkpoint commits:** through `b51149f` (Post-STAB hygiene)  
+**Checkpoint commits:** through `98791e7` (release checkpoint + usability polish)  
 **Status:** merge-ready platform checkpoint — documentation and integrity only; no new platform wave.
 
 `AGENTS.md` remains primary governance authority.
@@ -45,7 +45,7 @@ Full index: [freeze_registry_r1.md](freeze_registry_r1.md).
 | Viewer mirror | `platform/sa-r0-viewer/public/demo/` | Interactive review (`npm run dev`) |
 | Offline archive | `fixtures/sa_r0/research_bundles/sa_r0_corpus_r1/` | Portable zip for mentor handoff |
 
-Regeneration: [sa_platform_maintainer_checklist.md](sa_platform_maintainer_checklist.md). Reviewer entry: [sa_r0_reviewer_quickstart.md](sa_r0_reviewer_quickstart.md).
+Regeneration: [sa_platform_maintainer_checklist.md](sa_platform_maintainer_checklist.md). Reviewer entry: [sa_r0_reviewer_quickstart.md](sa_r0_reviewer_quickstart.md). Usability log: [sa_platform_usability_findings.md](sa_platform_usability_findings.md).
 
 ## Governance boundaries preserved
 
@@ -77,6 +77,10 @@ python3 scripts/evaluation/audit_sa_platform_integrity.py --all
 - Cross-sweep compare: descriptive rollups only; viewer compare stays 2-slot A/B
 - PLAN-VIZ-R2 (rosbag/Plotly): planning-only, not implemented
 - PDF export: manual browser print-to-PDF
+
+## Usability polish (post-checkpoint)
+
+See [sa_platform_usability_findings.md](sa_platform_usability_findings.md) for mentor friction notes, walkthrough pacing guidance, and dissemination checklist.
 
 ## Merge readiness
 

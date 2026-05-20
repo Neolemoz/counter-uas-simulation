@@ -54,6 +54,8 @@ Documentation and parity refinements after PLAT-SA-STAB freeze — no new platfo
 - `build_replay_linkage.py` syncs storyline overlay to `public/demo/synthesis/`
 - `tier0-sa-r0` runs `test_sa_platform_integrity.py` explicitly
 
+Release polish: [sa_platform_usability_findings.md](sa_platform_usability_findings.md) — storyboard index parity check, cross-sweep storyboard restored to `gen_e1`, presentation packet readability header.
+
 ## Verdict
 
 **Verdict: frozen** for PLAT-SA-STAB.
