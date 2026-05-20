@@ -40,14 +40,14 @@
       "target_url": "?demo=valley_ingress&presentation=walkthrough_valley_ingress_long&chapter=2"
     },
     {
-      "chapter": 4,
+      "chapter": 3,
       "copy": "Final chapter: replay outcome summary.",
       "importance_tags": [
         "pacing"
       ],
       "label": "Outcome",
       "scene_id": "outcome",
-      "target_url": "?demo=valley_ingress&presentation=walkthrough_valley_ingress_long&chapter=4"
+      "target_url": "?demo=valley_ingress&presentation=walkthrough_valley_ingress_long&chapter=3"
     }
   ],
   "schema_version": "replay_storyboard_v1",

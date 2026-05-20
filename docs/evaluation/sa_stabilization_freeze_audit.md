@@ -43,6 +43,17 @@ scripts/ci_eval.sh tier0-sa-r0
 - Pattern tag recompute mismatches emit **warnings** only; unknown `pattern_id` values fail the audit.
 - Binary asset parity is enforced for synthesis/report allowlists, not every PNG byte in CI.
 
+## Post-STAB hygiene pass (maintenance)
+
+Documentation and parity refinements after PLAT-SA-STAB freeze — no new platform features:
+
+- [sa_r0_reviewer_quickstart.md](sa_r0_reviewer_quickstart.md) — SA-R0 URL cheat sheet and 15-minute reviewer path
+- [sa_platform_maintainer_checklist.md](sa_platform_maintainer_checklist.md) — ordered regen and audit check mapping
+- [fixtures/sa_r0/README.md](../../fixtures/sa_r0/README.md) — fixture directory map
+- Parity allowlist expanded: `storyline_linkage_overlay_v1.json`, publication/review HTML and presentation export suffixes
+- `build_replay_linkage.py` syncs storyline overlay to `public/demo/synthesis/`
+- `tier0-sa-r0` runs `test_sa_platform_integrity.py` explicitly
+
 ## Verdict
 
 **Verdict: frozen** for PLAT-SA-STAB.

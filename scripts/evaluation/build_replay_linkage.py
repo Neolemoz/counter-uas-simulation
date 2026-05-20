@@ -271,6 +271,11 @@ def write_linkage(linkage: dict[str, Any]) -> None:
         (d / "replay_linkage_index_v1.json").write_text(json_text, encoding="utf-8")
         (d / "linkage_summary.md").write_text(md_text, encoding="utf-8")
 
+    overlay_src = fixture / "storyline_linkage_overlay_v1.json"
+    if overlay_src.is_file():
+        overlay_text = overlay_src.read_text(encoding="utf-8")
+        (pub / "storyline_linkage_overlay_v1.json").write_text(overlay_text, encoding="utf-8")
+
 
 def check_linkage() -> None:
     expected = build_linkage_index()

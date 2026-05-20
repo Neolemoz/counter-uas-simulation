@@ -73,6 +73,7 @@ tier0_sa_r0() {
   done
   echo "[ci_eval] tier0-sa-r0: catalog and sweeps sync check"
   "$PY" scripts/evaluation/check_sa_catalog_sync.py
+  "$PY" -m pytest src/counter_uas/test/test_sa_platform_integrity.py -q
   "$PY" -m pytest src/counter_uas/test/test_replay_mc_sweep.py -q
   echo "[ci_eval] tier0-sa-r0: PLAT-SA-STAB platform integrity audit"
   "$PY" scripts/evaluation/audit_sa_platform_integrity.py --all

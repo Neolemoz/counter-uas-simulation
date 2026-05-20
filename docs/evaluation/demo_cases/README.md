@@ -6,6 +6,12 @@ Each brief follows the same structure: what to demonstrate, what to look for, wh
 
 When preparing a live demo, copy the case brief (or its `README_case.md` block) into `runs/evaluation/demo/<case_id>/README_case.md` after generating artifacts.
 
+For SA-R0 spatial replay after static HTML review, see [sa_r0_reviewer_quickstart.md](../sa_r0_reviewer_quickstart.md). Example viewer URLs:
+
+- `clean_hit` / ridge baseline: `http://localhost:5173/` (default `ridge_defense` demo)
+- `ambiguity_pressure`: `?demo=urban_masking`
+- `selection_oracle_divergence`: `?demo=delayed_detection`
+
 | Case ID | Brief file | Primary teaching goal |
 |---------|------------|------------------------|
 | `clean_hit` | [clean_hit.md](clean_hit.md) | Parser-visible success path |

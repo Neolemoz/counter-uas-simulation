@@ -62,7 +62,7 @@ Optional on `replay_sa_bundle_v1`:
 }
 ```
 
-Packed by `replay_sa_bundle.py` at bundle build time. Viewer does **not** implement compare UI in C1b.
+Packed by `replay_sa_bundle.py` at bundle build time. Compare UI shipped in PLAT-SA-D1 (see § D1 implemented below).
 
 ## Governance dos and don'ts
 

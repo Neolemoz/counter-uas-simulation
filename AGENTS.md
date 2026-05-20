@@ -88,6 +88,7 @@ Two frontiers are active. Do not merge them in a single wave.
 - [SA D3 Replay Narrative Intelligence](docs/evaluation/sa_d3_replay_narrative_intelligence_plan.md) — narrative summaries, cohort workstation, N-slot filmstrip, pattern taxonomy, review exports; see PLAT-SA-D3 in freeze registry
 - [SA E1 Research Presentation](docs/evaluation/sa_e1_research_presentation_plan.md) — presentation mode, guided walkthroughs, storytelling layer, storyboard fixtures; see PLAT-SA-E1 in freeze registry
 - [SA E2 Replay Knowledge Synthesis](docs/evaluation/sa_e2_replay_knowledge_synthesis_plan.md) — cross-sweep synthesis, linkage index, publication packets, research bundles; see PLAT-SA-E2 in freeze registry
+- [SA Stabilization](docs/evaluation/sa_stabilization_plan.md) — platform integrity audits, fixture parity, governance batch lint; see PLAT-SA-STAB in freeze registry
 
 Forbidden on the platform frontier: live dashboards, HITL/operator semantics, readiness scoring, parser/topic changes, runtime redesign, rosbridge/WebSocket in eval tooling, extending legacy `web/` rosbridge pages.
 

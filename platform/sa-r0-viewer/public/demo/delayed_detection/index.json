@@ -1103,67 +1103,67 @@
     ]
   },
   "presentation": {
+    "walkthrough_id": "delayed_detection_demo_walkthrough",
     "chapters": [
       {
         "chapter_id": "ingress",
+        "title": "Ingress",
+        "t_start": 8,
+        "t_end": 14,
+        "summary": "Review ingress geometry and initial threat track appearance in this replay variant \u2014 explanatory orientation only.",
         "focus_event_ids": [
           "narrative_event_0001_detection_candidate_spawn"
         ],
+        "topology_highlight": "none",
         "narrative_emphasis": "topology",
-        "spatial_declutter": "top_k",
-        "summary": "Review ingress geometry and initial threat track appearance in this replay variant \u2014 explanatory orientation only.",
-        "t_end": 14,
-        "t_start": 8,
-        "title": "Ingress",
-        "topology_highlight": "none"
+        "spatial_declutter": "top_k"
       },
       {
         "chapter_id": "los_degradation",
-        "los_scope": "selected_track",
-        "narrative_emphasis": "los",
-        "spatial_declutter": "top_k",
-        "summary": "LOS instability concentrates near terrain masking in this replay \u2014 review degraded segments as explanatory evidence only.",
-        "t_end": 17,
-        "t_start": 8,
         "title": "LOS degradation",
-        "topology_highlight": "none"
+        "t_start": 8,
+        "t_end": 17,
+        "summary": "LOS instability concentrates near terrain masking in this replay \u2014 review degraded segments as explanatory evidence only.",
+        "topology_highlight": "none",
+        "narrative_emphasis": "los",
+        "los_scope": "selected_track",
+        "spatial_declutter": "top_k"
       },
       {
         "chapter_id": "ambiguity",
-        "narrative_emphasis": "ambiguity",
-        "spatial_declutter": "threshold",
-        "summary": "Ambiguity windows cluster in overlapping ingress phases \u2014 not evidence of validated operational performance.",
-        "t_end": 30,
+        "title": "Ambiguity concentration",
         "t_start": 20,
-        "title": "Ambiguity concentration"
+        "t_end": 30,
+        "summary": "Ambiguity windows cluster in overlapping ingress phases \u2014 not evidence of validated operational performance.",
+        "narrative_emphasis": "ambiguity",
+        "spatial_declutter": "threshold"
       },
       {
         "chapter_id": "assignment_instability",
+        "title": "Assignment instability",
+        "t_start": 24,
+        "t_end": 30,
+        "summary": "Selection and divergence events appear in replay-local sequence \u2014 localized mismatch language only; not causal proof.",
         "focus_event_ids": [
           "narrative_event_0006_divergence_selection_oracle_mismatch",
           "narrative_event_0007_divergence_divergence_class",
           "narrative_event_0002_selection_selection_block"
         ],
-        "narrative_emphasis": "assignment",
-        "summary": "Selection and divergence events appear in replay-local sequence \u2014 localized mismatch language only; not causal proof.",
-        "t_end": 30,
-        "t_start": 24,
-        "title": "Assignment instability"
+        "narrative_emphasis": "assignment"
       },
       {
         "chapter_id": "replay_outcome",
+        "title": "Replay outcome summary",
+        "t_start": 29,
+        "t_end": 35,
+        "summary": "Review replay outcome markers and final track states \u2014 derived summary only; not deployment readiness.",
         "focus_event_ids": [
           "narrative_event_0008_outcome_outcome_hit",
           "narrative_event_0009_outcome_outcome_miss_distance"
         ],
-        "narrative_emphasis": "pacing",
-        "summary": "Review replay outcome markers and final track states \u2014 derived summary only; not deployment readiness.",
-        "t_end": 35,
-        "t_start": 29,
-        "title": "Replay outcome summary"
+        "narrative_emphasis": "pacing"
       }
-    ],
-    "walkthrough_id": "delayed_detection_demo_walkthrough"
+    ]
   },
   "scenario": {
     "ambiguity_profile": {

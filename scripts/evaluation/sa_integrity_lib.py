@@ -16,6 +16,7 @@ SCENARIOS = _REPO / "fixtures/scenarios"
 SYNTHESIS_PARITY_FILES = (
     "cross_sweep_synthesis_v1.json",
     "replay_linkage_index_v1.json",
+    "storyline_linkage_overlay_v1.json",
     "cross_sweep_summary.md",
     "linkage_summary.md",
     "cognition_rollup_summary.md",
@@ -31,6 +32,11 @@ SWEEP_REPORT_PARITY_SUFFIXES = (
     "ambiguity_hotspot_summary.md",
     "replay_compare_report_v1.json",
     "replay_review_report_v1.json",
+    "publication_packet.html",
+    "review_packet.html",
+    "sweep_presentation_packet.md",
+    "guided_walkthrough_report.md",
+    "replay_presentation_report_v1.json",
 )
 
 

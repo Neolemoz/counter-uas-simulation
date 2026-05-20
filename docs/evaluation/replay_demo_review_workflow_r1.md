@@ -128,6 +128,8 @@ Single-session path for a new reviewer with no prior replay tooling context:
 
 Extended onboarding (three sessions, ~45 minutes): repeat with `paired_seed_delta`, `ambiguity_pressure`, and `fragmentation_phase_pocket` using the mentor sequence below.
 
+**SA-R0 viewer session (recommended second pass):** After static HTML onboarding, continue with [sa_r0_reviewer_quickstart.md](sa_r0_reviewer_quickstart.md) for spatial replay, compare, sweep, and storyboard URLs (~15 minutes).
+
 ## Fifteen-to-twenty-minute mentor presentation sequence
 
 | Minutes | Section | Action |
@@ -347,7 +349,7 @@ scripts/ci_eval.sh tier0-sa-r0
 python3 scripts/evaluation/audit_sa_platform_integrity.py --all
 ```
 
-If parity or staleness checks fail, regenerate with `sync_sa_catalog.py`, `gen_d3_sweep_enrichment.py`, `gen_e1_presentation_fixtures.py`, or `gen_e2_research_fixtures.py` as indicated in audit stderr. See [sa_stabilization_plan.md](sa_stabilization_plan.md).
+If parity or staleness checks fail, regenerate with `sync_sa_catalog.py`, `gen_d3_sweep_enrichment.py`, `gen_e1_presentation_fixtures.py`, or `gen_e2_research_fixtures.py` as indicated in audit stderr. See [sa_stabilization_plan.md](sa_stabilization_plan.md) and [sa_platform_maintainer_checklist.md](sa_platform_maintainer_checklist.md).
 
 ## Related documents
 

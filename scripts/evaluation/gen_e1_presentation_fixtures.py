@@ -146,9 +146,9 @@ STORYBOARDS: list[dict[str, Any]] = [
             {
                 "scene_id": "outcome",
                 "label": "Outcome",
-                "target_url": "?demo=valley_ingress&presentation=walkthrough_valley_ingress_long&chapter=4",
+                "target_url": "?demo=valley_ingress&presentation=walkthrough_valley_ingress_long&chapter=3",
                 "copy": "Final chapter: replay outcome summary.",
-                "chapter": 4,
+                "chapter": 3,
                 "importance_tags": ["pacing"],
             },
         ],

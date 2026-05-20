@@ -34,12 +34,6 @@
       "storyboard_id": "walkthrough_assignment_instability",
       "storyboard_url": "/demo/presentations/walkthrough_assignment_instability.json",
       "title": "Assignment instability walkthrough"
-    },
-    {
-      "estimated_minutes": 14,
-      "storyboard_id": "showcase_cross_sweep_synthesis",
-      "storyboard_url": "/demo/presentations/showcase_cross_sweep_synthesis.json",
-      "title": "Showcase: cross-sweep synthesis corpus"
     }
   ]
 }
