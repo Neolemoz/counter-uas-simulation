@@ -3359,12 +3359,18 @@ class InterceptionLogicNode(Node):
         self._last_layer = ''
         self._last_feas_log = None
         self._last_class_warn = None
+        self._target = None
+        self._target_filter_velocity = None
         self._v_tgt_smooth = (0.0, 0.0, 0.0)
         self._prev_target = None
         self._prev_target_time = None
         self._hit_snap_target_prev = None
         self._hit_snap_target_prev_multi.clear()
         self._target_detect_time = None
+        self._inter_pos = {i: None for i in self._ids}
+        self._inter_start_pos.clear()
+        self._t_go_filtered = {i: None for i in self._ids}
+        self._guidance_unit_prev.clear()
         for iid in self._ids:
             self._prev_inter_pos[iid] = None
             self._prev_inter_time[iid] = None
@@ -3947,6 +3953,8 @@ class InterceptionLogicNode(Node):
             self._guidance_mode[iid] = 'pursuit'
             self._valid_streak[iid] = 0
             self._invalid_streak[iid] = 0
+            self._t_go_filtered[iid] = None
+            self._guidance_unit_prev.pop(iid, None)
         self._last_hit_range = {i: None for i in self._ids}
         self._feasible_at_engagement_start_by_pair.clear()
         self._feas_eng_latch_assign.clear()
