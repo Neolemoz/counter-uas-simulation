@@ -57,6 +57,9 @@ _HIT_RE     = re.compile(r"\[HIT\]")
 _MINMISS_RE = re.compile(r"\[min_miss\]\s*=\s*(?P<v>[0-9]+(?:\.[0-9]+)?)\s*m\b")
 _HITHR_RE   = re.compile(r"hit_threshold\s*=\s*(?P<v>[0-9]+(?:\.[0-9]+)?)\s*m")
 _MINMISS_IN_HIT_RE = re.compile(r"\bmin_miss=(?P<v>[0-9]+(?:\.[0-9]+)?)\s*m\b")
+_RESULT_INTERCEPT_TIME_RE = re.compile(
+    r"\bintercept_time\s*=\s*(?P<v>[+-]?(?:[0-9]+(?:\.[0-9]*)?|\.[0-9]+)(?:[eE][+-]?[0-9]+)?)\s*s?\b"
+)
 
 # optional evaluation-layer tags (used by summarize_run.py; keep parsing lightweight here too)
 _LAYER_RE = re.compile(r"\[LAYER\]\s+(?P<layer>\S+)\b")
@@ -97,6 +100,7 @@ def parse_log(text: str) -> dict:
     vel_series:    list[float] = []   # commanded velocity magnitude
     cmd_vels:      list[tuple[float, float, float]] = []  # for heading-change calc
     thit_series:   list[float] = []   # t_hit from [Intercept Debug]
+    result_intercept_time_series: list[float] = []  # elapsed time from [RESULT]
     mode_series:   list[str]   = []   # mode from [Intercept Debug]
 
     hit            = False
@@ -169,6 +173,10 @@ def parse_log(text: str) -> dict:
         if m3:
             hit_threshold = float(m3.group("v"))
 
+        rt = _RESULT_INTERCEPT_TIME_RE.search(s)
+        if rt:
+            result_intercept_time_series.append(float(rt.group("v")))
+
     # heading-change series (°/step) from consecutive cmd_vel vectors
     heading_changes: list[float] = []
     for i in range(1, len(cmd_vels)):
@@ -182,6 +190,7 @@ def parse_log(text: str) -> dict:
         "tgo_series":       tgo_series,
         "vel_series":       vel_series,
         "thit_series":      thit_series,
+        "result_intercept_time_series": result_intercept_time_series,
         "mode_series":      mode_series,
         "heading_changes":  heading_changes,
     }
@@ -210,10 +219,14 @@ def parse_run_to_result(log_path: str) -> dict:
         mm_val = float(mm)
         mm_note = "miss_distance from [min_miss]"
 
+    result_times = data.get("result_intercept_time_series", []) or []
     tgo = data.get("tgo_series", []) or []
     thit = data.get("thit_series", []) or []
     intercept_time_s: float | None
-    if tgo:
+    if result_times:
+        intercept_time_s = float(result_times[-1])
+        t_note = "intercept_time from [RESULT]"
+    elif tgo:
         intercept_time_s = float(tgo[-1])
         t_note = "intercept_time from last t_go sample"
     elif thit:
