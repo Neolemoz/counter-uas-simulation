@@ -1,0 +1,93 @@
+{
+  "artifact_type": "replay_corpus_drift_report_v1",
+  "corpus_id": "sa_r0_corpus_r1",
+  "findings": [
+    {
+      "entry_id": "sweep_family__delayed_detection_sweep",
+      "finding_id": "corpus_ref_missing__0006",
+      "kind": "corpus_ref_missing",
+      "message": "optional corpus_ref absent on fixtures/sa_r0/sweeps/delayed_detection_sweep/sweep.json",
+      "path": "fixtures/sa_r0/sweeps/delayed_detection_sweep/sweep.json",
+      "severity": "info"
+    },
+    {
+      "entry_id": "sweep_family__ridge_overlap_sweep",
+      "finding_id": "corpus_ref_missing__0007",
+      "kind": "corpus_ref_missing",
+      "message": "optional corpus_ref absent on fixtures/sa_r0/sweeps/ridge_overlap_sweep/sweep.json",
+      "path": "fixtures/sa_r0/sweeps/ridge_overlap_sweep/sweep.json",
+      "severity": "info"
+    },
+    {
+      "entry_id": "sweep_family__saturation_assignment_sweep",
+      "finding_id": "corpus_ref_missing__0008",
+      "kind": "corpus_ref_missing",
+      "message": "optional corpus_ref absent on fixtures/sa_r0/sweeps/saturation_assignment_sweep/sweep.json",
+      "path": "fixtures/sa_r0/sweeps/saturation_assignment_sweep/sweep.json",
+      "severity": "info"
+    },
+    {
+      "entry_id": "sweep_family__valley_sensor_sweep",
+      "finding_id": "corpus_ref_missing__0009",
+      "kind": "corpus_ref_missing",
+      "message": "optional corpus_ref absent on fixtures/sa_r0/sweeps/valley_sensor_sweep/sweep.json",
+      "path": "fixtures/sa_r0/sweeps/valley_sensor_sweep/sweep.json",
+      "severity": "info"
+    },
+    {
+      "finding_id": "unindexed_file__0001",
+      "kind": "unindexed_file",
+      "message": "discoverable artifact not in corpus index: fixtures/sa_r0/synthesis/replay_corpus_evolution_manifest_v1.json",
+      "path": "fixtures/sa_r0/synthesis/replay_corpus_evolution_manifest_v1.json",
+      "severity": "info"
+    },
+    {
+      "finding_id": "unindexed_file__0002",
+      "kind": "unindexed_file",
+      "message": "discoverable artifact not in corpus index: fixtures/sa_r0/synthesis/replay_corpus_evolution_summary_v1.json",
+      "path": "fixtures/sa_r0/synthesis/replay_corpus_evolution_summary_v1.json",
+      "severity": "info"
+    },
+    {
+      "finding_id": "unindexed_file__0003",
+      "kind": "unindexed_file",
+      "message": "discoverable artifact not in corpus index: fixtures/sa_r0/synthesis/replay_corpus_index_v1.json",
+      "path": "fixtures/sa_r0/synthesis/replay_corpus_index_v1.json",
+      "severity": "info"
+    },
+    {
+      "finding_id": "unindexed_file__0004",
+      "kind": "unindexed_file",
+      "message": "discoverable artifact not in corpus index: fixtures/sa_r0/synthesis/replay_corpus_publication_packet_v1.json",
+      "path": "fixtures/sa_r0/synthesis/replay_corpus_publication_packet_v1.json",
+      "severity": "info"
+    },
+    {
+      "finding_id": "unindexed_file__0005",
+      "kind": "unindexed_file",
+      "message": "discoverable artifact not in corpus index: fixtures/sa_r0/presentations/index.json",
+      "path": "fixtures/sa_r0/presentations/index.json",
+      "severity": "info"
+    }
+  ],
+  "generation_revision": "f1b_v1",
+  "governance": {
+    "anti_claims": [
+      "Drift findings indicate bytes or references out of sync with the corpus index.",
+      "Regeneration restores deterministic artifacts; drift does not imply invalid doctrine."
+    ],
+    "notice": "Corpus drift report for maintainer integrity review only \u2014 explanatory fixture drift inventory, not operational failure or readiness."
+  },
+  "index_revision": "cf644076b570350467afc409f07ec3fc7bbb18692fde2a1858873ae4af2d3207",
+  "schema_version": "replay_corpus_drift_report_v1",
+  "summary": {
+    "by_kind": {
+      "corpus_ref_missing": 4,
+      "unindexed_file": 5
+    },
+    "by_severity": {
+      "info": 9
+    },
+    "total": 9
+  }
+}

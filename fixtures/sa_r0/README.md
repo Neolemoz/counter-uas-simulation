@@ -1,6 +1,6 @@
 # SA-R0 platform fixtures
 
-Committed source of truth for the frozen SA-R0 replay platform (PLAT-SA-R0 through PLAT-SA-E2). Served interactively via mirror at `platform/sa-r0-viewer/public/demo/`.
+Committed source of truth for the frozen SA-R0 replay platform (PLAT-SA-R0 through PLAT-SA-F1a). Served interactively via mirror at `platform/sa-r0-viewer/public/demo/`.
 
 **Explanatory replay artifacts only** — not operational authority.
 
@@ -11,7 +11,9 @@ Committed source of truth for the frozen SA-R0 replay platform (PLAT-SA-R0 throu
 | `demo_<pack_id>/` | `replay_sa_bundle_v1` index + demo log/meta sidecars |
 | `sweeps/<sweep_id>/` | MC sweep manifests, members, spatial analytics, reports |
 | `presentations/` | Storyboard decks + `index.json` |
-| `synthesis/` | Cross-sweep synthesis, linkage, cognition rollups |
+| `synthesis/` | Cross-sweep synthesis, linkage, cognition rollups, corpus index |
+| `corpus_releases/` | Deterministic release snapshots (`sa_r0_corpus_r1_r1/`) |
+| `corpus_audits/` | Drift report, release diff, regen run report (F1b) |
 | `research_bundles/sa_r0_corpus_r1/` | Portable offline corpus (+ `.zip`) |
 
 Default viewer bundle: `demo_ridge_defense/` (mirrored to `public/demo/index.json`).

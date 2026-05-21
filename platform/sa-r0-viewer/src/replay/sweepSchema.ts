@@ -108,6 +108,14 @@ export const replayMcSweepSchema = z.object({
       ),
     })
     .optional(),
+  corpus_ref: z
+    .object({
+      corpus_id: z.string(),
+      entry_id: z.string(),
+      lineage_parent_ids: z.array(z.string()).optional(),
+      index_revision: z.string().optional(),
+    })
+    .optional(),
 });
 
 export type ReplayMcSweep = z.infer<typeof replayMcSweepSchema>;

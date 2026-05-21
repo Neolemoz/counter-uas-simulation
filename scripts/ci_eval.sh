@@ -86,6 +86,21 @@ tier0_sa_r0() {
     src/counter_uas/test/test_replay_publication_export.py \
     src/counter_uas/test/test_replay_research_bundle.py -q
   "$PY" scripts/evaluation/export_research_bundle.py --check
+  echo "[ci_eval] tier0-sa-r0: F1a corpus index and lineage"
+  "$PY" scripts/evaluation/build_replay_corpus_index.py --check
+  "$PY" scripts/evaluation/validate_replay_corpus.py
+  "$PY" scripts/evaluation/build_replay_corpus_release.py --check
+  "$PY" -m pytest src/counter_uas/test/test_replay_corpus_index.py -q
+  echo "[ci_eval] tier0-sa-r0: F1b corpus audit and reproducibility"
+  "$PY" scripts/evaluation/verify_replay_corpus_reproducibility.py
+  "$PY" -m pytest src/counter_uas/test/test_replay_corpus_audit.py -q
+  echo "[ci_eval] tier0-sa-r0: F1c corpus navigation"
+  "$PY" -m pytest src/counter_uas/test/test_replay_corpus_navigation.py -q
+  echo "[ci_eval] tier0-sa-r0: F1d corpus evolution and publication"
+  "$PY" scripts/evaluation/build_replay_corpus_evolution.py --check
+  "$PY" scripts/evaluation/build_replay_corpus_publication.py --check
+  "$PY" scripts/evaluation/verify_replay_corpus_release.py
+  "$PY" -m pytest src/counter_uas/test/test_replay_corpus_evolution.py -q
   echo "[ci_eval] tier0-sa-r0: platform/sa-r0-viewer"
   (cd "$ROOT/platform/sa-r0-viewer" && npm ci && npm test && npm run build)
   echo "[ci_eval] tier0-sa-r0: OK"

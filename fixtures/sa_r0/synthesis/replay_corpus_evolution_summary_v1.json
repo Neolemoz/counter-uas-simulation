@@ -1,0 +1,897 @@
+{
+  "ambiguity_trend_rollup": {
+    "chronology_tiers": {
+      "corpus_release": {
+        "entry_count": 1,
+        "release_generation_id": "gen_corpus_ops"
+      },
+      "export_e1": {
+        "entry_count": 16,
+        "release_generation_id": "gen_export"
+      },
+      "presentation_e1": {
+        "entry_count": 6,
+        "release_generation_id": "gen_presentation"
+      },
+      "sweep_wave_d2": {
+        "entry_count": 4,
+        "release_generation_id": "gen_sweep_d2"
+      },
+      "synthesis_e2": {
+        "entry_count": 6,
+        "release_generation_id": "gen_synthesis"
+      },
+      "topology_baseline": {
+        "entry_count": 12,
+        "release_generation_id": "gen_topology"
+      },
+      "topology_demo": {
+        "entry_count": 12,
+        "release_generation_id": "gen_topology_demo"
+      }
+    },
+    "note": "Ambiguity concentration compared across sweep families \u2014 explanatory spatial analytics only.",
+    "shared_hotspot_cells": [
+      173,
+      207,
+      212,
+      213
+    ],
+    "top_cells_by_sweep": {
+      "delayed_detection_sweep": [
+        {
+          "cell_index": 216,
+          "count": 6
+        },
+        {
+          "cell_index": 213,
+          "count": 3
+        },
+        {
+          "cell_index": 215,
+          "count": 3
+        }
+      ],
+      "ridge_overlap_sweep": [
+        {
+          "cell_index": 207,
+          "count": 3
+        },
+        {
+          "cell_index": 213,
+          "count": 3
+        },
+        {
+          "cell_index": 212,
+          "count": 2
+        },
+        {
+          "cell_index": 214,
+          "count": 2
+        },
+        {
+          "cell_index": 173,
+          "count": 1
+        }
+      ],
+      "saturation_assignment_sweep": [
+        {
+          "cell_index": 208,
+          "count": 4
+        },
+        {
+          "cell_index": 212,
+          "count": 4
+        },
+        {
+          "cell_index": 173,
+          "count": 2
+        },
+        {
+          "cell_index": 209,
+          "count": 2
+        }
+      ],
+      "valley_sensor_sweep": [
+        {
+          "cell_index": 207,
+          "count": 15
+        }
+      ]
+    }
+  },
+  "artifact_type": "replay_corpus_evolution_summary_v1",
+  "corpus_id": "sa_r0_corpus_r1",
+  "divergence_chronology": [
+    "[topology_baseline] 12 entries \u2014 Topology experiment baseline.",
+    "[topology_demo] 12 entries \u2014 Demo bundle replay wave.",
+    "[sweep_wave_d2] 4 entries \u2014 Monte Carlo sweep generation (D2).",
+    "[presentation_e1] 6 entries \u2014 Presentation and storyboard wave (E1).",
+    "[export_e1] 16 entries \u2014 Static export and publication packets (E1).",
+    "[synthesis_e2] 6 entries \u2014 Cross-sweep synthesis wave (E2).",
+    "[corpus_release] 1 entries \u2014 Corpus release and research bundle.",
+    "Sweep `valley_sensor_sweep`: sweep family indexed; see workstation for member replay detail.",
+    "Sweep `ridge_overlap_sweep`: sweep family indexed; see workstation for member replay detail.",
+    "Sweep `delayed_detection_sweep`: sweep family indexed; see workstation for member replay detail.",
+    "Sweep `saturation_assignment_sweep`: sweep family indexed; see workstation for member replay detail.",
+    "Divergence chronology is replay-local ordering \u2014 not causal inference or operational timeline."
+  ],
+  "generation_revision": "f1d_v1",
+  "governance": {
+    "anti_claims": [
+      "Evolution rollups document artifact derivation waves, not causal tactical doctrine.",
+      "Chronology tiers do not certify comparability across experiments.",
+      "Cross-release diffs are structural integrity comparisons only."
+    ],
+    "notice": "Replay corpus evolution manifest for long-horizon research review only \u2014 descriptive chronology and release comparison, not operational lifecycle management."
+  },
+  "long_horizon_family_narratives": [
+    {
+      "caveat": "Family grouping does not imply tactical equivalence across experiments.",
+      "entry_ids": [
+        "synthesis_report__cognition_rollup_summary"
+      ],
+      "entry_kinds": [
+        "synthesis_report"
+      ],
+      "replay_family": "cognition_rollup_summary",
+      "summary": "Replay family `cognition_rollup_summary` spans 1 corpus entries (synthesis_report) \u2014 explanatory lineage grouping only."
+    },
+    {
+      "caveat": "Family grouping does not imply tactical equivalence across experiments.",
+      "entry_ids": [
+        "demo_bundle__corridor_defense",
+        "topology_experiment__corridor_defense"
+      ],
+      "entry_kinds": [
+        "demo_bundle",
+        "topology_experiment"
+      ],
+      "replay_family": "corridor_defense",
+      "summary": "Replay family `corridor_defense` spans 2 corpus entries (demo_bundle, topology_experiment) \u2014 explanatory lineage grouping only."
+    },
+    {
+      "caveat": "Family grouping does not imply tactical equivalence across experiments.",
+      "entry_ids": [
+        "synthesis_report__cross_sweep_summary",
+        "synthesis_report__cross_sweep_synthesis_v1",
+        "synthesis_report__linkage_summary",
+        "synthesis_report__replay_linkage_index_v1"
+      ],
+      "entry_kinds": [
+        "synthesis_report"
+      ],
+      "replay_family": "cross_sweep",
+      "summary": "Replay family `cross_sweep` spans 4 corpus entries (synthesis_report) \u2014 explanatory lineage grouping only."
+    },
+    {
+      "caveat": "Family grouping does not imply tactical equivalence across experiments.",
+      "entry_ids": [
+        "demo_bundle__delayed_detection",
+        "topology_experiment__delayed_detection"
+      ],
+      "entry_kinds": [
+        "demo_bundle",
+        "topology_experiment"
+      ],
+      "replay_family": "delayed_detection",
+      "summary": "Replay family `delayed_detection` spans 2 corpus entries (demo_bundle, topology_experiment) \u2014 explanatory lineage grouping only."
+    },
+    {
+      "caveat": "Family grouping does not imply tactical equivalence across experiments.",
+      "entry_ids": [
+        "publication_packet__delayed_detection_sweep_publication",
+        "replay_export__delayed_detection_sweep_compare",
+        "replay_export__delayed_detection_sweep_presentation",
+        "replay_export__delayed_detection_sweep_review",
+        "sweep_family__delayed_detection_sweep"
+      ],
+      "entry_kinds": [
+        "publication_packet",
+        "replay_export",
+        "sweep_family"
+      ],
+      "replay_family": "delayed_detection_sweep",
+      "summary": "Replay family `delayed_detection_sweep` spans 5 corpus entries (publication_packet, replay_export, sweep_family) \u2014 explanatory lineage grouping only."
+    },
+    {
+      "caveat": "Family grouping does not imply tactical equivalence across experiments.",
+      "entry_ids": [
+        "demo_bundle__long_range_ingress",
+        "topology_experiment__long_range_ingress"
+      ],
+      "entry_kinds": [
+        "demo_bundle",
+        "topology_experiment"
+      ],
+      "replay_family": "long_range_ingress",
+      "summary": "Replay family `long_range_ingress` spans 2 corpus entries (demo_bundle, topology_experiment) \u2014 explanatory lineage grouping only."
+    },
+    {
+      "caveat": "Family grouping does not imply tactical equivalence across experiments.",
+      "entry_ids": [
+        "demo_bundle__multi_ridge",
+        "topology_experiment__multi_ridge"
+      ],
+      "entry_kinds": [
+        "demo_bundle",
+        "topology_experiment"
+      ],
+      "replay_family": "multi_ridge",
+      "summary": "Replay family `multi_ridge` spans 2 corpus entries (demo_bundle, topology_experiment) \u2014 explanatory lineage grouping only."
+    },
+    {
+      "caveat": "Family grouping does not imply tactical equivalence across experiments.",
+      "entry_ids": [
+        "synthesis_report__presentation_assets_index_v1"
+      ],
+      "entry_kinds": [
+        "synthesis_report"
+      ],
+      "replay_family": "presentation_assets_index_v1",
+      "summary": "Replay family `presentation_assets_index_v1` spans 1 corpus entries (synthesis_report) \u2014 explanatory lineage grouping only."
+    },
+    {
+      "caveat": "Family grouping does not imply tactical equivalence across experiments.",
+      "entry_ids": [
+        "demo_bundle__ridge_defense",
+        "topology_experiment__ridge_defense"
+      ],
+      "entry_kinds": [
+        "demo_bundle",
+        "topology_experiment"
+      ],
+      "replay_family": "ridge_defense",
+      "summary": "Replay family `ridge_defense` spans 2 corpus entries (demo_bundle, topology_experiment) \u2014 explanatory lineage grouping only."
+    },
+    {
+      "caveat": "Family grouping does not imply tactical equivalence across experiments.",
+      "entry_ids": [
+        "publication_packet__ridge_overlap_sweep_publication",
+        "replay_export__ridge_overlap_sweep_compare",
+        "replay_export__ridge_overlap_sweep_presentation",
+        "replay_export__ridge_overlap_sweep_review",
+        "sweep_family__ridge_overlap_sweep"
+      ],
+      "entry_kinds": [
+        "publication_packet",
+        "replay_export",
+        "sweep_family"
+      ],
+      "replay_family": "ridge_overlap_sweep",
+      "summary": "Replay family `ridge_overlap_sweep` spans 5 corpus entries (publication_packet, replay_export, sweep_family) \u2014 explanatory lineage grouping only."
+    },
+    {
+      "caveat": "Family grouping does not imply tactical equivalence across experiments.",
+      "entry_ids": [
+        "research_bundle__sa_r0_corpus_r1"
+      ],
+      "entry_kinds": [
+        "research_bundle"
+      ],
+      "replay_family": "sa_r0_corpus_r1",
+      "summary": "Replay family `sa_r0_corpus_r1` spans 1 corpus entries (research_bundle) \u2014 explanatory lineage grouping only."
+    },
+    {
+      "caveat": "Family grouping does not imply tactical equivalence across experiments.",
+      "entry_ids": [
+        "publication_packet__saturation_assignment_sweep_publication",
+        "replay_export__saturation_assignment_sweep_compare",
+        "replay_export__saturation_assignment_sweep_presentation",
+        "replay_export__saturation_assignment_sweep_review",
+        "sweep_family__saturation_assignment_sweep"
+      ],
+      "entry_kinds": [
+        "publication_packet",
+        "replay_export",
+        "sweep_family"
+      ],
+      "replay_family": "saturation_assignment_sweep",
+      "summary": "Replay family `saturation_assignment_sweep` spans 5 corpus entries (publication_packet, replay_export, sweep_family) \u2014 explanatory lineage grouping only."
+    },
+    {
+      "caveat": "Family grouping does not imply tactical equivalence across experiments.",
+      "entry_ids": [
+        "demo_bundle__saturation_ingress",
+        "topology_experiment__saturation_ingress"
+      ],
+      "entry_kinds": [
+        "demo_bundle",
+        "topology_experiment"
+      ],
+      "replay_family": "saturation_ingress",
+      "summary": "Replay family `saturation_ingress` spans 2 corpus entries (demo_bundle, topology_experiment) \u2014 explanatory lineage grouping only."
+    },
+    {
+      "caveat": "Family grouping does not imply tactical equivalence across experiments.",
+      "entry_ids": [
+        "presentation_deck__showcase_ambiguity_heavy"
+      ],
+      "entry_kinds": [
+        "presentation_deck"
+      ],
+      "replay_family": "showcase_ambiguity_heavy",
+      "summary": "Replay family `showcase_ambiguity_heavy` spans 1 corpus entries (presentation_deck) \u2014 explanatory lineage grouping only."
+    },
+    {
+      "caveat": "Family grouping does not imply tactical equivalence across experiments.",
+      "entry_ids": [
+        "presentation_deck__showcase_best_narratives"
+      ],
+      "entry_kinds": [
+        "presentation_deck"
+      ],
+      "replay_family": "showcase_best_narratives",
+      "summary": "Replay family `showcase_best_narratives` spans 1 corpus entries (presentation_deck) \u2014 explanatory lineage grouping only."
+    },
+    {
+      "caveat": "Family grouping does not imply tactical equivalence across experiments.",
+      "entry_ids": [
+        "presentation_deck__showcase_cross_sweep_synthesis"
+      ],
+      "entry_kinds": [
+        "presentation_deck"
+      ],
+      "replay_family": "showcase_cross_sweep_synthesis",
+      "summary": "Replay family `showcase_cross_sweep_synthesis` spans 1 corpus entries (presentation_deck) \u2014 explanatory lineage grouping only."
+    },
+    {
+      "caveat": "Family grouping does not imply tactical equivalence across experiments.",
+      "entry_ids": [
+        "presentation_deck__showcase_topology_divergence"
+      ],
+      "entry_kinds": [
+        "presentation_deck"
+      ],
+      "replay_family": "showcase_topology_divergence",
+      "summary": "Replay family `showcase_topology_divergence` spans 1 corpus entries (presentation_deck) \u2014 explanatory lineage grouping only."
+    },
+    {
+      "caveat": "Family grouping does not imply tactical equivalence across experiments.",
+      "entry_ids": [
+        "demo_bundle__urban_masking",
+        "topology_experiment__urban_masking"
+      ],
+      "entry_kinds": [
+        "demo_bundle",
+        "topology_experiment"
+      ],
+      "replay_family": "urban_masking",
+      "summary": "Replay family `urban_masking` spans 2 corpus entries (demo_bundle, topology_experiment) \u2014 explanatory lineage grouping only."
+    },
+    {
+      "caveat": "Family grouping does not imply tactical equivalence across experiments.",
+      "entry_ids": [
+        "demo_bundle__valley_ingress",
+        "topology_experiment__valley_ingress"
+      ],
+      "entry_kinds": [
+        "demo_bundle",
+        "topology_experiment"
+      ],
+      "replay_family": "valley_ingress",
+      "summary": "Replay family `valley_ingress` spans 2 corpus entries (demo_bundle, topology_experiment) \u2014 explanatory lineage grouping only."
+    },
+    {
+      "caveat": "Family grouping does not imply tactical equivalence across experiments.",
+      "entry_ids": [
+        "demo_bundle__valley_ingress_delayed_interceptor_base",
+        "topology_experiment__valley_ingress_delayed_interceptor_base"
+      ],
+      "entry_kinds": [
+        "demo_bundle",
+        "topology_experiment"
+      ],
+      "replay_family": "valley_ingress_delayed_interceptor_base",
+      "summary": "Replay family `valley_ingress_delayed_interceptor_base` spans 2 corpus entries (demo_bundle, topology_experiment) \u2014 explanatory lineage grouping only."
+    },
+    {
+      "caveat": "Family grouping does not imply tactical equivalence across experiments.",
+      "entry_ids": [
+        "demo_bundle__valley_ingress_extra_valley_sensor",
+        "topology_experiment__valley_ingress_extra_valley_sensor"
+      ],
+      "entry_kinds": [
+        "demo_bundle",
+        "topology_experiment"
+      ],
+      "replay_family": "valley_ingress_extra_valley_sensor",
+      "summary": "Replay family `valley_ingress_extra_valley_sensor` spans 2 corpus entries (demo_bundle, topology_experiment) \u2014 explanatory lineage grouping only."
+    },
+    {
+      "caveat": "Family grouping does not imply tactical equivalence across experiments.",
+      "entry_ids": [
+        "demo_bundle__valley_ingress_radar_shifted_north",
+        "topology_experiment__valley_ingress_radar_shifted_north"
+      ],
+      "entry_kinds": [
+        "demo_bundle",
+        "topology_experiment"
+      ],
+      "replay_family": "valley_ingress_radar_shifted_north",
+      "summary": "Replay family `valley_ingress_radar_shifted_north` spans 2 corpus entries (demo_bundle, topology_experiment) \u2014 explanatory lineage grouping only."
+    },
+    {
+      "caveat": "Family grouping does not imply tactical equivalence across experiments.",
+      "entry_ids": [
+        "demo_bundle__valley_ingress_reduced_overlap_layout",
+        "topology_experiment__valley_ingress_reduced_overlap_layout"
+      ],
+      "entry_kinds": [
+        "demo_bundle",
+        "topology_experiment"
+      ],
+      "replay_family": "valley_ingress_reduced_overlap_layout",
+      "summary": "Replay family `valley_ingress_reduced_overlap_layout` spans 2 corpus entries (demo_bundle, topology_experiment) \u2014 explanatory lineage grouping only."
+    },
+    {
+      "caveat": "Family grouping does not imply tactical equivalence across experiments.",
+      "entry_ids": [
+        "publication_packet__valley_sensor_sweep_publication",
+        "replay_export__valley_sensor_sweep_compare",
+        "replay_export__valley_sensor_sweep_presentation",
+        "replay_export__valley_sensor_sweep_review",
+        "sweep_family__valley_sensor_sweep"
+      ],
+      "entry_kinds": [
+        "publication_packet",
+        "replay_export",
+        "sweep_family"
+      ],
+      "replay_family": "valley_sensor_sweep",
+      "summary": "Replay family `valley_sensor_sweep` spans 5 corpus entries (publication_packet, replay_export, sweep_family) \u2014 explanatory lineage grouping only."
+    },
+    {
+      "caveat": "Family grouping does not imply tactical equivalence across experiments.",
+      "entry_ids": [
+        "presentation_deck__walkthrough_assignment_instability"
+      ],
+      "entry_kinds": [
+        "presentation_deck"
+      ],
+      "replay_family": "walkthrough_assignment_instability",
+      "summary": "Replay family `walkthrough_assignment_instability` spans 1 corpus entries (presentation_deck) \u2014 explanatory lineage grouping only."
+    },
+    {
+      "caveat": "Family grouping does not imply tactical equivalence across experiments.",
+      "entry_ids": [
+        "presentation_deck__walkthrough_valley_ingress_long"
+      ],
+      "entry_kinds": [
+        "presentation_deck"
+      ],
+      "replay_family": "walkthrough_valley_ingress_long",
+      "summary": "Replay family `walkthrough_valley_ingress_long` spans 1 corpus entries (presentation_deck) \u2014 explanatory lineage grouping only."
+    }
+  ],
+  "pattern_evolution_rollup": {
+    "cognition_rollup_summary": {
+      "chronology_groups": [
+        "synthesis_e2"
+      ],
+      "entry_count": 1,
+      "entry_kinds": [
+        "synthesis_report"
+      ]
+    },
+    "corridor_defense": {
+      "chronology_groups": [
+        "topology_baseline",
+        "topology_demo"
+      ],
+      "entry_count": 2,
+      "entry_kinds": [
+        "demo_bundle",
+        "topology_experiment"
+      ]
+    },
+    "cross_sweep": {
+      "chronology_groups": [
+        "synthesis_e2"
+      ],
+      "entry_count": 4,
+      "entry_kinds": [
+        "synthesis_report"
+      ]
+    },
+    "delayed_detection": {
+      "chronology_groups": [
+        "topology_baseline",
+        "topology_demo"
+      ],
+      "entry_count": 2,
+      "entry_kinds": [
+        "demo_bundle",
+        "topology_experiment"
+      ]
+    },
+    "delayed_detection_sweep": {
+      "chronology_groups": [
+        "export_e1",
+        "sweep_wave_d2"
+      ],
+      "entry_count": 5,
+      "entry_kinds": [
+        "publication_packet",
+        "replay_export",
+        "sweep_family"
+      ]
+    },
+    "long_range_ingress": {
+      "chronology_groups": [
+        "topology_baseline",
+        "topology_demo"
+      ],
+      "entry_count": 2,
+      "entry_kinds": [
+        "demo_bundle",
+        "topology_experiment"
+      ]
+    },
+    "multi_ridge": {
+      "chronology_groups": [
+        "topology_baseline",
+        "topology_demo"
+      ],
+      "entry_count": 2,
+      "entry_kinds": [
+        "demo_bundle",
+        "topology_experiment"
+      ]
+    },
+    "presentation_assets_index_v1": {
+      "chronology_groups": [
+        "synthesis_e2"
+      ],
+      "entry_count": 1,
+      "entry_kinds": [
+        "synthesis_report"
+      ]
+    },
+    "ridge_defense": {
+      "chronology_groups": [
+        "topology_baseline",
+        "topology_demo"
+      ],
+      "entry_count": 2,
+      "entry_kinds": [
+        "demo_bundle",
+        "topology_experiment"
+      ]
+    },
+    "ridge_overlap_sweep": {
+      "chronology_groups": [
+        "export_e1",
+        "sweep_wave_d2"
+      ],
+      "entry_count": 5,
+      "entry_kinds": [
+        "publication_packet",
+        "replay_export",
+        "sweep_family"
+      ]
+    },
+    "sa_r0_corpus_r1": {
+      "chronology_groups": [
+        "corpus_release"
+      ],
+      "entry_count": 1,
+      "entry_kinds": [
+        "research_bundle"
+      ]
+    },
+    "saturation_assignment_sweep": {
+      "chronology_groups": [
+        "export_e1",
+        "sweep_wave_d2"
+      ],
+      "entry_count": 5,
+      "entry_kinds": [
+        "publication_packet",
+        "replay_export",
+        "sweep_family"
+      ]
+    },
+    "saturation_ingress": {
+      "chronology_groups": [
+        "topology_baseline",
+        "topology_demo"
+      ],
+      "entry_count": 2,
+      "entry_kinds": [
+        "demo_bundle",
+        "topology_experiment"
+      ]
+    },
+    "showcase_ambiguity_heavy": {
+      "chronology_groups": [
+        "presentation_e1"
+      ],
+      "entry_count": 1,
+      "entry_kinds": [
+        "presentation_deck"
+      ]
+    },
+    "showcase_best_narratives": {
+      "chronology_groups": [
+        "presentation_e1"
+      ],
+      "entry_count": 1,
+      "entry_kinds": [
+        "presentation_deck"
+      ]
+    },
+    "showcase_cross_sweep_synthesis": {
+      "chronology_groups": [
+        "presentation_e1"
+      ],
+      "entry_count": 1,
+      "entry_kinds": [
+        "presentation_deck"
+      ]
+    },
+    "showcase_topology_divergence": {
+      "chronology_groups": [
+        "presentation_e1"
+      ],
+      "entry_count": 1,
+      "entry_kinds": [
+        "presentation_deck"
+      ]
+    },
+    "urban_masking": {
+      "chronology_groups": [
+        "topology_baseline",
+        "topology_demo"
+      ],
+      "entry_count": 2,
+      "entry_kinds": [
+        "demo_bundle",
+        "topology_experiment"
+      ]
+    },
+    "valley_ingress": {
+      "chronology_groups": [
+        "topology_baseline",
+        "topology_demo"
+      ],
+      "entry_count": 2,
+      "entry_kinds": [
+        "demo_bundle",
+        "topology_experiment"
+      ]
+    },
+    "valley_ingress_delayed_interceptor_base": {
+      "chronology_groups": [
+        "topology_baseline",
+        "topology_demo"
+      ],
+      "entry_count": 2,
+      "entry_kinds": [
+        "demo_bundle",
+        "topology_experiment"
+      ]
+    },
+    "valley_ingress_extra_valley_sensor": {
+      "chronology_groups": [
+        "topology_baseline",
+        "topology_demo"
+      ],
+      "entry_count": 2,
+      "entry_kinds": [
+        "demo_bundle",
+        "topology_experiment"
+      ]
+    },
+    "valley_ingress_radar_shifted_north": {
+      "chronology_groups": [
+        "topology_baseline",
+        "topology_demo"
+      ],
+      "entry_count": 2,
+      "entry_kinds": [
+        "demo_bundle",
+        "topology_experiment"
+      ]
+    },
+    "valley_ingress_reduced_overlap_layout": {
+      "chronology_groups": [
+        "topology_baseline",
+        "topology_demo"
+      ],
+      "entry_count": 2,
+      "entry_kinds": [
+        "demo_bundle",
+        "topology_experiment"
+      ]
+    },
+    "valley_sensor_sweep": {
+      "chronology_groups": [
+        "export_e1",
+        "sweep_wave_d2"
+      ],
+      "entry_count": 5,
+      "entry_kinds": [
+        "publication_packet",
+        "replay_export",
+        "sweep_family"
+      ]
+    },
+    "walkthrough_assignment_instability": {
+      "chronology_groups": [
+        "presentation_e1"
+      ],
+      "entry_count": 1,
+      "entry_kinds": [
+        "presentation_deck"
+      ]
+    },
+    "walkthrough_valley_ingress_long": {
+      "chronology_groups": [
+        "presentation_e1"
+      ],
+      "entry_count": 1,
+      "entry_kinds": [
+        "presentation_deck"
+      ]
+    }
+  },
+  "schema_version": "replay_corpus_evolution_summary_v1",
+  "topology_sensitivity_evolution": {
+    "divergence_rollup": {
+      "member_divergence_count": 9,
+      "sweeps_with_divergence": [
+        "valley_sensor_sweep",
+        "ridge_overlap_sweep",
+        "saturation_assignment_sweep"
+      ]
+    },
+    "los_instability_summary": {
+      "by_sweep": {
+        "delayed_detection_sweep": {
+          "max_los_count": 8,
+          "member_los_totals": [
+            5,
+            5,
+            5,
+            5
+          ]
+        },
+        "ridge_overlap_sweep": {
+          "max_los_count": 7,
+          "member_los_totals": [
+            11,
+            9,
+            4,
+            12
+          ]
+        },
+        "saturation_assignment_sweep": {
+          "max_los_count": 6,
+          "member_los_totals": [
+            12,
+            12,
+            12,
+            12
+          ]
+        },
+        "valley_sensor_sweep": {
+          "max_los_count": 5,
+          "member_los_totals": [
+            4,
+            4,
+            8,
+            4,
+            4
+          ]
+        }
+      },
+      "ranked_sweep_ids": [
+        "delayed_detection_sweep",
+        "ridge_overlap_sweep",
+        "saturation_assignment_sweep",
+        "valley_sensor_sweep"
+      ]
+    },
+    "per_sweep": [
+      {
+        "baseline_topology_key": "valley_ingress",
+        "pattern_notes": null,
+        "sweep_id": "valley_sensor_sweep",
+        "topology_notes": null
+      },
+      {
+        "baseline_topology_key": "ridge_defense",
+        "pattern_notes": null,
+        "sweep_id": "ridge_overlap_sweep",
+        "topology_notes": null
+      },
+      {
+        "baseline_topology_key": "delayed_detection",
+        "pattern_notes": null,
+        "sweep_id": "delayed_detection_sweep",
+        "topology_notes": null
+      },
+      {
+        "baseline_topology_key": "saturation_ingress",
+        "pattern_notes": null,
+        "sweep_id": "saturation_assignment_sweep",
+        "topology_notes": null
+      }
+    ],
+    "shared_ambiguity_hotspots": [
+      173,
+      207,
+      212,
+      213
+    ],
+    "sweep_ids": [
+      "valley_sensor_sweep",
+      "ridge_overlap_sweep",
+      "delayed_detection_sweep",
+      "saturation_assignment_sweep"
+    ],
+    "top_cells_by_sweep": {
+      "delayed_detection_sweep": [
+        {
+          "cell_index": 216,
+          "count": 6
+        },
+        {
+          "cell_index": 213,
+          "count": 3
+        },
+        {
+          "cell_index": 215,
+          "count": 3
+        }
+      ],
+      "ridge_overlap_sweep": [
+        {
+          "cell_index": 207,
+          "count": 3
+        },
+        {
+          "cell_index": 213,
+          "count": 3
+        },
+        {
+          "cell_index": 212,
+          "count": 2
+        },
+        {
+          "cell_index": 214,
+          "count": 2
+        },
+        {
+          "cell_index": 173,
+          "count": 1
+        }
+      ],
+      "saturation_assignment_sweep": [
+        {
+          "cell_index": 208,
+          "count": 4
+        },
+        {
+          "cell_index": 212,
+          "count": 4
+        },
+        {
+          "cell_index": 173,
+          "count": 2
+        },
+        {
+          "cell_index": 209,
+          "count": 2
+        }
+      ],
+      "valley_sensor_sweep": [
+        {
+          "cell_index": 207,
+          "count": 15
+        }
+      ]
+    }
+  }
+}

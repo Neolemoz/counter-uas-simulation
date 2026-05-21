@@ -22,6 +22,7 @@ See also: [replay_sa_bundle_schema.md](replay_sa_bundle_schema.md), [replay_cros
 | `included_files` | yes | List of `{ path, sha256, size_bytes }` |
 | `provenance` | yes | Generator versions and timestamps |
 | `sweep_ids` | yes | Sweeps included |
+| `corpus_ref` | no | F1a corpus index pointer for `research_bundle` entry |
 
 ## Bundle layout
 
@@ -30,6 +31,7 @@ See also: [replay_sa_bundle_schema.md](replay_sa_bundle_schema.md), [replay_cros
   manifest.json
   synthesis/cross_sweep_synthesis_v1.json
   synthesis/replay_linkage_index_v1.json
+  synthesis/replay_corpus_index_v1.json
   synthesis/cognition_rollup_summary.md
   synthesis/linkage_summary.md
   synthesis/cross_sweep_summary.md

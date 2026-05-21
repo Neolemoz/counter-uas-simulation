@@ -199,7 +199,9 @@ def render_publication_report_v1(
         }
         for s in walk.get("steps") or []
     ]
-    return {
+    from replay_corpus_lineage import attach_corpus_ref  # noqa: E402
+
+    report = {
         "artifact_type": "replay_publication_report_v1",
         "schema_version": "replay_publication_report_v1",
         "sweep_id": sid,
@@ -216,6 +218,7 @@ def render_publication_report_v1(
             "Figure numbering is for documentation; not operational scoring.",
         ],
     }
+    return attach_corpus_ref(report, "publication_packet", f"{sid}_publication")
 
 
 def render_publication_packet_html(

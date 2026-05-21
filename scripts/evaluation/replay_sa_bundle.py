@@ -775,6 +775,11 @@ def pack_bundle(
         scenario_overlay_path=scenario_overlay_json,
         scenario_pack_path=scenario_pack_dir,
     )
+    pack_id = (bundle.get("scenario") or {}).get("catalog_pack_id")
+    if pack_id:
+        from replay_corpus_lineage import attach_corpus_ref  # noqa: E402
+
+        bundle = attach_corpus_ref(bundle, "demo_bundle", str(pack_id))
     lint = lint_replay_sa_bundle(bundle)
     if not lint["ok"]:
         raise ValueError(f"bundle governance lint failed: {lint['issues']}")

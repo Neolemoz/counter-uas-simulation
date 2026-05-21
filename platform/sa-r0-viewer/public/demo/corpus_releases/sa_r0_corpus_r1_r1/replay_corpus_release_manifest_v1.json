@@ -1,0 +1,97 @@
+{
+  "artifact_type": "replay_corpus_release_manifest_v1",
+  "corpus_id": "sa_r0_corpus_r1",
+  "evolution_chain": [
+    {
+      "index_revision": "cf644076b570350467afc409f07ec3fc7bbb18692fde2a1858873ae4af2d3207",
+      "parent_release_ids": [],
+      "release_id": "canonical_index"
+    }
+  ],
+  "files": [
+    {
+      "path": "replay_corpus_index_v1.json",
+      "sha256": "37cb8a2d05c5b6ba566a332f6372a54303af5cc0b1ca5ab6613649178474a46c",
+      "size_bytes": 151600
+    }
+  ],
+  "governance": {
+    "anti_claims": [
+      "Corpus lineage documents derivation paths, not causal inference.",
+      "Index entries are not parser authority or tactical state.",
+      "SHA256 integrity does not certify replay effectiveness or readiness."
+    ],
+    "notice": "Replay corpus index for offline inventory and structural lineage only \u2014 explanatory artifact graph, not operational deployment or validated doctrine."
+  },
+  "indexed_entry_ids": [
+    "demo_bundle__corridor_defense",
+    "demo_bundle__delayed_detection",
+    "demo_bundle__long_range_ingress",
+    "demo_bundle__multi_ridge",
+    "demo_bundle__ridge_defense",
+    "demo_bundle__saturation_ingress",
+    "demo_bundle__urban_masking",
+    "demo_bundle__valley_ingress",
+    "demo_bundle__valley_ingress_delayed_interceptor_base",
+    "demo_bundle__valley_ingress_extra_valley_sensor",
+    "demo_bundle__valley_ingress_radar_shifted_north",
+    "demo_bundle__valley_ingress_reduced_overlap_layout",
+    "presentation_deck__showcase_ambiguity_heavy",
+    "presentation_deck__showcase_best_narratives",
+    "presentation_deck__showcase_cross_sweep_synthesis",
+    "presentation_deck__showcase_topology_divergence",
+    "presentation_deck__walkthrough_assignment_instability",
+    "presentation_deck__walkthrough_valley_ingress_long",
+    "publication_packet__delayed_detection_sweep_publication",
+    "publication_packet__ridge_overlap_sweep_publication",
+    "publication_packet__saturation_assignment_sweep_publication",
+    "publication_packet__valley_sensor_sweep_publication",
+    "replay_export__delayed_detection_sweep_compare",
+    "replay_export__delayed_detection_sweep_presentation",
+    "replay_export__delayed_detection_sweep_review",
+    "replay_export__ridge_overlap_sweep_compare",
+    "replay_export__ridge_overlap_sweep_presentation",
+    "replay_export__ridge_overlap_sweep_review",
+    "replay_export__saturation_assignment_sweep_compare",
+    "replay_export__saturation_assignment_sweep_presentation",
+    "replay_export__saturation_assignment_sweep_review",
+    "replay_export__valley_sensor_sweep_compare",
+    "replay_export__valley_sensor_sweep_presentation",
+    "replay_export__valley_sensor_sweep_review",
+    "research_bundle__sa_r0_corpus_r1",
+    "sweep_family__delayed_detection_sweep",
+    "sweep_family__ridge_overlap_sweep",
+    "sweep_family__saturation_assignment_sweep",
+    "sweep_family__valley_sensor_sweep",
+    "synthesis_report__cognition_rollup_summary",
+    "synthesis_report__cross_sweep_summary",
+    "synthesis_report__cross_sweep_synthesis_v1",
+    "synthesis_report__linkage_summary",
+    "synthesis_report__presentation_assets_index_v1",
+    "synthesis_report__replay_linkage_index_v1",
+    "topology_experiment__corridor_defense",
+    "topology_experiment__delayed_detection",
+    "topology_experiment__long_range_ingress",
+    "topology_experiment__multi_ridge",
+    "topology_experiment__ridge_defense",
+    "topology_experiment__saturation_ingress",
+    "topology_experiment__urban_masking",
+    "topology_experiment__valley_ingress",
+    "topology_experiment__valley_ingress_delayed_interceptor_base",
+    "topology_experiment__valley_ingress_extra_valley_sensor",
+    "topology_experiment__valley_ingress_radar_shifted_north",
+    "topology_experiment__valley_ingress_reduced_overlap_layout"
+  ],
+  "parent_release_ids": [],
+  "provenance": {
+    "generators": {
+      "build_replay_corpus_index.py": "f1a_v1",
+      "build_replay_corpus_release.py": "f1a_v1"
+    },
+    "source_root": "fixtures/sa_r0"
+  },
+  "publication_revision": "c2e7ec4d30cc31557d3b1fa7544438206c5555392e6b28eff825a8f62883fe8f",
+  "release_id": "sa_r0_corpus_r1_r1",
+  "schema_version": "replay_corpus_release_manifest_v1",
+  "snapshot_root": "fixtures/sa_r0/corpus_releases/sa_r0_corpus_r1_r1"
+}

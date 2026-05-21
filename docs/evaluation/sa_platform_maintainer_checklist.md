@@ -26,7 +26,13 @@ python3 scripts/evaluation/sync_sa_catalog.py
 python3 scripts/evaluation/gen_d3_sweep_enrichment.py
 python3 scripts/evaluation/gen_e1_presentation_fixtures.py
 python3 scripts/evaluation/gen_e2_research_fixtures.py
+python3 scripts/evaluation/gen_f1_corpus_fixtures.py
+python3 scripts/evaluation/run_replay_corpus_regen.py
 ```
+
+Preview regen steps: `python3 scripts/evaluation/run_replay_corpus_regen.py --dry-run`
+
+Corpus reproducibility gate: `python3 scripts/evaluation/verify_replay_corpus_reproducibility.py`
 
 Then re-run the pre-merge gate above.
 
@@ -43,7 +49,17 @@ Then re-run the pre-merge gate above.
 | `pattern_taxonomy` | Fix sweep member tags or `PATTERN_PRIORITY`, then `gen_d3_sweep_enrichment.py` |
 | `narrative_duplicates` | Fix empty bullets in sweep enrichment sources |
 | `sweep_reports` | `export_replay_analytics_report.py --sweep <id> --format md,json` then E1/E2 regen |
-| `research_bundle` | `gen_e2_research_fixtures.py` |
+| `research_bundle` | `gen_e2_research_fixtures.py` or `gen_f1_corpus_fixtures.py` |
+| `corpus_index_stale` | `build_replay_corpus_index.py` |
+| `corpus_lineage` | `audit_replay_lineage.py` after index regen |
+| `corpus_release_stale` | `build_replay_corpus_release.py` |
+| `corpus_drift_stale` | `build_replay_corpus_drift_report.py` |
+| `corpus_provenance` | `audit_replay_corpus_provenance.py` |
+| `corpus_release_diff` | `diff_replay_corpus_releases.py` then refresh release if needed |
+| `corpus_viewer_audit_mirror` | `build_replay_corpus_drift_report.py` + `build_replay_corpus_release.py` (dual-write viewer mirrors) |
+| `corpus_evolution_stale` | `build_replay_corpus_evolution.py` |
+| `corpus_publication_stale` | `build_replay_corpus_publication.py` |
+| `corpus_release_export` | `export_replay_corpus_release.py` |
 | `bundle_catalog` | `sync_sa_catalog.py` + verify `fixtures/scenarios/` packs |
 | `governance_batch` | Fix forbidden wording in fixture copy, then regen |
 

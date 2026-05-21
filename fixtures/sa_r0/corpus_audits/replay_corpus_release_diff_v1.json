@@ -1,0 +1,23 @@
+{
+  "artifact_type": "replay_corpus_release_diff_v1",
+  "baseline_id": "sa_r0_corpus_r1_r1",
+  "corpus_id": "sa_r0_corpus_r1",
+  "entries_added": [],
+  "entries_changed": [],
+  "entries_removed": [],
+  "governance": {
+    "anti_claims": [
+      "Non-empty diff between canonical index and frozen release is expected until release rebuild."
+    ],
+    "notice": "Corpus release diff for offline reproducibility review \u2014 structural index comparison only, not deployment certification."
+  },
+  "index_revision_delta": {
+    "baseline": "cf644076b570350467afc409f07ec3fc7bbb18692fde2a1858873ae4af2d3207",
+    "target": "cf644076b570350467afc409f07ec3fc7bbb18692fde2a1858873ae4af2d3207"
+  },
+  "lineage_edges_added": [],
+  "lineage_edges_removed": [],
+  "release_behind_canonical": false,
+  "schema_version": "replay_corpus_release_diff_v1",
+  "target_id": "canonical_index"
+}

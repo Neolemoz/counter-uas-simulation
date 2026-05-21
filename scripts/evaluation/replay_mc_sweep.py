@@ -70,7 +70,9 @@ def build_sweep_manifest(
         baseline_index=0,
         baseline_topology_key=baseline_topology_key,
     )
-    return {
+    from replay_corpus_lineage import attach_corpus_ref  # noqa: E402
+
+    manifest = {
         "artifact_type": SWEEP_ARTIFACT,
         "schema_version": SWEEP_ARTIFACT,
         "sweep_id": sweep_id,
@@ -92,6 +94,7 @@ def build_sweep_manifest(
         "spatial_aggregate": agg["spatial_aggregate"],
         "replay_aggregation": agg["replay_aggregation"],
     }
+    return attach_corpus_ref(manifest, "sweep_family", sweep_id)
 
 
 def write_sweep(path: Path, manifest: dict[str, Any]) -> None:

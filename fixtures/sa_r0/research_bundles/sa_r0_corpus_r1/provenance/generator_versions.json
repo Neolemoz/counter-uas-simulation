@@ -1,6 +1,7 @@
 {
   "build_cross_sweep_synthesis.py": "e2_v1",
   "build_replay_cognition_rollup.py": "e2_v1",
+  "build_replay_corpus_index.py": "f1a_v1",
   "build_replay_linkage.py": "e2_v1",
-  "export_research_bundle.py": "e2_v1"
+  "export_research_bundle.py": "f1a_v1"
 }

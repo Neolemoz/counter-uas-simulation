@@ -1,7 +1,9 @@
 import {
   crossSweepSynthesisSchema,
+  replayCorpusIndexSchema,
   replayLinkageIndexSchema,
   type CrossSweepSynthesis,
+  type ReplayCorpusIndex,
   type ReplayLinkageIndex,
 } from "./synthesisSchema";
 
@@ -24,6 +26,21 @@ export function linkageEdgesForSweep(
   sweepId: string,
 ): ReplayLinkageIndex["edges"] {
   return linkage.edges.filter((e) => e.source === sweepId || e.target === sweepId);
+}
+
+export async function loadReplayCorpusIndex(): Promise<ReplayCorpusIndex> {
+  const res = await fetch("/demo/synthesis/replay_corpus_index_v1.json");
+  if (!res.ok) throw new Error(`Failed to load corpus index: ${res.status}`);
+  const data: unknown = await res.json();
+  return replayCorpusIndexSchema.parse(data);
+}
+
+export function corpusEntryForSweep(
+  index: ReplayCorpusIndex,
+  sweepId: string,
+): ReplayCorpusIndex["entries"][number] | undefined {
+  const eid = `sweep_family__${sweepId}`;
+  return index.entries.find((e) => e.entry_id === eid);
 }
 
 export function relatedSweepIds(linkage: ReplayLinkageIndex, sweepId: string): string[] {

@@ -219,7 +219,9 @@ def build_cross_sweep_synthesis(
     manifests = [_load_sweep(sid) for sid in ids]
     bundles_by_sweep = {m["sweep_id"]: _load_member_bundles(m) for m in manifests}
 
-    return {
+    from replay_corpus_lineage import attach_corpus_ref  # noqa: E402
+
+    payload = {
         "artifact_type": "cross_sweep_synthesis_v1",
         "schema_version": "cross_sweep_synthesis_v1",
         "governance": GOVERNANCE,
@@ -235,6 +237,7 @@ def build_cross_sweep_synthesis(
             "Pattern frequency counts reflect taxonomy tags on fixture members, not operational doctrine.",
         ],
     }
+    return attach_corpus_ref(payload, "synthesis_report", "cross_sweep_synthesis_v1")
 
 
 def render_cross_sweep_summary(synthesis: dict[str, Any]) -> str:

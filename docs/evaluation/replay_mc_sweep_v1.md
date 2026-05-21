@@ -32,6 +32,7 @@ See also: [comparison_foundations.md](comparison_foundations.md), [replay_spatia
 | `baseline_topology_key` | Baseline `pack_id` for sensitivity summaries |
 | `governance` | `notice` required; `anti_claims` recommended |
 | `lineage` | `generator`, `seed_base`, `member_count` |
+| `corpus_ref` | no | F1a corpus index pointer (optional until sweep regen) |
 | `members` | Ordered list (see below) |
 | `spatial_aggregate` | Precomputed grids per [replay_spatial_analytics_v1.md](replay_spatial_analytics_v1.md) |
 | `replay_aggregation` | Histograms + `dominant_patterns` (descriptive strings only) |

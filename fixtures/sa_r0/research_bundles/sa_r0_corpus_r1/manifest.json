@@ -1,6 +1,21 @@
 {
   "artifact_type": "replay_research_bundle_v1",
   "corpus_id": "sa_r0_corpus_r1",
+  "corpus_ref": {
+    "corpus_id": "sa_r0_corpus_r1",
+    "entry_id": "research_bundle__sa_r0_corpus_r1",
+    "index_revision": "cf644076b570350467afc409f07ec3fc7bbb18692fde2a1858873ae4af2d3207",
+    "lineage_parent_ids": [
+      "publication_packet__valley_sensor_sweep_publication",
+      "sweep_family__delayed_detection_sweep",
+      "sweep_family__ridge_overlap_sweep",
+      "sweep_family__saturation_assignment_sweep",
+      "sweep_family__valley_sensor_sweep",
+      "synthesis_report__cross_sweep_summary",
+      "synthesis_report__cross_sweep_synthesis_v1",
+      "synthesis_report__linkage_summary"
+    ]
+  },
   "governance": {
     "notice": "Portable offline replay research bundle \u2014 explanatory artifacts only, not operational deployment or validated doctrine."
   },
@@ -207,8 +222,8 @@
     },
     {
       "path": "provenance/generator_versions.json",
-      "sha256": "153c9cb7712502581d535315e9ec6149ab1de4ae365dfcefdd15d563a4f6e0a7",
-      "size_bytes": 173
+      "sha256": "868b85599929f38c7672b0f9802c64b70d8052604fdf68b6af1f9816a13d3c8b",
+      "size_bytes": 218
     },
     {
       "path": "sweeps/delayed_detection_sweep/reports/ambiguity_hotspot_summary.md",
@@ -272,8 +287,8 @@
     },
     {
       "path": "sweeps/delayed_detection_sweep/reports/replay_publication_report_v1.json",
-      "sha256": "ac0ee581b7883340dedd91a6c3d218abd3e47343644b5aa7e9c38b747ee5a439",
-      "size_bytes": 3648
+      "sha256": "b0f379aa05da096c3a5db4c888e3ce6e1a07c93ae46c1fcb3b969844057791ba",
+      "size_bytes": 3952
     },
     {
       "path": "sweeps/delayed_detection_sweep/reports/replay_review_report_v1.json",
@@ -372,8 +387,8 @@
     },
     {
       "path": "sweeps/ridge_overlap_sweep/reports/replay_publication_report_v1.json",
-      "sha256": "16c247877d7ab0561538964e5ae7ecb6eb93f7765ea65533c243916627d365d9",
-      "size_bytes": 3576
+      "sha256": "e37da53c6b5489314515ca0f1fdee2b23b9ba8fea8ee0b5539c5e2044d7ae2cf",
+      "size_bytes": 3872
     },
     {
       "path": "sweeps/ridge_overlap_sweep/reports/replay_review_report_v1.json",
@@ -472,8 +487,8 @@
     },
     {
       "path": "sweeps/saturation_assignment_sweep/reports/replay_publication_report_v1.json",
-      "sha256": "b897ea351129ae1189028b70f5586af074ed9d8c758da397246a78a164db9833",
-      "size_bytes": 3732
+      "sha256": "be5ac9dc97834c5894e1f39dc9880c0ae97baa415aa9577199e12bf49be2a4dd",
+      "size_bytes": 4044
     },
     {
       "path": "sweeps/saturation_assignment_sweep/reports/replay_review_report_v1.json",
@@ -572,8 +587,8 @@
     },
     {
       "path": "sweeps/valley_sensor_sweep/reports/replay_publication_report_v1.json",
-      "sha256": "5753d0f7b0072959a45e01cff784969b91ef734d64f2080ea07dd21ce4bdb0ee",
-      "size_bytes": 3720
+      "sha256": "979882d99c5e1462b44a92097dcad98c2452cc7176a1c436aa5e1215f127b2b6",
+      "size_bytes": 4016
     },
     {
       "path": "sweeps/valley_sensor_sweep/reports/replay_review_report_v1.json",
@@ -822,8 +837,8 @@
     },
     {
       "path": "synthesis/cross_sweep_synthesis_v1.json",
-      "sha256": "a7e7d661ff06ba5c2fa1242964f831a5fe90564a08ca7e41c307bfe85ea0cd54",
-      "size_bytes": 7123
+      "sha256": "0d7119dca50cf0e43648201dc6ef0e4bb9a8c5ecd7cc3905b89bd93cf6fc1b17",
+      "size_bytes": 7551
     },
     {
       "path": "synthesis/figures/cross_sweep_comparison_grid.png",
@@ -834,6 +849,11 @@
       "path": "synthesis/linkage_summary.md",
       "sha256": "24bc1a0d74afbe49403f94bd77133806638ccc9ead742735a1a67e425f9d581e",
       "size_bytes": 4534
+    },
+    {
+      "path": "synthesis/replay_corpus_index_v1.json",
+      "sha256": "b0ea9bb692bbf41c0c56d60adda8b098cc96e5308b8e07c6ec0b80e5d9268fcd",
+      "size_bytes": 116041
     },
     {
       "path": "synthesis/replay_linkage_index_v1.json",
@@ -850,8 +870,9 @@
     "generators": {
       "build_cross_sweep_synthesis.py": "e2_v1",
       "build_replay_cognition_rollup.py": "e2_v1",
+      "build_replay_corpus_index.py": "f1a_v1",
       "build_replay_linkage.py": "e2_v1",
-      "export_research_bundle.py": "e2_v1"
+      "export_research_bundle.py": "f1a_v1"
     },
     "source_root": "fixtures/sa_r0"
   },

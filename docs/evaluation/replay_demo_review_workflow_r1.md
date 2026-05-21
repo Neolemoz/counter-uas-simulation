@@ -180,6 +180,75 @@ Usability and mentor pacing: [sa_platform_usability_findings.md](sa_platform_usa
 
 See [sa_e2_replay_knowledge_synthesis_plan.md](sa_e2_replay_knowledge_synthesis_plan.md) and [replay_cross_sweep_synthesis_v1.md](replay_cross_sweep_synthesis_v1.md).
 
+## Corpus index and lineage (PLAT-SA-F1a)
+
+Deterministic corpus inventory: `fixtures/sa_r0/synthesis/replay_corpus_index_v1.json` (viewer `/demo/synthesis/replay_corpus_index_v1.json`).
+
+Regenerate after E2:
+
+```bash
+python3 scripts/evaluation/gen_f1_corpus_fixtures.py
+```
+
+Key artifacts:
+
+- `replay_corpus_index_v1.json` — full corpus inventory + structural lineage DAG
+- `fixtures/sa_r0/corpus_releases/sa_r0_corpus_r1_r1/` — offline release snapshot manifest
+
+See [sa_f1a_corpus_indexing_plan.md](sa_f1a_corpus_indexing_plan.md) and [replay_corpus_index_v1.md](replay_corpus_index_v1.md).
+
+## Corpus audit and regen (PLAT-SA-F1b)
+
+Maintainer artifacts under `fixtures/sa_r0/corpus_audits/`:
+
+- `replay_corpus_drift_report_v1.json` — fixture drift inventory
+- `replay_corpus_release_diff_v1.json` — frozen release vs canonical index
+- `regen_run_report_v1.json` — last regen orchestrator run (when executed)
+
+```bash
+python3 scripts/evaluation/build_replay_corpus_drift_report.py
+python3 scripts/evaluation/diff_replay_corpus_releases.py
+python3 scripts/evaluation/run_replay_corpus_regen.py --dry-run
+python3 scripts/evaluation/verify_replay_corpus_reproducibility.py
+```
+
+See [sa_f1b_corpus_audit_operations_plan.md](sa_f1b_corpus_audit_operations_plan.md).
+
+## Corpus navigation (PLAT-SA-F1c)
+
+Reviewer corpus browser in sa-r0-viewer (collapsible **Corpus inventory** in the scenario catalog sidebar):
+
+- Filter by `entry_kind`, `reviewer_category`, `navigation_tags`
+- Lineage parent/child jumps and drift badges (read-only)
+- Deep link: `?corpus_entry=<entry_id>` (resolves to `sweep`, `demo`, or `presentation` as appropriate)
+
+Viewer mirrors:
+
+- `/demo/corpus_audits/replay_corpus_drift_report_v1.json`
+- `/demo/corpus_releases/sa_r0_corpus_r1_r1/replay_corpus_release_manifest_v1.json`
+
+See [sa_f1c_corpus_navigation_plan.md](sa_f1c_corpus_navigation_plan.md) and [replay_corpus_navigation_v1.md](replay_corpus_navigation_v1.md).
+
+## Corpus evolution and publication (PLAT-SA-F1d)
+
+Long-horizon evolution and publication tooling:
+
+- `fixtures/sa_r0/synthesis/replay_corpus_evolution_manifest_v1.json` — release chain + chronology tiers
+- `fixtures/sa_r0/synthesis/replay_corpus_evolution_summary_v1.json` — descriptive evolution rollups
+- `fixtures/sa_r0/synthesis/replay_corpus_publication_packet_v1.json` — publication-ready artifact inventory
+
+```bash
+python3 scripts/evaluation/build_replay_corpus_evolution.py
+python3 scripts/evaluation/build_replay_corpus_publication.py
+python3 scripts/evaluation/export_replay_corpus_release.py
+python3 scripts/evaluation/verify_replay_corpus_release.py
+python3 scripts/evaluation/gen_f1d_publication_fixtures.py
+```
+
+Viewer: **Corpus evolution** panel (chronology timeline + summary bullets) under scenario catalog.
+
+See [sa_f1d_long_horizon_publication_plan.md](sa_f1d_long_horizon_publication_plan.md).
+
 ## Replay comparison dos and don'ts
 
 ### Same seed, different profile

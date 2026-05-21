@@ -98,6 +98,10 @@ Correct reading: [reviewer_interpretation_guide.md](reviewer_interpretation_guid
 | PLAT-SA-E1 | Research presentation & reviewer experience | frozen | [sa_e1_research_presentation_freeze_audit.md](sa_e1_research_presentation_freeze_audit.md) | Presentation mode, chapters, storyboards, storytelling exports, cognition indicators |
 | PLAT-SA-E2 | Replay knowledge synthesis & research publication | frozen | [sa_e2_replay_knowledge_synthesis_freeze_audit.md](sa_e2_replay_knowledge_synthesis_freeze_audit.md) | Cross-sweep synthesis, linkage index, publication packets, research bundles, E2 viewer panels |
 | PLAT-SA-STAB | Platform stabilization & integrity audits | frozen | [sa_stabilization_freeze_audit.md](sa_stabilization_freeze_audit.md) | `audit_sa_platform_integrity.py`, `governance_lint_sa.py`, `tier0-sa-r0` integrity gate |
+| PLAT-SA-F1a | Corpus indexing & lineage foundations | frozen | [sa_f1a_corpus_indexing_freeze_audit.md](sa_f1a_corpus_indexing_freeze_audit.md) | `build_replay_corpus_index.py`, `replay_corpus_index_v1`, corpus lineage panel |
+| PLAT-SA-F1b | Corpus audit & provenance operations | frozen | [sa_f1b_corpus_audit_operations_freeze_audit.md](sa_f1b_corpus_audit_operations_freeze_audit.md) | drift report, release diff, regen orchestrator, provenance audit |
+| PLAT-SA-F1c | Corpus navigation & reviewer workflows | frozen | [sa_f1c_corpus_navigation_freeze_audit.md](sa_f1c_corpus_navigation_freeze_audit.md) | corpus browser, lineage nav, drift surfacing, `?corpus_entry=` deep links |
+| PLAT-SA-F1d | Long-horizon synthesis & publication ops | frozen | [sa_f1d_long_horizon_publication_freeze_audit.md](sa_f1d_long_horizon_publication_freeze_audit.md) | evolution manifest/summary, publication packet, release archive export, chronology panel |
 
 ## Platform vs runtime frontiers
 
@@ -128,6 +132,10 @@ Do not merge these frontiers in a single implementation wave.
 | `replay_linkage_index_v1` | `build_replay_linkage.py` | derived, rule-based linkage |
 | `replay_research_bundle_v1` | `export_research_bundle.py` | derived, portable archive |
 | `replay_publication_report_v1` | `export_presentation_pack.py` | derived, print-ready export |
+| `replay_corpus_index_v1` | `build_replay_corpus_index.py` | derived, corpus inventory + lineage DAG |
+| `replay_corpus_release_manifest_v1` | `build_replay_corpus_release.py` | derived, offline release snapshot |
+| `replay_corpus_drift_report_v1` | `build_replay_corpus_drift_report.py` | derived, maintainer drift inventory |
+| `replay_corpus_release_diff_v1` | `diff_replay_corpus_releases.py` | derived, index snapshot comparison |
 | `scenario_topology_v1` | `fixtures/scenarios/<id>/` | explanatory topology source (not a bundle) |
 
 ## Structural risks (summary)

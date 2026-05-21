@@ -1,0 +1,61 @@
+{
+  "archive_name": "sa_r0_corpus_release_archive.zip",
+  "archive_sha256": "4d8ab5c427e184535ab3858da7fef8bc555537fbfcda4f2e4df2cb4e5cbbac2d",
+  "members": [
+    {
+      "arcname": "MANIFEST.sha256",
+      "sha256": "3c8a837b347e4b2f65d4a8ca6b998f38466e535f6cc80e18c3c33a0c4663256b",
+      "size_bytes": 65,
+      "source_path": "fixtures/sa_r0/corpus_releases/sa_r0_corpus_r1_r1/MANIFEST.sha256"
+    },
+    {
+      "arcname": "archive/archive_manifest.json",
+      "sha256": "ccdbb86c6bec5a11d90c451580c9b7892969586eaa010c530e39d1c30b677902",
+      "size_bytes": 2674,
+      "source_path": "fixtures/sa_r0/corpus_releases/sa_r0_corpus_r1_r1/archive/archive_manifest.json"
+    },
+    {
+      "arcname": "extras/replay_corpus_drift_report_v1.json",
+      "sha256": "d7dbf06e893730e5d9c2589d0efa862df03adb92ae2fef0f28879d4f46ec7838",
+      "size_bytes": 3819,
+      "source_path": "fixtures/sa_r0/corpus_audits/replay_corpus_drift_report_v1.json"
+    },
+    {
+      "arcname": "extras/replay_corpus_evolution_manifest_v1.json",
+      "sha256": "27b11378ba61a8b323a9b31b1fd2123e7c7506323b22db1dd7cf6802229a156f",
+      "size_bytes": 7484,
+      "source_path": "fixtures/sa_r0/synthesis/replay_corpus_evolution_manifest_v1.json"
+    },
+    {
+      "arcname": "extras/replay_corpus_evolution_summary_v1.json",
+      "sha256": "a3e9c548450e94cc4d291d9fd27132c4b6bf4d721b535800b902d7d5f31a2916",
+      "size_bytes": 27008,
+      "source_path": "fixtures/sa_r0/synthesis/replay_corpus_evolution_summary_v1.json"
+    },
+    {
+      "arcname": "extras/replay_corpus_publication_packet_v1.json",
+      "sha256": "013e23c64e2d3a8579ef200d9870442daff46d9b2936204b5f9de8515bd90335",
+      "size_bytes": 3496,
+      "source_path": "fixtures/sa_r0/synthesis/replay_corpus_publication_packet_v1.json"
+    },
+    {
+      "arcname": "extras/replay_corpus_release_diff_v1.json",
+      "sha256": "ac79d84a9430779af5e42d235669695a85ec4350130c0201bafcc64299adb177",
+      "size_bytes": 877,
+      "source_path": "fixtures/sa_r0/corpus_audits/replay_corpus_release_diff_v1.json"
+    },
+    {
+      "arcname": "replay_corpus_index_v1.json",
+      "sha256": "37cb8a2d05c5b6ba566a332f6372a54303af5cc0b1ca5ab6613649178474a46c",
+      "size_bytes": 151600,
+      "source_path": "fixtures/sa_r0/corpus_releases/sa_r0_corpus_r1_r1/replay_corpus_index_v1.json"
+    },
+    {
+      "arcname": "replay_corpus_release_manifest_v1.json",
+      "sha256": "201dc51790eb2425b72c1027847944546d690efd8bbe3c81d250fb2a9d43f35a",
+      "size_bytes": 4288,
+      "source_path": "fixtures/sa_r0/corpus_releases/sa_r0_corpus_r1_r1/replay_corpus_release_manifest_v1.json"
+    }
+  ],
+  "release_id": "sa_r0_corpus_r1_r1"
+}

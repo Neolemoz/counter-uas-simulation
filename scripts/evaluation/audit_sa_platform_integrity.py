@@ -43,6 +43,16 @@ CHECK_IDS = (
     "narrative_duplicates",
     "sweep_reports",
     "research_bundle",
+    "corpus_index_stale",
+    "corpus_lineage",
+    "corpus_release_stale",
+    "corpus_drift_stale",
+    "corpus_provenance",
+    "corpus_release_diff",
+    "corpus_viewer_audit_mirror",
+    "corpus_evolution_stale",
+    "corpus_publication_stale",
+    "corpus_release_export",
     "bundle_catalog",
     "governance_batch",
 )
@@ -299,6 +309,105 @@ def check_research_bundle() -> list[str]:
     )
 
 
+def check_corpus_index_stale() -> list[str]:
+    return _errors(
+        "corpus_index_stale",
+        _run_script_check("build_replay_corpus_index.py", "--check"),
+    )
+
+
+def check_corpus_lineage() -> list[str]:
+    return _errors(
+        "corpus_lineage",
+        _run_script_check("audit_replay_lineage.py"),
+    )
+
+
+def check_corpus_release_stale() -> list[str]:
+    return _errors(
+        "corpus_release_stale",
+        _run_script_check("build_replay_corpus_release.py", "--check"),
+    )
+
+
+def check_corpus_drift_stale() -> list[str]:
+    return _errors(
+        "corpus_drift_stale",
+        _run_script_check("build_replay_corpus_drift_report.py", "--check"),
+    )
+
+
+def check_corpus_provenance() -> list[str]:
+    return _errors(
+        "corpus_provenance",
+        _run_script_check("audit_replay_corpus_provenance.py"),
+    )
+
+
+def check_corpus_release_diff() -> list[str]:
+    return _errors(
+        "corpus_release_diff",
+        _run_script_check("diff_replay_corpus_releases.py", "--check"),
+    )
+
+
+def check_corpus_viewer_audit_mirror() -> list[str]:
+    issues: list[str] = []
+    pairs = [
+        (
+            FIXTURES_SA / "corpus_audits/replay_corpus_drift_report_v1.json",
+            PUBLIC_DEMO / "corpus_audits/replay_corpus_drift_report_v1.json",
+        ),
+        (
+            FIXTURES_SA / "corpus_releases/sa_r0_corpus_r1_r1/replay_corpus_release_manifest_v1.json",
+            PUBLIC_DEMO / "corpus_releases/sa_r0_corpus_r1_r1/replay_corpus_release_manifest_v1.json",
+        ),
+        (
+            FIXTURES_SA / "synthesis/replay_corpus_evolution_manifest_v1.json",
+            PUBLIC_DEMO / "synthesis/replay_corpus_evolution_manifest_v1.json",
+        ),
+        (
+            FIXTURES_SA / "synthesis/replay_corpus_evolution_summary_v1.json",
+            PUBLIC_DEMO / "synthesis/replay_corpus_evolution_summary_v1.json",
+        ),
+        (
+            FIXTURES_SA / "synthesis/replay_corpus_publication_packet_v1.json",
+            PUBLIC_DEMO / "synthesis/replay_corpus_publication_packet_v1.json",
+        ),
+    ]
+    for canonical, mirror in pairs:
+        if not canonical.is_file():
+            issues.append(f"missing canonical: {canonical}")
+            continue
+        if not mirror.is_file():
+            issues.append(f"missing viewer mirror: {mirror}")
+            continue
+        if canonical.read_bytes() != mirror.read_bytes():
+            issues.append(f"viewer mirror stale: {mirror.relative_to(_REPO)}")
+    return _errors("corpus_viewer_audit_mirror", issues)
+
+
+def check_corpus_evolution_stale() -> list[str]:
+    return _errors(
+        "corpus_evolution_stale",
+        _run_script_check("build_replay_corpus_evolution.py", "--check"),
+    )
+
+
+def check_corpus_publication_stale() -> list[str]:
+    return _errors(
+        "corpus_publication_stale",
+        _run_script_check("build_replay_corpus_publication.py", "--check"),
+    )
+
+
+def check_corpus_release_export() -> list[str]:
+    return _errors(
+        "corpus_release_export",
+        _run_script_check("export_replay_corpus_release.py", "--check"),
+    )
+
+
 def check_bundle_catalog() -> list[str]:
     issues: list[str] = []
     catalog = lib.load_json(SCENARIOS / "index.json")
@@ -348,6 +457,16 @@ CHECK_FUNCS = {
     "narrative_duplicates": check_narrative_duplicates,
     "sweep_reports": check_sweep_reports,
     "research_bundle": check_research_bundle,
+    "corpus_index_stale": check_corpus_index_stale,
+    "corpus_lineage": check_corpus_lineage,
+    "corpus_release_stale": check_corpus_release_stale,
+    "corpus_drift_stale": check_corpus_drift_stale,
+    "corpus_provenance": check_corpus_provenance,
+    "corpus_release_diff": check_corpus_release_diff,
+    "corpus_viewer_audit_mirror": check_corpus_viewer_audit_mirror,
+    "corpus_evolution_stale": check_corpus_evolution_stale,
+    "corpus_publication_stale": check_corpus_publication_stale,
+    "corpus_release_export": check_corpus_release_export,
     "bundle_catalog": check_bundle_catalog,
     "governance_batch": check_governance_batch,
 }
@@ -389,7 +508,8 @@ def main() -> None:
             print(f"  {err}", file=sys.stderr)
         print(
             "Hints: sync_sa_catalog.py, gen_e1_presentation_fixtures.py, "
-            "gen_e2_research_fixtures.py, gen_d3_sweep_enrichment.py",
+            "gen_e2_research_fixtures.py, gen_f1_corpus_fixtures.py, "
+            "run_replay_corpus_regen.py, gen_d3_sweep_enrichment.py",
             file=sys.stderr,
         )
         raise SystemExit(1)

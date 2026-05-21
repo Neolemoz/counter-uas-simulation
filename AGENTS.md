@@ -89,6 +89,10 @@ Two frontiers are active. Do not merge them in a single wave.
 - [SA E1 Research Presentation](docs/evaluation/sa_e1_research_presentation_plan.md) — presentation mode, guided walkthroughs, storytelling layer, storyboard fixtures; see PLAT-SA-E1 in freeze registry
 - [SA E2 Replay Knowledge Synthesis](docs/evaluation/sa_e2_replay_knowledge_synthesis_plan.md) — cross-sweep synthesis, linkage index, publication packets, research bundles; see PLAT-SA-E2 in freeze registry
 - [SA Stabilization](docs/evaluation/sa_stabilization_plan.md) — platform integrity audits, fixture parity, governance batch lint; see PLAT-SA-STAB in freeze registry
+- [SA F1a Corpus Indexing](docs/evaluation/sa_f1a_corpus_indexing_plan.md) — replay corpus index, structural lineage, release snapshots; see PLAT-SA-F1a in freeze registry
+- [SA F1b Corpus Audit Operations](docs/evaluation/sa_f1b_corpus_audit_operations_plan.md) — drift reports, release diffs, regen orchestration, provenance audits; see PLAT-SA-F1b in freeze registry
+- [SA F1c Corpus Navigation](docs/evaluation/sa_f1c_corpus_navigation_plan.md) — corpus browser, lineage navigation, drift surfacing, reviewer cognition workflows; see PLAT-SA-F1c in freeze registry
+- [SA F1d Long-Horizon Publication](docs/evaluation/sa_f1d_long_horizon_publication_plan.md) — evolution tracking, publication packet, release archive export, chronology panel; see PLAT-SA-F1d in freeze registry
 
 Forbidden on the platform frontier: live dashboards, HITL/operator semantics, readiness scoring, parser/topic changes, runtime redesign, rosbridge/WebSocket in eval tooling, extending legacy `web/` rosbridge pages.
 

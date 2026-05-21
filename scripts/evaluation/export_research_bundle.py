@@ -24,7 +24,8 @@ GENERATOR_VERSIONS = {
     "build_cross_sweep_synthesis.py": "e2_v1",
     "build_replay_linkage.py": "e2_v1",
     "build_replay_cognition_rollup.py": "e2_v1",
-    "export_research_bundle.py": "e2_v1",
+    "build_replay_corpus_index.py": "f1a_v1",
+    "export_research_bundle.py": "f1a_v1",
 }
 
 
@@ -59,6 +60,9 @@ def build_research_bundle(corpus_id: str = CORPUS_ID) -> Path:
     synth_dst = out / "synthesis"
     if synth_src.is_dir():
         shutil.copytree(synth_src, synth_dst, dirs_exist_ok=True)
+    corpus_index = synth_src / "replay_corpus_index_v1.json"
+    if corpus_index.is_file():
+        shutil.copy2(corpus_index, synth_dst / "replay_corpus_index_v1.json")
 
     fig_src = synth_src / "figures"
     if fig_src.is_dir():
@@ -83,6 +87,8 @@ def build_research_bundle(corpus_id: str = CORPUS_ID) -> Path:
     )
 
     included = _collect_files(out)
+    from replay_corpus_lineage import attach_corpus_ref  # noqa: E402
+
     manifest = {
         "artifact_type": "replay_research_bundle_v1",
         "schema_version": "replay_research_bundle_v1",
@@ -100,6 +106,7 @@ def build_research_bundle(corpus_id: str = CORPUS_ID) -> Path:
             "source_root": "fixtures/sa_r0",
         },
     }
+    manifest = attach_corpus_ref(manifest, "research_bundle", corpus_id)
     (out / "manifest.json").write_text(json.dumps(manifest, indent=2, sort_keys=True) + "\n", encoding="utf-8")
     return out
 

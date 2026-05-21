@@ -1,61 +1,58 @@
 # SA Platform Release Checkpoint
 
 **Branch:** `codex/replay-narrative-tooling-r1`  
-**Checkpoint commits:** through `98791e7` (release checkpoint + usability polish)  
-**Status:** merge-ready platform checkpoint — documentation and integrity only; no new platform wave.
+**Checkpoint scope:** PLAT-SA-F1a through PLAT-SA-F1d (corpus operations stack) on frozen platform through PLAT-SA-STAB + E2  
+**Status:** merge-ready F1 corpus checkpoint — documentation, fixtures, viewer, and integrity gates only; no new platform wave.
 
 `AGENTS.md` remains primary governance authority.
 
-## Architecture maturity summary
+## F1 stack freeze inventory (PLAT-SA-F1a–F1d)
 
-The platform frontier is frozen through **PLAT-SA-STAB** plus a post-STAB hygiene pass. Maturity layers:
+| ID | Wave | Audit | Primary artifacts |
+|----|------|-------|-------------------|
+| PLAT-SA-F1a | Corpus indexing & lineage | [sa_f1a_corpus_indexing_freeze_audit.md](sa_f1a_corpus_indexing_freeze_audit.md) | `replay_corpus_index_v1.json`, `build_replay_corpus_index.py`, `replay_corpus_lineage.py`, release snapshot `sa_r0_corpus_r1_r1` |
+| PLAT-SA-F1b | Corpus audit & provenance | [sa_f1b_corpus_audit_operations_freeze_audit.md](sa_f1b_corpus_audit_operations_freeze_audit.md) | drift report, release diff, `run_replay_corpus_regen.py`, `verify_replay_corpus_reproducibility.py` |
+| PLAT-SA-F1c | Corpus navigation & reviewer UX | [sa_f1c_corpus_navigation_freeze_audit.md](sa_f1c_corpus_navigation_freeze_audit.md) | corpus browser, lineage nav, drift surfacing, `?corpus_entry=` / navigation metadata |
+| PLAT-SA-F1d | Long-horizon synthesis & publication | [sa_f1d_long_horizon_publication_freeze_audit.md](sa_f1d_long_horizon_publication_freeze_audit.md) | evolution manifest/summary, publication packet, release archive export, chronology panel |
 
-1. **Static replay review** — observability, narrative, comprehension HTML (EVAL-DEMO-R1, EVAL-VIZ-*)
-2. **SA-R0 replay platform** — `replay_sa_bundle_v1` + read-only Cesium viewer
-3. **Scenario & compare** — topology packs (C1a/C1b), side-by-side compare (D1)
-4. **Sweep analytics** — MC sweep manifests, spatial overlays, narrative workstation (D2/D3)
-5. **Presentation & synthesis** — storyboards, publication packets, cross-sweep rollups, research bundles (E1/E2)
-6. **Integrity gate** — centralized audit, governance batch lint, `tier0-sa-r0` CI (STAB + hygiene)
+Full platform index (R0–STAB, E1/E2): [freeze_registry_r1.md](freeze_registry_r1.md).
 
-Runtime research frontier (realism/lifecycle) remains **separate** and bounded — not merged with platform changes on this branch.
+## Corpus infrastructure maturity
 
-## Frozen wave inventory
+The F1 stack completes deterministic **offline corpus operations** on top of the frozen replay experimentation platform:
 
-| ID | Wave | Audit |
-|----|------|-------|
-| PLAT-SA-R0 | Replay platform + viewer | [sa_r0_freeze_audit.md](sa_r0_freeze_audit.md) |
-| PLAT-SA-B1 | Geometry replay | [sa_b1_geometry_freeze_audit.md](sa_b1_geometry_freeze_audit.md) |
-| PLAT-SA-B2 | Rich scenario packs | [sa_b2_rich_scenario_freeze_audit.md](sa_b2_rich_scenario_freeze_audit.md) |
-| PLAT-SA-C1a | Scenario schema | [sa_c1a_scenario_schema_freeze_audit.md](sa_c1a_scenario_schema_freeze_audit.md) |
-| PLAT-SA-C1b | Authoring refinement | [sa_c1b_scenario_authoring_refinement_freeze_audit.md](sa_c1b_scenario_authoring_refinement_freeze_audit.md) |
-| PLAT-SA-D1 | Comparative replay | [sa_d1_comparative_replay_freeze_audit.md](sa_d1_comparative_replay_freeze_audit.md) |
-| PLAT-SA-D2 | MC spatial analytics | [sa_d2_monte_carlo_spatial_analytics_freeze_audit.md](sa_d2_monte_carlo_spatial_analytics_freeze_audit.md) |
-| PLAT-SA-D3 | Narrative intelligence | [sa_d3_replay_narrative_intelligence_freeze_audit.md](sa_d3_replay_narrative_intelligence_freeze_audit.md) |
-| PLAT-SA-E1 | Research presentation | [sa_e1_research_presentation_freeze_audit.md](sa_e1_research_presentation_freeze_audit.md) |
-| PLAT-SA-E2 | Knowledge synthesis | [sa_e2_replay_knowledge_synthesis_freeze_audit.md](sa_e2_replay_knowledge_synthesis_freeze_audit.md) |
-| PLAT-SA-STAB | Platform stabilization | [sa_stabilization_freeze_audit.md](sa_stabilization_freeze_audit.md) |
+1. **Structural index** — 57-entry `replay_corpus_index_v1` with lineage DAG, navigation, and evolution metadata
+2. **Audit & reproducibility** — drift inventory, release diff, provenance audit, regen orchestration
+3. **Reviewer navigation** — corpus browser, filters, chronology grouping, deep links, workstation drift badges
+4. **Long-horizon cognition** — evolution manifest/summary, multi-release browser, publication packet, zip archive export
+5. **Three-tier artifacts** — source fixtures, viewer mirrors, research-bundle offline archive
 
-Full index: [freeze_registry_r1.md](freeze_registry_r1.md).
+Regeneration: [sa_platform_maintainer_checklist.md](sa_platform_maintainer_checklist.md), [replay_corpus_regen_workflow_v1.md](replay_corpus_regen_workflow_v1.md). Reviewer entry: [sa_r0_reviewer_quickstart.md](sa_r0_reviewer_quickstart.md).
 
-## Three-tier artifact model
+## Lineage / provenance / release capabilities
 
-| Tier | Path | Role |
-|------|------|------|
-| Source | `fixtures/sa_r0/` | Committed source of truth |
-| Viewer mirror | `platform/sa-r0-viewer/public/demo/` | Interactive review (`npm run dev`) |
-| Offline archive | `fixtures/sa_r0/research_bundles/sa_r0_corpus_r1/` | Portable zip for mentor handoff |
-
-Regeneration: [sa_platform_maintainer_checklist.md](sa_platform_maintainer_checklist.md). Reviewer entry: [sa_r0_reviewer_quickstart.md](sa_r0_reviewer_quickstart.md). Usability log: [sa_platform_usability_findings.md](sa_platform_usability_findings.md).
+| Capability | Mechanism |
+|------------|-----------|
+| Entry discovery | `build_replay_corpus_index.py` |
+| Lineage validation | `replay_corpus_lineage.py`, `audit_replay_lineage.py` |
+| Drift surfacing | `build_replay_corpus_drift_report.py` + viewer provenance panel |
+| Release snapshot | `build_replay_corpus_release.py` → `fixtures/sa_r0/corpus_releases/sa_r0_corpus_r1_r1/` |
+| Cross-release diff | `diff_replay_corpus_releases.py` |
+| Evolution chronology | `build_replay_corpus_evolution.py` |
+| Publication inventory | `build_replay_corpus_publication.py` |
+| Offline archive | `export_replay_corpus_release.py` → `corpus_releases/<id>/archive/` |
+| F1 regen | `gen_f1_corpus_fixtures.py`, `gen_f1d_publication_fixtures.py` |
 
 ## Governance boundaries preserved
 
-- Explanatory-only replay semantics; mirrors ≠ authority
+- Replay-only, explanatory semantics; mirrors ≠ authority
 - No parser/topic/schema changes on this checkpoint
 - No HITL, readiness, operational, or WebSocket expansion
-- No GovernanceChrome redesign; no ML recommendation/ranking systems
+- No tracker/fusion/runtime redesign
+- Viewer does not execute regen or external publish
 - Additive-only evolution; freeze-before-expansion discipline maintained
 
-## Validation results (release gate)
+## Validation results (F1 release gate)
 
 Run from repository root:
 
@@ -64,27 +61,34 @@ python3 -m pytest src/counter_uas/test/ -q --tb=short
 (cd platform/sa-r0-viewer && npm ci && npm test && npm run build)
 scripts/ci_eval.sh tier0-sa-r0
 python3 scripts/evaluation/audit_sa_platform_integrity.py --all
+python3 scripts/evaluation/build_replay_corpus_evolution.py --check
+python3 scripts/evaluation/build_replay_corpus_publication.py --check
+python3 scripts/evaluation/verify_replay_corpus_release.py
 ```
 
-**Checkpoint run:** all gates green (200 pytest; 36 viewer tests; 12 integrity checks OK; narrative-duplicate warnings only).
+**Checkpoint run (F1 gate):** all green — 221 pytest; 44 viewer tests; `tier0-sa-r0` OK; 22 integrity checks OK; F1 evolution/publication/release verify OK; narrative-duplicate warnings only.
 
 ## Remaining intentional limitations
 
-- Duplicate narrative bullets across sweeps: **warnings only** (synthetic fixture template copy)
-- Pattern tag recompute drift: **warnings only**
-- PNG/binary asset byte parity: not enforced on every CI run
-- Matplotlib figure regen: maintainer-driven, not CI-on-every-run
-- Cross-sweep compare: descriptive rollups only; viewer compare stays 2-slot A/B
-- PLAN-VIZ-R2 (rosbag/Plotly): planning-only, not implemented
-- PDF export: manual browser print-to-PDF
+- **Info-level drift:** optional `corpus_ref_missing` on sweep manifests; meta-corpus JSON (`evolution_*`, `publication_packet`) listed as `unindexed_file` until optional index backfill
+- **Single frozen release:** `sa_r0_corpus_r1_r1` only; `r2` optional via `--parent-release` when index revision changes
+- **Evolution narratives:** rule-based rollups, not causal inference
+- **Publication archive:** offline fixture zip, not CDN distribution
+- Duplicate narrative bullets / pattern-tag drift: integrity **warnings only**
+- PNG/binary byte parity: not enforced on every CI run
+- Runtime research frontier: separate from platform; not started on this checkpoint
 
-## Usability polish (post-checkpoint)
+## Recommended direction after F1
 
-See [sa_platform_usability_findings.md](sa_platform_usability_findings.md) for mentor friction notes, walkthrough pacing guidance, and dissemination checklist.
+Do **not** start a new platform frontier until explicit governance review. Candidate post-F1 themes (planning only):
+
+- Multi-corpus IDs and automated release promotion workflow
+- Richer cross-release HTML publication packets (still static)
+- Optional `corpus_ref` backfill on sweep manifests to clear info drift findings
+- PLAN-VIZ-R2 / runtime realism: remain separate frontiers per `AGENTS.md`
 
 ## Merge readiness
 
-- Working tree clean after checkpoint verification
-- Branch pushed to `origin/codex/replay-narrative-tooling-r1`
-- Draft PR: update description with this checkpoint summary before merge to `main`
+- Commit F1 stack artifacts + docs + viewer + CI gates on `codex/replay-narrative-tooling-r1`
+- Push branch; update PR description with this checkpoint summary before merge to `main`
 - Post-merge: no new platform frontier until explicit governance review

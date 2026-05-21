@@ -213,6 +213,14 @@ export const replaySaBundleSchema = z.object({
     })
     .optional(),
   interpretation_caveats: z.array(z.string()).optional(),
+  corpus_ref: z
+    .object({
+      corpus_id: z.string(),
+      entry_id: z.string(),
+      lineage_parent_ids: z.array(z.string()).optional(),
+      index_revision: z.string().optional(),
+    })
+    .optional(),
   presentation: z
     .object({
       walkthrough_id: z.string(),

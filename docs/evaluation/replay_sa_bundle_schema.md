@@ -27,6 +27,7 @@ Normative schema for the SA-R0 viewer input. **Evaluation-side only** — not a 
 | `source_artifacts` | object | yes | paths to upstream JSON |
 | `views` | object | no | mock pane configs |
 | `panels` | object | no | telemetry_series, threat_assessment |
+| `corpus_ref` | object | no | F1a corpus index pointer (`corpus_id`, `entry_id`, `lineage_parent_ids`, `index_revision`) |
 
 ## Track sample
 

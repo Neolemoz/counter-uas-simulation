@@ -32,6 +32,7 @@ See also: [replay_presentation_v1.md](replay_presentation_v1.md), [sa_e1_researc
 | `citations` | no | Replay citation entries |
 | `chapters` | no | Chapter reference list |
 | `cross_sweep_appendix` | no | Synthesis summary pointer |
+| `corpus_ref` | no | F1a corpus index pointer for `publication_packet` entry |
 
 ## Governance
 

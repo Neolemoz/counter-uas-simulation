@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { GovernanceChrome } from "@/governance/GovernanceChrome";
 import { CaveatsFooter } from "@/governance/CaveatsFooter";
 import { loadBundleFromFile, loadBundleFromUrl, resolveInitialBundleUrl } from "@/replay/loadBundle";
@@ -33,6 +33,9 @@ import { SweepWorkstationShell } from "@/replay/workstation/SweepWorkstationShel
 import { usePresentationStore } from "@/replay/presentation/presentationStore";
 import { PresentationView } from "@/replay/presentation/PresentationView";
 import { tryResolvePresentationFromUrl } from "@/replay/presentation/resolvePresentationUrl";
+import { tryResolveCorpusEntryFromUrl } from "@/replay/corpus/resolveCorpusEntryUrl";
+import type { NavigateHooks } from "@/replay/corpus/navigateToCorpusEntry";
+import { readCorpusEntryFromUrl } from "@/replay/corpus/useCorpusStore";
 
 export function App() {
   const [error, setError] = useState<string | null>(null);
@@ -59,10 +62,28 @@ export function App() {
     [setBundle],
   );
 
+  const navigateHooks: NavigateHooks = useMemo(
+    () => ({
+      onLoading: setLoading,
+      onLoadError: setError,
+    }),
+    [],
+  );
+
   useEffect(() => {
     let cancelled = false;
     (async () => {
       try {
+        const corpusEntry = readCorpusEntryFromUrl();
+        if (corpusEntry) {
+          const inCorpus = await tryResolveCorpusEntryFromUrl(navigateHooks);
+          if (cancelled) return;
+          if (inCorpus) {
+            await tryResolvePresentationFromUrl();
+            if (!cancelled) setError(null);
+            return;
+          }
+        }
         const inSweep = await tryResolveSweepFromUrl();
         if (cancelled) return;
         if (!inSweep) {
@@ -87,7 +108,7 @@ export function App() {
     return () => {
       cancelled = true;
     };
-  }, [applyBundle]);
+  }, [applyBundle, navigateHooks]);
 
   useEffect(() => {
     if (compareMode === "compare" || !playing || presentationMode) return;
@@ -146,9 +167,13 @@ export function App() {
       ) : bundle ? (
         <main className="grid min-h-0 flex-1 grid-cols-1 gap-3 p-3 lg:grid-cols-12">
           <aside className="flex flex-col gap-3 lg:col-span-3">
-            <ScenarioCatalogPicker onLoadError={setError} onLoading={setLoading} />
+            <ScenarioCatalogPicker
+              onLoadError={setError}
+              onLoading={setLoading}
+              navigateHooks={navigateHooks}
+            />
             {sweepMode && <SweepMetadataPanel />}
-            {sweepMode && <SweepWorkstationShell />}
+            {sweepMode && <SweepWorkstationShell navigateHooks={navigateHooks} />}
             <MetadataPanel bundle={bundle} />
             {sweepMode && (
               <>
@@ -178,7 +203,8 @@ export function App() {
       ) : (
         !loading && (
           <p className="p-8 text-center text-slate-500">
-            No bundle loaded. Use ?bundle=URL, ?sweep=id, ?pair=id, ?compare=packA,packB, ?presentation=id, or demo catalog.
+            No bundle loaded. Use ?bundle=URL, ?sweep=id, ?corpus_entry=id, ?pair=id,
+            ?compare=packA,packB, ?presentation=id, or demo catalog.
           </p>
         )
       )}

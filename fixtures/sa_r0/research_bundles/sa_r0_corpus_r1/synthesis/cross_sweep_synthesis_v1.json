@@ -126,6 +126,17 @@
     ],
     "schema_version": "replay_cognition_rollup_v1"
   },
+  "corpus_ref": {
+    "corpus_id": "sa_r0_corpus_r1",
+    "entry_id": "synthesis_report__cross_sweep_synthesis_v1",
+    "index_revision": "cf644076b570350467afc409f07ec3fc7bbb18692fde2a1858873ae4af2d3207",
+    "lineage_parent_ids": [
+      "sweep_family__delayed_detection_sweep",
+      "sweep_family__ridge_overlap_sweep",
+      "sweep_family__saturation_assignment_sweep",
+      "sweep_family__valley_sensor_sweep"
+    ]
+  },
   "divergence_rollup": {
     "member_divergence_count": 9,
     "sweeps_with_divergence": [

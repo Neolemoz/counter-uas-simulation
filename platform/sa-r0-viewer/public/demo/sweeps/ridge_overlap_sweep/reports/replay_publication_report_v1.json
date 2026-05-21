@@ -60,6 +60,14 @@
       "url": "?sweep=ridge_overlap_sweep&member=seed_9213_corridor_defense"
     }
   ],
+  "corpus_ref": {
+    "corpus_id": "sa_r0_corpus_r1",
+    "entry_id": "publication_packet__ridge_overlap_sweep_publication",
+    "index_revision": "cf644076b570350467afc409f07ec3fc7bbb18692fde2a1858873ae4af2d3207",
+    "lineage_parent_ids": [
+      "sweep_family__ridge_overlap_sweep"
+    ]
+  },
   "cross_sweep_appendix": {
     "included": true,
     "synthesis_artifact": "cross_sweep_synthesis_v1.json"

@@ -6,6 +6,9 @@ import { CATEGORY_LABELS } from "./catalogSchema";
 import { ScenarioFilterBar } from "./ScenarioFilterBar";
 import { ScenarioPreviewCard } from "./ScenarioPreviewCard";
 import { CompareCatalogSection } from "./compare/CompareCatalogSection";
+import { CorpusBrowserPanel } from "./corpus/CorpusBrowserPanel";
+import { CorpusEvolutionPanel } from "./corpus/CorpusEvolutionPanel";
+import type { NavigateHooks } from "./corpus/navigateToCorpusEntry";
 import { SweepCatalogPicker } from "./SweepCatalogPicker";
 import { useSweepStore } from "./useSweepStore";
 import { useClockStore } from "./clockStore";
@@ -14,6 +17,7 @@ import { useCompareStore } from "./compareStore";
 type Props = {
   onLoadError: (msg: string) => void;
   onLoading: (loading: boolean) => void;
+  navigateHooks: NavigateHooks;
 };
 
 function packMatchesFilters(pack: CatalogPack, activeTags: string[]): boolean {
@@ -22,7 +26,7 @@ function packMatchesFilters(pack: CatalogPack, activeTags: string[]): boolean {
   return activeTags.every((t) => pool.has(t));
 }
 
-export function ScenarioCatalogPicker({ onLoadError, onLoading }: Props) {
+export function ScenarioCatalogPicker({ onLoadError, onLoading, navigateHooks }: Props) {
   const [catalog, setCatalog] = useState<ScenarioCatalog | null>(null);
   const [activeTags, setActiveTags] = useState<string[]>([]);
   const [selectedId, setSelectedId] = useState<string>("");
@@ -101,6 +105,8 @@ export function ScenarioCatalogPicker({ onLoadError, onLoading }: Props) {
 
   return (
     <section className="rounded border border-slate-700 bg-slate-900/80 p-3 text-sm">
+      <CorpusBrowserPanel hooks={navigateHooks} />
+      <CorpusEvolutionPanel hooks={navigateHooks} />
       <CompareCatalogSection onLoadError={onLoadError} onLoading={onLoading} />
       <SweepCatalogPicker onLoadError={onLoadError} onLoading={onLoading} />
       <h2 className="mb-2 font-semibold text-slate-200">Scenario catalog</h2>
