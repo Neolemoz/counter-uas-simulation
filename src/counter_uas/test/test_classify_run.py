@@ -23,12 +23,32 @@ def test_f1_timeout_marker() -> None:
         p.unlink(missing_ok=True)
 
 
-def test_f1_capture_rc_124() -> None:
+def test_f1_capture_rc_124_without_hit() -> None:
+    with tempfile.NamedTemporaryFile(mode='w', suffix='.log', delete=False, encoding='utf-8') as f:
+        f.write('no hit here\n')
+        p = Path(f.name)
+    try:
+        assert classify_run_failure(p, capture_rc=124) == 'F1_timeout'
+    finally:
+        p.unlink(missing_ok=True)
+
+
+def test_hit_with_capture_timeout_is_not_failure_timeout() -> None:
     with tempfile.NamedTemporaryFile(mode='w', suffix='.log', delete=False, encoding='utf-8') as f:
         f.write('[HIT] x min_miss=0.1 m\n')
         p = Path(f.name)
     try:
-        assert classify_run_failure(p, capture_rc=124) == 'F1_timeout'
+        assert classify_run_failure(p, capture_rc=124) == 'F5_unknown'
+    finally:
+        p.unlink(missing_ok=True)
+
+
+def test_hit_with_timeout_marker_is_not_failure_timeout() -> None:
+    with tempfile.NamedTemporaryFile(mode='w', suffix='.log', delete=False, encoding='utf-8') as f:
+        f.write('[HIT] x min_miss=0.1 m\n=== TIMEOUT ===\n')
+        p = Path(f.name)
+    try:
+        assert classify_run_failure(p) == 'F5_unknown'
     finally:
         p.unlink(missing_ok=True)
 

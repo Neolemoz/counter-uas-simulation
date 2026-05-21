@@ -25,6 +25,17 @@ def test_classify_run_failure_evidence_tracks_timeout(tmp_path: Path) -> None:
     evidence = classify.classify_run_failure_evidence(log, capture_rc=124)
     assert evidence['failure_class'] == 'F1_timeout'
     assert evidence['timeout_seen'] is True
+    assert evidence['raw_timeout_seen'] is True
+
+
+def test_classify_run_failure_evidence_ignores_timeout_after_hit(tmp_path: Path) -> None:
+    classify = _load_classify()
+    log = tmp_path / 'hit_then_timeout.log'
+    log.write_text('[HIT] interceptor_0 min_miss=0.2 m\n=== TIMEOUT ===\n', encoding='utf-8')
+    evidence = classify.classify_run_failure_evidence(log, capture_rc=124)
+    assert evidence['failure_class'] == 'F5_unknown'
+    assert evidence['timeout_seen'] is False
+    assert evidence['raw_timeout_seen'] is True
 
 
 def test_classify_run_failure_evidence_tracks_instability(tmp_path: Path) -> None:

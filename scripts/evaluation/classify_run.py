@@ -37,7 +37,8 @@ def classify_run_failure_evidence(
         except ValueError:
             continue
 
-    timeout_seen = '=== timeout ===' in low or (capture_rc is not None and int(capture_rc) == 124)
+    raw_timeout_seen = '=== timeout ===' in low or (capture_rc is not None and int(capture_rc) == 124)
+    timeout_seen = raw_timeout_seen and not summary.hit
     assignment_switch_count = len(_REASSIGN_RE.findall(text))
     feasible_geom_seen = 'feasible_geom=true' in text or '[feas_warn]' in low
     has_eng_metric = '[eng_metric]' in low
@@ -58,6 +59,7 @@ def classify_run_failure_evidence(
         'log': str(log_path),
         'capture_rc': capture_rc,
         'timeout_seen': timeout_seen,
+        'raw_timeout_seen': raw_timeout_seen,
         'has_eng_metric': has_eng_metric,
         'max_abs_delta_t_go': max_abs_delta,
         'delta_t_go_count': len(deltas),
