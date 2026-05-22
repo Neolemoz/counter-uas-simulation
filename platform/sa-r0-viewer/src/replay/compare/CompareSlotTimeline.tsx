@@ -1,6 +1,7 @@
 import type { CompareSlotId } from "../compareStore";
 import { useCompareStore } from "../compareStore";
 import { findAlignedEventId } from "../annotationAlign";
+import { sandboxButtons, sandboxSurfaces, sandboxTypography } from "@/theme/sandboxTheme";
 
 type Props = { slot: CompareSlotId; label: string };
 
@@ -33,17 +34,20 @@ export function CompareSlotTimeline({ slot, label }: Props) {
   };
 
   return (
-    <section className="rounded border border-slate-700 bg-slate-900/80 p-2">
-      <p className="mb-1 text-xs font-semibold uppercase text-slate-500">{label}</p>
+    <section className={`${sandboxSurfaces.panelInset} p-2`}>
+      <p className={`mb-0.5 ${sandboxTypography.sectionLabel}`}>{label}</p>
+      {!syncClock && (
+        <p className={`mb-2 ${sandboxTypography.caption}`}>Independent replay clock for this slot.</p>
+      )}
       <div className="mb-1 flex items-center gap-2">
         <button
           type="button"
-          className="rounded bg-slate-700 px-2 py-0.5 text-xs hover:bg-slate-600"
+          className={sandboxButtons.subtle}
           onClick={() => setSlotPlaying(slot, !slotState.playing)}
         >
           {slotState.playing ? "Pause" : "Play"}
         </button>
-        <span className="text-xs text-slate-400">t = {slotState.currentT}</span>
+        <span className="text-xs tabular-nums text-slate-400">t = {slotState.currentT}</span>
       </div>
       <input
         type="range"
@@ -51,7 +55,7 @@ export function CompareSlotTimeline({ slot, label }: Props) {
         max={Math.max(end, start + 1)}
         step={bundle.clock.duration.step}
         value={slotState.currentT}
-        className="w-full"
+        className="w-full accent-amber-600"
         onChange={(e) => {
           setSlotPlaying(slot, false);
           setSlotCurrentT(slot, Number(e.target.value));
@@ -63,7 +67,9 @@ export function CompareSlotTimeline({ slot, label }: Props) {
             key={`${m.t}-${m.event_id ?? m.label}`}
             type="button"
             className={`rounded px-1 py-0.5 text-[10px] ${
-              m.t === slotState.currentT ? "bg-amber-700 text-white" : "bg-slate-800 text-slate-500"
+              m.t === slotState.currentT
+                ? "bg-amber-800/50 text-amber-100"
+                : "bg-slate-800/80 text-slate-500 hover:text-slate-300"
             }`}
             onClick={() => selectMarker(m.t, m.event_id ? String(m.event_id) : undefined)}
           >

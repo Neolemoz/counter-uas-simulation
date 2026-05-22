@@ -1,0 +1,25 @@
+{
+  "artifact_type": "experiment_orchestration_async_manifest_v1",
+  "async_execution_status": "quarantined",
+  "async_lineage": [
+    {
+      "actor": "cli:record_async_execution",
+      "event_id": "async-2026-05-22T04:17:13Z",
+      "from_status": null,
+      "notes": "",
+      "to_status": "quarantined"
+    }
+  ],
+  "governance": {
+    "anti_claims": [
+      "not live execution authority",
+      "not distributed worker registry",
+      "not parser contract"
+    ],
+    "notice": "Async orchestration sidecar for offline experiment bookkeeping only."
+  },
+  "manifest_id": "capture_pipeline_template",
+  "schema_version": "1",
+  "updated_at": "2026-05-22T04:17:13Z",
+  "worker_execution_refs": []
+}

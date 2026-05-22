@@ -1,0 +1,27 @@
+{
+  "artifact_type": "orchestration_async_batch_audit_v1",
+  "async_manifest_count": 3,
+  "failed_manifest_ids": [],
+  "generated_at": "2026-05-22T04:42:17Z",
+  "governance": {
+    "anti_claims": [
+      "not live recovery authority",
+      "not parser contract",
+      "not operational readiness"
+    ],
+    "notice": "Recovery and reconciliation artifacts for offline reviewer cognition only."
+  },
+  "governance_banner": "ASYNC BATCH AUDIT \u2014 explanatory export only",
+  "ok": true,
+  "quarantined_manifest_ids": [
+    "capture_pipeline_template"
+  ],
+  "recovery_issue_count": 0,
+  "recovery_warning_count": 0,
+  "schema_version": "1",
+  "status_counts": {
+    "quarantined": 1,
+    "superseded": 1,
+    "unset": 1
+  }
+}

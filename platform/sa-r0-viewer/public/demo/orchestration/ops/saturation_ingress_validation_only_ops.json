@@ -1,0 +1,34 @@
+{
+  "artifact_type": "experiment_orchestration_ops_manifest_v1",
+  "audit_report_ref": "fixtures/orchestration/audits/saturation_ingress_validation_only_queue_report.json",
+  "authoring_pack_refs": [
+    "saturation_ingress"
+  ],
+  "governance": {
+    "anti_claims": [
+      "not live execution authority",
+      "not operational deployment state",
+      "not parser contract"
+    ],
+    "notice": "Orchestration operations sidecar for offline experiment workflow only."
+  },
+  "manifest_fingerprint": "sha256:0c8184bfc9d9a7416ef4caa00713cdde7c6026a9a935f4664db7a37ae2de0e27",
+  "manifest_id": "saturation_ingress_validation_only",
+  "operations_lineage": [
+    {
+      "actor": "cli:promote_experiment_manifest",
+      "event_id": "ops-2026-05-22T00:31:38Z",
+      "from_status": "validated",
+      "notes": "I1 backfill",
+      "to_status": "queued"
+    }
+  ],
+  "operations_status": "queued",
+  "operations_summary_ref": "fixtures/orchestration/ops/saturation_ingress_validation_only_orchestration_operations_summary_v1.json",
+  "queue_snapshot_ref": "fixtures/orchestration/queues/saturation_ingress_validation_only_queue.json",
+  "scenario_pack_ids": [
+    "saturation_ingress"
+  ],
+  "schema_version": "1",
+  "updated_at": "2026-05-22T00:31:38Z"
+}

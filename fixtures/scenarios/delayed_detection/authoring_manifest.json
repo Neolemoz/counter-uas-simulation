@@ -1,0 +1,40 @@
+{
+  "artifact_type": "scenario_authoring_manifest_v1",
+  "authoring_notes": "A2 catalog backfill",
+  "governance": {
+    "anti_claims": [
+      "not operational deployment state",
+      "not simulation launch authority",
+      "not parser contract"
+    ],
+    "notice": "Authoring manifest for fixture topology workflow only."
+  },
+  "orchestration_handoff_refs": [
+    {
+      "job_id": "delayed_detection_validate",
+      "manifest_id": "delayed_detection_validation",
+      "queue_mirror_id": "delayed_detection_validation_only_queue"
+    }
+  ],
+  "pack_id": "delayed_detection",
+  "parent_pack_id": null,
+  "promotion_lineage": [
+    {
+      "actor": "cli:promote_scenario_pack",
+      "event_id": "promote-2026-05-21T11:55:54Z",
+      "from_status": "validated",
+      "notes": "A2 catalog backfill",
+      "pack_fingerprint": "sha256:d649a09703cacef63ee4acee34a277222d071c6726e78519bb8c1172634ddf70",
+      "recorded_at": "2026-05-21T11:55:54Z",
+      "to_status": "promoted",
+      "validation_mirror_ok": true
+    }
+  ],
+  "promotion_status": "promoted",
+  "promotion_summary_ref": "fixtures/scenarios/delayed_detection/authoring_promotion_summary_v1.json",
+  "schema_version": "1",
+  "topology_variant_class": "baseline",
+  "updated_at": "2026-05-21T11:55:54Z",
+  "validation_pack_fingerprint": "sha256:d649a09703cacef63ee4acee34a277222d071c6726e78519bb8c1172634ddf70",
+  "validation_snapshot_ref": "fixtures/orchestration/validation_mirrors/delayed_detection_validation_mirror.json"
+}

@@ -89,6 +89,8 @@ export type MapReplayState = {
   fitReplayNonce: number;
 };
 
+export type MapVisualProfile = "default" | "publication";
+
 type Props = {
   bundle: ReplaySaBundle;
   className?: string;
@@ -100,6 +102,8 @@ type Props = {
   cameraLocked?: boolean;
   onCameraMatrix?: (state: { position: Cartesian3; direction: Cartesian3; up: Cartesian3 }) => void;
   followCamera?: { position: Cartesian3; direction: Cartesian3; up: Cartesian3 } | null;
+  visualProfile?: MapVisualProfile;
+  onViewerReady?: (viewer: Viewer | null) => void;
 };
 
 export function CesiumReplayMap({
@@ -113,9 +117,18 @@ export function CesiumReplayMap({
   cameraLocked = false,
   onCameraMatrix,
   followCamera,
+  visualProfile = "default",
+  onViewerReady,
 }: Props) {
+  const publication = visualProfile === "publication";
+  const labelFont = publication ? "10px sans-serif" : "12px sans-serif";
+  const siteLabelFont = publication ? "9px sans-serif" : "10px sans-serif";
+  const futureAlpha = publication ? 0.22 : 0.35;
+  const futureDash = publication ? 20 : 16;
   const containerRef = useRef<HTMLDivElement>(null);
   const viewerRef = useRef<Viewer | null>(null);
+  const onViewerReadyRef = useRef(onViewerReady);
+  onViewerReadyRef.current = onViewerReady;
   const clockCurrentT = useClockStore((s) => s.currentT);
   const clockLayers = useClockStore((s) => s.layers);
   const clockHighlighted = useClockStore((s) => s.highlightedTrackIds);
@@ -158,9 +171,11 @@ export function CesiumReplayMap({
       imagery.alpha = 0.88;
     }
     viewerRef.current = viewer;
+    onViewerReadyRef.current?.(viewer);
     return () => {
       viewer.destroy();
       viewerRef.current = null;
+      onViewerReadyRef.current?.(null);
     };
   }, []);
 
@@ -204,7 +219,7 @@ export function CesiumReplayMap({
           position: toCartesian(bundle, cx, cy + g.radius_m * 0.85, cz),
           label: {
             text: label,
-            font: "12px sans-serif",
+            font: labelFont,
             fillColor: Color.WHITE,
             outlineColor: Color.BLACK,
             outlineWidth: 2,
@@ -293,7 +308,7 @@ export function CesiumReplayMap({
           },
           label: {
             text: ent.label,
-            font: "10px sans-serif",
+            font: siteLabelFont,
             fillColor: Color.WHITE,
             style: LabelStyle.FILL,
             pixelOffset: new Cartesian2(0, -12),
@@ -372,8 +387,8 @@ export function CesiumReplayMap({
                 positions: futurePositions,
                 width: 1.5,
                 material: new PolylineDashMaterialProperty({
-                  color: Color.fromCssColorString(colors.future).withAlpha(0.35),
-                  dashLength: 16,
+                  color: Color.fromCssColorString(colors.future).withAlpha(futureAlpha),
+                  dashLength: futureDash,
                 }),
               },
             });
@@ -390,7 +405,7 @@ export function CesiumReplayMap({
               outlineColor: Color.WHITE,
               outlineWidth: highlight ? 2 : 1,
             },
-            label: highlight
+            label: highlight && !publication
               ? {
                   text: track.track_id,
                   font: "11px sans-serif",

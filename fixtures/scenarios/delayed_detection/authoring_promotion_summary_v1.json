@@ -1,0 +1,13 @@
+{
+  "artifact_type": "authoring_promotion_summary_v1",
+  "event_id": "promote-2026-05-21T11:55:54Z",
+  "from_status": "validated",
+  "governance_banner": "PROMOTION SUMMARY \u2014 CLI audit trail; not operational authority",
+  "orchestration_handoff_refs": [],
+  "pack_id": "delayed_detection",
+  "recorded_at": "2026-05-21T11:55:54Z",
+  "schema_version": "1",
+  "to_status": "promoted",
+  "validation_pack_fingerprint": "sha256:d649a09703cacef63ee4acee34a277222d071c6726e78519bb8c1172634ddf70",
+  "validation_snapshot_ref": "fixtures/orchestration/validation_mirrors/delayed_detection_validation_mirror.json"
+}

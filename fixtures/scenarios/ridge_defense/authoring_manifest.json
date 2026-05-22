@@ -1,0 +1,35 @@
+{
+  "artifact_type": "scenario_authoring_manifest_v1",
+  "governance": {
+    "anti_claims": [
+      "not operational deployment state",
+      "not simulation launch authority",
+      "not parser contract"
+    ],
+    "notice": "Authoring manifest for fixture topology workflow only."
+  },
+  "orchestration_handoff_refs": [
+    {
+      "job_id": "ridge_defense_synthetic",
+      "manifest_id": "ridge_defense_synthetic_pipeline",
+      "queue_mirror_id": "ridge_defense_synthetic_pipeline_queue"
+    }
+  ],
+  "pack_id": "ridge_defense",
+  "parent_pack_id": null,
+  "promotion_lineage": [
+    {
+      "actor": "cli:promote_scenario_pack",
+      "event_id": "promote-2026-05-21T11:28:57Z",
+      "from_status": "validated",
+      "notes": "",
+      "to_status": "promoted"
+    }
+  ],
+  "promotion_status": "orchestration_ready",
+  "schema_version": "1",
+  "topology_variant_class": "baseline",
+  "updated_at": "2026-05-21T11:28:57Z",
+  "validation_pack_fingerprint": "sha256:f982fbd733369f15aecbab79d6ae854fd922f97aaddac9219eca27125ff310d6",
+  "validation_snapshot_ref": "fixtures/orchestration/validation_mirrors/ridge_defense_validation_mirror.json"
+}

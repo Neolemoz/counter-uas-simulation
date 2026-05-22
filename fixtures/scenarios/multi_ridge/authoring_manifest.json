@@ -1,0 +1,40 @@
+{
+  "artifact_type": "scenario_authoring_manifest_v1",
+  "authoring_notes": "A2 catalog backfill",
+  "governance": {
+    "anti_claims": [
+      "not operational deployment state",
+      "not simulation launch authority",
+      "not parser contract"
+    ],
+    "notice": "Authoring manifest for fixture topology workflow only."
+  },
+  "orchestration_handoff_refs": [
+    {
+      "job_id": "multi_ridge_validate",
+      "manifest_id": "multi_ridge_validation",
+      "queue_mirror_id": "multi_ridge_validation_only_queue"
+    }
+  ],
+  "pack_id": "multi_ridge",
+  "parent_pack_id": null,
+  "promotion_lineage": [
+    {
+      "actor": "cli:promote_scenario_pack",
+      "event_id": "promote-2026-05-21T11:55:53Z",
+      "from_status": "validated",
+      "notes": "A2 catalog backfill",
+      "pack_fingerprint": "sha256:55b154592a0b22939cc8d1f5708ac639a4d2a22da7e75d971be74e3200d2fb4a",
+      "recorded_at": "2026-05-21T11:55:53Z",
+      "to_status": "promoted",
+      "validation_mirror_ok": true
+    }
+  ],
+  "promotion_status": "promoted",
+  "promotion_summary_ref": "fixtures/scenarios/multi_ridge/authoring_promotion_summary_v1.json",
+  "schema_version": "1",
+  "topology_variant_class": "baseline",
+  "updated_at": "2026-05-21T11:55:53Z",
+  "validation_pack_fingerprint": "sha256:55b154592a0b22939cc8d1f5708ac639a4d2a22da7e75d971be74e3200d2fb4a",
+  "validation_snapshot_ref": "fixtures/orchestration/validation_mirrors/multi_ridge_validation_mirror.json"
+}

@@ -1,9 +1,15 @@
+import type { ReplaySaBundle } from "@/replay/bundleSchema";
 import { useClockStore } from "@/replay/clockStore";
 import { interpolatePosition } from "@/replay/trackPlayback";
 
-export function RadarMockPane() {
-  const bundle = useClockStore((s) => s.bundle);
-  const currentT = useClockStore((s) => s.currentT);
+type Props = {
+  bundle?: ReplaySaBundle | null;
+  currentT?: number;
+};
+
+export function RadarMockPane({ bundle: bundleProp, currentT: tProp }: Props = {}) {
+  const bundle = bundleProp ?? useClockStore((s) => s.bundle);
+  const currentT = tProp ?? useClockStore((s) => s.currentT);
   if (!bundle) return null;
 
   const points: { x: number; y: number; role: string; interpolated: boolean }[] = [];

@@ -1,4 +1,5 @@
-import { useEffect, useRef } from "react";
+import { useCallback, useEffect, useRef } from "react";
+import type { Viewer } from "cesium";
 import { StrategicMapPane } from "@/views/StrategicMapPane";
 import { useClockStore } from "../clockStore";
 import { useSweepStore } from "../useSweepStore";
@@ -36,6 +37,10 @@ export function PresentationView() {
   const timelineCompressed = usePresentationStore((s) => s.timelineCompressed);
   const setSpatialDeclutter = useSweepStore((s) => s.setSpatialDeclutter);
   const mapRef = useRef<HTMLDivElement>(null);
+  const mapViewerRef = useRef<Viewer | null>(null);
+  const onMapViewerReady = useCallback((v: Viewer | null) => {
+    mapViewerRef.current = v;
+  }, []);
 
   const chapter = activeChapter(bundle, currentChapterIndex);
 
@@ -88,6 +93,7 @@ export function PresentationView() {
 
   return (
     <PresentationLayoutShell
+      className="sandbox-publication"
       left={mapFullscreen ? undefined : leftPanel}
       center={
         <>
@@ -95,12 +101,20 @@ export function PresentationView() {
             onExit={exitPresentation}
             onToggleFullscreen={() => void toggleFullscreen()}
             mapFullscreen={mapFullscreen}
+            mapViewer={mapViewerRef.current}
           />
           <ChapterNavRail />
-          <div ref={mapRef} className={mapFullscreen ? "h-screen w-full bg-slate-950" : "min-h-[420px] flex-1"}>
-            <StrategicMapPane bundle={bundle} presentationDimming />
+          <div
+            ref={mapRef}
+            className={mapFullscreen ? "h-screen w-full bg-slate-950" : "min-h-[420px] flex-1"}
+          >
+            <StrategicMapPane bundle={bundle} presentationDimming onViewerReady={onMapViewerReady} />
           </div>
-          <TimelineScrubber compressed={timelineCompressed} chapter={chapter} />
+          <TimelineScrubber
+            compressed={timelineCompressed}
+            chapter={chapter}
+            presentationMode
+          />
         </>
       }
     />

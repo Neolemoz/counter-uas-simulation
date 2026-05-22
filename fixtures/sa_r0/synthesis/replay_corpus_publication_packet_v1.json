@@ -23,12 +23,12 @@
     {
       "kind": "release_manifest",
       "path": "fixtures/sa_r0/corpus_releases/sa_r0_corpus_r1_r1/replay_corpus_release_manifest_v1.json",
-      "sha256": "201dc51790eb2425b72c1027847944546d690efd8bbe3c81d250fb2a9d43f35a"
+      "sha256": "4e126bb702c237921be5b1567a7fdc79a8b8d0a9a07edc02ac9dbe863e82e680"
     },
     {
       "kind": "research_bundle",
       "path": "fixtures/sa_r0/research_bundles/sa_r0_corpus_r1/manifest.json",
-      "sha256": "2125f9817134cfbb6bda3d0571a038033447e244105bce9385d7401096b71728"
+      "sha256": "2dd19c6225ad670b94cecdbfc6a7dab8bc9b894b0b1c17f463f8365a5b9918c7"
     },
     {
       "kind": "publication_packet",
@@ -68,7 +68,7 @@
     {
       "kind": "corpus_index",
       "path": "fixtures/sa_r0/synthesis/replay_corpus_index_v1.json",
-      "sha256": "37cb8a2d05c5b6ba566a332f6372a54303af5cc0b1ca5ab6613649178474a46c"
+      "sha256": "0127302f6a835c99705e7ae6884df40c70b07b324ae5e1ba77d9a7e66754611d"
     },
     {
       "kind": "linkage",

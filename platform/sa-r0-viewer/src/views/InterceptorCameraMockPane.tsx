@@ -1,3 +1,4 @@
+import type { ReplaySaBundle } from "@/replay/bundleSchema";
 import { useClockStore } from "@/replay/clockStore";
 import { getOnboardPhase, ONBOARD_PHASE_COPY } from "@/replay/onboardPhase";
 import { interpolatePosition } from "@/replay/trackPlayback";
@@ -10,9 +11,14 @@ const PHASE_VISUAL: Record<string, string> = {
   intercept_window: "✦",
 };
 
-export function InterceptorCameraMockPane() {
-  const bundle = useClockStore((s) => s.bundle);
-  const currentT = useClockStore((s) => s.currentT);
+type Props = {
+  bundle?: ReplaySaBundle | null;
+  currentT?: number;
+};
+
+export function InterceptorCameraMockPane({ bundle: bundleProp, currentT: tProp }: Props = {}) {
+  const bundle = bundleProp ?? useClockStore((s) => s.bundle);
+  const currentT = tProp ?? useClockStore((s) => s.currentT);
   if (!bundle) return null;
 
   const phase = getOnboardPhase(bundle, currentT);

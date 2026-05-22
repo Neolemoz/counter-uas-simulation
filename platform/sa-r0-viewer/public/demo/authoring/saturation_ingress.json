@@ -1,0 +1,40 @@
+{
+  "artifact_type": "scenario_authoring_manifest_v1",
+  "authoring_notes": "A2 catalog backfill",
+  "governance": {
+    "anti_claims": [
+      "not operational deployment state",
+      "not simulation launch authority",
+      "not parser contract"
+    ],
+    "notice": "Authoring manifest for fixture topology workflow only."
+  },
+  "orchestration_handoff_refs": [
+    {
+      "job_id": "saturation_ingress_validate",
+      "manifest_id": "saturation_ingress_validation",
+      "queue_mirror_id": "saturation_ingress_validation_only_queue"
+    }
+  ],
+  "pack_id": "saturation_ingress",
+  "parent_pack_id": null,
+  "promotion_lineage": [
+    {
+      "actor": "cli:promote_scenario_pack",
+      "event_id": "promote-2026-05-21T11:55:54Z",
+      "from_status": "validated",
+      "notes": "A2 catalog backfill",
+      "pack_fingerprint": "sha256:c997812cd3df2c565cda0822c667b44f44551300efef1b672271d50c6d22c066",
+      "recorded_at": "2026-05-21T11:55:54Z",
+      "to_status": "promoted",
+      "validation_mirror_ok": true
+    }
+  ],
+  "promotion_status": "promoted",
+  "promotion_summary_ref": "fixtures/scenarios/saturation_ingress/authoring_promotion_summary_v1.json",
+  "schema_version": "1",
+  "topology_variant_class": "baseline",
+  "updated_at": "2026-05-21T11:55:54Z",
+  "validation_pack_fingerprint": "sha256:c997812cd3df2c565cda0822c667b44f44551300efef1b672271d50c6d22c066",
+  "validation_snapshot_ref": "fixtures/orchestration/validation_mirrors/saturation_ingress_validation_mirror.json"
+}

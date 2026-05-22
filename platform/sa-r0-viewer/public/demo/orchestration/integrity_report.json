@@ -1,0 +1,250 @@
+{
+  "artifact_type": "orchestration_integrity_report_v1",
+  "checked_at": "2026-05-22T04:42:16Z",
+  "errors": [],
+  "governance_banner": "ORCHESTRATION INTEGRITY \u2014 explanatory audit; CLI remains authoritative",
+  "manifest_count": 12,
+  "ok": true,
+  "orphan_queues": [],
+  "pack_count": 12,
+  "per_manifest": {
+    "corridor_defense_validation_only": {
+      "errors": [],
+      "manifest_id": "corridor_defense_validation_only",
+      "pack_ids": [
+        "corridor_defense"
+      ],
+      "warnings": [
+        "corridor_defense_validation_only: queue manifest_ref mismatch",
+        "corridor_defense: handoff manifest_id not in index: corridor_defense_validation"
+      ]
+    },
+    "delayed_detection_validation_only": {
+      "errors": [],
+      "manifest_id": "delayed_detection_validation_only",
+      "pack_ids": [
+        "delayed_detection"
+      ],
+      "warnings": [
+        "delayed_detection_validation_only: queue manifest_ref mismatch",
+        "delayed_detection: handoff manifest_id not in index: delayed_detection_validation"
+      ]
+    },
+    "long_range_ingress_validation_only": {
+      "errors": [],
+      "manifest_id": "long_range_ingress_validation_only",
+      "pack_ids": [
+        "long_range_ingress"
+      ],
+      "warnings": [
+        "long_range_ingress_validation_only: queue manifest_ref mismatch",
+        "long_range_ingress: handoff manifest_id not in index: long_range_ingress_validation"
+      ]
+    },
+    "multi_ridge_validation_only": {
+      "errors": [],
+      "manifest_id": "multi_ridge_validation_only",
+      "pack_ids": [
+        "multi_ridge"
+      ],
+      "warnings": [
+        "multi_ridge_validation_only: queue manifest_ref mismatch",
+        "multi_ridge: handoff manifest_id not in index: multi_ridge_validation"
+      ]
+    },
+    "ridge_defense_synthetic_pipeline": {
+      "errors": [],
+      "manifest_id": "ridge_defense_synthetic_pipeline",
+      "pack_ids": [
+        "ridge_defense"
+      ],
+      "warnings": [
+        "ridge_defense_synthetic_pipeline: queue manifest_ref mismatch"
+      ]
+    },
+    "saturation_ingress_validation_only": {
+      "errors": [],
+      "manifest_id": "saturation_ingress_validation_only",
+      "pack_ids": [
+        "saturation_ingress"
+      ],
+      "warnings": [
+        "saturation_ingress_validation_only: queue manifest_ref mismatch",
+        "saturation_ingress: handoff manifest_id not in index: saturation_ingress_validation"
+      ]
+    },
+    "urban_masking_validation_only": {
+      "errors": [],
+      "manifest_id": "urban_masking_validation_only",
+      "pack_ids": [
+        "urban_masking"
+      ],
+      "warnings": [
+        "urban_masking_validation_only: queue manifest_ref mismatch",
+        "urban_masking: handoff manifest_id not in index: urban_masking_validation"
+      ]
+    },
+    "valley_ingress_delayed_interceptor_base_validation_only": {
+      "errors": [],
+      "manifest_id": "valley_ingress_delayed_interceptor_base_validation_only",
+      "pack_ids": [
+        "valley_ingress_delayed_interceptor_base"
+      ],
+      "warnings": [
+        "valley_ingress_delayed_interceptor_base_validation_only: queue manifest_ref mismatch"
+      ]
+    },
+    "valley_ingress_extra_valley_sensor_validation_only": {
+      "errors": [],
+      "manifest_id": "valley_ingress_extra_valley_sensor_validation_only",
+      "pack_ids": [
+        "valley_ingress_extra_valley_sensor"
+      ],
+      "warnings": [
+        "valley_ingress_extra_valley_sensor_validation_only: queue manifest_ref mismatch"
+      ]
+    },
+    "valley_ingress_radar_shifted_north_validation_only": {
+      "errors": [],
+      "manifest_id": "valley_ingress_radar_shifted_north_validation_only",
+      "pack_ids": [
+        "valley_ingress_radar_shifted_north"
+      ],
+      "warnings": [
+        "valley_ingress_radar_shifted_north_validation_only: queue manifest_ref mismatch"
+      ]
+    },
+    "valley_ingress_reduced_overlap_layout_validation_only": {
+      "errors": [],
+      "manifest_id": "valley_ingress_reduced_overlap_layout_validation_only",
+      "pack_ids": [
+        "valley_ingress_reduced_overlap_layout"
+      ],
+      "warnings": [
+        "valley_ingress_reduced_overlap_layout_validation_only: queue manifest_ref mismatch"
+      ]
+    },
+    "valley_ingress_validation_only": {
+      "errors": [],
+      "manifest_id": "valley_ingress_validation_only",
+      "pack_ids": [
+        "valley_ingress"
+      ],
+      "warnings": [
+        "valley_ingress_validation_only: queue manifest_ref mismatch"
+      ]
+    }
+  },
+  "per_pack": {
+    "corridor_defense": {
+      "errors": [],
+      "pack_id": "corridor_defense",
+      "warnings": [
+        "corridor_defense_validation_only: queue manifest_ref mismatch",
+        "corridor_defense: handoff manifest_id not in index: corridor_defense_validation"
+      ]
+    },
+    "delayed_detection": {
+      "errors": [],
+      "pack_id": "delayed_detection",
+      "warnings": [
+        "delayed_detection_validation_only: queue manifest_ref mismatch",
+        "delayed_detection: handoff manifest_id not in index: delayed_detection_validation"
+      ]
+    },
+    "long_range_ingress": {
+      "errors": [],
+      "pack_id": "long_range_ingress",
+      "warnings": [
+        "long_range_ingress_validation_only: queue manifest_ref mismatch",
+        "long_range_ingress: handoff manifest_id not in index: long_range_ingress_validation"
+      ]
+    },
+    "multi_ridge": {
+      "errors": [],
+      "pack_id": "multi_ridge",
+      "warnings": [
+        "multi_ridge_validation_only: queue manifest_ref mismatch",
+        "multi_ridge: handoff manifest_id not in index: multi_ridge_validation"
+      ]
+    },
+    "ridge_defense": {
+      "errors": [],
+      "pack_id": "ridge_defense",
+      "warnings": []
+    },
+    "saturation_ingress": {
+      "errors": [],
+      "pack_id": "saturation_ingress",
+      "warnings": [
+        "saturation_ingress_validation_only: queue manifest_ref mismatch",
+        "saturation_ingress: handoff manifest_id not in index: saturation_ingress_validation"
+      ]
+    },
+    "urban_masking": {
+      "errors": [],
+      "pack_id": "urban_masking",
+      "warnings": [
+        "urban_masking_validation_only: queue manifest_ref mismatch",
+        "urban_masking: handoff manifest_id not in index: urban_masking_validation"
+      ]
+    },
+    "valley_ingress": {
+      "errors": [],
+      "pack_id": "valley_ingress",
+      "warnings": [
+        "valley_ingress_validation_only: queue manifest_ref mismatch"
+      ]
+    },
+    "valley_ingress_delayed_interceptor_base": {
+      "errors": [],
+      "pack_id": "valley_ingress_delayed_interceptor_base",
+      "warnings": [
+        "valley_ingress_delayed_interceptor_base_validation_only: queue manifest_ref mismatch"
+      ]
+    },
+    "valley_ingress_extra_valley_sensor": {
+      "errors": [],
+      "pack_id": "valley_ingress_extra_valley_sensor",
+      "warnings": [
+        "valley_ingress_extra_valley_sensor_validation_only: queue manifest_ref mismatch"
+      ]
+    },
+    "valley_ingress_radar_shifted_north": {
+      "errors": [],
+      "pack_id": "valley_ingress_radar_shifted_north",
+      "warnings": [
+        "valley_ingress_radar_shifted_north_validation_only: queue manifest_ref mismatch"
+      ]
+    },
+    "valley_ingress_reduced_overlap_layout": {
+      "errors": [],
+      "pack_id": "valley_ingress_reduced_overlap_layout",
+      "warnings": [
+        "valley_ingress_reduced_overlap_layout_validation_only: queue manifest_ref mismatch"
+      ]
+    }
+  },
+  "schema_version": "1",
+  "strict": false,
+  "warnings": [
+    "corridor_defense_validation_only: queue manifest_ref mismatch",
+    "corridor_defense: handoff manifest_id not in index: corridor_defense_validation",
+    "delayed_detection_validation_only: queue manifest_ref mismatch",
+    "delayed_detection: handoff manifest_id not in index: delayed_detection_validation",
+    "long_range_ingress_validation_only: queue manifest_ref mismatch",
+    "long_range_ingress: handoff manifest_id not in index: long_range_ingress_validation",
+    "multi_ridge_validation_only: queue manifest_ref mismatch",
+    "multi_ridge: handoff manifest_id not in index: multi_ridge_validation",
+    "ridge_defense_synthetic_pipeline: queue manifest_ref mismatch",
+    "saturation_ingress_validation_only: queue manifest_ref mismatch",
+    "saturation_ingress: handoff manifest_id not in index: saturation_ingress_validation",
+    "urban_masking_validation_only: queue manifest_ref mismatch",
+    "urban_masking: handoff manifest_id not in index: urban_masking_validation",
+    "valley_ingress_delayed_interceptor_base_validation_only: queue manifest_ref mismatch",
+    "valley_ingress_extra_valley_sensor_validation_only: queue manifest_ref mismatch",
+    "valley_ingress_radar_shifted_north_validation_only: queue manifest_ref mismatch",
+    "valley_ingress_reduced_overlap_layout_validation_only: queue manifest_ref mismatch",
+    "valley_ingress_validation_only: queue manifest_ref mismatch"
+  ]
+}

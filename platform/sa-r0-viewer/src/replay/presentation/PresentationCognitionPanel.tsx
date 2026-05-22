@@ -1,6 +1,7 @@
 import { useClockStore } from "../clockStore";
 import { useSweepStore } from "../useSweepStore";
 import { computeCognitionIndicators } from "../cognition/replayStorytelling";
+import { sandboxSurfaces, sandboxTypography } from "@/theme/sandboxTheme";
 
 export function PresentationCognitionPanel() {
   const bundle = useClockStore((s) => s.bundle);
@@ -8,18 +9,20 @@ export function PresentationCognitionPanel() {
   const indicators = computeCognitionIndicators(bundle, sweep);
 
   return (
-    <section className="rounded border border-slate-700 bg-slate-900/80 p-3 text-sm">
-      <h2 className="mb-1 font-semibold text-slate-200">Presentation cognition</h2>
-      <p className="mb-2 text-xs text-slate-500">
-        Reviewer support only — not performance metrics or reviewer scoring.
+    <section className={`${sandboxSurfaces.panel} p-3`}>
+      <h2 className={`mb-1 ${sandboxTypography.sectionLabel} text-slate-200`}>
+        Review orientation
+      </h2>
+      <p className={`mb-2 ${sandboxTypography.caption}`}>
+        Descriptive tags for mentor walkthrough — not scores or rankings.
       </p>
-      <ul className="flex flex-wrap gap-2">
+      <ul className="flex flex-wrap gap-1.5">
         {Object.entries(indicators).map(([key, label]) => (
           <li
             key={key}
-            className="rounded border border-slate-700 bg-slate-950/60 px-2 py-1 text-[11px] text-slate-300"
+            className="rounded-md border border-slate-700/60 bg-slate-950/50 px-2 py-1 text-[11px] text-slate-400"
           >
-            <span className="font-medium text-slate-400">{key.replace(/([A-Z])/g, " $1")}: </span>
+            <span className="text-slate-500">{key.replace(/([A-Z])/g, " $1").trim()}: </span>
             {label}
           </li>
         ))}

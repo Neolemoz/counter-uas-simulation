@@ -1,7 +1,12 @@
+import type { ReplaySaBundle } from "@/replay/bundleSchema";
 import { useClockStore } from "@/replay/clockStore";
 
-export function ThreatAssessmentPanel() {
-  const bundle = useClockStore((s) => s.bundle);
+type Props = {
+  bundle?: ReplaySaBundle | null;
+};
+
+export function ThreatAssessmentPanel({ bundle: bundleProp }: Props = {}) {
+  const bundle = bundleProp ?? useClockStore((s) => s.bundle);
   if (!bundle) return null;
 
   const items = bundle.panels?.threat_assessment ?? [];

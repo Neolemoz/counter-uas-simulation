@@ -1,0 +1,35 @@
+{
+  "artifact_type": "scenario_authoring_manifest_v1",
+  "governance": {
+    "anti_claims": [
+      "not operational deployment state",
+      "not simulation launch authority",
+      "not parser contract"
+    ],
+    "notice": "Authoring manifest for fixture topology workflow only."
+  },
+  "orchestration_handoff_refs": [
+    {
+      "job_id": "valley_ingress_validate",
+      "manifest_id": "valley_ingress_validation_only",
+      "queue_mirror_id": "valley_ingress_validation_only_queue"
+    }
+  ],
+  "pack_id": "valley_ingress",
+  "parent_pack_id": null,
+  "promotion_lineage": [
+    {
+      "actor": "cli:promote_scenario_pack",
+      "event_id": "promote-2026-05-21T11:28:57Z",
+      "from_status": "validated",
+      "notes": "",
+      "to_status": "promoted"
+    }
+  ],
+  "promotion_status": "orchestration_ready",
+  "schema_version": "1",
+  "topology_variant_class": "baseline",
+  "updated_at": "2026-05-21T11:28:57Z",
+  "validation_pack_fingerprint": "sha256:255bf10fd768ed14f4c5c48fc3fc254699cd79c74ddab3d33b9ebaad8d2e6139",
+  "validation_snapshot_ref": "fixtures/orchestration/validation_mirrors/valley_ingress_validation_mirror.json"
+}

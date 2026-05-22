@@ -1,0 +1,13 @@
+{
+  "artifact_type": "experiment_validation_mirror_v1",
+  "checked_at": "2026-05-21T11:28:57Z",
+  "governance_banner": "VALIDATION MIRROR \u2014 not certification or deployment authority",
+  "issues": [],
+  "job_id": "validate",
+  "manifest_id": "authoring",
+  "ok": true,
+  "scenario_pack_id": "valley_ingress",
+  "scenario_pack_ref": "fixtures/scenarios/valley_ingress",
+  "schema_version": "experiment_validation_mirror_v1",
+  "warnings": []
+}

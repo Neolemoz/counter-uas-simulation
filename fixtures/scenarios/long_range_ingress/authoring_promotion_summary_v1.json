@@ -1,0 +1,13 @@
+{
+  "artifact_type": "authoring_promotion_summary_v1",
+  "event_id": "promote-2026-05-21T11:55:54Z",
+  "from_status": "validated",
+  "governance_banner": "PROMOTION SUMMARY \u2014 CLI audit trail; not operational authority",
+  "orchestration_handoff_refs": [],
+  "pack_id": "long_range_ingress",
+  "recorded_at": "2026-05-21T11:55:54Z",
+  "schema_version": "1",
+  "to_status": "promoted",
+  "validation_pack_fingerprint": "sha256:d09930f0f39c6f989c0b82bfdc7bf179a5eb1eb5cee0a9478d4edda5e4e0aba0",
+  "validation_snapshot_ref": "fixtures/orchestration/validation_mirrors/long_range_ingress_validation_mirror.json"
+}

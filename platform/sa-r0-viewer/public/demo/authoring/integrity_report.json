@@ -1,0 +1,93 @@
+{
+  "artifact_type": "scenario_authoring_integrity_report_v1",
+  "checked_at": "2026-05-22T00:36:18Z",
+  "errors": [],
+  "governance_banner": "INTEGRITY REPORT \u2014 explanatory audit; CLI remains authoritative",
+  "manifest_count": 12,
+  "ok": true,
+  "pack_count": 12,
+  "per_pack": {
+    "corridor_defense": {
+      "errors": [],
+      "pack_id": "corridor_defense",
+      "warnings": [
+        "corridor_defense: handoff manifest_id not in orchestration index: corridor_defense_validation"
+      ]
+    },
+    "delayed_detection": {
+      "errors": [],
+      "pack_id": "delayed_detection",
+      "warnings": [
+        "delayed_detection: handoff manifest_id not in orchestration index: delayed_detection_validation"
+      ]
+    },
+    "long_range_ingress": {
+      "errors": [],
+      "pack_id": "long_range_ingress",
+      "warnings": [
+        "long_range_ingress: handoff manifest_id not in orchestration index: long_range_ingress_validation"
+      ]
+    },
+    "multi_ridge": {
+      "errors": [],
+      "pack_id": "multi_ridge",
+      "warnings": [
+        "multi_ridge: handoff manifest_id not in orchestration index: multi_ridge_validation"
+      ]
+    },
+    "ridge_defense": {
+      "errors": [],
+      "pack_id": "ridge_defense",
+      "warnings": []
+    },
+    "saturation_ingress": {
+      "errors": [],
+      "pack_id": "saturation_ingress",
+      "warnings": [
+        "saturation_ingress: handoff manifest_id not in orchestration index: saturation_ingress_validation"
+      ]
+    },
+    "urban_masking": {
+      "errors": [],
+      "pack_id": "urban_masking",
+      "warnings": [
+        "urban_masking: handoff manifest_id not in orchestration index: urban_masking_validation"
+      ]
+    },
+    "valley_ingress": {
+      "errors": [],
+      "pack_id": "valley_ingress",
+      "warnings": []
+    },
+    "valley_ingress_delayed_interceptor_base": {
+      "errors": [],
+      "pack_id": "valley_ingress_delayed_interceptor_base",
+      "warnings": []
+    },
+    "valley_ingress_extra_valley_sensor": {
+      "errors": [],
+      "pack_id": "valley_ingress_extra_valley_sensor",
+      "warnings": []
+    },
+    "valley_ingress_radar_shifted_north": {
+      "errors": [],
+      "pack_id": "valley_ingress_radar_shifted_north",
+      "warnings": []
+    },
+    "valley_ingress_reduced_overlap_layout": {
+      "errors": [],
+      "pack_id": "valley_ingress_reduced_overlap_layout",
+      "warnings": []
+    }
+  },
+  "schema_version": "1",
+  "strict": false,
+  "warnings": [
+    "corridor_defense: handoff manifest_id not in orchestration index: corridor_defense_validation",
+    "delayed_detection: handoff manifest_id not in orchestration index: delayed_detection_validation",
+    "long_range_ingress: handoff manifest_id not in orchestration index: long_range_ingress_validation",
+    "multi_ridge: handoff manifest_id not in orchestration index: multi_ridge_validation",
+    "saturation_ingress: handoff manifest_id not in orchestration index: saturation_ingress_validation",
+    "urban_masking: handoff manifest_id not in orchestration index: urban_masking_validation"
+  ]
+}

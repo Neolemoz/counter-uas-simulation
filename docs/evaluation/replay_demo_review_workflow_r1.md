@@ -249,6 +249,24 @@ Viewer: **Corpus evolution** panel (chronology timeline + summary bullets) under
 
 See [sa_f1d_long_horizon_publication_plan.md](sa_f1d_long_horizon_publication_plan.md).
 
+## Multi-corpus federation (PLAT-SA-F2A)
+
+Offline federation registry and cross-corpus cognition (read-only; not cloud sync):
+
+- `fixtures/sa_r0/federation/replay_federation_manifest_v1.json` — corpus group registry
+- `fixtures/sa_r0/federation/replay_federation_index_v1.json` — federated rollups
+- `fixtures/sa_r0/federation/audits/replay_federation_integrity_report_v1.json` — cross-group integrity
+
+```bash
+python3 scripts/evaluation/build_replay_federation_index.py --check
+python3 scripts/evaluation/audit_replay_federation_integrity.py --check --strict
+python3 scripts/evaluation/gen_f2a_federation_fixtures.py
+```
+
+Viewer (corpus segment): **Federation registry**, lineage, integrity, publication collections, continuity panels. URL params: `federation_id`, `corpus_group_id`, `federation_lineage_ref`.
+
+See [sa_f2a_multi_corpus_federation_plan.md](sa_f2a_multi_corpus_federation_plan.md).
+
 ## Replay comparison dos and don'ts
 
 ### Same seed, different profile
@@ -429,6 +447,7 @@ If parity or staleness checks fail, regenerate with `sync_sa_catalog.py`, `gen_d
 - [replay_static_visualization_comprehension_r1_freeze_audit.md](replay_static_visualization_comprehension_r1_freeze_audit.md)
 - [replay_observability_freeze_audit.md](replay_observability_freeze_audit.md)
 - [situational_awareness_ui_planning_r1.md](situational_awareness_ui_planning_r1.md) — SA UI architecture plan (docs frozen; not demo implementation)
+- [h1_sandbox_ux_architecture_plan.md](../platform/h1_sandbox_ux_architecture_plan.md) — PLAN-SA-H1 sandbox workstation UX hierarchy (plan-only; PLAT-SA-H2 for implementation)
 
 ## Freeze status
 

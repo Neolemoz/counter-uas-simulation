@@ -1,0 +1,59 @@
+{
+  "artifact_type": "replay_federation_index_v1",
+  "continuity_index_ref": "fixtures/sa_r0/federation/replay_federation_continuity_index_v1.json",
+  "corpus_group_summaries": [
+    {
+      "corpus_group_id": "canonical_r1",
+      "corpus_id": "sa_r0_corpus_r1",
+      "entry_count": 57,
+      "entry_kind_counts": {
+        "demo_bundle": 12,
+        "presentation_deck": 6,
+        "publication_packet": 4,
+        "replay_export": 12,
+        "research_bundle": 1,
+        "sweep_family": 4,
+        "synthesis_report": 6,
+        "topology_experiment": 12
+      },
+      "index_artifact_path": "fixtures/sa_r0/synthesis/replay_corpus_index_v1.json",
+      "index_revision": "cf644076b570350467afc409f07ec3fc7bbb18692fde2a1858873ae4af2d3207",
+      "release_id": null,
+      "study_label": "Canonical replay corpus index"
+    },
+    {
+      "corpus_group_id": "release_r1_snapshot",
+      "corpus_id": "sa_r0_corpus_r1",
+      "entry_count": 57,
+      "entry_kind_counts": {
+        "demo_bundle": 12,
+        "presentation_deck": 6,
+        "publication_packet": 4,
+        "replay_export": 12,
+        "research_bundle": 1,
+        "sweep_family": 4,
+        "synthesis_report": 6,
+        "topology_experiment": 12
+      },
+      "index_artifact_path": "fixtures/sa_r0/corpus_releases/sa_r0_corpus_r1_r1/replay_corpus_index_v1.json",
+      "index_revision": "cf644076b570350467afc409f07ec3fc7bbb18692fde2a1858873ae4af2d3207",
+      "release_id": "sa_r0_corpus_r1_r1",
+      "study_label": "Frozen release snapshot (sa_r0_corpus_r1_r1)"
+    }
+  ],
+  "federation_id": "sa_replay_federation_r0_v1",
+  "federation_revision": "017d22158bb7dbe3f6f5673ee10845b77250f46a6226fac1a35b39d8fba4ea88",
+  "generation_revision": "f2a_v1",
+  "governance": {
+    "anti_claims": [
+      "Federation groups partition offline fixture indexes; they do not live-sync corpora.",
+      "Cross-corpus lineage documents structural partitioning, not causal inference.",
+      "Federation integrity does not certify replay effectiveness or readiness.",
+      "Recovery continuity summaries are explanatory; CLI remains authoritative for promote."
+    ],
+    "notice": "Replay federation index for offline multi-corpus research operations only \u2014 deterministic registry and cross-study lineage, not cloud sync or operational authority."
+  },
+  "lineage_graph_ref": "fixtures/sa_r0/federation/replay_federation_lineage_graph_v1.json",
+  "manifest_ref": "fixtures/sa_r0/federation/replay_federation_manifest_v1.json",
+  "schema_version": "replay_federation_index_v1"
+}

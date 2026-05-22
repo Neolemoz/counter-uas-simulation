@@ -80,7 +80,9 @@ python3 scripts/evaluation/verify_replay_corpus_release.py
 
 ## Recommended direction after F1
 
-Do **not** start a new platform frontier until explicit governance review. Candidate post-F1 themes (planning only):
+**G1 complete:** [sa_platform_governance_review_r1.md](sa_platform_governance_review_r1.md), [sa_platform_maturity_assessment_r1.md](sa_platform_maturity_assessment_r1.md), [sa_platform_frontier_review_r1.md](sa_platform_frontier_review_r1.md). **Posture:** stabilize and maintain (P1 hygiene); defer new platform features until an explicit scoped wave is approved.
+
+Do **not** start a new platform frontier until explicit governance review. Candidate post-F1 themes (planning only; see frontier review for priorities):
 
 - Multi-corpus IDs and automated release promotion workflow
 - Richer cross-release HTML publication packets (still static)

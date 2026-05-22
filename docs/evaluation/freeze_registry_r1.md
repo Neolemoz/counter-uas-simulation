@@ -87,6 +87,21 @@ Correct reading: [reviewer_interpretation_guide.md](reviewer_interpretation_guid
 | META-GOV-R1 | Meta-governance maturity review R1 | frozen | [meta_governance_maturity_review_r1_freeze_audit.md](meta_governance_maturity_review_r1_freeze_audit.md) | this registry, risk map |
 | PLAN-VIZ-R2 | Static visualization R2 | planning | [replay_static_visualization_r2_plan.md](replay_static_visualization_r2_plan.md) | not implemented |
 | PLAN-SA-R1 | Situational awareness UI planning R1 | docs frozen | [situational_awareness_ui_planning_r1_freeze_audit.md](situational_awareness_ui_planning_r1_freeze_audit.md) | plan-only boundaries |
+| PLAN-SA-H1 | Sandbox UX architecture & information hierarchy | docs frozen | [sa_h1_sandbox_ux_freeze_audit.md](sa_h1_sandbox_ux_freeze_audit.md) | [h1_sandbox_ux_architecture_plan.md](../platform/h1_sandbox_ux_architecture_plan.md), layout notes |
+| PLAT-SA-H2 | Sandbox workspace shell & UX refactor | frozen | [sa_h2_sandbox_workspace_freeze_audit.md](sa_h2_sandbox_workspace_freeze_audit.md) | `platform/sa-r0-viewer/src/workspace/` |
+| PLAT-SA-H3 | Offline experiment orchestration foundations | frozen | [sa_h3_offline_orchestration_freeze_audit.md](sa_h3_offline_orchestration_freeze_audit.md) | `fixtures/orchestration/`, `experiment_orchestration.py`, viewer `orchestration/` |
+| PLAT-SA-H4 | Sandbox replay workstation integration | frozen | [sa_h4_workstation_integration_freeze_audit.md](sa_h4_workstation_integration_freeze_audit.md) | `experimentNavigation.ts`, `workflow/`, `CompareWorkspaceView`, `ReportWorkspaceView`, continuity doc |
+| PLAT-SA-H5 | Publication / presentation UX polish | frozen | [sa_h5_presentation_ux_polish_freeze_audit.md](sa_h5_presentation_ux_polish_freeze_audit.md) | `sandboxTheme.ts`, `exportPublicationFrame.ts`, presentation/compare/report visual polish |
+| PLAN-SA-A1 | Authoring workstation foundations (plan) | docs frozen | [sa_a1_authoring_workstation_freeze_audit.md](sa_a1_authoring_workstation_freeze_audit.md) | [sa_a1_authoring_workstation_foundations_plan.md](../platform/sa_a1_authoring_workstation_foundations_plan.md), workflow/manifest/lineage docs |
+| PLAN-SA-A2 | Authoring operations & promotion flow (plan) | docs frozen | [sa_a2_authoring_operations_freeze_audit.md](sa_a2_authoring_operations_freeze_audit.md) | [sa_a2_authoring_operations_plan.md](../platform/sa_a2_authoring_operations_plan.md), [scenario_authoring_operations_v1.md](scenario_authoring_operations_v1.md) |
+| PLAT-SA-A2 | Authoring operations layer (implementation) | frozen | [sa_a2_authoring_operations_freeze_audit.md](sa_a2_authoring_operations_freeze_audit.md) | `replay_sa_authoring_integrity.py`, `audit_scenario_authoring_integrity.py`, 12-pack manifests, viewer integrity panel |
+| PLAN-SA-I1 | Orchestration operations (plan) | docs frozen | [sa_i1_orchestration_operations_freeze_audit.md](sa_i1_orchestration_operations_freeze_audit.md) | [sa_i1_orchestration_operations_plan.md](../platform/sa_i1_orchestration_operations_plan.md), ops/continuity docs |
+| PLAT-SA-I1 | Orchestration operations layer (implementation) | frozen | [sa_i1_orchestration_operations_freeze_audit.md](sa_i1_orchestration_operations_freeze_audit.md) | `replay_sa_orchestration_ops.py`, `audit_orchestration_integrity.py`, ops sidecars, viewer orchestration panels |
+| PLAN-SA-I2 | Async orchestration safety & determinism (plan) | docs frozen | [sa_i2_async_orchestration_freeze_audit.md](sa_i2_async_orchestration_freeze_audit.md) | [sa_i2_async_orchestration_plan.md](../platform/sa_i2_async_orchestration_plan.md), async model/safety/governance docs |
+| PLAT-SA-I2 | Async orchestration foundations (implementation) | frozen | [sa_i2_async_orchestration_freeze_audit.md](sa_i2_async_orchestration_freeze_audit.md) | `replay_sa_orchestration_async.py`, `audit_orchestration_async_integrity.py`, async/claims/workers fixtures, `OrchestrationAsyncPanel` |
+| PLAN-SA-I3 | Async recovery & batch review (plan) | docs frozen | [sa_i3_async_recovery_freeze_audit.md](sa_i3_async_recovery_freeze_audit.md) | [sa_i3_async_recovery_plan.md](../platform/sa_i3_async_recovery_plan.md), recovery/reconciliation docs |
+| PLAT-SA-I3 | Async recovery & batch review (implementation) | frozen | [sa_i3_async_recovery_freeze_audit.md](sa_i3_async_recovery_freeze_audit.md) | `replay_sa_orchestration_recovery.py`, `audit_orchestration_recovery.py`, recovery/reconciliation fixtures, `OrchestrationRecoveryPanel`, `OrchestrationBatchReviewPanel` |
+| PLAT-SA-A1 | Authoring workstation foundations (implementation) | frozen | [sa_a1_authoring_workstation_freeze_audit.md](sa_a1_authoring_workstation_freeze_audit.md) | `replay_sa_authoring.py`, `promote_scenario_pack.py`, `fixtures/scenarios/*/authoring_manifest.json`, viewer `src/authoring/` |
 | PLAT-SA-R0 | SA-R0 replay platform | frozen | [sa_r0_freeze_audit.md](sa_r0_freeze_audit.md) | `replay_sa_bundle.py`, `platform/sa-r0-viewer/`, `fixtures/sa_r0/` |
 | PLAT-SA-B1 | Geometry-aware replay realism | frozen | [sa_b1_geometry_freeze_audit.md](sa_b1_geometry_freeze_audit.md) | `replay_sa_geometry.py`, LOS overlays, `demo_valley_ingress` |
 | PLAT-SA-C1a | Scenario topology schema foundation | frozen | [sa_c1a_scenario_schema_freeze_audit.md](sa_c1a_scenario_schema_freeze_audit.md) | `scenario_schema_v1.md`, `fixtures/scenarios/`, `replay_sa_scenario.py`, `validate_scenario.py` |
@@ -102,6 +117,8 @@ Correct reading: [reviewer_interpretation_guide.md](reviewer_interpretation_guid
 | PLAT-SA-F1b | Corpus audit & provenance operations | frozen | [sa_f1b_corpus_audit_operations_freeze_audit.md](sa_f1b_corpus_audit_operations_freeze_audit.md) | drift report, release diff, regen orchestrator, provenance audit |
 | PLAT-SA-F1c | Corpus navigation & reviewer workflows | frozen | [sa_f1c_corpus_navigation_freeze_audit.md](sa_f1c_corpus_navigation_freeze_audit.md) | corpus browser, lineage nav, drift surfacing, `?corpus_entry=` deep links |
 | PLAT-SA-F1d | Long-horizon synthesis & publication ops | frozen | [sa_f1d_long_horizon_publication_freeze_audit.md](sa_f1d_long_horizon_publication_freeze_audit.md) | evolution manifest/summary, publication packet, release archive export, chronology panel |
+| PLAN-SA-F2A | Multi-corpus federation foundations (plan) | docs frozen | [sa_f2a_multi_corpus_federation_freeze_audit.md](sa_f2a_multi_corpus_federation_freeze_audit.md) | [sa_f2a_multi_corpus_federation_plan.md](sa_f2a_multi_corpus_federation_plan.md), `replay_federation_*_v1` schemas |
+| PLAT-SA-F2A | Multi-corpus federation foundations (implementation) | frozen | [sa_f2a_multi_corpus_federation_freeze_audit.md](sa_f2a_multi_corpus_federation_freeze_audit.md) | `replay_federation_lineage.py`, federation fixtures, integrity/recovery audits, federation viewer panels |
 
 ## Platform vs runtime frontiers
 
@@ -158,6 +175,14 @@ When closing a new freeze wave:
 4. Run scoped regression named in the freeze audit.
 5. If reviewer copy changed, cross-check [reviewer_interpretation_guide.md](reviewer_interpretation_guide.md).
 
+## G1 platform governance review (docs only; post F1 checkpoint)
+
+Checkpoint `75ea6d5` (PLAT-SA-F1a–F1d). Consolidation assessment — no implementation authority:
+
+- [sa_platform_governance_review_r1.md](sa_platform_governance_review_r1.md) — identity, boundaries, freeze posture, roadmap
+- [sa_platform_maturity_assessment_r1.md](sa_platform_maturity_assessment_r1.md) — coherence, determinism, debt, sustainability
+- [sa_platform_frontier_review_r1.md](sa_platform_frontier_review_r1.md) — frontier candidate matrix and priorities
+
 ## Related planning (not frozen implementation)
 
 - [replay_static_visualization_r2_plan.md](replay_static_visualization_r2_plan.md) — planning only
@@ -165,6 +190,15 @@ When closing a new freeze wave:
 ## Related planning (docs frozen; no implementation)
 
 - [situational_awareness_ui_planning_r1.md](situational_awareness_ui_planning_r1.md) — SA UI architecture boundaries; see PLAN-SA-R1
+- [h1_sandbox_ux_architecture_plan.md](../platform/h1_sandbox_ux_architecture_plan.md) — sandbox workstation UX hierarchy; see PLAN-SA-H1
+- [h3_offline_experiment_orchestration_plan.md](../platform/h3_offline_experiment_orchestration_plan.md) — offline job/queue orchestration; see PLAT-SA-H3
+- [h4_sandbox_replay_workstation_integration_plan.md](../platform/h4_sandbox_replay_workstation_integration_plan.md) — workstation workflow integration; see PLAT-SA-H4
+- [h5_publication_presentation_ux_polish_plan.md](../platform/h5_publication_presentation_ux_polish_plan.md) — publication/presentation visual polish; see PLAT-SA-H5
+- [sa_a1_authoring_workstation_foundations_plan.md](../platform/sa_a1_authoring_workstation_foundations_plan.md) — authoring workflow, manifest, lineage, AUTHORING profile; see PLAN-SA-A1
+- [sa_a2_authoring_operations_plan.md](../platform/sa_a2_authoring_operations_plan.md) — authoring operations; see PLAN-SA-A2
+- [sa_i1_orchestration_operations_plan.md](../platform/sa_i1_orchestration_operations_plan.md) — orchestration operations; see PLAN-SA-I1 / PLAT-SA-I1
+- [sa_i2_async_orchestration_plan.md](../platform/sa_i2_async_orchestration_plan.md) — async orchestration safety & determinism model; see PLAN-SA-I2 / PLAT-SA-I2
+- [sa_i3_async_recovery_plan.md](../platform/sa_i3_async_recovery_plan.md) — async recovery & batch review cognition; see PLAN-SA-I3 / PLAT-SA-I3
 
 ## SA-R0 replay platform (frozen implementation)
 

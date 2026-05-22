@@ -4,6 +4,26 @@ Post-STAB maintenance runbook for `fixtures/sa_r0/` and `platform/sa-r0-viewer/p
 
 Authority: [sa_stabilization_plan.md](sa_stabilization_plan.md), [sa_stabilization_freeze_audit.md](sa_stabilization_freeze_audit.md).
 
+UX architecture (plan-only; no viewer changes until PLAT-SA-H2): [h1_sandbox_ux_architecture_plan.md](../platform/h1_sandbox_ux_architecture_plan.md) (PLAN-SA-H1).
+
+Offline experiment orchestration (PLAT-SA-H3): [experiment_workflow_scenario_to_replay_v1.md](experiment_workflow_scenario_to_replay_v1.md); run `python3 scripts/evaluation/run_experiment_queue.py --dry-run --manifest fixtures/orchestration/manifests/ridge_defense_synthetic.json` then `sync_orchestration_mirrors.py`.
+
+Replay workstation integration (PLAT-SA-H4): [experiment_workflow_continuity_v1.md](experiment_workflow_continuity_v1.md) — reviewer navigation path (Scenario → Replay → Compare → Corpus → Report); viewer read-only, no CLI changes.
+
+Presentation UX polish (PLAT-SA-H5): [h5_publication_presentation_ux_polish_plan.md](../platform/h5_publication_presentation_ux_polish_plan.md) — presentation mode → Print layout / Save map frame / Copy chapter; Report storyboard cards.
+
+Authoring workstation (PLAT-SA-A1): [scenario_authoring_workflow_v1.md](scenario_authoring_workflow_v1.md) — `promote_scenario_pack.py`, `sync_authoring_mirrors.py`; viewer AUTHORING panels read-only. After pack edits: `--record-validation` then `--status promoted`; sync mirrors before share.
+
+Authoring operations (PLAT-SA-A2): [scenario_authoring_operations_v1.md](scenario_authoring_operations_v1.md) — `audit_scenario_authoring_integrity.py --strict`, `lint_scenario_authoring_manifest.py --all-catalog-packs`; `sync_authoring_mirrors.py` refreshes `integrity_report.json`. Catalog sync: `sync_sa_catalog.py` (warn) or `--strict-promotion`. Promotion ergonomics: `--summary`, `--repro-check`, `--lineage-report` via audit CLI.
+
+Orchestration operations (PLAT-SA-I1): [experiment_orchestration_operations_v1.md](experiment_orchestration_operations_v1.md) — `audit_orchestration_integrity.py --strict`, `lint_orchestration_ops_manifest.py --all-manifests`; `promote_experiment_manifest.py` for ops lifecycle; `sync_orchestration_mirrors.py` refreshes `integrity_report.json` and full queue/audit/ops mirrors. Continuity: [experiment_orchestration_continuity_v1.md](experiment_orchestration_continuity_v1.md).
+
+Async orchestration (PLAT-SA-I2, frozen): [sa_i2_async_orchestration_plan.md](../platform/sa_i2_async_orchestration_plan.md) — [experiment_orchestration_async_operations_v1.md](experiment_orchestration_async_operations_v1.md). Commands: `record_async_execution.py`, `audit_orchestration_async_integrity.py --strict`, `lint_orchestration_async_manifest.py --all-manifests --check`. Flags: `--allow-async-worker` (never default on `run_experiment_queue.py`). Stop line: no distributed workers, browser authority, or federation.
+
+Async recovery (PLAT-SA-I3, frozen): [sa_i3_async_recovery_plan.md](../platform/sa_i3_async_recovery_plan.md) — [experiment_orchestration_async_recovery_v1.md](experiment_orchestration_async_recovery_v1.md). Commands: `audit_orchestration_recovery.py --strict`, `audit_orchestration_recovery.py --refresh-fixtures`, `sync_orchestration_mirrors.py`. Stop line: no federation, multi-corpus ops, live retry orchestration, or browser-triggered recovery.
+
+Multi-corpus federation (PLAT-SA-F2A, frozen): [sa_f2a_multi_corpus_federation_plan.md](sa_f2a_multi_corpus_federation_plan.md). Commands: `build_replay_federation_index.py --check`, `audit_replay_federation_integrity.py --check --strict`, `audit_federation_recovery_continuity.py --check --strict`, `gen_f2a_federation_fixtures.py`. Stop line: no cloud federation, live sync, collaborative editing, or browser orchestration.
+
 ## Pre-merge / pre-share gate
 
 Run from repository root:
@@ -98,6 +118,9 @@ Enforced by `sa_integrity_lib.py`:
 
 ## Related
 
+- [sa_platform_governance_review_r1.md](sa_platform_governance_review_r1.md) — G1 boundaries, freeze posture, roadmap (post F1)
+- [sa_platform_maturity_assessment_r1.md](sa_platform_maturity_assessment_r1.md) — G1 maturity and sustainability
+- [sa_platform_frontier_review_r1.md](sa_platform_frontier_review_r1.md) — G1 frontier candidate matrix
 - [sa_platform_release_checkpoint.md](sa_platform_release_checkpoint.md) — merge-ready release gate summary
 - [fixtures/sa_r0/README.md](../../fixtures/sa_r0/README.md) — directory map
 - [replay_demo_review_workflow_r1.md](replay_demo_review_workflow_r1.md) § Platform fixture maintenance

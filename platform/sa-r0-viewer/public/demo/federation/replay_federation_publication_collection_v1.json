@@ -1,0 +1,36 @@
+{
+  "artifact_type": "replay_federation_publication_collection_v1",
+  "collection_id": "sa_r0_primary_publications",
+  "federation_id": "sa_replay_federation_r0_v1",
+  "generation_revision": "f2a_v1",
+  "governance": {
+    "anti_claims": [
+      "Federation groups partition offline fixture indexes; they do not live-sync corpora.",
+      "Cross-corpus lineage documents structural partitioning, not causal inference.",
+      "Federation integrity does not certify replay effectiveness or readiness.",
+      "Recovery continuity summaries are explanatory; CLI remains authoritative for promote."
+    ],
+    "notice": "Replay federation index for offline multi-corpus research operations only \u2014 deterministic registry and cross-study lineage, not cloud sync or operational authority."
+  },
+  "members": [
+    {
+      "artifact_kind": "publication_packet",
+      "artifact_path": "fixtures/sa_r0/synthesis/replay_corpus_publication_packet_v1.json",
+      "corpus_group_id": "canonical_r1",
+      "sha256": "a1b0b17cb7385f217014fb0551a2d8aa2212aae4ce2c501bdb8ec884ddc67753"
+    },
+    {
+      "artifact_kind": "research_bundle",
+      "artifact_path": "fixtures/sa_r0/research_bundles/sa_r0_corpus_r1/manifest.json",
+      "corpus_group_id": "canonical_r1",
+      "sha256": "2dd19c6225ad670b94cecdbfc6a7dab8bc9b894b0b1c17f463f8365a5b9918c7"
+    },
+    {
+      "artifact_kind": "corpus_release",
+      "artifact_path": "fixtures/sa_r0/corpus_releases/sa_r0_corpus_r1_r1/replay_corpus_release_manifest_v1.json",
+      "corpus_group_id": "release_r1_snapshot",
+      "sha256": "4e126bb702c237921be5b1567a7fdc79a8b8d0a9a07edc02ac9dbe863e82e680"
+    }
+  ],
+  "schema_version": "replay_federation_publication_collection_v1"
+}

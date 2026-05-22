@@ -851,9 +851,24 @@
       "size_bytes": 4534
     },
     {
+      "path": "synthesis/replay_corpus_evolution_manifest_v1.json",
+      "sha256": "27b11378ba61a8b323a9b31b1fd2123e7c7506323b22db1dd7cf6802229a156f",
+      "size_bytes": 7484
+    },
+    {
+      "path": "synthesis/replay_corpus_evolution_summary_v1.json",
+      "sha256": "a3e9c548450e94cc4d291d9fd27132c4b6bf4d721b535800b902d7d5f31a2916",
+      "size_bytes": 27008
+    },
+    {
       "path": "synthesis/replay_corpus_index_v1.json",
-      "sha256": "b0ea9bb692bbf41c0c56d60adda8b098cc96e5308b8e07c6ec0b80e5d9268fcd",
-      "size_bytes": 116041
+      "sha256": "01f82d108260218e9e9670fc1b6791d603d6e94f9aacbda6d049654d660b34bd",
+      "size_bytes": 151600
+    },
+    {
+      "path": "synthesis/replay_corpus_publication_packet_v1.json",
+      "sha256": "013e23c64e2d3a8579ef200d9870442daff46d9b2936204b5f9de8515bd90335",
+      "size_bytes": 3496
     },
     {
       "path": "synthesis/replay_linkage_index_v1.json",

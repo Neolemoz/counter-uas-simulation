@@ -1,12 +1,18 @@
 import { useClockStore } from "../clockStore";
 import type { PresentationChapter } from "../presentation/presentationStore";
+import { sandboxButtons, sandboxSurfaces, sandboxTypography } from "@/theme/sandboxTheme";
 
 type Props = {
   compressed?: boolean;
   chapter?: PresentationChapter | null;
+  presentationMode?: boolean;
 };
 
-export function TimelineScrubber({ compressed = false, chapter = null }: Props) {
+export function TimelineScrubber({
+  compressed = false,
+  chapter = null,
+  presentationMode = false,
+}: Props) {
   const bundle = useClockStore((s) => s.bundle);
   const currentT = useClockStore((s) => s.currentT);
   const playing = useClockStore((s) => s.playing);
@@ -20,16 +26,21 @@ export function TimelineScrubber({ compressed = false, chapter = null }: Props) 
   const end = compressed && chapter ? chapter.t_end : full.end;
 
   return (
-    <section className="rounded border border-slate-700 bg-slate-900/80 p-3">
+    <section className={`${sandboxSurfaces.panel} p-3`}>
+      {presentationMode && compressed && chapter && (
+        <p className={`mb-2 ${sandboxTypography.caption} text-violet-200/70`}>
+          Chapter window: t {chapter.t_start}–{chapter.t_end}
+        </p>
+      )}
       <div className="mb-2 flex items-center gap-2">
         <button
           type="button"
-          className="rounded bg-slate-700 px-3 py-1 text-sm hover:bg-slate-600"
+          className={presentationMode ? sandboxButtons.primary : sandboxButtons.subtle}
           onClick={() => setPlaying(!playing)}
         >
           {playing ? "Pause" : "Play"}
         </button>
-        <span className="text-sm text-slate-400">
+        <span className="text-sm tabular-nums text-slate-400">
           t = {currentT} ({bundle.clock.domain})
         </span>
       </div>
@@ -39,20 +50,22 @@ export function TimelineScrubber({ compressed = false, chapter = null }: Props) 
         max={Math.max(end, start + 1)}
         step={bundle.clock.duration.step}
         value={currentT}
-        className="w-full"
+        className="w-full accent-violet-600"
         onChange={(e) => {
           setPlaying(false);
           setCurrentT(Number(e.target.value));
         }}
       />
-      <div className="mt-1 flex flex-wrap gap-1">
+      <div className="mt-2 flex max-h-20 flex-wrap gap-1 overflow-y-auto">
         {bundle.clock.markers.map((m) => (
           <button
             key={`${m.t}-${m.event_id ?? m.label}`}
             type="button"
             title={m.label}
-            className={`rounded px-1.5 py-0.5 text-xs ${
-              m.t === currentT ? "bg-amber-700 text-white" : "bg-slate-800 text-slate-400"
+            className={`rounded px-1.5 py-0.5 sandbox-caption ${
+              m.t === currentT
+                ? "bg-violet-800/50 text-violet-100"
+                : "bg-slate-800/80 text-slate-500 hover:text-slate-300"
             }`}
             onClick={() => {
               setPlaying(false);

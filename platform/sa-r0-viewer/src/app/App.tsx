@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { GovernanceChrome } from "@/governance/GovernanceChrome";
 import { CaveatsFooter } from "@/governance/CaveatsFooter";
 import { loadBundleFromFile, loadBundleFromUrl, resolveInitialBundleUrl } from "@/replay/loadBundle";
@@ -7,35 +7,28 @@ import { useClockStore } from "@/replay/clockStore";
 import { useCompareStore } from "@/replay/compareStore";
 import { tryResolveCompareFromUrl } from "@/replay/resolveCompareUrl";
 import { tryResolveSweepFromUrl } from "@/replay/resolveSweepUrl";
-import { SweepMetadataPanel } from "@/replay/SweepMetadataPanel";
-import { OutcomeDistributionPanel } from "@/replay/analytics/OutcomeDistributionPanel";
-import { LosDegradationSummary } from "@/replay/analytics/LosDegradationSummary";
-import { ReplayVariabilityPanel } from "@/replay/analytics/ReplayVariabilityPanel";
-import { ReplayClusterSummaryPanel } from "@/replay/analytics/ReplayClusterSummaryPanel";
-import { MatchedSeedPanel } from "@/replay/analytics/MatchedSeedPanel";
 import { useSweepStore } from "@/replay/useSweepStore";
-import { ScenarioCatalogPicker } from "@/replay/ScenarioCatalogPicker";
-import { MetadataPanel } from "@/replay/MetadataPanel";
-import { LayerToggles } from "@/replay/LayerToggles";
-import { TimelineScrubber } from "@/replay/timeline/TimelineScrubber";
-import { NarrativeTimeline } from "@/replay/narrative/NarrativeTimeline";
-import { AnnotationsPanel } from "@/replay/narrative/AnnotationsPanel";
-import { StrategicMapPane } from "@/views/StrategicMapPane";
-import { RadarMockPane } from "@/views/RadarMockPane";
-import { EoIrMockPane } from "@/views/EoIrMockPane";
-import { InterceptorCameraMockPane } from "@/views/InterceptorCameraMockPane";
-import { TelemetryPanel } from "@/views/TelemetryPanel";
-import { ThreatAssessmentPanel } from "@/views/ThreatAssessmentPanel";
-import { CompareView } from "@/replay/compare/CompareView";
 import { useCohortFilmstripStore } from "@/replay/cohortFilmstripStore";
 import { CohortFilmstripView } from "@/replay/filmstrip/CohortFilmstripView";
-import { SweepWorkstationShell } from "@/replay/workstation/SweepWorkstationShell";
 import { usePresentationStore } from "@/replay/presentation/presentationStore";
 import { PresentationView } from "@/replay/presentation/PresentationView";
 import { tryResolvePresentationFromUrl } from "@/replay/presentation/resolvePresentationUrl";
 import { tryResolveCorpusEntryFromUrl } from "@/replay/corpus/resolveCorpusEntryUrl";
 import type { NavigateHooks } from "@/replay/corpus/navigateToCorpusEntry";
 import { readCorpusEntryFromUrl } from "@/replay/corpus/useCorpusStore";
+import { SegmentNav } from "@/workspace/SegmentNav";
+import { useWorkspaceSegmentStore } from "@/workspace/workspaceSegmentStore";
+import type { WorkspaceSegment } from "@/workspace/types";
+import { ReplayWorkspaceView } from "@/workspace/views/ReplayWorkspaceView";
+import { ScenarioWorkspaceView } from "@/workspace/views/ScenarioWorkspaceView";
+import { CorpusWorkspaceView } from "@/workspace/views/CorpusWorkspaceView";
+import { CompareWorkspaceView } from "@/workspace/views/CompareWorkspaceView";
+import { ReportWorkspaceView } from "@/workspace/views/ReportWorkspaceView";
+import type { ExperimentNavHooks } from "@/navigation/experimentNavigation";
+import { readOrchestrationQueueFromUrl } from "@/orchestration/loadOrchestration";
+import { useAuthoringMirror } from "@/authoring/useAuthoringMirror";
+import { loadAuthoringManifest } from "@/authoring/loadAuthoring";
+import { loadValidationMirror } from "@/orchestration/loadOrchestration";
 
 export function App() {
   const [error, setError] = useState<string | null>(null);
@@ -51,6 +44,29 @@ export function App() {
   const sweepMode = useSweepStore((s) => s.mode === "sweep");
   const filmstripMode = useCohortFilmstripStore((s) => s.mode === "filmstrip");
   const presentationMode = usePresentationStore((s) => s.mode === "presentation");
+
+  const setUserSegment = useWorkspaceSegmentStore((s) => s.setUserSegment);
+  const rememberSegmentForMode = useWorkspaceSegmentStore((s) => s.rememberSegmentForMode);
+  const restoreSegmentAfterMode = useWorkspaceSegmentStore((s) => s.restoreSegmentAfterMode);
+  const effectiveSegment = useWorkspaceSegmentStore((s) => s.effectiveSegment);
+
+  const runtimeFlags = useMemo(
+    () => ({
+      compareMode: compareMode === "compare",
+      presentationMode,
+      filmstripMode,
+      sweepMode,
+      hasBundle: Boolean(bundle),
+    }),
+    [compareMode, presentationMode, filmstripMode, sweepMode, bundle],
+  );
+
+  const segment = effectiveSegment(runtimeFlags);
+  const lockedSegment: WorkspaceSegment | null = runtimeFlags.compareMode
+    ? "compare"
+    : runtimeFlags.presentationMode
+      ? "report"
+      : null;
 
   const applyBundle = useCallback(
     (b: ReplaySaBundle) => {
@@ -68,6 +84,13 @@ export function App() {
       onLoadError: setError,
     }),
     [],
+  );
+
+  const experimentHooks: ExperimentNavHooks = useMemo(
+    () => ({
+      ...navigateHooks,
+    }),
+    [navigateHooks],
   );
 
   useEffect(() => {
@@ -116,6 +139,47 @@ export function App() {
     return () => window.clearInterval(id);
   }, [playing, playbackMs, tickPlayback, compareMode, presentationMode]);
 
+  const prevModesRef = useRef({
+    compare: compareMode === "compare",
+    presentation: presentationMode,
+    filmstrip: filmstripMode,
+  });
+  useEffect(() => {
+    const prev = prevModesRef.current;
+    const nowCompare = compareMode === "compare";
+    const nowPresentation = presentationMode;
+    const nowFilmstrip = filmstripMode;
+
+    if (
+      (nowCompare && !prev.compare) ||
+      (nowPresentation && !prev.presentation) ||
+      (nowFilmstrip && !prev.filmstrip)
+    ) {
+      rememberSegmentForMode();
+      if (nowCompare) setUserSegment("compare");
+      if (nowPresentation) setUserSegment("report");
+    } else if (
+      (prev.compare && !nowCompare) ||
+      (prev.presentation && !nowPresentation) ||
+      (prev.filmstrip && !nowFilmstrip)
+    ) {
+      restoreSegmentAfterMode();
+    }
+
+    prevModesRef.current = {
+      compare: nowCompare,
+      presentation: nowPresentation,
+      filmstrip: nowFilmstrip,
+    };
+  }, [
+    compareMode,
+    presentationMode,
+    filmstripMode,
+    rememberSegmentForMode,
+    restoreSegmentAfterMode,
+    setUserSegment,
+  ]);
+
   const onFile = async (file: File) => {
     setLoading(true);
     try {
@@ -129,6 +193,106 @@ export function App() {
   };
 
   const headerBundle = compareMode === "compare" ? slotA.bundle ?? slotB.bundle : bundle;
+  const activePackId = bundle?.scenario.catalog_pack_id ?? null;
+  const urlDemoPackId =
+    typeof window !== "undefined"
+      ? new URLSearchParams(window.location.search).get("demo")
+      : null;
+  const packForAuthoring = activePackId ?? urlDemoPackId;
+  const authoringMirror = useAuthoringMirror(
+    segment === "scenario" ? packForAuthoring : null,
+  );
+  const [validationOk, setValidationOk] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    if (segment !== "scenario" || !packForAuthoring) {
+      setValidationOk(null);
+      return;
+    }
+    let cancelled = false;
+    void (async () => {
+      const [mirror, manifest] = await Promise.all([
+        loadValidationMirror(packForAuthoring).catch(() => null),
+        loadAuthoringManifest(packForAuthoring).catch(() => null),
+      ]);
+      if (cancelled) return;
+      if (!mirror) {
+        setValidationOk(null);
+        return;
+      }
+      const stale =
+        manifest?.validation_pack_fingerprint &&
+        manifest.updated_at &&
+        mirror.checked_at &&
+        manifest.updated_at > mirror.checked_at;
+      setValidationOk(Boolean(mirror.ok) && !stale);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [segment, packForAuthoring]);
+
+  const queueId = readOrchestrationQueueFromUrl();
+
+  const workspaceBody = () => {
+    if (filmstripMode) {
+      return <CohortFilmstripView />;
+    }
+    if (presentationMode && bundle) {
+      return <PresentationView />;
+    }
+    if (segment === "compare") {
+      return (
+        <CompareWorkspaceView
+          onLoadError={setError}
+          onLoading={setLoading}
+          hooks={experimentHooks}
+        />
+      );
+    }
+    if (segment === "scenario") {
+      return (
+        <ScenarioWorkspaceView
+          onLoadError={setError}
+          onLoading={setLoading}
+          hooks={experimentHooks}
+        />
+      );
+    }
+    if (segment === "corpus") {
+      return (
+        <CorpusWorkspaceView
+          onLoadError={setError}
+          onLoading={setLoading}
+          navigateHooks={navigateHooks}
+          experimentHooks={experimentHooks}
+        />
+      );
+    }
+    if (segment === "report" && !presentationMode) {
+      return <ReportWorkspaceView hooks={experimentHooks} />;
+    }
+    if (bundle && segment === "replay") {
+      return (
+        <ReplayWorkspaceView
+          bundle={bundle}
+          onLoadError={setError}
+          onLoading={setLoading}
+          navigateHooks={navigateHooks}
+          experimentHooks={experimentHooks}
+        />
+      );
+    }
+    if (!loading) {
+      return (
+        <p className="p-8 text-center text-slate-500">
+          No bundle loaded. Use ?bundle=URL, ?sweep=id, ?corpus_entry=id, ?pair=id,
+          ?compare=packA,packB, ?presentation=id, or open Scenario / Corpus to browse fixtures.
+        </p>
+      );
+    }
+    return null;
+  };
 
   return (
     <div className="flex h-full min-h-screen flex-col">
@@ -136,19 +300,33 @@ export function App() {
         bundle={headerBundle}
         compareMode={compareMode === "compare"}
         presentationMode={presentationMode}
+        workspaceSegment={segment}
         compareTitles={
           compareMode === "compare"
             ? [slotA.bundle?.scenario.title, slotB.bundle?.scenario.title]
             : undefined
         }
+        scenarioPackId={activePackId}
+        orchestrationQueueId={queueId}
+        authoringMirror={authoringMirror && segment === "scenario"}
+        validationOk={segment === "scenario" ? validationOk : null}
       />
-      <div className="border-b border-slate-800 bg-slate-900/50 px-4 py-2">
-        <label className="text-sm text-slate-400">
+      <SegmentNav
+        active={segment}
+        locked={lockedSegment}
+        authoringMirror={authoringMirror && segment === "scenario"}
+        onSelect={(seg) => {
+          if (lockedSegment) return;
+          setUserSegment(seg);
+        }}
+      />
+      <div className="sandbox-no-print sandbox-loader-strip">
+        <label>
           Load replay bundle (JSON):{" "}
           <input
             type="file"
             accept=".json,application/json"
-            className="text-slate-200"
+            className="ml-1 text-slate-300"
             onChange={(e) => {
               const f = e.target.files?.[0];
               if (f) void onFile(f);
@@ -158,56 +336,7 @@ export function App() {
         {loading && <span className="ml-2 text-sm text-slate-500">Loading…</span>}
         {error && <p className="mt-1 text-sm text-red-400">{error}</p>}
       </div>
-      {compareMode === "compare" && slotA.bundle && slotB.bundle ? (
-        <CompareView />
-      ) : filmstripMode ? (
-        <CohortFilmstripView />
-      ) : presentationMode && bundle ? (
-        <PresentationView />
-      ) : bundle ? (
-        <main className="grid min-h-0 flex-1 grid-cols-1 gap-3 p-3 lg:grid-cols-12">
-          <aside className="flex flex-col gap-3 lg:col-span-3">
-            <ScenarioCatalogPicker
-              onLoadError={setError}
-              onLoading={setLoading}
-              navigateHooks={navigateHooks}
-            />
-            {sweepMode && <SweepMetadataPanel />}
-            {sweepMode && <SweepWorkstationShell navigateHooks={navigateHooks} />}
-            <MetadataPanel bundle={bundle} />
-            {sweepMode && (
-              <>
-                <OutcomeDistributionPanel />
-                <LosDegradationSummary />
-                <ReplayVariabilityPanel />
-                <ReplayClusterSummaryPanel />
-                <MatchedSeedPanel />
-              </>
-            )}
-            <LayerToggles />
-            <TimelineScrubber />
-            <AnnotationsPanel />
-          </aside>
-          <div className="flex flex-col gap-3 lg:col-span-6">
-            <StrategicMapPane bundle={bundle} />
-            <NarrativeTimeline />
-          </div>
-          <aside className="grid gap-3 lg:col-span-3">
-            <RadarMockPane />
-            <EoIrMockPane />
-            <InterceptorCameraMockPane />
-            <TelemetryPanel />
-            <ThreatAssessmentPanel />
-          </aside>
-        </main>
-      ) : (
-        !loading && (
-          <p className="p-8 text-center text-slate-500">
-            No bundle loaded. Use ?bundle=URL, ?sweep=id, ?corpus_entry=id, ?pair=id,
-            ?compare=packA,packB, ?presentation=id, or demo catalog.
-          </p>
-        )
-      )}
+      {workspaceBody()}
       <CaveatsFooter compareMode={compareMode === "compare"} />
     </div>
   );

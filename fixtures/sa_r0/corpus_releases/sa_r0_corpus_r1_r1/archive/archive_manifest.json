@@ -1,16 +1,16 @@
 {
   "archive_name": "sa_r0_corpus_release_archive.zip",
-  "archive_sha256": "4d8ab5c427e184535ab3858da7fef8bc555537fbfcda4f2e4df2cb4e5cbbac2d",
+  "archive_sha256": "acc1c2733a342cfb30b01fcb70477964b921ad6bf1b9da851862ef3b625b6d72",
   "members": [
     {
       "arcname": "MANIFEST.sha256",
-      "sha256": "3c8a837b347e4b2f65d4a8ca6b998f38466e535f6cc80e18c3c33a0c4663256b",
+      "sha256": "a0a32b1eaf29d4e83776bf5e2826a4d2a74e5133c2965d6934b4636e5d2b166b",
       "size_bytes": 65,
       "source_path": "fixtures/sa_r0/corpus_releases/sa_r0_corpus_r1_r1/MANIFEST.sha256"
     },
     {
       "arcname": "archive/archive_manifest.json",
-      "sha256": "ccdbb86c6bec5a11d90c451580c9b7892969586eaa010c530e39d1c30b677902",
+      "sha256": "1a6e68c6e378435fa062b7f54bee05ee6222537590198ff21b70fcb142fb4b7a",
       "size_bytes": 2674,
       "source_path": "fixtures/sa_r0/corpus_releases/sa_r0_corpus_r1_r1/archive/archive_manifest.json"
     },
@@ -34,7 +34,7 @@
     },
     {
       "arcname": "extras/replay_corpus_publication_packet_v1.json",
-      "sha256": "013e23c64e2d3a8579ef200d9870442daff46d9b2936204b5f9de8515bd90335",
+      "sha256": "a1b0b17cb7385f217014fb0551a2d8aa2212aae4ce2c501bdb8ec884ddc67753",
       "size_bytes": 3496,
       "source_path": "fixtures/sa_r0/synthesis/replay_corpus_publication_packet_v1.json"
     },
@@ -46,13 +46,13 @@
     },
     {
       "arcname": "replay_corpus_index_v1.json",
-      "sha256": "37cb8a2d05c5b6ba566a332f6372a54303af5cc0b1ca5ab6613649178474a46c",
+      "sha256": "0127302f6a835c99705e7ae6884df40c70b07b324ae5e1ba77d9a7e66754611d",
       "size_bytes": 151600,
       "source_path": "fixtures/sa_r0/corpus_releases/sa_r0_corpus_r1_r1/replay_corpus_index_v1.json"
     },
     {
       "arcname": "replay_corpus_release_manifest_v1.json",
-      "sha256": "201dc51790eb2425b72c1027847944546d690efd8bbe3c81d250fb2a9d43f35a",
+      "sha256": "4e126bb702c237921be5b1567a7fdc79a8b8d0a9a07edc02ac9dbe863e82e680",
       "size_bytes": 4288,
       "source_path": "fixtures/sa_r0/corpus_releases/sa_r0_corpus_r1_r1/replay_corpus_release_manifest_v1.json"
     }

@@ -75,6 +75,12 @@ tier0_sa_r0() {
   "$PY" scripts/evaluation/check_sa_catalog_sync.py
   "$PY" -m pytest src/counter_uas/test/test_sa_platform_integrity.py -q
   "$PY" -m pytest src/counter_uas/test/test_replay_mc_sweep.py -q
+  echo "[ci_eval] tier0-sa-r0: PLAT-SA-A2 authoring operations"
+  "$PY" -m pytest \
+    src/counter_uas/test/test_replay_sa_authoring.py \
+    src/counter_uas/test/test_replay_sa_scenario.py -q --tb=short
+  "$PY" scripts/evaluation/lint_scenario_authoring_manifest.py --all-catalog-packs
+  "$PY" scripts/evaluation/audit_scenario_authoring_integrity.py --strict
   echo "[ci_eval] tier0-sa-r0: PLAT-SA-STAB platform integrity audit"
   "$PY" scripts/evaluation/audit_sa_platform_integrity.py --all
   echo "[ci_eval] tier0-sa-r0: E2 synthesis and research bundle checks"
@@ -101,6 +107,33 @@ tier0_sa_r0() {
   "$PY" scripts/evaluation/build_replay_corpus_publication.py --check
   "$PY" scripts/evaluation/verify_replay_corpus_release.py
   "$PY" -m pytest src/counter_uas/test/test_replay_corpus_evolution.py -q
+  echo "[ci_eval] tier0-sa-r0: F2A multi-corpus federation"
+  "$PY" scripts/evaluation/build_replay_federation_index.py --check
+  "$PY" scripts/evaluation/validate_replay_federation.py
+  "$PY" scripts/evaluation/audit_replay_federation_integrity.py --check --strict
+  "$PY" scripts/evaluation/verify_replay_federation_reproducibility.py
+  "$PY" scripts/evaluation/audit_federation_recovery_continuity.py --check --strict
+  "$PY" -m pytest src/counter_uas/test/test_replay_federation_index.py \
+    src/counter_uas/test/test_replay_federation_integrity.py \
+    src/counter_uas/test/test_replay_federation_recovery_continuity.py -q
+  echo "[ci_eval] tier0-sa-r0: PLAT-SA-H3 experiment orchestration"
+  "$PY" scripts/evaluation/lint_experiment_manifest.py "$ROOT/fixtures/orchestration/manifests" --check
+  "$PY" scripts/evaluation/run_experiment_queue.py \
+    --manifest "$ROOT/fixtures/orchestration/manifests/ridge_defense_synthetic.json" \
+    --dry-run \
+    --no-write-queue
+  "$PY" -m pytest src/counter_uas/test/test_experiment_orchestration.py -q --tb=short
+  echo "[ci_eval] tier0-sa-r0: PLAT-SA-I1 orchestration operations"
+  "$PY" scripts/evaluation/lint_orchestration_ops_manifest.py --all-manifests --check
+  "$PY" scripts/evaluation/audit_orchestration_integrity.py --strict
+  "$PY" -m pytest src/counter_uas/test/test_orchestration_integrity.py -q --tb=short
+  echo "[ci_eval] tier0-sa-r0: PLAT-SA-I2 async orchestration foundations"
+  "$PY" scripts/evaluation/lint_orchestration_async_manifest.py --all-manifests --check
+  "$PY" scripts/evaluation/audit_orchestration_async_integrity.py --strict
+  "$PY" -m pytest src/counter_uas/test/test_orchestration_async_integrity.py -q --tb=short
+  echo "[ci_eval] tier0-sa-r0: PLAT-SA-I3 async recovery & batch review"
+  "$PY" scripts/evaluation/audit_orchestration_recovery.py --strict
+  "$PY" -m pytest src/counter_uas/test/test_orchestration_recovery_integrity.py -q --tb=short
   echo "[ci_eval] tier0-sa-r0: platform/sa-r0-viewer"
   (cd "$ROOT/platform/sa-r0-viewer" && npm ci && npm test && npm run build)
   echo "[ci_eval] tier0-sa-r0: OK"

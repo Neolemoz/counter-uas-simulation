@@ -33,6 +33,10 @@ DUPLICATE_BULLET_MIN_COUNT = 3
 DUPLICATE_CAVEAT_MIN_COUNT = 4
 
 CHECK_IDS = (
+    "authoring_integrity",
+    "orchestration_integrity",
+    "orchestration_async_integrity",
+    "orchestration_recovery_integrity",
     "catalog_sync",
     "fixture_pub_parity",
     "synthesis_stale",
@@ -53,6 +57,10 @@ CHECK_IDS = (
     "corpus_evolution_stale",
     "corpus_publication_stale",
     "corpus_release_export",
+    "federation_index_stale",
+    "federation_integrity",
+    "federation_viewer_mirror",
+    "federation_recovery_continuity",
     "bundle_catalog",
     "governance_batch",
 )
@@ -60,6 +68,44 @@ CHECK_IDS = (
 
 def _errors(check_id: str, messages: list[str]) -> list[str]:
     return [f"[{check_id}] {m}" for m in messages]
+
+
+def check_authoring_integrity() -> list[str]:
+    import replay_sa_authoring_integrity as auth_int  # noqa: E402
+
+    result = auth_int.run_integrity_audit(strict=True)
+    issues = list(result.get("errors") or [])
+    return _errors("authoring_integrity", issues)
+
+
+def check_orchestration_integrity() -> list[str]:
+    import replay_sa_orchestration_integrity as orch_int  # noqa: E402
+
+    result = orch_int.run_integrity_audit(strict=True)
+    issues = list(result.get("errors") or [])
+    return _errors("orchestration_integrity", issues)
+
+
+def check_orchestration_async_integrity() -> list[str]:
+    import replay_sa_orchestration_async as orch_async  # noqa: E402
+
+    result = orch_async.run_async_integrity_audit(strict=True)
+    issues = [
+        f"{i.get('kind')}: {i.get('manifest_id')}: {i.get('message')}"
+        for i in (result.get("issues") or [])
+    ]
+    return _errors("orchestration_async_integrity", issues)
+
+
+def check_orchestration_recovery_integrity() -> list[str]:
+    import replay_sa_orchestration_recovery as orch_recovery  # noqa: E402
+
+    result = orch_recovery.run_recovery_integrity_audit(strict=True)
+    issues = [
+        f"{i.get('kind')}: {i.get('manifest_id')}: {i.get('message')}"
+        for i in (result.get("issues") or [])
+    ]
+    return _errors("orchestration_recovery_integrity", issues)
 
 
 def check_catalog_sync() -> list[str]:
@@ -408,6 +454,74 @@ def check_corpus_release_export() -> list[str]:
     )
 
 
+def check_federation_index_stale() -> list[str]:
+    return _errors(
+        "federation_index_stale",
+        _run_script_check("build_replay_federation_index.py", "--check"),
+    )
+
+
+def check_federation_integrity() -> list[str]:
+    return _errors(
+        "federation_integrity",
+        _run_script_check("audit_replay_federation_integrity.py", "--check", "--strict"),
+    )
+
+
+def check_federation_viewer_mirror() -> list[str]:
+    issues: list[str] = []
+    fed = FIXTURES_SA / "federation"
+    demo = PUBLIC_DEMO / "federation"
+    names = (
+        "replay_federation_manifest_v1.json",
+        "replay_federation_index_v1.json",
+        "replay_federation_lineage_graph_v1.json",
+        "replay_federation_continuity_index_v1.json",
+        "replay_federation_publication_collection_v1.json",
+        "replay_federation_replay_summary_v1.json",
+        "replay_federation_reproducibility_v1.json",
+        "replay_federation_snapshot_v1.json",
+    )
+    for name in names:
+        canonical = fed / name
+        mirror = demo / name
+        if not canonical.is_file():
+            issues.append(f"missing canonical: {canonical}")
+            continue
+        if not mirror.is_file():
+            issues.append(f"missing viewer mirror: {mirror}")
+            continue
+        if canonical.read_bytes() != mirror.read_bytes():
+            issues.append(f"viewer mirror stale: {mirror.relative_to(_REPO)}")
+    audit_pairs = (
+        (
+            fed / "audits/replay_federation_integrity_report_v1.json",
+            demo / "audits/replay_federation_integrity_report_v1.json",
+        ),
+        (
+            fed / "audits/orchestration_federation_recovery_continuity_v1.json",
+            demo / "audits/orchestration_federation_recovery_continuity_v1.json",
+        ),
+    )
+    for canonical, mirror in audit_pairs:
+        if not canonical.is_file():
+            issues.append(f"missing canonical: {canonical}")
+            continue
+        if not mirror.is_file():
+            issues.append(f"missing viewer mirror: {mirror}")
+            continue
+        if canonical.read_bytes() != mirror.read_bytes():
+            issues.append(f"viewer mirror stale: {mirror.relative_to(_REPO)}")
+    return _errors("federation_viewer_mirror", issues)
+
+
+def check_federation_recovery_continuity() -> list[str]:
+    return _errors(
+        "federation_recovery_continuity",
+        _run_script_check("audit_federation_recovery_continuity.py", "--check", "--strict"),
+    )
+
+
 def check_bundle_catalog() -> list[str]:
     issues: list[str] = []
     catalog = lib.load_json(SCENARIOS / "index.json")
@@ -447,6 +561,10 @@ def check_governance_batch() -> list[str]:
 
 
 CHECK_FUNCS = {
+    "authoring_integrity": check_authoring_integrity,
+    "orchestration_integrity": check_orchestration_integrity,
+    "orchestration_async_integrity": check_orchestration_async_integrity,
+    "orchestration_recovery_integrity": check_orchestration_recovery_integrity,
     "catalog_sync": check_catalog_sync,
     "fixture_pub_parity": check_fixture_pub_parity,
     "synthesis_stale": check_synthesis_stale,
@@ -467,6 +585,10 @@ CHECK_FUNCS = {
     "corpus_evolution_stale": check_corpus_evolution_stale,
     "corpus_publication_stale": check_corpus_publication_stale,
     "corpus_release_export": check_corpus_release_export,
+    "federation_index_stale": check_federation_index_stale,
+    "federation_integrity": check_federation_integrity,
+    "federation_viewer_mirror": check_federation_viewer_mirror,
+    "federation_recovery_continuity": check_federation_recovery_continuity,
     "bundle_catalog": check_bundle_catalog,
     "governance_batch": check_governance_batch,
 }

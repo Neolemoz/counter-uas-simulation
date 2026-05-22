@@ -1,0 +1,34 @@
+{
+  "artifact_type": "experiment_orchestration_ops_manifest_v1",
+  "audit_report_ref": "fixtures/orchestration/audits/capture_pipeline_template_queue_report.json",
+  "authoring_pack_refs": [
+    "ridge_defense"
+  ],
+  "governance": {
+    "anti_claims": [
+      "not live execution authority",
+      "not operational deployment state",
+      "not parser contract"
+    ],
+    "notice": "Orchestration operations sidecar for offline experiment workflow only."
+  },
+  "manifest_fingerprint": "sha256:afa914b6e7ab0c9f1bd954fb7e92b8d166d5a45d6403b8e63db0cfd3b1438ff5",
+  "manifest_id": "capture_pipeline_template",
+  "operations_lineage": [
+    {
+      "actor": "cli:promote_experiment_manifest",
+      "event_id": "ops-2026-05-22T00:31:33Z",
+      "from_status": "validated",
+      "notes": "I1 backfill",
+      "to_status": "queued"
+    }
+  ],
+  "operations_status": "queued",
+  "operations_summary_ref": "fixtures/orchestration/ops/capture_pipeline_template_orchestration_operations_summary_v1.json",
+  "queue_snapshot_ref": "fixtures/orchestration/queues/capture_pipeline_template_queue.json",
+  "scenario_pack_ids": [
+    "ridge_defense"
+  ],
+  "schema_version": "1",
+  "updated_at": "2026-05-22T00:31:33Z"
+}

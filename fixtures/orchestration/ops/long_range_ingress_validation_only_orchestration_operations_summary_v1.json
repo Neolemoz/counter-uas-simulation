@@ -1,0 +1,12 @@
+{
+  "artifact_type": "orchestration_operations_summary_v1",
+  "generated_at": "2026-05-22T00:31:36Z",
+  "governance_banner": "OPERATIONS SUMMARY \u2014 explanatory; CLI authoritative",
+  "manifest_id": "long_range_ingress_validation_only",
+  "operations_status": "queued",
+  "queue_snapshot_ref": "fixtures/orchestration/queues/long_range_ingress_validation_only_queue.json",
+  "scenario_pack_ids": [
+    "long_range_ingress"
+  ],
+  "schema_version": "1"
+}

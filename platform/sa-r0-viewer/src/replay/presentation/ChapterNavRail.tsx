@@ -1,5 +1,7 @@
 import { useClockStore } from "../clockStore";
 import { usePresentationStore } from "./presentationStore";
+import { sandboxSurfaces, sandboxTypography } from "@/theme/sandboxTheme";
+import { cn } from "@/lib/utils";
 
 export function ChapterNavRail() {
   const bundle = useClockStore((s) => s.bundle);
@@ -11,25 +13,40 @@ export function ChapterNavRail() {
   if (!chapters.length) return null;
 
   return (
-    <section className="rounded border border-violet-900/30 bg-slate-900/80 p-3">
-      <div className="mb-2 flex flex-wrap gap-1">
+    <section className={cn(sandboxSurfaces.panel, "border-violet-900/30 p-3")}>
+      <p className={`mb-2 ${sandboxTypography.sectionLabel} text-violet-300/80`}>Chapters</p>
+      <ol className="mb-3 space-y-1">
         {chapters.map((ch, i) => (
-          <button
-            key={ch.chapter_id}
-            type="button"
-            className={`rounded px-2 py-1 text-xs ${
-              i === currentChapterIndex
-                ? "bg-violet-800 text-violet-100"
-                : "bg-slate-800 text-slate-400 hover:bg-slate-700"
-            }`}
-            onClick={() => setChapterIndex(i)}
-          >
-            {ch.title}
-          </button>
+          <li key={ch.chapter_id}>
+            <button
+              type="button"
+              className={cn(
+                "flex w-full items-start gap-2 rounded-md px-2 py-1.5 text-left text-xs transition-colors",
+                i === currentChapterIndex
+                  ? "bg-violet-900/35 text-violet-100"
+                  : "text-slate-400 hover:bg-slate-800/50 hover:text-slate-200",
+              )}
+              onClick={() => setChapterIndex(i)}
+            >
+              <span
+                className={cn(
+                  "mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[10px] font-medium tabular-nums",
+                  i === currentChapterIndex
+                    ? "bg-violet-700/60 text-violet-50"
+                    : "bg-slate-800 text-slate-500",
+                )}
+              >
+                {i + 1}
+              </span>
+              <span className="leading-snug">{ch.title}</span>
+            </button>
+          </li>
         ))}
-      </div>
+      </ol>
       {chapter && (
-        <p className="text-sm text-violet-100/90 transition-opacity duration-300">{chapter.summary}</p>
+        <p className={`transition-opacity duration-300 ${sandboxTypography.chapterSummary}`}>
+          {chapter.summary}
+        </p>
       )}
     </section>
   );

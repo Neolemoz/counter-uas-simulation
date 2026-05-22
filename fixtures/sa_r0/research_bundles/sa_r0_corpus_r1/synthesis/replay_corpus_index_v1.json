@@ -3,7 +3,8 @@
   "corpus_id": "sa_r0_corpus_r1",
   "entries": [
     {
-      "content_revision": "07cd7acb01823db262f9b0f51b02ad59d9e05e594aaa5d29e07934f8433d108f",
+      "chronology_group": "topology_demo",
+      "content_revision": "99e4a5bcecb0ef7098f81e150ce3592a1d801cbbc42c959c7550389530cd0d1e",
       "corpus_id": "sa_r0_corpus_r1",
       "derived_from": [
         {
@@ -19,23 +20,39 @@
       ],
       "entry_id": "demo_bundle__corridor_defense",
       "entry_kind": "demo_bundle",
-      "generation_revision": "7112ec817ada52e0135d5411d1e48e3fdbbfbfea5f2d83b4f3ec1fa20e15bf36",
+      "evolution_tags": [
+        "first_generation"
+      ],
+      "generation_revision": "d1dc1f05899976ec7401ab727a9824ff39172459d4df6e03a32b4c834531cff3",
       "generation_tool": "replay_sa_bundle.py",
       "lineage_parent_ids": [
         "topology_experiment__corridor_defense"
       ],
+      "navigation_hint": "corridor defense",
+      "navigation_tags": [
+        "demo_bundle",
+        "topology"
+      ],
       "primary_artifact_path": "fixtures/sa_r0/demo_corridor_defense/index.json",
+      "publication_revision_lineage": [
+        "b985555a63bbbd062abe848730e4e4b8fb8bbdfa73e83f2e6efafd4df1db9c8c"
+      ],
+      "release_generation_id": "gen_topology_demo",
+      "replay_chronology_descriptor": "Demo bundle replay wave",
+      "replay_family": "corridor_defense",
       "replay_scope": {
         "pack_id": "corridor_defense",
         "seed": 101
       },
-      "sha256": "7112ec817ada52e0135d5411d1e48e3fdbbfbfea5f2d83b4f3ec1fa20e15bf36",
+      "reviewer_category": "topology_lab",
+      "sha256": "d1dc1f05899976ec7401ab727a9824ff39172459d4df6e03a32b4c834531cff3",
       "source_artifacts": [
         "fixtures/sa_r0/demo_corridor_defense/index.json"
       ]
     },
     {
-      "content_revision": "c82ec986bd5aca96a2d20e873a54a428b56310ef8a9565e2e026c131c2c5e6cb",
+      "chronology_group": "topology_demo",
+      "content_revision": "13558616c704cb77d7d004cc34b8cef793e8c94d33ef8a475b20671249ec5918",
       "corpus_id": "sa_r0_corpus_r1",
       "derived_from": [
         {
@@ -51,23 +68,39 @@
       ],
       "entry_id": "demo_bundle__delayed_detection",
       "entry_kind": "demo_bundle",
-      "generation_revision": "55eb0f10cd223489460637e706a228ab98d9ac268dfbf9ed289fb543ee6d419a",
+      "evolution_tags": [
+        "first_generation"
+      ],
+      "generation_revision": "97bb49008a56c1f1c5c258bb03617d9e7659a888746b4395aedfd15f3f6982c7",
       "generation_tool": "replay_sa_bundle.py",
       "lineage_parent_ids": [
         "topology_experiment__delayed_detection"
       ],
+      "navigation_hint": "delayed detection",
+      "navigation_tags": [
+        "demo_bundle",
+        "topology"
+      ],
       "primary_artifact_path": "fixtures/sa_r0/demo_delayed_detection/index.json",
+      "publication_revision_lineage": [
+        "7be47220b2b45d97182dfb6f0509815411f4d2046fb64b3359accc054c453d06"
+      ],
+      "release_generation_id": "gen_topology_demo",
+      "replay_chronology_descriptor": "Demo bundle replay wave",
+      "replay_family": "delayed_detection",
       "replay_scope": {
         "pack_id": "delayed_detection",
         "seed": 101
       },
-      "sha256": "55eb0f10cd223489460637e706a228ab98d9ac268dfbf9ed289fb543ee6d419a",
+      "reviewer_category": "topology_lab",
+      "sha256": "97bb49008a56c1f1c5c258bb03617d9e7659a888746b4395aedfd15f3f6982c7",
       "source_artifacts": [
         "fixtures/sa_r0/demo_delayed_detection/index.json"
       ]
     },
     {
-      "content_revision": "20ec187df8d8e2f43bf72673a7486895ce66a81f4b95039959ed5441a2103ab3",
+      "chronology_group": "topology_demo",
+      "content_revision": "a91a963c6dfb0fd9a5931a65ac588fe49fa1a3af554556487112524ea5a4a807",
       "corpus_id": "sa_r0_corpus_r1",
       "derived_from": [
         {
@@ -83,23 +116,39 @@
       ],
       "entry_id": "demo_bundle__long_range_ingress",
       "entry_kind": "demo_bundle",
-      "generation_revision": "29fe2b3c3eda089e4262d2325c236cae40c609a36cc2568d0cf647898cb547ad",
+      "evolution_tags": [
+        "first_generation"
+      ],
+      "generation_revision": "214b97327b46ab9752aa7384f2c4a5e3d61619915e6b84d8134e0f8d89ab2149",
       "generation_tool": "replay_sa_bundle.py",
       "lineage_parent_ids": [
         "topology_experiment__long_range_ingress"
       ],
+      "navigation_hint": "long range ingress",
+      "navigation_tags": [
+        "demo_bundle",
+        "topology"
+      ],
       "primary_artifact_path": "fixtures/sa_r0/demo_long_range_ingress/index.json",
+      "publication_revision_lineage": [
+        "c06ca2397569842a87fcac3e5da5162cad0783ad3dc58bd420288efabc21ce04"
+      ],
+      "release_generation_id": "gen_topology_demo",
+      "replay_chronology_descriptor": "Demo bundle replay wave",
+      "replay_family": "long_range_ingress",
       "replay_scope": {
         "pack_id": "long_range_ingress",
         "seed": 101
       },
-      "sha256": "29fe2b3c3eda089e4262d2325c236cae40c609a36cc2568d0cf647898cb547ad",
+      "reviewer_category": "topology_lab",
+      "sha256": "214b97327b46ab9752aa7384f2c4a5e3d61619915e6b84d8134e0f8d89ab2149",
       "source_artifacts": [
         "fixtures/sa_r0/demo_long_range_ingress/index.json"
       ]
     },
     {
-      "content_revision": "21e6817574a8981d0c9a1ae028c005803167927fb0c48ef882039f509dd1f430",
+      "chronology_group": "topology_demo",
+      "content_revision": "577478261dea88d2d243ab4a5d9c07adc80928b64fd702039264c9f9d4771ba5",
       "corpus_id": "sa_r0_corpus_r1",
       "derived_from": [
         {
@@ -115,23 +164,39 @@
       ],
       "entry_id": "demo_bundle__multi_ridge",
       "entry_kind": "demo_bundle",
-      "generation_revision": "1083d61ed4f4e597e583a2b21fcb4a3efddf0f829f1b79d03e73bcf3d00e381d",
+      "evolution_tags": [
+        "first_generation"
+      ],
+      "generation_revision": "f734528b36b85d3c19046c6123376f814c01ae2fad6bee9c8b3ce2653597e29c",
       "generation_tool": "replay_sa_bundle.py",
       "lineage_parent_ids": [
         "topology_experiment__multi_ridge"
       ],
+      "navigation_hint": "multi ridge",
+      "navigation_tags": [
+        "demo_bundle",
+        "topology"
+      ],
       "primary_artifact_path": "fixtures/sa_r0/demo_multi_ridge/index.json",
+      "publication_revision_lineage": [
+        "59edf86ae88c668d92bf244e10983f5e419614d13462893894c115dc65860a46"
+      ],
+      "release_generation_id": "gen_topology_demo",
+      "replay_chronology_descriptor": "Demo bundle replay wave",
+      "replay_family": "multi_ridge",
       "replay_scope": {
         "pack_id": "multi_ridge",
         "seed": 101
       },
-      "sha256": "1083d61ed4f4e597e583a2b21fcb4a3efddf0f829f1b79d03e73bcf3d00e381d",
+      "reviewer_category": "topology_lab",
+      "sha256": "f734528b36b85d3c19046c6123376f814c01ae2fad6bee9c8b3ce2653597e29c",
       "source_artifacts": [
         "fixtures/sa_r0/demo_multi_ridge/index.json"
       ]
     },
     {
-      "content_revision": "93c5403cd77f6567e017c7d297e1a4ffbc27caf59f6723ad168a9695f6a18782",
+      "chronology_group": "topology_demo",
+      "content_revision": "de6d3aca9839960cff2753e8f500c9dee654a941cee661f2d93b50bc4559034d",
       "corpus_id": "sa_r0_corpus_r1",
       "derived_from": [
         {
@@ -147,23 +212,39 @@
       ],
       "entry_id": "demo_bundle__ridge_defense",
       "entry_kind": "demo_bundle",
-      "generation_revision": "1ea75d9b0e22d5d907cfafe6356c34a6911810d4c47afa918a197c360a3bf1d5",
+      "evolution_tags": [
+        "first_generation"
+      ],
+      "generation_revision": "5f412328ab752f5c961468bc0a281849bc9cfbfa30c10f1001474e1f2f348fb4",
       "generation_tool": "replay_sa_bundle.py",
       "lineage_parent_ids": [
         "topology_experiment__ridge_defense"
       ],
+      "navigation_hint": "ridge defense",
+      "navigation_tags": [
+        "demo_bundle",
+        "topology"
+      ],
       "primary_artifact_path": "fixtures/sa_r0/demo_ridge_defense/index.json",
+      "publication_revision_lineage": [
+        "3f3afc8d4f14cee78ecbe62078ea71d684ac0752510539360456be215e0c25de"
+      ],
+      "release_generation_id": "gen_topology_demo",
+      "replay_chronology_descriptor": "Demo bundle replay wave",
+      "replay_family": "ridge_defense",
       "replay_scope": {
         "pack_id": "ridge_defense",
         "seed": 101
       },
-      "sha256": "1ea75d9b0e22d5d907cfafe6356c34a6911810d4c47afa918a197c360a3bf1d5",
+      "reviewer_category": "topology_lab",
+      "sha256": "5f412328ab752f5c961468bc0a281849bc9cfbfa30c10f1001474e1f2f348fb4",
       "source_artifacts": [
         "fixtures/sa_r0/demo_ridge_defense/index.json"
       ]
     },
     {
-      "content_revision": "002cf162de2f1153396c358865b82a3a04651504ccc594d1a1a95ab999a44b1a",
+      "chronology_group": "topology_demo",
+      "content_revision": "7e5178130e15353f73cc96535cf0423dc5d3cd7bf5f760476a1b9f763c8ca029",
       "corpus_id": "sa_r0_corpus_r1",
       "derived_from": [
         {
@@ -179,23 +260,39 @@
       ],
       "entry_id": "demo_bundle__saturation_ingress",
       "entry_kind": "demo_bundle",
-      "generation_revision": "2377c7d7c2d5fd5a14694e916dd4c6d00b9750cc07be646b9e41eb724082ef0e",
+      "evolution_tags": [
+        "first_generation"
+      ],
+      "generation_revision": "b41c019c0394ddb1749000d6055fc257e8c1345bd6dda07464e66ae3fdd0f89a",
       "generation_tool": "replay_sa_bundle.py",
       "lineage_parent_ids": [
         "topology_experiment__saturation_ingress"
       ],
+      "navigation_hint": "saturation ingress",
+      "navigation_tags": [
+        "demo_bundle",
+        "topology"
+      ],
       "primary_artifact_path": "fixtures/sa_r0/demo_saturation_ingress/index.json",
+      "publication_revision_lineage": [
+        "d040d95e9dd26ea8d9c5e9ac41858703b4cbe42a8f04fc0f726821b2fd7a5c59"
+      ],
+      "release_generation_id": "gen_topology_demo",
+      "replay_chronology_descriptor": "Demo bundle replay wave",
+      "replay_family": "saturation_ingress",
       "replay_scope": {
         "pack_id": "saturation_ingress",
         "seed": 101
       },
-      "sha256": "2377c7d7c2d5fd5a14694e916dd4c6d00b9750cc07be646b9e41eb724082ef0e",
+      "reviewer_category": "topology_lab",
+      "sha256": "b41c019c0394ddb1749000d6055fc257e8c1345bd6dda07464e66ae3fdd0f89a",
       "source_artifacts": [
         "fixtures/sa_r0/demo_saturation_ingress/index.json"
       ]
     },
     {
-      "content_revision": "817cb14f31e36425b3d7331d30a078119658fcf2fcfc803ef33a1ab02fa58804",
+      "chronology_group": "topology_demo",
+      "content_revision": "421842e7b9774586c48dae342392a8c2f743de0240805bbd0365d2ea876857c6",
       "corpus_id": "sa_r0_corpus_r1",
       "derived_from": [
         {
@@ -211,23 +308,39 @@
       ],
       "entry_id": "demo_bundle__urban_masking",
       "entry_kind": "demo_bundle",
-      "generation_revision": "4770c06a0afa5ca086010f24d96b0ad44b8ac40d72ac3d8a76032e954d50598b",
+      "evolution_tags": [
+        "first_generation"
+      ],
+      "generation_revision": "967aa9a7cb36ac11b17810d85885d496e41bdd5660087e8ada31ed283f45cc7f",
       "generation_tool": "replay_sa_bundle.py",
       "lineage_parent_ids": [
         "topology_experiment__urban_masking"
       ],
+      "navigation_hint": "urban masking",
+      "navigation_tags": [
+        "demo_bundle",
+        "topology"
+      ],
       "primary_artifact_path": "fixtures/sa_r0/demo_urban_masking/index.json",
+      "publication_revision_lineage": [
+        "40fad588543557cfe01afaf8f0c5bf35293ff69682440814696b07387d197cb6"
+      ],
+      "release_generation_id": "gen_topology_demo",
+      "replay_chronology_descriptor": "Demo bundle replay wave",
+      "replay_family": "urban_masking",
       "replay_scope": {
         "pack_id": "urban_masking",
         "seed": 101
       },
-      "sha256": "4770c06a0afa5ca086010f24d96b0ad44b8ac40d72ac3d8a76032e954d50598b",
+      "reviewer_category": "topology_lab",
+      "sha256": "967aa9a7cb36ac11b17810d85885d496e41bdd5660087e8ada31ed283f45cc7f",
       "source_artifacts": [
         "fixtures/sa_r0/demo_urban_masking/index.json"
       ]
     },
     {
-      "content_revision": "6ae45571398c56c794d848044fe6d3e180389b0d7f5234d342f91194dd60ce76",
+      "chronology_group": "topology_demo",
+      "content_revision": "59dbace7bee7a124c81a7dbfb1077d8fa39dc9c97491f46349d985f036590f39",
       "corpus_id": "sa_r0_corpus_r1",
       "derived_from": [
         {
@@ -243,23 +356,39 @@
       ],
       "entry_id": "demo_bundle__valley_ingress",
       "entry_kind": "demo_bundle",
-      "generation_revision": "d2486c06233296fe830241a6262943af1c553a500570a79db8fdb7696477ef82",
+      "evolution_tags": [
+        "first_generation"
+      ],
+      "generation_revision": "6d2751ac339fe9f532cbf04cf3f058e1fa972a3331674c31e5c32504fe13e5f2",
       "generation_tool": "replay_sa_bundle.py",
       "lineage_parent_ids": [
         "topology_experiment__valley_ingress"
       ],
+      "navigation_hint": "valley ingress",
+      "navigation_tags": [
+        "demo_bundle",
+        "topology"
+      ],
       "primary_artifact_path": "fixtures/sa_r0/demo_valley_ingress/index.json",
+      "publication_revision_lineage": [
+        "3c12c815f9971ee0660e879feaaa608eaea87d3982b85f78891fdf30bbc7f9b3"
+      ],
+      "release_generation_id": "gen_topology_demo",
+      "replay_chronology_descriptor": "Demo bundle replay wave",
+      "replay_family": "valley_ingress",
       "replay_scope": {
         "pack_id": "valley_ingress",
         "seed": 101
       },
-      "sha256": "d2486c06233296fe830241a6262943af1c553a500570a79db8fdb7696477ef82",
+      "reviewer_category": "topology_lab",
+      "sha256": "6d2751ac339fe9f532cbf04cf3f058e1fa972a3331674c31e5c32504fe13e5f2",
       "source_artifacts": [
         "fixtures/sa_r0/demo_valley_ingress/index.json"
       ]
     },
     {
-      "content_revision": "dad1618354d30a418c9ba819806548d7c42375c54656535c3947da3509d6da16",
+      "chronology_group": "topology_demo",
+      "content_revision": "0dc16cc558bdad4ba0ac2c851b3f85b69fe2468e0ba716adaa74306a1b9d8679",
       "corpus_id": "sa_r0_corpus_r1",
       "derived_from": [
         {
@@ -275,23 +404,39 @@
       ],
       "entry_id": "demo_bundle__valley_ingress_delayed_interceptor_base",
       "entry_kind": "demo_bundle",
-      "generation_revision": "ff80d467d3646b64b76c84e54933782858ef7cc20589be21e45745a22b8c989b",
+      "evolution_tags": [
+        "first_generation"
+      ],
+      "generation_revision": "fafce428b011f7c05e24d65da8cdd0203c28dca0df10c43926813b914b4ab9c7",
       "generation_tool": "replay_sa_bundle.py",
       "lineage_parent_ids": [
         "topology_experiment__valley_ingress_delayed_interceptor_base"
       ],
+      "navigation_hint": "valley ingress delayed interceptor base",
+      "navigation_tags": [
+        "demo_bundle",
+        "topology"
+      ],
       "primary_artifact_path": "fixtures/sa_r0/demo_valley_ingress_delayed_interceptor_base/index.json",
+      "publication_revision_lineage": [
+        "2dbbefe9d5b11b53baf2bcb34124ca37db36d6cacb75fe0a77ca23019c503ca2"
+      ],
+      "release_generation_id": "gen_topology_demo",
+      "replay_chronology_descriptor": "Demo bundle replay wave",
+      "replay_family": "valley_ingress_delayed_interceptor_base",
       "replay_scope": {
         "pack_id": "valley_ingress_delayed_interceptor_base",
         "seed": 101
       },
-      "sha256": "ff80d467d3646b64b76c84e54933782858ef7cc20589be21e45745a22b8c989b",
+      "reviewer_category": "topology_lab",
+      "sha256": "fafce428b011f7c05e24d65da8cdd0203c28dca0df10c43926813b914b4ab9c7",
       "source_artifacts": [
         "fixtures/sa_r0/demo_valley_ingress_delayed_interceptor_base/index.json"
       ]
     },
     {
-      "content_revision": "16b7b1bac969391807f2f7d69e8b593e691339e7b285b5fa99b84392579145e1",
+      "chronology_group": "topology_demo",
+      "content_revision": "2fd9155e583f5f758b1ee150db46b844ce14efa2d22b670081426180d4d7352d",
       "corpus_id": "sa_r0_corpus_r1",
       "derived_from": [
         {
@@ -307,23 +452,39 @@
       ],
       "entry_id": "demo_bundle__valley_ingress_extra_valley_sensor",
       "entry_kind": "demo_bundle",
-      "generation_revision": "5bd199d045e746dc3f9bf27bd205265d487eca3025d7e81022b9b0e588112b9e",
+      "evolution_tags": [
+        "first_generation"
+      ],
+      "generation_revision": "951d3f7e0d3b4bcd1cc17487aaf7b885b7f3aaa64242f832c33c4622b65efd59",
       "generation_tool": "replay_sa_bundle.py",
       "lineage_parent_ids": [
         "topology_experiment__valley_ingress_extra_valley_sensor"
       ],
+      "navigation_hint": "valley ingress extra valley sensor",
+      "navigation_tags": [
+        "demo_bundle",
+        "topology"
+      ],
       "primary_artifact_path": "fixtures/sa_r0/demo_valley_ingress_extra_valley_sensor/index.json",
+      "publication_revision_lineage": [
+        "fdab03eacfa1d3f2d8718bd184b2e291f1c95f9d800bf635cdd64c1bfd1f87b8"
+      ],
+      "release_generation_id": "gen_topology_demo",
+      "replay_chronology_descriptor": "Demo bundle replay wave",
+      "replay_family": "valley_ingress_extra_valley_sensor",
       "replay_scope": {
         "pack_id": "valley_ingress_extra_valley_sensor",
         "seed": 101
       },
-      "sha256": "5bd199d045e746dc3f9bf27bd205265d487eca3025d7e81022b9b0e588112b9e",
+      "reviewer_category": "topology_lab",
+      "sha256": "951d3f7e0d3b4bcd1cc17487aaf7b885b7f3aaa64242f832c33c4622b65efd59",
       "source_artifacts": [
         "fixtures/sa_r0/demo_valley_ingress_extra_valley_sensor/index.json"
       ]
     },
     {
-      "content_revision": "152b3c5836ef9fc427ee6d5a31885feaf24b3408e52af315b5701c49e1acc2bf",
+      "chronology_group": "topology_demo",
+      "content_revision": "c2428131f7e461a29cf346d334a0468c2d995d67924e1b83627ca4ecfdd855c2",
       "corpus_id": "sa_r0_corpus_r1",
       "derived_from": [
         {
@@ -339,23 +500,39 @@
       ],
       "entry_id": "demo_bundle__valley_ingress_radar_shifted_north",
       "entry_kind": "demo_bundle",
-      "generation_revision": "4939f7084d8104c4e2192a5bf003873875d1c787110804a75d71a09b11552dbf",
+      "evolution_tags": [
+        "first_generation"
+      ],
+      "generation_revision": "f0028bb60eb9a77ffa90d50f4641f1355e4c6c8a4f01511957842d77aa3fb8dd",
       "generation_tool": "replay_sa_bundle.py",
       "lineage_parent_ids": [
         "topology_experiment__valley_ingress_radar_shifted_north"
       ],
+      "navigation_hint": "valley ingress radar shifted north",
+      "navigation_tags": [
+        "demo_bundle",
+        "topology"
+      ],
       "primary_artifact_path": "fixtures/sa_r0/demo_valley_ingress_radar_shifted_north/index.json",
+      "publication_revision_lineage": [
+        "91faf6f007aeb4fea1033c2f787fcb83e0ad0851e013a5416cf87cb4e86d4240"
+      ],
+      "release_generation_id": "gen_topology_demo",
+      "replay_chronology_descriptor": "Demo bundle replay wave",
+      "replay_family": "valley_ingress_radar_shifted_north",
       "replay_scope": {
         "pack_id": "valley_ingress_radar_shifted_north",
         "seed": 101
       },
-      "sha256": "4939f7084d8104c4e2192a5bf003873875d1c787110804a75d71a09b11552dbf",
+      "reviewer_category": "topology_lab",
+      "sha256": "f0028bb60eb9a77ffa90d50f4641f1355e4c6c8a4f01511957842d77aa3fb8dd",
       "source_artifacts": [
         "fixtures/sa_r0/demo_valley_ingress_radar_shifted_north/index.json"
       ]
     },
     {
-      "content_revision": "6eab7ec0bd2ca157c3cb320092f43d6f7b40d922d030c87aa8e89e683c77eee5",
+      "chronology_group": "topology_demo",
+      "content_revision": "9ff2468fa5796da8fc0e143c1963fffa12add0daa003caeb91b4955c264f08a7",
       "corpus_id": "sa_r0_corpus_r1",
       "derived_from": [
         {
@@ -371,22 +548,38 @@
       ],
       "entry_id": "demo_bundle__valley_ingress_reduced_overlap_layout",
       "entry_kind": "demo_bundle",
-      "generation_revision": "b09e54c290385a88851f2c065af4158777a3f14a4064b21df9fa9235d7cf50ad",
+      "evolution_tags": [
+        "first_generation"
+      ],
+      "generation_revision": "5fc3884aa720733773e5c58fab566b4c30854c1810e83de69fd001fd8a74683e",
       "generation_tool": "replay_sa_bundle.py",
       "lineage_parent_ids": [
         "topology_experiment__valley_ingress_reduced_overlap_layout"
       ],
+      "navigation_hint": "valley ingress reduced overlap layout",
+      "navigation_tags": [
+        "demo_bundle",
+        "topology"
+      ],
       "primary_artifact_path": "fixtures/sa_r0/demo_valley_ingress_reduced_overlap_layout/index.json",
+      "publication_revision_lineage": [
+        "5804c7945abcc6cb1c1904ca7349b73c65c329566bc86dc7d3c5c941427e0001"
+      ],
+      "release_generation_id": "gen_topology_demo",
+      "replay_chronology_descriptor": "Demo bundle replay wave",
+      "replay_family": "valley_ingress_reduced_overlap_layout",
       "replay_scope": {
         "pack_id": "valley_ingress_reduced_overlap_layout",
         "seed": 101
       },
-      "sha256": "b09e54c290385a88851f2c065af4158777a3f14a4064b21df9fa9235d7cf50ad",
+      "reviewer_category": "topology_lab",
+      "sha256": "5fc3884aa720733773e5c58fab566b4c30854c1810e83de69fd001fd8a74683e",
       "source_artifacts": [
         "fixtures/sa_r0/demo_valley_ingress_reduced_overlap_layout/index.json"
       ]
     },
     {
+      "chronology_group": "presentation_e1",
       "content_revision": "cd4a90d14ee7296f5e41adc44063a91343fc0db57442385d1f1eb7e1b90c88ac",
       "corpus_id": "sa_r0_corpus_r1",
       "derived_from": [
@@ -398,6 +591,9 @@
       ],
       "entry_id": "presentation_deck__showcase_ambiguity_heavy",
       "entry_kind": "presentation_deck",
+      "evolution_tags": [
+        "presentation_derived"
+      ],
       "generation_revision": "adc8fb982c479179d95df498cb3a2c9a1e64584b73dfb05e90e27b7e45b522b3",
       "generation_tool": "gen_e1_presentation_fixtures.py",
       "lineage_parent_ids": [
@@ -406,16 +602,32 @@
         "sweep_family__saturation_assignment_sweep",
         "sweep_family__valley_sensor_sweep"
       ],
+      "navigation_hint": "showcase ambiguity heavy",
+      "navigation_tags": [
+        "presentation",
+        "storyboard"
+      ],
       "presentation_scope": {
         "storyboard_id": "showcase_ambiguity_heavy"
       },
       "primary_artifact_path": "fixtures/sa_r0/presentations/showcase_ambiguity_heavy.json",
+      "publication_revision_lineage": [
+        "08120d962358594e432f5f353870e16e272bbb654ad52dc618aeb4765b2bb1c5",
+        "26c4b03d2b5cde65b7422bf2ec248109c56b47826eb893bbb723778533273d21",
+        "6ad7281c2b747cb28a5b255e9885b191c6a5cfd5af4811697d534322dcef2384",
+        "c94f217559419734912ffc3d34171eafca1cc9569cfa8bd398c35d59a803617b"
+      ],
+      "release_generation_id": "gen_presentation",
+      "replay_chronology_descriptor": "Presentation and storyboard wave (E1)",
+      "replay_family": "showcase_ambiguity_heavy",
+      "reviewer_category": "presentation",
       "sha256": "adc8fb982c479179d95df498cb3a2c9a1e64584b73dfb05e90e27b7e45b522b3",
       "source_artifacts": [
         "fixtures/sa_r0/presentations/showcase_ambiguity_heavy.json"
       ]
     },
     {
+      "chronology_group": "presentation_e1",
       "content_revision": "7332098cb977ee193849cbf12940b3483eeed30c428643d3ba3c1e70f4ee6659",
       "corpus_id": "sa_r0_corpus_r1",
       "derived_from": [
@@ -427,6 +639,9 @@
       ],
       "entry_id": "presentation_deck__showcase_best_narratives",
       "entry_kind": "presentation_deck",
+      "evolution_tags": [
+        "presentation_derived"
+      ],
       "generation_revision": "d62fb66ee04d56ff1dc43ff1e21dc8d85465a35edbd7bedbf4013ab060d25323",
       "generation_tool": "gen_e1_presentation_fixtures.py",
       "lineage_parent_ids": [
@@ -435,16 +650,32 @@
         "sweep_family__saturation_assignment_sweep",
         "sweep_family__valley_sensor_sweep"
       ],
+      "navigation_hint": "showcase best narratives",
+      "navigation_tags": [
+        "presentation",
+        "storyboard"
+      ],
       "presentation_scope": {
         "storyboard_id": "showcase_best_narratives"
       },
       "primary_artifact_path": "fixtures/sa_r0/presentations/showcase_best_narratives.json",
+      "publication_revision_lineage": [
+        "08120d962358594e432f5f353870e16e272bbb654ad52dc618aeb4765b2bb1c5",
+        "26c4b03d2b5cde65b7422bf2ec248109c56b47826eb893bbb723778533273d21",
+        "6ad7281c2b747cb28a5b255e9885b191c6a5cfd5af4811697d534322dcef2384",
+        "c94f217559419734912ffc3d34171eafca1cc9569cfa8bd398c35d59a803617b"
+      ],
+      "release_generation_id": "gen_presentation",
+      "replay_chronology_descriptor": "Presentation and storyboard wave (E1)",
+      "replay_family": "showcase_best_narratives",
+      "reviewer_category": "presentation",
       "sha256": "d62fb66ee04d56ff1dc43ff1e21dc8d85465a35edbd7bedbf4013ab060d25323",
       "source_artifacts": [
         "fixtures/sa_r0/presentations/showcase_best_narratives.json"
       ]
     },
     {
+      "chronology_group": "presentation_e1",
       "content_revision": "2d700e781e06e6c7d98110f49a612e3f63f7137e9aceb79bfa9975a3dec0f7ce",
       "corpus_id": "sa_r0_corpus_r1",
       "derived_from": [
@@ -456,6 +687,9 @@
       ],
       "entry_id": "presentation_deck__showcase_cross_sweep_synthesis",
       "entry_kind": "presentation_deck",
+      "evolution_tags": [
+        "presentation_derived"
+      ],
       "generation_revision": "9f90636b47ebb9c0e40d19ea1eab300e62da010f3182226012bccc28560e05c1",
       "generation_tool": "gen_e1_presentation_fixtures.py",
       "lineage_parent_ids": [
@@ -464,16 +698,32 @@
         "sweep_family__saturation_assignment_sweep",
         "sweep_family__valley_sensor_sweep"
       ],
+      "navigation_hint": "showcase cross sweep synthesis",
+      "navigation_tags": [
+        "presentation",
+        "storyboard"
+      ],
       "presentation_scope": {
         "storyboard_id": "showcase_cross_sweep_synthesis"
       },
       "primary_artifact_path": "fixtures/sa_r0/presentations/showcase_cross_sweep_synthesis.json",
+      "publication_revision_lineage": [
+        "08120d962358594e432f5f353870e16e272bbb654ad52dc618aeb4765b2bb1c5",
+        "26c4b03d2b5cde65b7422bf2ec248109c56b47826eb893bbb723778533273d21",
+        "6ad7281c2b747cb28a5b255e9885b191c6a5cfd5af4811697d534322dcef2384",
+        "c94f217559419734912ffc3d34171eafca1cc9569cfa8bd398c35d59a803617b"
+      ],
+      "release_generation_id": "gen_presentation",
+      "replay_chronology_descriptor": "Presentation and storyboard wave (E1)",
+      "replay_family": "showcase_cross_sweep_synthesis",
+      "reviewer_category": "presentation",
       "sha256": "9f90636b47ebb9c0e40d19ea1eab300e62da010f3182226012bccc28560e05c1",
       "source_artifacts": [
         "fixtures/sa_r0/presentations/showcase_cross_sweep_synthesis.json"
       ]
     },
     {
+      "chronology_group": "presentation_e1",
       "content_revision": "98455a9c9c7f4d8e492e0beaf9ea7f3655f631abf77cd1aa23bbde57467a7502",
       "corpus_id": "sa_r0_corpus_r1",
       "derived_from": [
@@ -485,6 +735,9 @@
       ],
       "entry_id": "presentation_deck__showcase_topology_divergence",
       "entry_kind": "presentation_deck",
+      "evolution_tags": [
+        "presentation_derived"
+      ],
       "generation_revision": "b651a46c6452deeb6b8c7acd23979168705ba76498bb0a97995b6efd95585ffe",
       "generation_tool": "gen_e1_presentation_fixtures.py",
       "lineage_parent_ids": [
@@ -493,16 +746,32 @@
         "sweep_family__saturation_assignment_sweep",
         "sweep_family__valley_sensor_sweep"
       ],
+      "navigation_hint": "showcase topology divergence",
+      "navigation_tags": [
+        "presentation",
+        "storyboard"
+      ],
       "presentation_scope": {
         "storyboard_id": "showcase_topology_divergence"
       },
       "primary_artifact_path": "fixtures/sa_r0/presentations/showcase_topology_divergence.json",
+      "publication_revision_lineage": [
+        "08120d962358594e432f5f353870e16e272bbb654ad52dc618aeb4765b2bb1c5",
+        "26c4b03d2b5cde65b7422bf2ec248109c56b47826eb893bbb723778533273d21",
+        "6ad7281c2b747cb28a5b255e9885b191c6a5cfd5af4811697d534322dcef2384",
+        "c94f217559419734912ffc3d34171eafca1cc9569cfa8bd398c35d59a803617b"
+      ],
+      "release_generation_id": "gen_presentation",
+      "replay_chronology_descriptor": "Presentation and storyboard wave (E1)",
+      "replay_family": "showcase_topology_divergence",
+      "reviewer_category": "presentation",
       "sha256": "b651a46c6452deeb6b8c7acd23979168705ba76498bb0a97995b6efd95585ffe",
       "source_artifacts": [
         "fixtures/sa_r0/presentations/showcase_topology_divergence.json"
       ]
     },
     {
+      "chronology_group": "presentation_e1",
       "content_revision": "736b737ee96572bf1b57d63c903a27379335e596b0dd4aab827e65fb7b213574",
       "corpus_id": "sa_r0_corpus_r1",
       "derived_from": [
@@ -514,6 +783,9 @@
       ],
       "entry_id": "presentation_deck__walkthrough_assignment_instability",
       "entry_kind": "presentation_deck",
+      "evolution_tags": [
+        "presentation_derived"
+      ],
       "generation_revision": "7046c4cc93129d580185a0821b4e2b02581f28a6b89ccb5de96979ea0619b8b7",
       "generation_tool": "gen_e1_presentation_fixtures.py",
       "lineage_parent_ids": [
@@ -522,16 +794,32 @@
         "sweep_family__saturation_assignment_sweep",
         "sweep_family__valley_sensor_sweep"
       ],
+      "navigation_hint": "walkthrough assignment instability",
+      "navigation_tags": [
+        "presentation",
+        "storyboard"
+      ],
       "presentation_scope": {
         "storyboard_id": "walkthrough_assignment_instability"
       },
       "primary_artifact_path": "fixtures/sa_r0/presentations/walkthrough_assignment_instability.json",
+      "publication_revision_lineage": [
+        "08120d962358594e432f5f353870e16e272bbb654ad52dc618aeb4765b2bb1c5",
+        "26c4b03d2b5cde65b7422bf2ec248109c56b47826eb893bbb723778533273d21",
+        "6ad7281c2b747cb28a5b255e9885b191c6a5cfd5af4811697d534322dcef2384",
+        "c94f217559419734912ffc3d34171eafca1cc9569cfa8bd398c35d59a803617b"
+      ],
+      "release_generation_id": "gen_presentation",
+      "replay_chronology_descriptor": "Presentation and storyboard wave (E1)",
+      "replay_family": "walkthrough_assignment_instability",
+      "reviewer_category": "presentation",
       "sha256": "7046c4cc93129d580185a0821b4e2b02581f28a6b89ccb5de96979ea0619b8b7",
       "source_artifacts": [
         "fixtures/sa_r0/presentations/walkthrough_assignment_instability.json"
       ]
     },
     {
+      "chronology_group": "presentation_e1",
       "content_revision": "aaad5323e2e9b6d23e5770dd938144ebf35f49fc0cf733930454058cb2163595",
       "corpus_id": "sa_r0_corpus_r1",
       "derived_from": [
@@ -543,6 +831,9 @@
       ],
       "entry_id": "presentation_deck__walkthrough_valley_ingress_long",
       "entry_kind": "presentation_deck",
+      "evolution_tags": [
+        "presentation_derived"
+      ],
       "generation_revision": "bae9ff05959ab470275290f5a6e85e9908dc6d869c5456f5390b99224a5dd3ed",
       "generation_tool": "gen_e1_presentation_fixtures.py",
       "lineage_parent_ids": [
@@ -551,16 +842,32 @@
         "sweep_family__saturation_assignment_sweep",
         "sweep_family__valley_sensor_sweep"
       ],
+      "navigation_hint": "walkthrough valley ingress long",
+      "navigation_tags": [
+        "presentation",
+        "storyboard"
+      ],
       "presentation_scope": {
         "storyboard_id": "walkthrough_valley_ingress_long"
       },
       "primary_artifact_path": "fixtures/sa_r0/presentations/walkthrough_valley_ingress_long.json",
+      "publication_revision_lineage": [
+        "08120d962358594e432f5f353870e16e272bbb654ad52dc618aeb4765b2bb1c5",
+        "26c4b03d2b5cde65b7422bf2ec248109c56b47826eb893bbb723778533273d21",
+        "6ad7281c2b747cb28a5b255e9885b191c6a5cfd5af4811697d534322dcef2384",
+        "c94f217559419734912ffc3d34171eafca1cc9569cfa8bd398c35d59a803617b"
+      ],
+      "release_generation_id": "gen_presentation",
+      "replay_chronology_descriptor": "Presentation and storyboard wave (E1)",
+      "replay_family": "walkthrough_valley_ingress_long",
+      "reviewer_category": "presentation",
       "sha256": "bae9ff05959ab470275290f5a6e85e9908dc6d869c5456f5390b99224a5dd3ed",
       "source_artifacts": [
         "fixtures/sa_r0/presentations/walkthrough_valley_ingress_long.json"
       ]
     },
     {
+      "chronology_group": "export_e1",
       "content_revision": "e5edc7909523854621f8b6de2868cac622b2689123f6be60b7a89dcc4d5a1378",
       "corpus_id": "sa_r0_corpus_r1",
       "derived_from": [
@@ -572,6 +879,9 @@
       ],
       "entry_id": "publication_packet__delayed_detection_sweep_publication",
       "entry_kind": "publication_packet",
+      "evolution_tags": [
+        "publication_derived"
+      ],
       "export_scope": {
         "export_kinds": [
           "publication"
@@ -582,7 +892,19 @@
       "lineage_parent_ids": [
         "sweep_family__delayed_detection_sweep"
       ],
+      "navigation_hint": "delayed detection sweep publication",
+      "navigation_tags": [
+        "export",
+        "publication"
+      ],
       "primary_artifact_path": "fixtures/sa_r0/sweeps/delayed_detection_sweep/reports/replay_publication_report_v1.json",
+      "publication_revision_lineage": [
+        "26c4b03d2b5cde65b7422bf2ec248109c56b47826eb893bbb723778533273d21"
+      ],
+      "release_generation_id": "gen_export",
+      "replay_chronology_descriptor": "Static export and publication packets (E1)",
+      "replay_family": "delayed_detection_sweep",
+      "reviewer_category": "export",
       "sha256": "b0f379aa05da096c3a5db4c888e3ce6e1a07c93ae46c1fcb3b969844057791ba",
       "source_artifacts": [
         "fixtures/sa_r0/sweeps/delayed_detection_sweep/reports/replay_publication_report_v1.json"
@@ -592,6 +914,7 @@
       }
     },
     {
+      "chronology_group": "export_e1",
       "content_revision": "ca72597366b027e18217facdef0597eaab488dbd66c945e642fa2f47c746ea19",
       "corpus_id": "sa_r0_corpus_r1",
       "derived_from": [
@@ -603,6 +926,9 @@
       ],
       "entry_id": "publication_packet__ridge_overlap_sweep_publication",
       "entry_kind": "publication_packet",
+      "evolution_tags": [
+        "publication_derived"
+      ],
       "export_scope": {
         "export_kinds": [
           "publication"
@@ -613,7 +939,19 @@
       "lineage_parent_ids": [
         "sweep_family__ridge_overlap_sweep"
       ],
+      "navigation_hint": "ridge overlap sweep publication",
+      "navigation_tags": [
+        "export",
+        "publication"
+      ],
       "primary_artifact_path": "fixtures/sa_r0/sweeps/ridge_overlap_sweep/reports/replay_publication_report_v1.json",
+      "publication_revision_lineage": [
+        "c94f217559419734912ffc3d34171eafca1cc9569cfa8bd398c35d59a803617b"
+      ],
+      "release_generation_id": "gen_export",
+      "replay_chronology_descriptor": "Static export and publication packets (E1)",
+      "replay_family": "ridge_overlap_sweep",
+      "reviewer_category": "export",
       "sha256": "e37da53c6b5489314515ca0f1fdee2b23b9ba8fea8ee0b5539c5e2044d7ae2cf",
       "source_artifacts": [
         "fixtures/sa_r0/sweeps/ridge_overlap_sweep/reports/replay_publication_report_v1.json"
@@ -623,6 +961,7 @@
       }
     },
     {
+      "chronology_group": "export_e1",
       "content_revision": "f6d8f04a2bfb230edfa9bc54d0bef9c7d1ab1df4a087ff8396650e73c79a82b9",
       "corpus_id": "sa_r0_corpus_r1",
       "derived_from": [
@@ -634,6 +973,9 @@
       ],
       "entry_id": "publication_packet__saturation_assignment_sweep_publication",
       "entry_kind": "publication_packet",
+      "evolution_tags": [
+        "publication_derived"
+      ],
       "export_scope": {
         "export_kinds": [
           "publication"
@@ -644,7 +986,19 @@
       "lineage_parent_ids": [
         "sweep_family__saturation_assignment_sweep"
       ],
+      "navigation_hint": "saturation assignment sweep publication",
+      "navigation_tags": [
+        "export",
+        "publication"
+      ],
       "primary_artifact_path": "fixtures/sa_r0/sweeps/saturation_assignment_sweep/reports/replay_publication_report_v1.json",
+      "publication_revision_lineage": [
+        "6ad7281c2b747cb28a5b255e9885b191c6a5cfd5af4811697d534322dcef2384"
+      ],
+      "release_generation_id": "gen_export",
+      "replay_chronology_descriptor": "Static export and publication packets (E1)",
+      "replay_family": "saturation_assignment_sweep",
+      "reviewer_category": "export",
       "sha256": "be5ac9dc97834c5894e1f39dc9880c0ae97baa415aa9577199e12bf49be2a4dd",
       "source_artifacts": [
         "fixtures/sa_r0/sweeps/saturation_assignment_sweep/reports/replay_publication_report_v1.json"
@@ -654,6 +1008,7 @@
       }
     },
     {
+      "chronology_group": "export_e1",
       "content_revision": "3dee47db8511937f78ff6c236b755f34d5ff923f1bba6177fbd2f989381637ff",
       "corpus_id": "sa_r0_corpus_r1",
       "derived_from": [
@@ -665,6 +1020,9 @@
       ],
       "entry_id": "publication_packet__valley_sensor_sweep_publication",
       "entry_kind": "publication_packet",
+      "evolution_tags": [
+        "publication_derived"
+      ],
       "export_scope": {
         "export_kinds": [
           "publication"
@@ -675,7 +1033,19 @@
       "lineage_parent_ids": [
         "sweep_family__valley_sensor_sweep"
       ],
+      "navigation_hint": "valley sensor sweep publication",
+      "navigation_tags": [
+        "export",
+        "publication"
+      ],
       "primary_artifact_path": "fixtures/sa_r0/sweeps/valley_sensor_sweep/reports/replay_publication_report_v1.json",
+      "publication_revision_lineage": [
+        "08120d962358594e432f5f353870e16e272bbb654ad52dc618aeb4765b2bb1c5"
+      ],
+      "release_generation_id": "gen_export",
+      "replay_chronology_descriptor": "Static export and publication packets (E1)",
+      "replay_family": "valley_sensor_sweep",
+      "reviewer_category": "export",
       "sha256": "979882d99c5e1462b44a92097dcad98c2452cc7176a1c436aa5e1215f127b2b6",
       "source_artifacts": [
         "fixtures/sa_r0/sweeps/valley_sensor_sweep/reports/replay_publication_report_v1.json"
@@ -685,6 +1055,7 @@
       }
     },
     {
+      "chronology_group": "export_e1",
       "content_revision": "3a6d676190c76e0ccbfd337825dcd8d16a7919cd41c30c712a495025e11a7b74",
       "corpus_id": "sa_r0_corpus_r1",
       "derived_from": [
@@ -696,6 +1067,9 @@
       ],
       "entry_id": "replay_export__delayed_detection_sweep_compare",
       "entry_kind": "replay_export",
+      "evolution_tags": [
+        "regenerated_export"
+      ],
       "export_scope": {
         "export_kinds": [
           "compare"
@@ -706,7 +1080,19 @@
       "lineage_parent_ids": [
         "sweep_family__delayed_detection_sweep"
       ],
+      "navigation_hint": "delayed detection sweep compare",
+      "navigation_tags": [
+        "export",
+        "replay_export"
+      ],
       "primary_artifact_path": "fixtures/sa_r0/sweeps/delayed_detection_sweep/reports/replay_compare_report_v1.json",
+      "publication_revision_lineage": [
+        "26c4b03d2b5cde65b7422bf2ec248109c56b47826eb893bbb723778533273d21"
+      ],
+      "release_generation_id": "gen_export",
+      "replay_chronology_descriptor": "Static export and publication packets (E1)",
+      "replay_family": "delayed_detection_sweep",
+      "reviewer_category": "export",
       "sha256": "cdc253864c718a906de3c00fa09876f778e8bd884970edc8d7fe59085925be56",
       "source_artifacts": [
         "fixtures/sa_r0/sweeps/delayed_detection_sweep/reports/replay_compare_report_v1.json"
@@ -716,6 +1102,7 @@
       }
     },
     {
+      "chronology_group": "export_e1",
       "content_revision": "e38dacadf611489bfa2f452a73a8bff63b69b46a6baabf0f14e750a9b65975f0",
       "corpus_id": "sa_r0_corpus_r1",
       "derived_from": [
@@ -727,6 +1114,9 @@
       ],
       "entry_id": "replay_export__delayed_detection_sweep_presentation",
       "entry_kind": "replay_export",
+      "evolution_tags": [
+        "regenerated_export"
+      ],
       "export_scope": {
         "export_kinds": [
           "presentation"
@@ -737,7 +1127,19 @@
       "lineage_parent_ids": [
         "sweep_family__delayed_detection_sweep"
       ],
+      "navigation_hint": "delayed detection sweep presentation",
+      "navigation_tags": [
+        "export",
+        "replay_export"
+      ],
       "primary_artifact_path": "fixtures/sa_r0/sweeps/delayed_detection_sweep/reports/replay_presentation_report_v1.json",
+      "publication_revision_lineage": [
+        "26c4b03d2b5cde65b7422bf2ec248109c56b47826eb893bbb723778533273d21"
+      ],
+      "release_generation_id": "gen_export",
+      "replay_chronology_descriptor": "Static export and publication packets (E1)",
+      "replay_family": "delayed_detection_sweep",
+      "reviewer_category": "export",
       "sha256": "7649aad37fb8eb1fd2012ed3ce225e41510da27914db2567282a9104893dee49",
       "source_artifacts": [
         "fixtures/sa_r0/sweeps/delayed_detection_sweep/reports/replay_presentation_report_v1.json"
@@ -747,6 +1149,7 @@
       }
     },
     {
+      "chronology_group": "export_e1",
       "content_revision": "37fe41506f34f84f4e5fa68b11653d8afd4097573316fad3b7e1e467565f264a",
       "corpus_id": "sa_r0_corpus_r1",
       "derived_from": [
@@ -758,6 +1161,9 @@
       ],
       "entry_id": "replay_export__delayed_detection_sweep_review",
       "entry_kind": "replay_export",
+      "evolution_tags": [
+        "regenerated_export"
+      ],
       "export_scope": {
         "export_kinds": [
           "review"
@@ -768,7 +1174,19 @@
       "lineage_parent_ids": [
         "sweep_family__delayed_detection_sweep"
       ],
+      "navigation_hint": "delayed detection sweep review",
+      "navigation_tags": [
+        "export",
+        "replay_export"
+      ],
       "primary_artifact_path": "fixtures/sa_r0/sweeps/delayed_detection_sweep/reports/replay_review_report_v1.json",
+      "publication_revision_lineage": [
+        "26c4b03d2b5cde65b7422bf2ec248109c56b47826eb893bbb723778533273d21"
+      ],
+      "release_generation_id": "gen_export",
+      "replay_chronology_descriptor": "Static export and publication packets (E1)",
+      "replay_family": "delayed_detection_sweep",
+      "reviewer_category": "export",
       "sha256": "c80702d9a60034b64c914dfea37c7ee6bfe13ed95e54836a27b06e3f6475082c",
       "source_artifacts": [
         "fixtures/sa_r0/sweeps/delayed_detection_sweep/reports/replay_review_report_v1.json"
@@ -778,6 +1196,7 @@
       }
     },
     {
+      "chronology_group": "export_e1",
       "content_revision": "70bc797cfb964aa8246c130b5e065c4f4c3fe18f86acf676a6f7c6ef22151acd",
       "corpus_id": "sa_r0_corpus_r1",
       "derived_from": [
@@ -789,6 +1208,9 @@
       ],
       "entry_id": "replay_export__ridge_overlap_sweep_compare",
       "entry_kind": "replay_export",
+      "evolution_tags": [
+        "regenerated_export"
+      ],
       "export_scope": {
         "export_kinds": [
           "compare"
@@ -799,7 +1221,19 @@
       "lineage_parent_ids": [
         "sweep_family__ridge_overlap_sweep"
       ],
+      "navigation_hint": "ridge overlap sweep compare",
+      "navigation_tags": [
+        "export",
+        "replay_export"
+      ],
       "primary_artifact_path": "fixtures/sa_r0/sweeps/ridge_overlap_sweep/reports/replay_compare_report_v1.json",
+      "publication_revision_lineage": [
+        "c94f217559419734912ffc3d34171eafca1cc9569cfa8bd398c35d59a803617b"
+      ],
+      "release_generation_id": "gen_export",
+      "replay_chronology_descriptor": "Static export and publication packets (E1)",
+      "replay_family": "ridge_overlap_sweep",
+      "reviewer_category": "export",
       "sha256": "30282277535180eaf65287c254e1c36caa694f77ac3f00a1b23ab2edb6f76d5a",
       "source_artifacts": [
         "fixtures/sa_r0/sweeps/ridge_overlap_sweep/reports/replay_compare_report_v1.json"
@@ -809,6 +1243,7 @@
       }
     },
     {
+      "chronology_group": "export_e1",
       "content_revision": "1ed0e33b59dde847b938f07b3373c3a4c9d3da9ff3285abb9e675cc86a553f0e",
       "corpus_id": "sa_r0_corpus_r1",
       "derived_from": [
@@ -820,6 +1255,9 @@
       ],
       "entry_id": "replay_export__ridge_overlap_sweep_presentation",
       "entry_kind": "replay_export",
+      "evolution_tags": [
+        "regenerated_export"
+      ],
       "export_scope": {
         "export_kinds": [
           "presentation"
@@ -830,7 +1268,19 @@
       "lineage_parent_ids": [
         "sweep_family__ridge_overlap_sweep"
       ],
+      "navigation_hint": "ridge overlap sweep presentation",
+      "navigation_tags": [
+        "export",
+        "replay_export"
+      ],
       "primary_artifact_path": "fixtures/sa_r0/sweeps/ridge_overlap_sweep/reports/replay_presentation_report_v1.json",
+      "publication_revision_lineage": [
+        "c94f217559419734912ffc3d34171eafca1cc9569cfa8bd398c35d59a803617b"
+      ],
+      "release_generation_id": "gen_export",
+      "replay_chronology_descriptor": "Static export and publication packets (E1)",
+      "replay_family": "ridge_overlap_sweep",
+      "reviewer_category": "export",
       "sha256": "6d5c472a475981e72180b76f9e64c3af3827265647ac3b8162d6c68bd3864f3e",
       "source_artifacts": [
         "fixtures/sa_r0/sweeps/ridge_overlap_sweep/reports/replay_presentation_report_v1.json"
@@ -840,6 +1290,7 @@
       }
     },
     {
+      "chronology_group": "export_e1",
       "content_revision": "6fcaeb698506f202c8b9eeefc8a3060b353d52d07548c1450e2db218e5a40610",
       "corpus_id": "sa_r0_corpus_r1",
       "derived_from": [
@@ -851,6 +1302,9 @@
       ],
       "entry_id": "replay_export__ridge_overlap_sweep_review",
       "entry_kind": "replay_export",
+      "evolution_tags": [
+        "regenerated_export"
+      ],
       "export_scope": {
         "export_kinds": [
           "review"
@@ -861,7 +1315,19 @@
       "lineage_parent_ids": [
         "sweep_family__ridge_overlap_sweep"
       ],
+      "navigation_hint": "ridge overlap sweep review",
+      "navigation_tags": [
+        "export",
+        "replay_export"
+      ],
       "primary_artifact_path": "fixtures/sa_r0/sweeps/ridge_overlap_sweep/reports/replay_review_report_v1.json",
+      "publication_revision_lineage": [
+        "c94f217559419734912ffc3d34171eafca1cc9569cfa8bd398c35d59a803617b"
+      ],
+      "release_generation_id": "gen_export",
+      "replay_chronology_descriptor": "Static export and publication packets (E1)",
+      "replay_family": "ridge_overlap_sweep",
+      "reviewer_category": "export",
       "sha256": "fd891910edf93111c12ff0bd0f673f195b8cd2b38287ef6f41f7187819d204cc",
       "source_artifacts": [
         "fixtures/sa_r0/sweeps/ridge_overlap_sweep/reports/replay_review_report_v1.json"
@@ -871,6 +1337,7 @@
       }
     },
     {
+      "chronology_group": "export_e1",
       "content_revision": "58dba21eef0cd05450690c594559a87caf4e2a5ea42fd45bd155e593abebe519",
       "corpus_id": "sa_r0_corpus_r1",
       "derived_from": [
@@ -882,6 +1349,9 @@
       ],
       "entry_id": "replay_export__saturation_assignment_sweep_compare",
       "entry_kind": "replay_export",
+      "evolution_tags": [
+        "regenerated_export"
+      ],
       "export_scope": {
         "export_kinds": [
           "compare"
@@ -892,7 +1362,19 @@
       "lineage_parent_ids": [
         "sweep_family__saturation_assignment_sweep"
       ],
+      "navigation_hint": "saturation assignment sweep compare",
+      "navigation_tags": [
+        "export",
+        "replay_export"
+      ],
       "primary_artifact_path": "fixtures/sa_r0/sweeps/saturation_assignment_sweep/reports/replay_compare_report_v1.json",
+      "publication_revision_lineage": [
+        "6ad7281c2b747cb28a5b255e9885b191c6a5cfd5af4811697d534322dcef2384"
+      ],
+      "release_generation_id": "gen_export",
+      "replay_chronology_descriptor": "Static export and publication packets (E1)",
+      "replay_family": "saturation_assignment_sweep",
+      "reviewer_category": "export",
       "sha256": "fea9ca3d6d3cf794b8eaf0c3dd4c3983c3d4cb910563a74eed6aa44be63c70cc",
       "source_artifacts": [
         "fixtures/sa_r0/sweeps/saturation_assignment_sweep/reports/replay_compare_report_v1.json"
@@ -902,6 +1384,7 @@
       }
     },
     {
+      "chronology_group": "export_e1",
       "content_revision": "ebb6afcfe9ed4fd2433c40e4145384754014f60beb7471b523d83fc45473ff71",
       "corpus_id": "sa_r0_corpus_r1",
       "derived_from": [
@@ -913,6 +1396,9 @@
       ],
       "entry_id": "replay_export__saturation_assignment_sweep_presentation",
       "entry_kind": "replay_export",
+      "evolution_tags": [
+        "regenerated_export"
+      ],
       "export_scope": {
         "export_kinds": [
           "presentation"
@@ -923,7 +1409,19 @@
       "lineage_parent_ids": [
         "sweep_family__saturation_assignment_sweep"
       ],
+      "navigation_hint": "saturation assignment sweep presentation",
+      "navigation_tags": [
+        "export",
+        "replay_export"
+      ],
       "primary_artifact_path": "fixtures/sa_r0/sweeps/saturation_assignment_sweep/reports/replay_presentation_report_v1.json",
+      "publication_revision_lineage": [
+        "6ad7281c2b747cb28a5b255e9885b191c6a5cfd5af4811697d534322dcef2384"
+      ],
+      "release_generation_id": "gen_export",
+      "replay_chronology_descriptor": "Static export and publication packets (E1)",
+      "replay_family": "saturation_assignment_sweep",
+      "reviewer_category": "export",
       "sha256": "bb4fa0dbcd0a5dcb3816301641213fdc5fc950f18dd87e969ffdf9cbdf671636",
       "source_artifacts": [
         "fixtures/sa_r0/sweeps/saturation_assignment_sweep/reports/replay_presentation_report_v1.json"
@@ -933,6 +1431,7 @@
       }
     },
     {
+      "chronology_group": "export_e1",
       "content_revision": "ea3875775332bae89997c06644466e3dd400a9b0e534df18016690aeaf858277",
       "corpus_id": "sa_r0_corpus_r1",
       "derived_from": [
@@ -944,6 +1443,9 @@
       ],
       "entry_id": "replay_export__saturation_assignment_sweep_review",
       "entry_kind": "replay_export",
+      "evolution_tags": [
+        "regenerated_export"
+      ],
       "export_scope": {
         "export_kinds": [
           "review"
@@ -954,7 +1456,19 @@
       "lineage_parent_ids": [
         "sweep_family__saturation_assignment_sweep"
       ],
+      "navigation_hint": "saturation assignment sweep review",
+      "navigation_tags": [
+        "export",
+        "replay_export"
+      ],
       "primary_artifact_path": "fixtures/sa_r0/sweeps/saturation_assignment_sweep/reports/replay_review_report_v1.json",
+      "publication_revision_lineage": [
+        "6ad7281c2b747cb28a5b255e9885b191c6a5cfd5af4811697d534322dcef2384"
+      ],
+      "release_generation_id": "gen_export",
+      "replay_chronology_descriptor": "Static export and publication packets (E1)",
+      "replay_family": "saturation_assignment_sweep",
+      "reviewer_category": "export",
       "sha256": "74694af917ab46329a2749ce650e8bb0ae88c00b1b73642f23252e9a1ff092b1",
       "source_artifacts": [
         "fixtures/sa_r0/sweeps/saturation_assignment_sweep/reports/replay_review_report_v1.json"
@@ -964,6 +1478,7 @@
       }
     },
     {
+      "chronology_group": "export_e1",
       "content_revision": "1c435c046b05c1015a95ac06190452f0e2148f33ffc974326c38d74cf3d89baf",
       "corpus_id": "sa_r0_corpus_r1",
       "derived_from": [
@@ -975,6 +1490,9 @@
       ],
       "entry_id": "replay_export__valley_sensor_sweep_compare",
       "entry_kind": "replay_export",
+      "evolution_tags": [
+        "regenerated_export"
+      ],
       "export_scope": {
         "export_kinds": [
           "compare"
@@ -985,7 +1503,19 @@
       "lineage_parent_ids": [
         "sweep_family__valley_sensor_sweep"
       ],
+      "navigation_hint": "valley sensor sweep compare",
+      "navigation_tags": [
+        "export",
+        "replay_export"
+      ],
       "primary_artifact_path": "fixtures/sa_r0/sweeps/valley_sensor_sweep/reports/replay_compare_report_v1.json",
+      "publication_revision_lineage": [
+        "08120d962358594e432f5f353870e16e272bbb654ad52dc618aeb4765b2bb1c5"
+      ],
+      "release_generation_id": "gen_export",
+      "replay_chronology_descriptor": "Static export and publication packets (E1)",
+      "replay_family": "valley_sensor_sweep",
+      "reviewer_category": "export",
       "sha256": "e439bd6496e80bfa4cf6bed2727ee7f4bfc24d4b17cb9af9a5b5778e08b75c98",
       "source_artifacts": [
         "fixtures/sa_r0/sweeps/valley_sensor_sweep/reports/replay_compare_report_v1.json"
@@ -995,6 +1525,7 @@
       }
     },
     {
+      "chronology_group": "export_e1",
       "content_revision": "27ae19aa441712c5faf7a61ac2361b8e0c8c5749fac326e1d95772d81dbadc9a",
       "corpus_id": "sa_r0_corpus_r1",
       "derived_from": [
@@ -1006,6 +1537,9 @@
       ],
       "entry_id": "replay_export__valley_sensor_sweep_presentation",
       "entry_kind": "replay_export",
+      "evolution_tags": [
+        "regenerated_export"
+      ],
       "export_scope": {
         "export_kinds": [
           "presentation"
@@ -1016,7 +1550,19 @@
       "lineage_parent_ids": [
         "sweep_family__valley_sensor_sweep"
       ],
+      "navigation_hint": "valley sensor sweep presentation",
+      "navigation_tags": [
+        "export",
+        "replay_export"
+      ],
       "primary_artifact_path": "fixtures/sa_r0/sweeps/valley_sensor_sweep/reports/replay_presentation_report_v1.json",
+      "publication_revision_lineage": [
+        "08120d962358594e432f5f353870e16e272bbb654ad52dc618aeb4765b2bb1c5"
+      ],
+      "release_generation_id": "gen_export",
+      "replay_chronology_descriptor": "Static export and publication packets (E1)",
+      "replay_family": "valley_sensor_sweep",
+      "reviewer_category": "export",
       "sha256": "e6a470adb5ac4b75b0575dd26f9946806487afaa65f45590fbf4cedb8fbf1f9d",
       "source_artifacts": [
         "fixtures/sa_r0/sweeps/valley_sensor_sweep/reports/replay_presentation_report_v1.json"
@@ -1026,6 +1572,7 @@
       }
     },
     {
+      "chronology_group": "export_e1",
       "content_revision": "9fe4649760ec562962f0d63bec5cd8b6aa4a3ac32c828708124406aa0569fcc7",
       "corpus_id": "sa_r0_corpus_r1",
       "derived_from": [
@@ -1037,6 +1584,9 @@
       ],
       "entry_id": "replay_export__valley_sensor_sweep_review",
       "entry_kind": "replay_export",
+      "evolution_tags": [
+        "regenerated_export"
+      ],
       "export_scope": {
         "export_kinds": [
           "review"
@@ -1047,7 +1597,19 @@
       "lineage_parent_ids": [
         "sweep_family__valley_sensor_sweep"
       ],
+      "navigation_hint": "valley sensor sweep review",
+      "navigation_tags": [
+        "export",
+        "replay_export"
+      ],
       "primary_artifact_path": "fixtures/sa_r0/sweeps/valley_sensor_sweep/reports/replay_review_report_v1.json",
+      "publication_revision_lineage": [
+        "08120d962358594e432f5f353870e16e272bbb654ad52dc618aeb4765b2bb1c5"
+      ],
+      "release_generation_id": "gen_export",
+      "replay_chronology_descriptor": "Static export and publication packets (E1)",
+      "replay_family": "valley_sensor_sweep",
+      "reviewer_category": "export",
       "sha256": "1a1d020070f7c52b425202352dcf3b47733e0b1de5824183cab5f8b0de4527e6",
       "source_artifacts": [
         "fixtures/sa_r0/sweeps/valley_sensor_sweep/reports/replay_review_report_v1.json"
@@ -1057,7 +1619,8 @@
       }
     },
     {
-      "content_revision": "090e321f534fb019755689430c456a6863adb2d7b79a3868d2f6878a6b59502e",
+      "chronology_group": "corpus_release",
+      "content_revision": "63e9de79482e705f78206571810f9e73649e1bb0900f376ac08f90cb709f30bb",
       "corpus_id": "sa_r0_corpus_r1",
       "derived_from": [
         {
@@ -1068,7 +1631,10 @@
       ],
       "entry_id": "research_bundle__sa_r0_corpus_r1",
       "entry_kind": "research_bundle",
-      "generation_revision": "893b38c8e322e5506708efa2a5b1327abf2f177759bab557ceed9418bbe2ccea",
+      "evolution_tags": [
+        "corpus_aggregate"
+      ],
+      "generation_revision": "2125f9817134cfbb6bda3d0571a038033447e244105bce9385d7401096b71728",
       "generation_tool": "export_research_bundle.py",
       "lineage_parent_ids": [
         "publication_packet__valley_sensor_sweep_publication",
@@ -1080,13 +1646,33 @@
         "synthesis_report__cross_sweep_synthesis_v1",
         "synthesis_report__linkage_summary"
       ],
+      "navigation_hint": "Research bundle sa_r0_corpus_r1",
+      "navigation_tags": [
+        "corpus_ops",
+        "research_bundle"
+      ],
       "primary_artifact_path": "fixtures/sa_r0/research_bundles/sa_r0_corpus_r1/manifest.json",
-      "sha256": "893b38c8e322e5506708efa2a5b1327abf2f177759bab557ceed9418bbe2ccea",
+      "publication_revision_lineage": [
+        "08120d962358594e432f5f353870e16e272bbb654ad52dc618aeb4765b2bb1c5",
+        "26c4b03d2b5cde65b7422bf2ec248109c56b47826eb893bbb723778533273d21",
+        "3dee47db8511937f78ff6c236b755f34d5ff923f1bba6177fbd2f989381637ff",
+        "569051ec2bd7e681721045bced77d8779831f12d159bab350e24f68aaccba5de",
+        "57fb4c8e2c24cba9564db2db92e9aee10c20eed8874add6485f0763518cce02d",
+        "66e34a428600de0fac29f7f00d0cf445042b180ef4b8dd0f0f82e01490d89551",
+        "6ad7281c2b747cb28a5b255e9885b191c6a5cfd5af4811697d534322dcef2384",
+        "c94f217559419734912ffc3d34171eafca1cc9569cfa8bd398c35d59a803617b"
+      ],
+      "release_generation_id": "gen_corpus_ops",
+      "replay_chronology_descriptor": "Corpus release and research bundle",
+      "replay_family": "sa_r0_corpus_r1",
+      "reviewer_category": "corpus_ops",
+      "sha256": "2125f9817134cfbb6bda3d0571a038033447e244105bce9385d7401096b71728",
       "source_artifacts": [
         "fixtures/sa_r0/research_bundles/sa_r0_corpus_r1/manifest.json"
       ]
     },
     {
+      "chronology_group": "sweep_wave_d2",
       "content_revision": "26c4b03d2b5cde65b7422bf2ec248109c56b47826eb893bbb723778533273d21",
       "corpus_id": "sa_r0_corpus_r1",
       "derived_from": [
@@ -1098,13 +1684,27 @@
       ],
       "entry_id": "sweep_family__delayed_detection_sweep",
       "entry_kind": "sweep_family",
+      "evolution_tags": [],
       "generation_revision": "e6ff4f205c230bd7ea9489605fe18ceebd7f36679cc3a55bc359c3768a181ff3",
       "generation_tool": "gen_d2_sweep_fixtures.py",
       "lineage_parent_ids": [
         "demo_bundle__delayed_detection",
         "topology_experiment__delayed_detection"
       ],
+      "navigation_hint": "delayed detection sweep sweep family",
+      "navigation_tags": [
+        "mc_sweep",
+        "sweep"
+      ],
       "primary_artifact_path": "fixtures/sa_r0/sweeps/delayed_detection_sweep/sweep.json",
+      "publication_revision_lineage": [
+        "13558616c704cb77d7d004cc34b8cef793e8c94d33ef8a475b20671249ec5918",
+        "7be47220b2b45d97182dfb6f0509815411f4d2046fb64b3359accc054c453d06"
+      ],
+      "release_generation_id": "gen_sweep_d2",
+      "replay_chronology_descriptor": "Monte Carlo sweep generation (D2)",
+      "replay_family": "delayed_detection_sweep",
+      "reviewer_category": "sweep_experiment",
       "sha256": "e6ff4f205c230bd7ea9489605fe18ceebd7f36679cc3a55bc359c3768a181ff3",
       "source_artifacts": [
         "fixtures/sa_r0/sweeps/delayed_detection_sweep/sweep.json"
@@ -1121,6 +1721,7 @@
       }
     },
     {
+      "chronology_group": "sweep_wave_d2",
       "content_revision": "c94f217559419734912ffc3d34171eafca1cc9569cfa8bd398c35d59a803617b",
       "corpus_id": "sa_r0_corpus_r1",
       "derived_from": [
@@ -1147,6 +1748,7 @@
       ],
       "entry_id": "sweep_family__ridge_overlap_sweep",
       "entry_kind": "sweep_family",
+      "evolution_tags": [],
       "generation_revision": "18ec2ac13c40dcf56bf947b8cde618d9063ba7e9f4df44dc11aa30d570c31a46",
       "generation_tool": "gen_d2_sweep_fixtures.py",
       "lineage_parent_ids": [
@@ -1156,7 +1758,23 @@
         "topology_experiment__ridge_defense",
         "topology_experiment__valley_ingress"
       ],
+      "navigation_hint": "ridge overlap sweep sweep family",
+      "navigation_tags": [
+        "mc_sweep",
+        "sweep"
+      ],
       "primary_artifact_path": "fixtures/sa_r0/sweeps/ridge_overlap_sweep/sweep.json",
+      "publication_revision_lineage": [
+        "3c12c815f9971ee0660e879feaaa608eaea87d3982b85f78891fdf30bbc7f9b3",
+        "3f3afc8d4f14cee78ecbe62078ea71d684ac0752510539360456be215e0c25de",
+        "59edf86ae88c668d92bf244e10983f5e419614d13462893894c115dc65860a46",
+        "b985555a63bbbd062abe848730e4e4b8fb8bbdfa73e83f2e6efafd4df1db9c8c",
+        "de6d3aca9839960cff2753e8f500c9dee654a941cee661f2d93b50bc4559034d"
+      ],
+      "release_generation_id": "gen_sweep_d2",
+      "replay_chronology_descriptor": "Monte Carlo sweep generation (D2)",
+      "replay_family": "ridge_overlap_sweep",
+      "reviewer_category": "sweep_experiment",
       "sha256": "18ec2ac13c40dcf56bf947b8cde618d9063ba7e9f4df44dc11aa30d570c31a46",
       "source_artifacts": [
         "fixtures/sa_r0/sweeps/ridge_overlap_sweep/sweep.json"
@@ -1173,6 +1791,7 @@
       }
     },
     {
+      "chronology_group": "sweep_wave_d2",
       "content_revision": "6ad7281c2b747cb28a5b255e9885b191c6a5cfd5af4811697d534322dcef2384",
       "corpus_id": "sa_r0_corpus_r1",
       "derived_from": [
@@ -1189,6 +1808,7 @@
       ],
       "entry_id": "sweep_family__saturation_assignment_sweep",
       "entry_kind": "sweep_family",
+      "evolution_tags": [],
       "generation_revision": "90d841aa23ca06347f30c2a3cee90880831d18f77fdb063459d52a029feceaa7",
       "generation_tool": "gen_d2_sweep_fixtures.py",
       "lineage_parent_ids": [
@@ -1196,7 +1816,21 @@
         "topology_experiment__corridor_defense",
         "topology_experiment__saturation_ingress"
       ],
+      "navigation_hint": "saturation assignment sweep sweep family",
+      "navigation_tags": [
+        "mc_sweep",
+        "sweep"
+      ],
       "primary_artifact_path": "fixtures/sa_r0/sweeps/saturation_assignment_sweep/sweep.json",
+      "publication_revision_lineage": [
+        "7e5178130e15353f73cc96535cf0423dc5d3cd7bf5f760476a1b9f763c8ca029",
+        "b985555a63bbbd062abe848730e4e4b8fb8bbdfa73e83f2e6efafd4df1db9c8c",
+        "d040d95e9dd26ea8d9c5e9ac41858703b4cbe42a8f04fc0f726821b2fd7a5c59"
+      ],
+      "release_generation_id": "gen_sweep_d2",
+      "replay_chronology_descriptor": "Monte Carlo sweep generation (D2)",
+      "replay_family": "saturation_assignment_sweep",
+      "reviewer_category": "sweep_experiment",
       "sha256": "90d841aa23ca06347f30c2a3cee90880831d18f77fdb063459d52a029feceaa7",
       "source_artifacts": [
         "fixtures/sa_r0/sweeps/saturation_assignment_sweep/sweep.json"
@@ -1213,6 +1847,7 @@
       }
     },
     {
+      "chronology_group": "sweep_wave_d2",
       "content_revision": "08120d962358594e432f5f353870e16e272bbb654ad52dc618aeb4765b2bb1c5",
       "corpus_id": "sa_r0_corpus_r1",
       "derived_from": [
@@ -1244,6 +1879,7 @@
       ],
       "entry_id": "sweep_family__valley_sensor_sweep",
       "entry_kind": "sweep_family",
+      "evolution_tags": [],
       "generation_revision": "bde59229bfbc9e2dc4fd0f99b94cd5993ffba26742abddf96ec5ad245664115f",
       "generation_tool": "gen_d2_sweep_fixtures.py",
       "lineage_parent_ids": [
@@ -1254,7 +1890,24 @@
         "topology_experiment__valley_ingress_radar_shifted_north",
         "topology_experiment__valley_ingress_reduced_overlap_layout"
       ],
+      "navigation_hint": "valley sensor sweep sweep family",
+      "navigation_tags": [
+        "mc_sweep",
+        "sweep"
+      ],
       "primary_artifact_path": "fixtures/sa_r0/sweeps/valley_sensor_sweep/sweep.json",
+      "publication_revision_lineage": [
+        "2dbbefe9d5b11b53baf2bcb34124ca37db36d6cacb75fe0a77ca23019c503ca2",
+        "3c12c815f9971ee0660e879feaaa608eaea87d3982b85f78891fdf30bbc7f9b3",
+        "5804c7945abcc6cb1c1904ca7349b73c65c329566bc86dc7d3c5c941427e0001",
+        "59dbace7bee7a124c81a7dbfb1077d8fa39dc9c97491f46349d985f036590f39",
+        "91faf6f007aeb4fea1033c2f787fcb83e0ad0851e013a5416cf87cb4e86d4240",
+        "fdab03eacfa1d3f2d8718bd184b2e291f1c95f9d800bf635cdd64c1bfd1f87b8"
+      ],
+      "release_generation_id": "gen_sweep_d2",
+      "replay_chronology_descriptor": "Monte Carlo sweep generation (D2)",
+      "replay_family": "valley_sensor_sweep",
+      "reviewer_category": "sweep_experiment",
       "sha256": "bde59229bfbc9e2dc4fd0f99b94cd5993ffba26742abddf96ec5ad245664115f",
       "source_artifacts": [
         "fixtures/sa_r0/sweeps/valley_sensor_sweep/sweep.json"
@@ -1272,6 +1925,7 @@
       }
     },
     {
+      "chronology_group": "synthesis_e2",
       "content_revision": "4a73c284ab28021b2820d8eddfe3539ad8d58e258fe2d57e392074ef698a5475",
       "corpus_id": "sa_r0_corpus_r1",
       "derived_from": [
@@ -1283,6 +1937,9 @@
       ],
       "entry_id": "synthesis_report__cognition_rollup_summary",
       "entry_kind": "synthesis_report",
+      "evolution_tags": [
+        "synthesis_rollup"
+      ],
       "generation_revision": "b4fca43a93c2cb9668bd1a5bfeb552349fc3056644bf8ba6d6f51c7d4e2e6c1f",
       "generation_tool": "build_cross_sweep_synthesis.py",
       "lineage_parent_ids": [
@@ -1291,13 +1948,28 @@
         "sweep_family__saturation_assignment_sweep",
         "sweep_family__valley_sensor_sweep"
       ],
+      "navigation_hint": "Synthesis: cognition rollup summary",
+      "navigation_tags": [
+        "synthesis"
+      ],
       "primary_artifact_path": "fixtures/sa_r0/synthesis/cognition_rollup_summary.md",
+      "publication_revision_lineage": [
+        "08120d962358594e432f5f353870e16e272bbb654ad52dc618aeb4765b2bb1c5",
+        "26c4b03d2b5cde65b7422bf2ec248109c56b47826eb893bbb723778533273d21",
+        "6ad7281c2b747cb28a5b255e9885b191c6a5cfd5af4811697d534322dcef2384",
+        "c94f217559419734912ffc3d34171eafca1cc9569cfa8bd398c35d59a803617b"
+      ],
+      "release_generation_id": "gen_synthesis",
+      "replay_chronology_descriptor": "Cross-sweep synthesis wave (E2)",
+      "replay_family": "cognition_rollup_summary",
+      "reviewer_category": "synthesis",
       "sha256": "b4fca43a93c2cb9668bd1a5bfeb552349fc3056644bf8ba6d6f51c7d4e2e6c1f",
       "source_artifacts": [
         "fixtures/sa_r0/synthesis/cognition_rollup_summary.md"
       ]
     },
     {
+      "chronology_group": "synthesis_e2",
       "content_revision": "569051ec2bd7e681721045bced77d8779831f12d159bab350e24f68aaccba5de",
       "corpus_id": "sa_r0_corpus_r1",
       "derived_from": [
@@ -1309,6 +1981,9 @@
       ],
       "entry_id": "synthesis_report__cross_sweep_summary",
       "entry_kind": "synthesis_report",
+      "evolution_tags": [
+        "synthesis_rollup"
+      ],
       "generation_revision": "6ebe666ff7ef403bec176598b38b880a2a2c2fa7be1fc2c46ec05d5e017b77f7",
       "generation_tool": "build_cross_sweep_synthesis.py",
       "lineage_parent_ids": [
@@ -1317,13 +1992,28 @@
         "sweep_family__saturation_assignment_sweep",
         "sweep_family__valley_sensor_sweep"
       ],
+      "navigation_hint": "Synthesis: cross sweep summary",
+      "navigation_tags": [
+        "synthesis"
+      ],
       "primary_artifact_path": "fixtures/sa_r0/synthesis/cross_sweep_summary.md",
+      "publication_revision_lineage": [
+        "08120d962358594e432f5f353870e16e272bbb654ad52dc618aeb4765b2bb1c5",
+        "26c4b03d2b5cde65b7422bf2ec248109c56b47826eb893bbb723778533273d21",
+        "6ad7281c2b747cb28a5b255e9885b191c6a5cfd5af4811697d534322dcef2384",
+        "c94f217559419734912ffc3d34171eafca1cc9569cfa8bd398c35d59a803617b"
+      ],
+      "release_generation_id": "gen_synthesis",
+      "replay_chronology_descriptor": "Cross-sweep synthesis wave (E2)",
+      "replay_family": "cross_sweep",
+      "reviewer_category": "synthesis",
       "sha256": "6ebe666ff7ef403bec176598b38b880a2a2c2fa7be1fc2c46ec05d5e017b77f7",
       "source_artifacts": [
         "fixtures/sa_r0/synthesis/cross_sweep_summary.md"
       ]
     },
     {
+      "chronology_group": "synthesis_e2",
       "content_revision": "57fb4c8e2c24cba9564db2db92e9aee10c20eed8874add6485f0763518cce02d",
       "corpus_id": "sa_r0_corpus_r1",
       "derived_from": [
@@ -1335,6 +2025,9 @@
       ],
       "entry_id": "synthesis_report__cross_sweep_synthesis_v1",
       "entry_kind": "synthesis_report",
+      "evolution_tags": [
+        "synthesis_rollup"
+      ],
       "generation_revision": "0d7119dca50cf0e43648201dc6ef0e4bb9a8c5ecd7cc3905b89bd93cf6fc1b17",
       "generation_tool": "build_cross_sweep_synthesis.py",
       "lineage_parent_ids": [
@@ -1343,7 +2036,21 @@
         "sweep_family__saturation_assignment_sweep",
         "sweep_family__valley_sensor_sweep"
       ],
+      "navigation_hint": "Synthesis: cross sweep synthesis v1",
+      "navigation_tags": [
+        "synthesis"
+      ],
       "primary_artifact_path": "fixtures/sa_r0/synthesis/cross_sweep_synthesis_v1.json",
+      "publication_revision_lineage": [
+        "08120d962358594e432f5f353870e16e272bbb654ad52dc618aeb4765b2bb1c5",
+        "26c4b03d2b5cde65b7422bf2ec248109c56b47826eb893bbb723778533273d21",
+        "6ad7281c2b747cb28a5b255e9885b191c6a5cfd5af4811697d534322dcef2384",
+        "c94f217559419734912ffc3d34171eafca1cc9569cfa8bd398c35d59a803617b"
+      ],
+      "release_generation_id": "gen_synthesis",
+      "replay_chronology_descriptor": "Cross-sweep synthesis wave (E2)",
+      "replay_family": "cross_sweep",
+      "reviewer_category": "synthesis",
       "sha256": "0d7119dca50cf0e43648201dc6ef0e4bb9a8c5ecd7cc3905b89bd93cf6fc1b17",
       "source_artifacts": [
         "fixtures/sa_r0/synthesis/cross_sweep_synthesis_v1.json"
@@ -1358,6 +2065,7 @@
       }
     },
     {
+      "chronology_group": "synthesis_e2",
       "content_revision": "66e34a428600de0fac29f7f00d0cf445042b180ef4b8dd0f0f82e01490d89551",
       "corpus_id": "sa_r0_corpus_r1",
       "derived_from": [
@@ -1369,6 +2077,9 @@
       ],
       "entry_id": "synthesis_report__linkage_summary",
       "entry_kind": "synthesis_report",
+      "evolution_tags": [
+        "synthesis_rollup"
+      ],
       "generation_revision": "24bc1a0d74afbe49403f94bd77133806638ccc9ead742735a1a67e425f9d581e",
       "generation_tool": "build_cross_sweep_synthesis.py",
       "lineage_parent_ids": [
@@ -1377,13 +2088,28 @@
         "sweep_family__saturation_assignment_sweep",
         "sweep_family__valley_sensor_sweep"
       ],
+      "navigation_hint": "Synthesis: linkage summary",
+      "navigation_tags": [
+        "synthesis"
+      ],
       "primary_artifact_path": "fixtures/sa_r0/synthesis/linkage_summary.md",
+      "publication_revision_lineage": [
+        "08120d962358594e432f5f353870e16e272bbb654ad52dc618aeb4765b2bb1c5",
+        "26c4b03d2b5cde65b7422bf2ec248109c56b47826eb893bbb723778533273d21",
+        "6ad7281c2b747cb28a5b255e9885b191c6a5cfd5af4811697d534322dcef2384",
+        "c94f217559419734912ffc3d34171eafca1cc9569cfa8bd398c35d59a803617b"
+      ],
+      "release_generation_id": "gen_synthesis",
+      "replay_chronology_descriptor": "Cross-sweep synthesis wave (E2)",
+      "replay_family": "cross_sweep",
+      "reviewer_category": "synthesis",
       "sha256": "24bc1a0d74afbe49403f94bd77133806638ccc9ead742735a1a67e425f9d581e",
       "source_artifacts": [
         "fixtures/sa_r0/synthesis/linkage_summary.md"
       ]
     },
     {
+      "chronology_group": "synthesis_e2",
       "content_revision": "d38108952a80b8f2c9a18b6d45b7f734ebdf185535978dfd5e4892395eec18cd",
       "corpus_id": "sa_r0_corpus_r1",
       "derived_from": [
@@ -1395,6 +2121,9 @@
       ],
       "entry_id": "synthesis_report__presentation_assets_index_v1",
       "entry_kind": "synthesis_report",
+      "evolution_tags": [
+        "synthesis_rollup"
+      ],
       "generation_revision": "f8a057aecea462b7190b17a27e9d309d80c76bb29fdcd3197e13aeca4c376237",
       "generation_tool": "gen_presentation_assets.py",
       "lineage_parent_ids": [
@@ -1402,6 +2131,10 @@
         "sweep_family__ridge_overlap_sweep",
         "sweep_family__saturation_assignment_sweep",
         "sweep_family__valley_sensor_sweep"
+      ],
+      "navigation_hint": "Synthesis: presentation assets index v1",
+      "navigation_tags": [
+        "synthesis"
       ],
       "presentation_scope": {
         "asset_kinds": [
@@ -1411,12 +2144,23 @@
         ]
       },
       "primary_artifact_path": "fixtures/sa_r0/synthesis/assets/index.json",
+      "publication_revision_lineage": [
+        "08120d962358594e432f5f353870e16e272bbb654ad52dc618aeb4765b2bb1c5",
+        "26c4b03d2b5cde65b7422bf2ec248109c56b47826eb893bbb723778533273d21",
+        "6ad7281c2b747cb28a5b255e9885b191c6a5cfd5af4811697d534322dcef2384",
+        "c94f217559419734912ffc3d34171eafca1cc9569cfa8bd398c35d59a803617b"
+      ],
+      "release_generation_id": "gen_synthesis",
+      "replay_chronology_descriptor": "Cross-sweep synthesis wave (E2)",
+      "replay_family": "presentation_assets_index_v1",
+      "reviewer_category": "synthesis",
       "sha256": "f8a057aecea462b7190b17a27e9d309d80c76bb29fdcd3197e13aeca4c376237",
       "source_artifacts": [
         "fixtures/sa_r0/synthesis/assets/index.json"
       ]
     },
     {
+      "chronology_group": "synthesis_e2",
       "content_revision": "2a839a098689c06ba601f2588fcdfbf2fc4d12653457c9d0a739e0a155a88fbf",
       "corpus_id": "sa_r0_corpus_r1",
       "derived_from": [
@@ -1428,6 +2172,9 @@
       ],
       "entry_id": "synthesis_report__replay_linkage_index_v1",
       "entry_kind": "synthesis_report",
+      "evolution_tags": [
+        "synthesis_rollup"
+      ],
       "generation_revision": "8395ea5685702b9042f03af97a8bb8a180f29ac9d112ef8f2046cb58c22f6806",
       "generation_tool": "build_replay_linkage.py",
       "lineage_parent_ids": [
@@ -1436,7 +2183,21 @@
         "sweep_family__saturation_assignment_sweep",
         "sweep_family__valley_sensor_sweep"
       ],
+      "navigation_hint": "Synthesis: replay linkage index v1",
+      "navigation_tags": [
+        "synthesis"
+      ],
       "primary_artifact_path": "fixtures/sa_r0/synthesis/replay_linkage_index_v1.json",
+      "publication_revision_lineage": [
+        "08120d962358594e432f5f353870e16e272bbb654ad52dc618aeb4765b2bb1c5",
+        "26c4b03d2b5cde65b7422bf2ec248109c56b47826eb893bbb723778533273d21",
+        "6ad7281c2b747cb28a5b255e9885b191c6a5cfd5af4811697d534322dcef2384",
+        "c94f217559419734912ffc3d34171eafca1cc9569cfa8bd398c35d59a803617b"
+      ],
+      "release_generation_id": "gen_synthesis",
+      "replay_chronology_descriptor": "Cross-sweep synthesis wave (E2)",
+      "replay_family": "cross_sweep",
+      "reviewer_category": "synthesis",
       "sha256": "8395ea5685702b9042f03af97a8bb8a180f29ac9d112ef8f2046cb58c22f6806",
       "source_artifacts": [
         "fixtures/sa_r0/synthesis/replay_linkage_index_v1.json"
@@ -1451,6 +2212,7 @@
       }
     },
     {
+      "chronology_group": "topology_baseline",
       "content_revision": "b985555a63bbbd062abe848730e4e4b8fb8bbdfa73e83f2e6efafd4df1db9c8c",
       "corpus_id": "sa_r0_corpus_r1",
       "derived_from": [
@@ -1462,19 +2224,32 @@
       ],
       "entry_id": "topology_experiment__corridor_defense",
       "entry_kind": "topology_experiment",
+      "evolution_tags": [
+        "first_generation"
+      ],
       "generation_revision": "d76d42eb2a16280b814ce14fb0bb80347c60ef4c64d0f2b73a37813fcddd9b00",
       "generation_tool": "validate_scenario.py",
       "lineage_parent_ids": [],
+      "navigation_hint": "corridor defense",
+      "navigation_tags": [
+        "topology"
+      ],
       "primary_artifact_path": "fixtures/scenarios/corridor_defense/metadata.json",
+      "publication_revision_lineage": [],
+      "release_generation_id": "gen_topology",
+      "replay_chronology_descriptor": "Topology experiment baseline",
+      "replay_family": "corridor_defense",
       "replay_scope": {
         "pack_id": "corridor_defense"
       },
+      "reviewer_category": "topology_lab",
       "sha256": "d76d42eb2a16280b814ce14fb0bb80347c60ef4c64d0f2b73a37813fcddd9b00",
       "source_artifacts": [
         "fixtures/scenarios/corridor_defense/metadata.json"
       ]
     },
     {
+      "chronology_group": "topology_baseline",
       "content_revision": "7be47220b2b45d97182dfb6f0509815411f4d2046fb64b3359accc054c453d06",
       "corpus_id": "sa_r0_corpus_r1",
       "derived_from": [
@@ -1486,19 +2261,32 @@
       ],
       "entry_id": "topology_experiment__delayed_detection",
       "entry_kind": "topology_experiment",
+      "evolution_tags": [
+        "first_generation"
+      ],
       "generation_revision": "eeab83e4f65f46e2d175f19d3c8617bb016dd269165df5b636e019eb80c75c7a",
       "generation_tool": "validate_scenario.py",
       "lineage_parent_ids": [],
+      "navigation_hint": "delayed detection",
+      "navigation_tags": [
+        "topology"
+      ],
       "primary_artifact_path": "fixtures/scenarios/delayed_detection/metadata.json",
+      "publication_revision_lineage": [],
+      "release_generation_id": "gen_topology",
+      "replay_chronology_descriptor": "Topology experiment baseline",
+      "replay_family": "delayed_detection",
       "replay_scope": {
         "pack_id": "delayed_detection"
       },
+      "reviewer_category": "topology_lab",
       "sha256": "eeab83e4f65f46e2d175f19d3c8617bb016dd269165df5b636e019eb80c75c7a",
       "source_artifacts": [
         "fixtures/scenarios/delayed_detection/metadata.json"
       ]
     },
     {
+      "chronology_group": "topology_baseline",
       "content_revision": "c06ca2397569842a87fcac3e5da5162cad0783ad3dc58bd420288efabc21ce04",
       "corpus_id": "sa_r0_corpus_r1",
       "derived_from": [
@@ -1510,19 +2298,32 @@
       ],
       "entry_id": "topology_experiment__long_range_ingress",
       "entry_kind": "topology_experiment",
+      "evolution_tags": [
+        "first_generation"
+      ],
       "generation_revision": "117f998dd03e9d12d634128c777c5a105aaeadedad4c063532927465f4697e8d",
       "generation_tool": "validate_scenario.py",
       "lineage_parent_ids": [],
+      "navigation_hint": "long range ingress",
+      "navigation_tags": [
+        "topology"
+      ],
       "primary_artifact_path": "fixtures/scenarios/long_range_ingress/metadata.json",
+      "publication_revision_lineage": [],
+      "release_generation_id": "gen_topology",
+      "replay_chronology_descriptor": "Topology experiment baseline",
+      "replay_family": "long_range_ingress",
       "replay_scope": {
         "pack_id": "long_range_ingress"
       },
+      "reviewer_category": "topology_lab",
       "sha256": "117f998dd03e9d12d634128c777c5a105aaeadedad4c063532927465f4697e8d",
       "source_artifacts": [
         "fixtures/scenarios/long_range_ingress/metadata.json"
       ]
     },
     {
+      "chronology_group": "topology_baseline",
       "content_revision": "59edf86ae88c668d92bf244e10983f5e419614d13462893894c115dc65860a46",
       "corpus_id": "sa_r0_corpus_r1",
       "derived_from": [
@@ -1534,19 +2335,32 @@
       ],
       "entry_id": "topology_experiment__multi_ridge",
       "entry_kind": "topology_experiment",
+      "evolution_tags": [
+        "first_generation"
+      ],
       "generation_revision": "f3c5297255dbaeeeffbc989a7f9de2d5073f0cfc1d5f6148b56b92afe3b1b92a",
       "generation_tool": "validate_scenario.py",
       "lineage_parent_ids": [],
+      "navigation_hint": "multi ridge",
+      "navigation_tags": [
+        "topology"
+      ],
       "primary_artifact_path": "fixtures/scenarios/multi_ridge/metadata.json",
+      "publication_revision_lineage": [],
+      "release_generation_id": "gen_topology",
+      "replay_chronology_descriptor": "Topology experiment baseline",
+      "replay_family": "multi_ridge",
       "replay_scope": {
         "pack_id": "multi_ridge"
       },
+      "reviewer_category": "topology_lab",
       "sha256": "f3c5297255dbaeeeffbc989a7f9de2d5073f0cfc1d5f6148b56b92afe3b1b92a",
       "source_artifacts": [
         "fixtures/scenarios/multi_ridge/metadata.json"
       ]
     },
     {
+      "chronology_group": "topology_baseline",
       "content_revision": "3f3afc8d4f14cee78ecbe62078ea71d684ac0752510539360456be215e0c25de",
       "corpus_id": "sa_r0_corpus_r1",
       "derived_from": [
@@ -1558,19 +2372,32 @@
       ],
       "entry_id": "topology_experiment__ridge_defense",
       "entry_kind": "topology_experiment",
+      "evolution_tags": [
+        "first_generation"
+      ],
       "generation_revision": "7fbe8360051669c02ad1ebfa3be27d36161a603525866873541e2354fb43ade7",
       "generation_tool": "validate_scenario.py",
       "lineage_parent_ids": [],
+      "navigation_hint": "ridge defense",
+      "navigation_tags": [
+        "topology"
+      ],
       "primary_artifact_path": "fixtures/scenarios/ridge_defense/metadata.json",
+      "publication_revision_lineage": [],
+      "release_generation_id": "gen_topology",
+      "replay_chronology_descriptor": "Topology experiment baseline",
+      "replay_family": "ridge_defense",
       "replay_scope": {
         "pack_id": "ridge_defense"
       },
+      "reviewer_category": "topology_lab",
       "sha256": "7fbe8360051669c02ad1ebfa3be27d36161a603525866873541e2354fb43ade7",
       "source_artifacts": [
         "fixtures/scenarios/ridge_defense/metadata.json"
       ]
     },
     {
+      "chronology_group": "topology_baseline",
       "content_revision": "d040d95e9dd26ea8d9c5e9ac41858703b4cbe42a8f04fc0f726821b2fd7a5c59",
       "corpus_id": "sa_r0_corpus_r1",
       "derived_from": [
@@ -1582,19 +2409,32 @@
       ],
       "entry_id": "topology_experiment__saturation_ingress",
       "entry_kind": "topology_experiment",
+      "evolution_tags": [
+        "first_generation"
+      ],
       "generation_revision": "3d684fc385f6512ccbf0d6c82cc2da1f182100cef558ec9d755bcba23d6abc02",
       "generation_tool": "validate_scenario.py",
       "lineage_parent_ids": [],
+      "navigation_hint": "saturation ingress",
+      "navigation_tags": [
+        "topology"
+      ],
       "primary_artifact_path": "fixtures/scenarios/saturation_ingress/metadata.json",
+      "publication_revision_lineage": [],
+      "release_generation_id": "gen_topology",
+      "replay_chronology_descriptor": "Topology experiment baseline",
+      "replay_family": "saturation_ingress",
       "replay_scope": {
         "pack_id": "saturation_ingress"
       },
+      "reviewer_category": "topology_lab",
       "sha256": "3d684fc385f6512ccbf0d6c82cc2da1f182100cef558ec9d755bcba23d6abc02",
       "source_artifacts": [
         "fixtures/scenarios/saturation_ingress/metadata.json"
       ]
     },
     {
+      "chronology_group": "topology_baseline",
       "content_revision": "40fad588543557cfe01afaf8f0c5bf35293ff69682440814696b07387d197cb6",
       "corpus_id": "sa_r0_corpus_r1",
       "derived_from": [
@@ -1606,19 +2446,32 @@
       ],
       "entry_id": "topology_experiment__urban_masking",
       "entry_kind": "topology_experiment",
+      "evolution_tags": [
+        "first_generation"
+      ],
       "generation_revision": "3909f2859c6ff451c05b9e59aa94ce757cde7736898fa347db0b1e2368b030bd",
       "generation_tool": "validate_scenario.py",
       "lineage_parent_ids": [],
+      "navigation_hint": "urban masking",
+      "navigation_tags": [
+        "topology"
+      ],
       "primary_artifact_path": "fixtures/scenarios/urban_masking/metadata.json",
+      "publication_revision_lineage": [],
+      "release_generation_id": "gen_topology",
+      "replay_chronology_descriptor": "Topology experiment baseline",
+      "replay_family": "urban_masking",
       "replay_scope": {
         "pack_id": "urban_masking"
       },
+      "reviewer_category": "topology_lab",
       "sha256": "3909f2859c6ff451c05b9e59aa94ce757cde7736898fa347db0b1e2368b030bd",
       "source_artifacts": [
         "fixtures/scenarios/urban_masking/metadata.json"
       ]
     },
     {
+      "chronology_group": "topology_baseline",
       "content_revision": "3c12c815f9971ee0660e879feaaa608eaea87d3982b85f78891fdf30bbc7f9b3",
       "corpus_id": "sa_r0_corpus_r1",
       "derived_from": [
@@ -1630,19 +2483,32 @@
       ],
       "entry_id": "topology_experiment__valley_ingress",
       "entry_kind": "topology_experiment",
+      "evolution_tags": [
+        "first_generation"
+      ],
       "generation_revision": "67097b8e33c1d0c6548c840c67a8a7a730aecdfb9e4be1ed0891a0a87343d302",
       "generation_tool": "validate_scenario.py",
       "lineage_parent_ids": [],
+      "navigation_hint": "valley ingress",
+      "navigation_tags": [
+        "topology"
+      ],
       "primary_artifact_path": "fixtures/scenarios/valley_ingress/metadata.json",
+      "publication_revision_lineage": [],
+      "release_generation_id": "gen_topology",
+      "replay_chronology_descriptor": "Topology experiment baseline",
+      "replay_family": "valley_ingress",
       "replay_scope": {
         "pack_id": "valley_ingress"
       },
+      "reviewer_category": "topology_lab",
       "sha256": "67097b8e33c1d0c6548c840c67a8a7a730aecdfb9e4be1ed0891a0a87343d302",
       "source_artifacts": [
         "fixtures/scenarios/valley_ingress/metadata.json"
       ]
     },
     {
+      "chronology_group": "topology_baseline",
       "content_revision": "2dbbefe9d5b11b53baf2bcb34124ca37db36d6cacb75fe0a77ca23019c503ca2",
       "corpus_id": "sa_r0_corpus_r1",
       "derived_from": [
@@ -1654,19 +2520,32 @@
       ],
       "entry_id": "topology_experiment__valley_ingress_delayed_interceptor_base",
       "entry_kind": "topology_experiment",
+      "evolution_tags": [
+        "first_generation"
+      ],
       "generation_revision": "5171c548f3dce55c069b667df75ff2818bd6dfbbe24dc4dbd63699d1557c5f3d",
       "generation_tool": "validate_scenario.py",
       "lineage_parent_ids": [],
+      "navigation_hint": "valley ingress delayed interceptor base",
+      "navigation_tags": [
+        "topology"
+      ],
       "primary_artifact_path": "fixtures/scenarios/valley_ingress_delayed_interceptor_base/metadata.json",
+      "publication_revision_lineage": [],
+      "release_generation_id": "gen_topology",
+      "replay_chronology_descriptor": "Topology experiment baseline",
+      "replay_family": "valley_ingress_delayed_interceptor_base",
       "replay_scope": {
         "pack_id": "valley_ingress_delayed_interceptor_base"
       },
+      "reviewer_category": "topology_lab",
       "sha256": "5171c548f3dce55c069b667df75ff2818bd6dfbbe24dc4dbd63699d1557c5f3d",
       "source_artifacts": [
         "fixtures/scenarios/valley_ingress_delayed_interceptor_base/metadata.json"
       ]
     },
     {
+      "chronology_group": "topology_baseline",
       "content_revision": "fdab03eacfa1d3f2d8718bd184b2e291f1c95f9d800bf635cdd64c1bfd1f87b8",
       "corpus_id": "sa_r0_corpus_r1",
       "derived_from": [
@@ -1678,19 +2557,32 @@
       ],
       "entry_id": "topology_experiment__valley_ingress_extra_valley_sensor",
       "entry_kind": "topology_experiment",
+      "evolution_tags": [
+        "first_generation"
+      ],
       "generation_revision": "83d325139772ac51a21e375179469b6b5b56f03a8b0dc22c02e548a6186663ec",
       "generation_tool": "validate_scenario.py",
       "lineage_parent_ids": [],
+      "navigation_hint": "valley ingress extra valley sensor",
+      "navigation_tags": [
+        "topology"
+      ],
       "primary_artifact_path": "fixtures/scenarios/valley_ingress_extra_valley_sensor/metadata.json",
+      "publication_revision_lineage": [],
+      "release_generation_id": "gen_topology",
+      "replay_chronology_descriptor": "Topology experiment baseline",
+      "replay_family": "valley_ingress_extra_valley_sensor",
       "replay_scope": {
         "pack_id": "valley_ingress_extra_valley_sensor"
       },
+      "reviewer_category": "topology_lab",
       "sha256": "83d325139772ac51a21e375179469b6b5b56f03a8b0dc22c02e548a6186663ec",
       "source_artifacts": [
         "fixtures/scenarios/valley_ingress_extra_valley_sensor/metadata.json"
       ]
     },
     {
+      "chronology_group": "topology_baseline",
       "content_revision": "91faf6f007aeb4fea1033c2f787fcb83e0ad0851e013a5416cf87cb4e86d4240",
       "corpus_id": "sa_r0_corpus_r1",
       "derived_from": [
@@ -1702,19 +2594,32 @@
       ],
       "entry_id": "topology_experiment__valley_ingress_radar_shifted_north",
       "entry_kind": "topology_experiment",
+      "evolution_tags": [
+        "first_generation"
+      ],
       "generation_revision": "1cd80ea740ce1c04ac1219a31ab39c71e98535fe884ca2800689b1ed20460bd3",
       "generation_tool": "validate_scenario.py",
       "lineage_parent_ids": [],
+      "navigation_hint": "valley ingress radar shifted north",
+      "navigation_tags": [
+        "topology"
+      ],
       "primary_artifact_path": "fixtures/scenarios/valley_ingress_radar_shifted_north/metadata.json",
+      "publication_revision_lineage": [],
+      "release_generation_id": "gen_topology",
+      "replay_chronology_descriptor": "Topology experiment baseline",
+      "replay_family": "valley_ingress_radar_shifted_north",
       "replay_scope": {
         "pack_id": "valley_ingress_radar_shifted_north"
       },
+      "reviewer_category": "topology_lab",
       "sha256": "1cd80ea740ce1c04ac1219a31ab39c71e98535fe884ca2800689b1ed20460bd3",
       "source_artifacts": [
         "fixtures/scenarios/valley_ingress_radar_shifted_north/metadata.json"
       ]
     },
     {
+      "chronology_group": "topology_baseline",
       "content_revision": "5804c7945abcc6cb1c1904ca7349b73c65c329566bc86dc7d3c5c941427e0001",
       "corpus_id": "sa_r0_corpus_r1",
       "derived_from": [
@@ -1726,13 +2631,25 @@
       ],
       "entry_id": "topology_experiment__valley_ingress_reduced_overlap_layout",
       "entry_kind": "topology_experiment",
+      "evolution_tags": [
+        "first_generation"
+      ],
       "generation_revision": "fdac30fe037e8bf2327a22dd769f5c405cdd5d6e963b0625f8fceadb440cd466",
       "generation_tool": "validate_scenario.py",
       "lineage_parent_ids": [],
+      "navigation_hint": "valley ingress reduced overlap layout",
+      "navigation_tags": [
+        "topology"
+      ],
       "primary_artifact_path": "fixtures/scenarios/valley_ingress_reduced_overlap_layout/metadata.json",
+      "publication_revision_lineage": [],
+      "release_generation_id": "gen_topology",
+      "replay_chronology_descriptor": "Topology experiment baseline",
+      "replay_family": "valley_ingress_reduced_overlap_layout",
       "replay_scope": {
         "pack_id": "valley_ingress_reduced_overlap_layout"
       },
+      "reviewer_category": "topology_lab",
       "sha256": "fdac30fe037e8bf2327a22dd769f5c405cdd5d6e963b0625f8fceadb440cd466",
       "source_artifacts": [
         "fixtures/scenarios/valley_ingress_reduced_overlap_layout/metadata.json"

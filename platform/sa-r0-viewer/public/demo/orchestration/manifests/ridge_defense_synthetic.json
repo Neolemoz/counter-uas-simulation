@@ -1,0 +1,52 @@
+{
+  "artifact_type": "experiment_job_manifest_v1",
+  "governance": {
+    "anti_claims": [
+      "not operational effectiveness",
+      "not live execution authority",
+      "not deployment readiness"
+    ],
+    "notice": "Offline synthetic replay pipeline — explanatory fixtures only."
+  },
+  "jobs": [
+    {
+      "job_id": "ridge_defense_synthetic",
+      "lineage": {
+        "parent_manifest": null,
+        "wave": "PLAT-SA-H3"
+      },
+      "outputs": {
+        "bundle_dir": "fixtures/sa_r0/demo_ridge_defense",
+        "corpus_entry_id": "demo_ridge_defense",
+        "viewer_demo_pack_id": "ridge_defense"
+      },
+      "pipeline": [
+        {
+          "step_id": "validate",
+          "step_type": "validate_scenario"
+        },
+        {
+          "step_id": "validation_mirror",
+          "step_type": "validation_mirror"
+        },
+        {
+          "step_id": "catalog_sync",
+          "step_type": "synthetic_demo_regen"
+        },
+        {
+          "step_id": "bundle_verify",
+          "step_type": "bundle_verify"
+        },
+        {
+          "step_id": "corpus_regen",
+          "step_type": "corpus_regen"
+        }
+      ],
+      "scenario_pack_id": "ridge_defense",
+      "scenario_pack_ref": "fixtures/scenarios/ridge_defense"
+    }
+  ],
+  "manifest_id": "ridge_defense_synthetic_pipeline",
+  "schema_version": "experiment_job_manifest_v1",
+  "title": "Ridge defense synthetic replay pipeline"
+}

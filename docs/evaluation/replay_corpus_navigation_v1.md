@@ -31,6 +31,9 @@ See also: [replay_corpus_index_v1.md](replay_corpus_index_v1.md), [replay_corpus
 |-------|---------|
 | `corpus_entry` | Stable `entry_id` — browser selection + lineage context |
 | `corpus_release` | Release id (e.g. `sa_r0_corpus_r1_r1`) — release browser panel |
+| `federation_id` | Active federation manifest (PLAT-SA-F2A) |
+| `corpus_group_id` | Filters federation/corpus context to a registered group |
+| `federation_lineage_ref` | Highlights edge in federation lineage panel |
 
 Entry navigation resolves to existing viewer modes:
 

@@ -4,21 +4,25 @@ import { loadScenarioCatalog } from "../loadCatalog";
 import { loadComparePairs, pairById } from "../loadComparePairs";
 import type { ComparePairsManifest } from "../catalogSchema";
 import { useCompareStore } from "../compareStore";
+import type { ExperimentNavHooks } from "@/navigation/experimentNavigation";
+import { navigateToComparePair } from "@/navigation/experimentNavigation";
+import { useWorkspaceSegmentStore } from "@/workspace/workspaceSegmentStore";
 
 type Props = {
   onLoadError: (msg: string) => void;
   onLoading: (loading: boolean) => void;
+  hooks?: ExperimentNavHooks;
 };
 
-export function CompareCatalogSection({ onLoadError, onLoading }: Props) {
+export function CompareCatalogSection({ onLoadError, onLoading, hooks }: Props) {
   const [pairs, setPairs] = useState<ComparePairsManifest | null>(null);
   const [packIds, setPackIds] = useState<string[]>([]);
   const [slotAPack, setSlotAPack] = useState("");
   const [slotBPack, setSlotBPack] = useState("");
   const [selectedPair, setSelectedPair] = useState("");
-  const enterCompare = useCompareStore((s) => s.enterCompare);
   const mode = useCompareStore((s) => s.mode);
   const exitCompare = useCompareStore((s) => s.exitCompare);
+  const setSegment = useWorkspaceSegmentStore((s) => s.setUserSegment);
 
   useEffect(() => {
     void loadComparePairs().then(setPairs).catch((e: unknown) => onLoadError(String(e)));
@@ -28,11 +32,17 @@ export function CompareCatalogSection({ onLoadError, onLoading }: Props) {
   }, [onLoadError]);
 
   const loadPair = async (pairId: string) => {
+    if (hooks) {
+      await navigateToComparePair(pairId, hooks);
+      setSelectedPair(pairId);
+      return;
+    }
     if (!pairs) return;
     const pair = pairById(pairs, pairId);
     if (!pair) return;
     onLoading(true);
     try {
+      const enterCompare = useCompareStore.getState().enterCompare;
       const [a, b] = await Promise.all([
         loadBundleFromUrl(pair.slot_a.demo_bundle_url),
         loadBundleFromUrl(pair.slot_b.demo_bundle_url),
@@ -43,6 +53,7 @@ export function CompareCatalogSection({ onLoadError, onLoading }: Props) {
       url.searchParams.delete("demo");
       url.searchParams.delete("compare");
       window.history.replaceState({}, "", url.toString());
+      setSegment("compare");
       onLoadError("");
     } catch (e: unknown) {
       onLoadError(String(e));
@@ -59,6 +70,7 @@ export function CompareCatalogSection({ onLoadError, onLoading }: Props) {
       const packA = catalog.packs.find((p) => p.pack_id === slotAPack);
       const packB = catalog.packs.find((p) => p.pack_id === slotBPack);
       if (!packA || !packB) throw new Error("Invalid pack selection");
+      const enterCompare = useCompareStore.getState().enterCompare;
       const [a, b] = await Promise.all([
         loadBundleFromUrl(packA.demo_bundle_url),
         loadBundleFromUrl(packB.demo_bundle_url),
@@ -69,6 +81,7 @@ export function CompareCatalogSection({ onLoadError, onLoading }: Props) {
       url.searchParams.delete("demo");
       url.searchParams.delete("pair");
       window.history.replaceState({}, "", url.toString());
+      setSegment("compare");
       onLoadError("");
     } catch (e: unknown) {
       onLoadError(String(e));

@@ -1,9 +1,15 @@
+import type { ReplaySaBundle } from "@/replay/bundleSchema";
 import { useClockStore } from "@/replay/clockStore";
 import { getBracketingSamples, interpolatePosition } from "@/replay/trackPlayback";
 
-export function EoIrMockPane() {
-  const bundle = useClockStore((s) => s.bundle);
-  const currentT = useClockStore((s) => s.currentT);
+type Props = {
+  bundle?: ReplaySaBundle | null;
+  currentT?: number;
+};
+
+export function EoIrMockPane({ bundle: bundleProp, currentT: tProp }: Props = {}) {
+  const bundle = bundleProp ?? useClockStore((s) => s.bundle);
+  const currentT = tProp ?? useClockStore((s) => s.currentT);
   if (!bundle) return null;
 
   const threat = bundle.tracks.find((t) => t.role === "threat");

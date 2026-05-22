@@ -1,0 +1,40 @@
+{
+  "artifact_type": "scenario_authoring_manifest_v1",
+  "authoring_notes": "A2 catalog backfill",
+  "governance": {
+    "anti_claims": [
+      "not operational deployment state",
+      "not simulation launch authority",
+      "not parser contract"
+    ],
+    "notice": "Authoring manifest for fixture topology workflow only."
+  },
+  "orchestration_handoff_refs": [
+    {
+      "job_id": "corridor_defense_validate",
+      "manifest_id": "corridor_defense_validation",
+      "queue_mirror_id": "corridor_defense_validation_only_queue"
+    }
+  ],
+  "pack_id": "corridor_defense",
+  "parent_pack_id": null,
+  "promotion_lineage": [
+    {
+      "actor": "cli:promote_scenario_pack",
+      "event_id": "promote-2026-05-21T11:55:54Z",
+      "from_status": "validated",
+      "notes": "A2 catalog backfill",
+      "pack_fingerprint": "sha256:95a2bc2160037637af4af3f9533e3c10bec1844ec1bb29cd95f2cab6b7c863cc",
+      "recorded_at": "2026-05-21T11:55:54Z",
+      "to_status": "promoted",
+      "validation_mirror_ok": true
+    }
+  ],
+  "promotion_status": "promoted",
+  "promotion_summary_ref": "fixtures/scenarios/corridor_defense/authoring_promotion_summary_v1.json",
+  "schema_version": "1",
+  "topology_variant_class": "baseline",
+  "updated_at": "2026-05-21T11:55:54Z",
+  "validation_pack_fingerprint": "sha256:95a2bc2160037637af4af3f9533e3c10bec1844ec1bb29cd95f2cab6b7c863cc",
+  "validation_snapshot_ref": "fixtures/orchestration/validation_mirrors/corridor_defense_validation_mirror.json"
+}

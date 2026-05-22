@@ -1,0 +1,34 @@
+{
+  "artifact_type": "experiment_orchestration_ops_manifest_v1",
+  "audit_report_ref": "fixtures/orchestration/audits/valley_ingress_delayed_interceptor_base_validation_only_queue_report.json",
+  "authoring_pack_refs": [
+    "valley_ingress_delayed_interceptor_base"
+  ],
+  "governance": {
+    "anti_claims": [
+      "not live execution authority",
+      "not operational deployment state",
+      "not parser contract"
+    ],
+    "notice": "Orchestration operations sidecar for offline experiment workflow only."
+  },
+  "manifest_fingerprint": "sha256:2c8cf207a679ee3578cb72288bda01bc3689495a30bac0b3960e851df217a72d",
+  "manifest_id": "valley_ingress_delayed_interceptor_base_validation_only",
+  "operations_lineage": [
+    {
+      "actor": "cli:promote_experiment_manifest",
+      "event_id": "ops-2026-05-22T00:31:40Z",
+      "from_status": "validated",
+      "notes": "I1 backfill",
+      "to_status": "queued"
+    }
+  ],
+  "operations_status": "queued",
+  "operations_summary_ref": "fixtures/orchestration/ops/valley_ingress_delayed_interceptor_base_validation_only_orchestration_operations_summary_v1.json",
+  "queue_snapshot_ref": "fixtures/orchestration/queues/valley_ingress_delayed_interceptor_base_validation_only_queue.json",
+  "scenario_pack_ids": [
+    "valley_ingress_delayed_interceptor_base"
+  ],
+  "schema_version": "1",
+  "updated_at": "2026-05-22T00:31:40Z"
+}

@@ -4,7 +4,7 @@
   "entries": [
     {
       "chronology_group": "topology_demo",
-      "content_revision": "07cd7acb01823db262f9b0f51b02ad59d9e05e594aaa5d29e07934f8433d108f",
+      "content_revision": "99e4a5bcecb0ef7098f81e150ce3592a1d801cbbc42c959c7550389530cd0d1e",
       "corpus_id": "sa_r0_corpus_r1",
       "derived_from": [
         {
@@ -23,7 +23,7 @@
       "evolution_tags": [
         "first_generation"
       ],
-      "generation_revision": "7112ec817ada52e0135d5411d1e48e3fdbbfbfea5f2d83b4f3ec1fa20e15bf36",
+      "generation_revision": "d1dc1f05899976ec7401ab727a9824ff39172459d4df6e03a32b4c834531cff3",
       "generation_tool": "replay_sa_bundle.py",
       "lineage_parent_ids": [
         "topology_experiment__corridor_defense"
@@ -45,14 +45,14 @@
         "seed": 101
       },
       "reviewer_category": "topology_lab",
-      "sha256": "7112ec817ada52e0135d5411d1e48e3fdbbfbfea5f2d83b4f3ec1fa20e15bf36",
+      "sha256": "d1dc1f05899976ec7401ab727a9824ff39172459d4df6e03a32b4c834531cff3",
       "source_artifacts": [
         "fixtures/sa_r0/demo_corridor_defense/index.json"
       ]
     },
     {
       "chronology_group": "topology_demo",
-      "content_revision": "c82ec986bd5aca96a2d20e873a54a428b56310ef8a9565e2e026c131c2c5e6cb",
+      "content_revision": "13558616c704cb77d7d004cc34b8cef793e8c94d33ef8a475b20671249ec5918",
       "corpus_id": "sa_r0_corpus_r1",
       "derived_from": [
         {
@@ -71,7 +71,7 @@
       "evolution_tags": [
         "first_generation"
       ],
-      "generation_revision": "55eb0f10cd223489460637e706a228ab98d9ac268dfbf9ed289fb543ee6d419a",
+      "generation_revision": "97bb49008a56c1f1c5c258bb03617d9e7659a888746b4395aedfd15f3f6982c7",
       "generation_tool": "replay_sa_bundle.py",
       "lineage_parent_ids": [
         "topology_experiment__delayed_detection"
@@ -93,14 +93,14 @@
         "seed": 101
       },
       "reviewer_category": "topology_lab",
-      "sha256": "55eb0f10cd223489460637e706a228ab98d9ac268dfbf9ed289fb543ee6d419a",
+      "sha256": "97bb49008a56c1f1c5c258bb03617d9e7659a888746b4395aedfd15f3f6982c7",
       "source_artifacts": [
         "fixtures/sa_r0/demo_delayed_detection/index.json"
       ]
     },
     {
       "chronology_group": "topology_demo",
-      "content_revision": "20ec187df8d8e2f43bf72673a7486895ce66a81f4b95039959ed5441a2103ab3",
+      "content_revision": "a91a963c6dfb0fd9a5931a65ac588fe49fa1a3af554556487112524ea5a4a807",
       "corpus_id": "sa_r0_corpus_r1",
       "derived_from": [
         {
@@ -119,7 +119,7 @@
       "evolution_tags": [
         "first_generation"
       ],
-      "generation_revision": "29fe2b3c3eda089e4262d2325c236cae40c609a36cc2568d0cf647898cb547ad",
+      "generation_revision": "214b97327b46ab9752aa7384f2c4a5e3d61619915e6b84d8134e0f8d89ab2149",
       "generation_tool": "replay_sa_bundle.py",
       "lineage_parent_ids": [
         "topology_experiment__long_range_ingress"
@@ -141,14 +141,14 @@
         "seed": 101
       },
       "reviewer_category": "topology_lab",
-      "sha256": "29fe2b3c3eda089e4262d2325c236cae40c609a36cc2568d0cf647898cb547ad",
+      "sha256": "214b97327b46ab9752aa7384f2c4a5e3d61619915e6b84d8134e0f8d89ab2149",
       "source_artifacts": [
         "fixtures/sa_r0/demo_long_range_ingress/index.json"
       ]
     },
     {
       "chronology_group": "topology_demo",
-      "content_revision": "21e6817574a8981d0c9a1ae028c005803167927fb0c48ef882039f509dd1f430",
+      "content_revision": "577478261dea88d2d243ab4a5d9c07adc80928b64fd702039264c9f9d4771ba5",
       "corpus_id": "sa_r0_corpus_r1",
       "derived_from": [
         {
@@ -167,7 +167,7 @@
       "evolution_tags": [
         "first_generation"
       ],
-      "generation_revision": "1083d61ed4f4e597e583a2b21fcb4a3efddf0f829f1b79d03e73bcf3d00e381d",
+      "generation_revision": "f734528b36b85d3c19046c6123376f814c01ae2fad6bee9c8b3ce2653597e29c",
       "generation_tool": "replay_sa_bundle.py",
       "lineage_parent_ids": [
         "topology_experiment__multi_ridge"
@@ -189,14 +189,14 @@
         "seed": 101
       },
       "reviewer_category": "topology_lab",
-      "sha256": "1083d61ed4f4e597e583a2b21fcb4a3efddf0f829f1b79d03e73bcf3d00e381d",
+      "sha256": "f734528b36b85d3c19046c6123376f814c01ae2fad6bee9c8b3ce2653597e29c",
       "source_artifacts": [
         "fixtures/sa_r0/demo_multi_ridge/index.json"
       ]
     },
     {
       "chronology_group": "topology_demo",
-      "content_revision": "93c5403cd77f6567e017c7d297e1a4ffbc27caf59f6723ad168a9695f6a18782",
+      "content_revision": "de6d3aca9839960cff2753e8f500c9dee654a941cee661f2d93b50bc4559034d",
       "corpus_id": "sa_r0_corpus_r1",
       "derived_from": [
         {
@@ -215,7 +215,7 @@
       "evolution_tags": [
         "first_generation"
       ],
-      "generation_revision": "1ea75d9b0e22d5d907cfafe6356c34a6911810d4c47afa918a197c360a3bf1d5",
+      "generation_revision": "5f412328ab752f5c961468bc0a281849bc9cfbfa30c10f1001474e1f2f348fb4",
       "generation_tool": "replay_sa_bundle.py",
       "lineage_parent_ids": [
         "topology_experiment__ridge_defense"
@@ -237,14 +237,14 @@
         "seed": 101
       },
       "reviewer_category": "topology_lab",
-      "sha256": "1ea75d9b0e22d5d907cfafe6356c34a6911810d4c47afa918a197c360a3bf1d5",
+      "sha256": "5f412328ab752f5c961468bc0a281849bc9cfbfa30c10f1001474e1f2f348fb4",
       "source_artifacts": [
         "fixtures/sa_r0/demo_ridge_defense/index.json"
       ]
     },
     {
       "chronology_group": "topology_demo",
-      "content_revision": "002cf162de2f1153396c358865b82a3a04651504ccc594d1a1a95ab999a44b1a",
+      "content_revision": "7e5178130e15353f73cc96535cf0423dc5d3cd7bf5f760476a1b9f763c8ca029",
       "corpus_id": "sa_r0_corpus_r1",
       "derived_from": [
         {
@@ -263,7 +263,7 @@
       "evolution_tags": [
         "first_generation"
       ],
-      "generation_revision": "2377c7d7c2d5fd5a14694e916dd4c6d00b9750cc07be646b9e41eb724082ef0e",
+      "generation_revision": "b41c019c0394ddb1749000d6055fc257e8c1345bd6dda07464e66ae3fdd0f89a",
       "generation_tool": "replay_sa_bundle.py",
       "lineage_parent_ids": [
         "topology_experiment__saturation_ingress"
@@ -285,14 +285,14 @@
         "seed": 101
       },
       "reviewer_category": "topology_lab",
-      "sha256": "2377c7d7c2d5fd5a14694e916dd4c6d00b9750cc07be646b9e41eb724082ef0e",
+      "sha256": "b41c019c0394ddb1749000d6055fc257e8c1345bd6dda07464e66ae3fdd0f89a",
       "source_artifacts": [
         "fixtures/sa_r0/demo_saturation_ingress/index.json"
       ]
     },
     {
       "chronology_group": "topology_demo",
-      "content_revision": "817cb14f31e36425b3d7331d30a078119658fcf2fcfc803ef33a1ab02fa58804",
+      "content_revision": "421842e7b9774586c48dae342392a8c2f743de0240805bbd0365d2ea876857c6",
       "corpus_id": "sa_r0_corpus_r1",
       "derived_from": [
         {
@@ -311,7 +311,7 @@
       "evolution_tags": [
         "first_generation"
       ],
-      "generation_revision": "4770c06a0afa5ca086010f24d96b0ad44b8ac40d72ac3d8a76032e954d50598b",
+      "generation_revision": "967aa9a7cb36ac11b17810d85885d496e41bdd5660087e8ada31ed283f45cc7f",
       "generation_tool": "replay_sa_bundle.py",
       "lineage_parent_ids": [
         "topology_experiment__urban_masking"
@@ -333,14 +333,14 @@
         "seed": 101
       },
       "reviewer_category": "topology_lab",
-      "sha256": "4770c06a0afa5ca086010f24d96b0ad44b8ac40d72ac3d8a76032e954d50598b",
+      "sha256": "967aa9a7cb36ac11b17810d85885d496e41bdd5660087e8ada31ed283f45cc7f",
       "source_artifacts": [
         "fixtures/sa_r0/demo_urban_masking/index.json"
       ]
     },
     {
       "chronology_group": "topology_demo",
-      "content_revision": "6ae45571398c56c794d848044fe6d3e180389b0d7f5234d342f91194dd60ce76",
+      "content_revision": "59dbace7bee7a124c81a7dbfb1077d8fa39dc9c97491f46349d985f036590f39",
       "corpus_id": "sa_r0_corpus_r1",
       "derived_from": [
         {
@@ -359,7 +359,7 @@
       "evolution_tags": [
         "first_generation"
       ],
-      "generation_revision": "d2486c06233296fe830241a6262943af1c553a500570a79db8fdb7696477ef82",
+      "generation_revision": "6d2751ac339fe9f532cbf04cf3f058e1fa972a3331674c31e5c32504fe13e5f2",
       "generation_tool": "replay_sa_bundle.py",
       "lineage_parent_ids": [
         "topology_experiment__valley_ingress"
@@ -381,14 +381,14 @@
         "seed": 101
       },
       "reviewer_category": "topology_lab",
-      "sha256": "d2486c06233296fe830241a6262943af1c553a500570a79db8fdb7696477ef82",
+      "sha256": "6d2751ac339fe9f532cbf04cf3f058e1fa972a3331674c31e5c32504fe13e5f2",
       "source_artifacts": [
         "fixtures/sa_r0/demo_valley_ingress/index.json"
       ]
     },
     {
       "chronology_group": "topology_demo",
-      "content_revision": "dad1618354d30a418c9ba819806548d7c42375c54656535c3947da3509d6da16",
+      "content_revision": "0dc16cc558bdad4ba0ac2c851b3f85b69fe2468e0ba716adaa74306a1b9d8679",
       "corpus_id": "sa_r0_corpus_r1",
       "derived_from": [
         {
@@ -407,7 +407,7 @@
       "evolution_tags": [
         "first_generation"
       ],
-      "generation_revision": "ff80d467d3646b64b76c84e54933782858ef7cc20589be21e45745a22b8c989b",
+      "generation_revision": "fafce428b011f7c05e24d65da8cdd0203c28dca0df10c43926813b914b4ab9c7",
       "generation_tool": "replay_sa_bundle.py",
       "lineage_parent_ids": [
         "topology_experiment__valley_ingress_delayed_interceptor_base"
@@ -429,14 +429,14 @@
         "seed": 101
       },
       "reviewer_category": "topology_lab",
-      "sha256": "ff80d467d3646b64b76c84e54933782858ef7cc20589be21e45745a22b8c989b",
+      "sha256": "fafce428b011f7c05e24d65da8cdd0203c28dca0df10c43926813b914b4ab9c7",
       "source_artifacts": [
         "fixtures/sa_r0/demo_valley_ingress_delayed_interceptor_base/index.json"
       ]
     },
     {
       "chronology_group": "topology_demo",
-      "content_revision": "16b7b1bac969391807f2f7d69e8b593e691339e7b285b5fa99b84392579145e1",
+      "content_revision": "2fd9155e583f5f758b1ee150db46b844ce14efa2d22b670081426180d4d7352d",
       "corpus_id": "sa_r0_corpus_r1",
       "derived_from": [
         {
@@ -455,7 +455,7 @@
       "evolution_tags": [
         "first_generation"
       ],
-      "generation_revision": "5bd199d045e746dc3f9bf27bd205265d487eca3025d7e81022b9b0e588112b9e",
+      "generation_revision": "951d3f7e0d3b4bcd1cc17487aaf7b885b7f3aaa64242f832c33c4622b65efd59",
       "generation_tool": "replay_sa_bundle.py",
       "lineage_parent_ids": [
         "topology_experiment__valley_ingress_extra_valley_sensor"
@@ -477,14 +477,14 @@
         "seed": 101
       },
       "reviewer_category": "topology_lab",
-      "sha256": "5bd199d045e746dc3f9bf27bd205265d487eca3025d7e81022b9b0e588112b9e",
+      "sha256": "951d3f7e0d3b4bcd1cc17487aaf7b885b7f3aaa64242f832c33c4622b65efd59",
       "source_artifacts": [
         "fixtures/sa_r0/demo_valley_ingress_extra_valley_sensor/index.json"
       ]
     },
     {
       "chronology_group": "topology_demo",
-      "content_revision": "152b3c5836ef9fc427ee6d5a31885feaf24b3408e52af315b5701c49e1acc2bf",
+      "content_revision": "c2428131f7e461a29cf346d334a0468c2d995d67924e1b83627ca4ecfdd855c2",
       "corpus_id": "sa_r0_corpus_r1",
       "derived_from": [
         {
@@ -503,7 +503,7 @@
       "evolution_tags": [
         "first_generation"
       ],
-      "generation_revision": "4939f7084d8104c4e2192a5bf003873875d1c787110804a75d71a09b11552dbf",
+      "generation_revision": "f0028bb60eb9a77ffa90d50f4641f1355e4c6c8a4f01511957842d77aa3fb8dd",
       "generation_tool": "replay_sa_bundle.py",
       "lineage_parent_ids": [
         "topology_experiment__valley_ingress_radar_shifted_north"
@@ -525,14 +525,14 @@
         "seed": 101
       },
       "reviewer_category": "topology_lab",
-      "sha256": "4939f7084d8104c4e2192a5bf003873875d1c787110804a75d71a09b11552dbf",
+      "sha256": "f0028bb60eb9a77ffa90d50f4641f1355e4c6c8a4f01511957842d77aa3fb8dd",
       "source_artifacts": [
         "fixtures/sa_r0/demo_valley_ingress_radar_shifted_north/index.json"
       ]
     },
     {
       "chronology_group": "topology_demo",
-      "content_revision": "6eab7ec0bd2ca157c3cb320092f43d6f7b40d922d030c87aa8e89e683c77eee5",
+      "content_revision": "9ff2468fa5796da8fc0e143c1963fffa12add0daa003caeb91b4955c264f08a7",
       "corpus_id": "sa_r0_corpus_r1",
       "derived_from": [
         {
@@ -551,7 +551,7 @@
       "evolution_tags": [
         "first_generation"
       ],
-      "generation_revision": "b09e54c290385a88851f2c065af4158777a3f14a4064b21df9fa9235d7cf50ad",
+      "generation_revision": "5fc3884aa720733773e5c58fab566b4c30854c1810e83de69fd001fd8a74683e",
       "generation_tool": "replay_sa_bundle.py",
       "lineage_parent_ids": [
         "topology_experiment__valley_ingress_reduced_overlap_layout"
@@ -573,7 +573,7 @@
         "seed": 101
       },
       "reviewer_category": "topology_lab",
-      "sha256": "b09e54c290385a88851f2c065af4158777a3f14a4064b21df9fa9235d7cf50ad",
+      "sha256": "5fc3884aa720733773e5c58fab566b4c30854c1810e83de69fd001fd8a74683e",
       "source_artifacts": [
         "fixtures/sa_r0/demo_valley_ingress_reduced_overlap_layout/index.json"
       ]
@@ -1620,7 +1620,7 @@
     },
     {
       "chronology_group": "corpus_release",
-      "content_revision": "63e9de79482e705f78206571810f9e73649e1bb0900f376ac08f90cb709f30bb",
+      "content_revision": "a850357988686006e5c2ea0c299d992c15920fe45fcc7ca57a5ad0ad533711b2",
       "corpus_id": "sa_r0_corpus_r1",
       "derived_from": [
         {
@@ -1634,7 +1634,7 @@
       "evolution_tags": [
         "corpus_aggregate"
       ],
-      "generation_revision": "2125f9817134cfbb6bda3d0571a038033447e244105bce9385d7401096b71728",
+      "generation_revision": "2dd19c6225ad670b94cecdbfc6a7dab8bc9b894b0b1c17f463f8365a5b9918c7",
       "generation_tool": "export_research_bundle.py",
       "lineage_parent_ids": [
         "publication_packet__valley_sensor_sweep_publication",
@@ -1666,7 +1666,7 @@
       "replay_chronology_descriptor": "Corpus release and research bundle",
       "replay_family": "sa_r0_corpus_r1",
       "reviewer_category": "corpus_ops",
-      "sha256": "2125f9817134cfbb6bda3d0571a038033447e244105bce9385d7401096b71728",
+      "sha256": "2dd19c6225ad670b94cecdbfc6a7dab8bc9b894b0b1c17f463f8365a5b9918c7",
       "source_artifacts": [
         "fixtures/sa_r0/research_bundles/sa_r0_corpus_r1/manifest.json"
       ]
@@ -1698,8 +1698,8 @@
       ],
       "primary_artifact_path": "fixtures/sa_r0/sweeps/delayed_detection_sweep/sweep.json",
       "publication_revision_lineage": [
-        "7be47220b2b45d97182dfb6f0509815411f4d2046fb64b3359accc054c453d06",
-        "c82ec986bd5aca96a2d20e873a54a428b56310ef8a9565e2e026c131c2c5e6cb"
+        "13558616c704cb77d7d004cc34b8cef793e8c94d33ef8a475b20671249ec5918",
+        "7be47220b2b45d97182dfb6f0509815411f4d2046fb64b3359accc054c453d06"
       ],
       "release_generation_id": "gen_sweep_d2",
       "replay_chronology_descriptor": "Monte Carlo sweep generation (D2)",
@@ -1768,8 +1768,8 @@
         "3c12c815f9971ee0660e879feaaa608eaea87d3982b85f78891fdf30bbc7f9b3",
         "3f3afc8d4f14cee78ecbe62078ea71d684ac0752510539360456be215e0c25de",
         "59edf86ae88c668d92bf244e10983f5e419614d13462893894c115dc65860a46",
-        "93c5403cd77f6567e017c7d297e1a4ffbc27caf59f6723ad168a9695f6a18782",
-        "b985555a63bbbd062abe848730e4e4b8fb8bbdfa73e83f2e6efafd4df1db9c8c"
+        "b985555a63bbbd062abe848730e4e4b8fb8bbdfa73e83f2e6efafd4df1db9c8c",
+        "de6d3aca9839960cff2753e8f500c9dee654a941cee661f2d93b50bc4559034d"
       ],
       "release_generation_id": "gen_sweep_d2",
       "replay_chronology_descriptor": "Monte Carlo sweep generation (D2)",
@@ -1823,7 +1823,7 @@
       ],
       "primary_artifact_path": "fixtures/sa_r0/sweeps/saturation_assignment_sweep/sweep.json",
       "publication_revision_lineage": [
-        "002cf162de2f1153396c358865b82a3a04651504ccc594d1a1a95ab999a44b1a",
+        "7e5178130e15353f73cc96535cf0423dc5d3cd7bf5f760476a1b9f763c8ca029",
         "b985555a63bbbd062abe848730e4e4b8fb8bbdfa73e83f2e6efafd4df1db9c8c",
         "d040d95e9dd26ea8d9c5e9ac41858703b4cbe42a8f04fc0f726821b2fd7a5c59"
       ],
@@ -1900,7 +1900,7 @@
         "2dbbefe9d5b11b53baf2bcb34124ca37db36d6cacb75fe0a77ca23019c503ca2",
         "3c12c815f9971ee0660e879feaaa608eaea87d3982b85f78891fdf30bbc7f9b3",
         "5804c7945abcc6cb1c1904ca7349b73c65c329566bc86dc7d3c5c941427e0001",
-        "6ae45571398c56c794d848044fe6d3e180389b0d7f5234d342f91194dd60ce76",
+        "59dbace7bee7a124c81a7dbfb1077d8fa39dc9c97491f46349d985f036590f39",
         "91faf6f007aeb4fea1033c2f787fcb83e0ad0851e013a5416cf87cb4e86d4240",
         "fdab03eacfa1d3f2d8718bd184b2e291f1c95f9d800bf635cdd64c1bfd1f87b8"
       ],

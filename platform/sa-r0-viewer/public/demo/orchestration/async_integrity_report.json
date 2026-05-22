@@ -1,0 +1,33 @@
+{
+  "artifact_type": "orchestration_async_integrity_report_v1",
+  "checked_at": "2026-05-22T04:42:16Z",
+  "governance": {
+    "anti_claims": [
+      "not operational readiness"
+    ],
+    "notice": "Explanatory audit only. Not parser-visible authority."
+  },
+  "governance_banner": "ASYNC ORCHESTRATION INTEGRITY \u2014 explanatory audit; CLI remains authoritative",
+  "issues": [],
+  "ok": true,
+  "per_manifest": {
+    "capture_pipeline_template": {
+      "issues": [],
+      "manifest_id": "capture_pipeline_template",
+      "warnings": []
+    },
+    "ridge_defense_synthetic_pipeline": {
+      "issues": [],
+      "manifest_id": "ridge_defense_synthetic_pipeline",
+      "warnings": []
+    },
+    "valley_ingress_validation_only": {
+      "issues": [],
+      "manifest_id": "valley_ingress_validation_only",
+      "warnings": []
+    }
+  },
+  "schema_version": "1",
+  "strict": false,
+  "warnings": []
+}

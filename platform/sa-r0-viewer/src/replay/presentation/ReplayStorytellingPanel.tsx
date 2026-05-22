@@ -1,6 +1,7 @@
 import type { ReplaySaBundle } from "../bundleSchema";
 import { useSweepStore } from "../useSweepStore";
 import { buildBundleStorytelling, buildSweepStorytelling } from "../cognition/replayStorytelling";
+import { sandboxSurfaces, sandboxTypography } from "@/theme/sandboxTheme";
 
 type Props = {
   bundle: ReplaySaBundle | null;
@@ -17,25 +18,25 @@ export function ReplayStorytellingPanel({ bundle }: Props) {
 
   if (!merged.length) {
     return (
-      <section className="rounded border border-slate-700 bg-slate-900/80 p-3 text-sm text-slate-500">
+      <section className={`${sandboxSurfaces.panel} p-3 ${sandboxTypography.caption}`}>
         No storytelling sections available for this replay.
       </section>
     );
   }
 
   return (
-    <section className="rounded border border-slate-700 bg-slate-900/80 p-3 text-sm">
-      <h2 className="mb-1 font-semibold text-slate-200">Replay storytelling</h2>
-      <p className="mb-3 text-xs text-slate-500">
+    <section className={`${sandboxSurfaces.panel} p-3`}>
+      <h2 className={`mb-1 ${sandboxTypography.sectionLabel} text-slate-200`}>Replay storytelling</h2>
+      <p className={`mb-3 ${sandboxTypography.caption}`}>
         Deterministic replay-derived summaries — explanatory only, not causal proof.
       </p>
-      <ul className="space-y-3">
+      <ul className="space-y-2.5">
         {merged.map((s) => (
-          <li key={s.id} className="rounded border border-slate-800 bg-slate-950/50 p-2">
-            <h3 className="mb-1 text-xs font-semibold uppercase tracking-wide text-amber-200/90">
+          <li key={s.id} className={`${sandboxSurfaces.panelInset} p-2.5`}>
+            <h3 className="mb-1 text-xs font-semibold uppercase tracking-wide text-amber-200/80">
               {s.title}
             </h3>
-            <p className="text-xs text-slate-300">{s.body}</p>
+            <p className="text-xs leading-relaxed text-slate-300">{s.body}</p>
           </li>
         ))}
       </ul>

@@ -93,6 +93,17 @@ Two frontiers are active. Do not merge them in a single wave.
 - [SA F1b Corpus Audit Operations](docs/evaluation/sa_f1b_corpus_audit_operations_plan.md) — drift reports, release diffs, regen orchestration, provenance audits; see PLAT-SA-F1b in freeze registry
 - [SA F1c Corpus Navigation](docs/evaluation/sa_f1c_corpus_navigation_plan.md) — corpus browser, lineage navigation, drift surfacing, reviewer cognition workflows; see PLAT-SA-F1c in freeze registry
 - [SA F1d Long-Horizon Publication](docs/evaluation/sa_f1d_long_horizon_publication_plan.md) — evolution tracking, publication packet, release archive export, chronology panel; see PLAT-SA-F1d in freeze registry
+- [SA F2A Multi-Corpus Federation](docs/evaluation/sa_f2a_multi_corpus_federation_plan.md) — federation manifest, cross-corpus indexing, integrity audits, publication collections, recovery continuity cognition (PLAN-SA-F2A + PLAT-SA-F2A, frozen)
+- [Sandbox UX H1](docs/platform/h1_sandbox_ux_architecture_plan.md) — workstation information hierarchy (PLAN-SA-H1, docs frozen)
+- [Sandbox Workspace H2](docs/evaluation/sa_h2_sandbox_workspace_freeze_audit.md) — segment shell and discover rails (PLAT-SA-H2, frozen)
+- [Offline Orchestration H3](docs/platform/h3_offline_experiment_orchestration_plan.md) — CLI queues and read-only mirrors (PLAT-SA-H3, frozen)
+- [Workstation Integration H4](docs/platform/h4_sandbox_replay_workstation_integration_plan.md) — end-to-end replay workflow navigation (PLAT-SA-H4, frozen)
+- [Presentation UX Polish H5](docs/platform/h5_publication_presentation_ux_polish_plan.md) — publication-grade visual polish and export handoff (PLAT-SA-H5, frozen)
+- [Authoring Workstation A1](docs/platform/sa_a1_authoring_workstation_foundations_plan.md) — authoring workflow, manifest, promotion CLI, read-only AUTHORING profile (PLAN-SA-A1 + PLAT-SA-A1, frozen)
+- [Authoring Operations A2](docs/platform/sa_a2_authoring_operations_plan.md) — corpus integrity audits, lifecycle retirement, promotion ergonomics, 12-pack backfill (PLAN-SA-A2 + PLAT-SA-A2, frozen)
+- [Orchestration Operations I1](docs/platform/sa_i1_orchestration_operations_plan.md) — offline orchestration lifecycle, integrity audits, replay continuity, 12-pack manifest coverage (PLAN-SA-I1 + PLAT-SA-I1, frozen)
+- [Async Orchestration I2](docs/platform/sa_i2_async_orchestration_plan.md) — async foundations: fingerprints, worker bookkeeping, integrity audits, read-only viewer cognition (PLAN-SA-I2 + PLAT-SA-I2, frozen)
+- [Async Recovery I3](docs/platform/sa_i3_async_recovery_plan.md) — recovery/reconciliation docs, batch review artifacts, recovery audits, read-only recovery cognition (PLAN-SA-I3 + PLAT-SA-I3, frozen)
 
 Forbidden on the platform frontier: live dashboards, HITL/operator semantics, readiness scoring, parser/topic changes, runtime redesign, rosbridge/WebSocket in eval tooling, extending legacy `web/` rosbridge pages.
 

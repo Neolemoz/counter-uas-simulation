@@ -1,0 +1,41 @@
+{
+  "artifact_type": "experiment_job_manifest_v1",
+  "governance": {
+    "anti_claims": [
+      "not automated certification",
+      "not live authority from viewer"
+    ],
+    "notice": "Template for optional replay capture — explanatory offline pipeline; default dry-run in committed queue."
+  },
+  "jobs": [
+    {
+      "job_id": "capture_template",
+      "outputs": {
+        "bundle_dir": "fixtures/sa_r0/demo_ridge_defense",
+        "log_dir": "runs/logs"
+      },
+      "pipeline": [
+        {
+          "step_id": "validate",
+          "step_type": "validate_scenario"
+        },
+        {
+          "capture_scenario": "single",
+          "step_id": "capture",
+          "step_type": "runtime_capture",
+          "timeout_s": 60
+        },
+        {
+          "step_id": "catalog_sync",
+          "step_type": "catalog_sync",
+          "enabled": false
+        }
+      ],
+      "scenario_pack_id": "ridge_defense",
+      "scenario_pack_ref": "fixtures/scenarios/ridge_defense"
+    }
+  ],
+  "manifest_id": "capture_pipeline_template",
+  "schema_version": "experiment_job_manifest_v1",
+  "title": "Runtime capture template (CLI-gated)"
+}

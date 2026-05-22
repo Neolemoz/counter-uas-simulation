@@ -1,0 +1,13 @@
+{
+  "artifact_type": "authoring_promotion_summary_v1",
+  "event_id": "promote-2026-05-21T11:55:54Z",
+  "from_status": "validated",
+  "governance_banner": "PROMOTION SUMMARY \u2014 CLI audit trail; not operational authority",
+  "orchestration_handoff_refs": [],
+  "pack_id": "saturation_ingress",
+  "recorded_at": "2026-05-21T11:55:54Z",
+  "schema_version": "1",
+  "to_status": "promoted",
+  "validation_pack_fingerprint": "sha256:c997812cd3df2c565cda0822c667b44f44551300efef1b672271d50c6d22c066",
+  "validation_snapshot_ref": "fixtures/orchestration/validation_mirrors/saturation_ingress_validation_mirror.json"
+}

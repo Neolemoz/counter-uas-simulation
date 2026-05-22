@@ -32,6 +32,14 @@ FORBIDDEN_SUBSTRINGS = (
     "tactical doctrine",
 )
 
+FORBIDDEN_VIEWER_UI = (
+    "battle management",
+    "operator console",
+    "live mission",
+    "tactical dashboard",
+    "command and control",
+)
+
 SA_ARTIFACT_TYPES = {
     "replay_linkage_index_v1",
     "cross_sweep_synthesis_v1",
@@ -108,6 +116,22 @@ def lint_sa_markdown_file(path: Path) -> list[str]:
     return lint_markdown_text(path.read_text(encoding="utf-8"), context=str(path.relative_to(_REPO)))
 
 
+def lint_viewer_ui_copy() -> list[str]:
+    """Scan sa-r0-viewer source for operational UI phrasing (PLAT-SA-H5)."""
+    issues: list[str] = []
+    viewer_src = _REPO / "platform/sa-r0-viewer/src"
+    if not viewer_src.is_dir():
+        return issues
+    for path in sorted(viewer_src.rglob("*.tsx")):
+        text = path.read_text(encoding="utf-8").lower()
+        for phrase in FORBIDDEN_VIEWER_UI:
+            if phrase in text:
+                issues.append(
+                    f"{path.relative_to(_REPO)}: forbidden viewer UI phrase '{phrase}'"
+                )
+    return issues
+
+
 def batch_lint_sa_fixtures() -> list[str]:
     """Lint committed SA fixture JSON/MD; returns human-readable issue strings."""
     issues: list[str] = []
@@ -155,7 +179,7 @@ def batch_lint_sa_fixtures() -> list[str]:
 
 
 def main() -> None:
-    issues = batch_lint_sa_fixtures()
+    issues = batch_lint_sa_fixtures() + lint_viewer_ui_copy()
     if issues:
         for item in issues:
             print(f"governance_lint_sa: {item}", file=sys.stderr)

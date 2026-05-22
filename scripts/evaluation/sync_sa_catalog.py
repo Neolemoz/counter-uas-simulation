@@ -192,7 +192,41 @@ def validate_sweeps_index() -> None:
                 raise SystemExit(f"sweep {sweep_id}: unknown pack_id {pid!r}")
 
 
+def check_promotion_policy(*, strict: bool = False) -> list[str]:
+    import replay_sa_authoring as authoring  # noqa: E402
+
+    warnings: list[str] = []
+    errors: list[str] = []
+    for pack_id in CATALOG_PACK_IDS:
+        manifest = authoring.load_authoring_manifest(_REPO / "fixtures/scenarios" / pack_id)
+        if not manifest:
+            continue
+        if not authoring.catalog_promotion_ready(pack_id):
+            msg = f"{pack_id}: catalog entry has manifest but promotion_status < promoted"
+            if strict:
+                errors.append(msg)
+            else:
+                warnings.append(msg)
+    return errors if strict else warnings
+
+
 def main() -> None:
+    import argparse
+
+    parser = argparse.ArgumentParser(description="Sync scenario catalog and demo bundles.")
+    parser.add_argument(
+        "--strict-promotion",
+        action="store_true",
+        help="Fail when authoring manifest exists but pack is not promoted",
+    )
+    args = parser.parse_args()
+
+    promo_msgs = check_promotion_policy(strict=args.strict_promotion)
+    for msg in promo_msgs:
+        print(f"WARN: {msg}" if not args.strict_promotion else f"ERROR: {msg}", file=sys.stderr)
+    if args.strict_promotion and promo_msgs:
+        raise SystemExit(1)
+
     for pack_id in CATALOG_PACK_IDS:
         result = scenario_mod.lint_scenario_pack(_REPO / "fixtures/scenarios" / pack_id)
         if not result["ok"]:
