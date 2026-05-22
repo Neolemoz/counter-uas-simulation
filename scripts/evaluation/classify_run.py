@@ -43,15 +43,18 @@ def classify_run_failure_evidence(
     has_eng_metric = '[eng_metric]' in low
     max_abs_delta = max((abs(d) for d in deltas), default=None)
 
-    failure_class = 'F5_unknown'
-    if timeout_seen:
-        failure_class = 'F1_timeout'
-    elif assignment_switch_count > 0:
-        failure_class = 'F4_assignment'
-    elif deltas and (max(abs(d) for d in deltas) > 8.0 or len(deltas) > 15):
-        failure_class = 'F3_track_instability'
-    elif not summary.hit and feasible_geom_seen:
-        failure_class = 'F2_geom_not_dyn'
+    hit_seen = bool(summary.hit)
+    failure_class: str | None = None
+    if not hit_seen:
+        failure_class = 'F5_unknown'
+        if timeout_seen:
+            failure_class = 'F1_timeout'
+        elif assignment_switch_count > 0:
+            failure_class = 'F4_assignment'
+        elif deltas and (max(abs(d) for d in deltas) > 8.0 or len(deltas) > 15):
+            failure_class = 'F3_track_instability'
+        elif feasible_geom_seen:
+            failure_class = 'F2_geom_not_dyn'
 
     return {
         'failure_class': failure_class,
@@ -63,8 +66,8 @@ def classify_run_failure_evidence(
         'delta_t_go_count': len(deltas),
         'assignment_switch_count': assignment_switch_count,
         'feasible_geom_seen': feasible_geom_seen,
-        'hit_seen': bool(summary.hit),
-        'parser_warnings': [] if summary.hit or failure_class != 'F5_unknown' else ['insufficient_failure_evidence'],
+        'hit_seen': hit_seen,
+        'parser_warnings': [] if hit_seen or failure_class != 'F5_unknown' else ['insufficient_failure_evidence'],
     }
 
 
@@ -74,7 +77,7 @@ def classify_run_failure(
     capture_rc: int | None = None,
 ) -> str:
     """
-    Return F1..F5 bucket for a single Gazebo capture log.
+    Return F1..F5 bucket for a failed Gazebo capture log, or "" for a HIT.
 
     F1_timeout — run cut by timeout or obvious time limit.
     F2_geom_not_dyn — no HIT but geometry looked feasible in metrics.
@@ -82,7 +85,8 @@ def classify_run_failure(
     F4_assignment — multi-assignment / switch hints in log.
     F5_unknown — default.
     """
-    return str(classify_run_failure_evidence(log_path, capture_rc=capture_rc)['failure_class'])
+    failure_class = classify_run_failure_evidence(log_path, capture_rc=capture_rc)['failure_class']
+    return '' if failure_class is None else str(failure_class)
 
 
 def main() -> int:
