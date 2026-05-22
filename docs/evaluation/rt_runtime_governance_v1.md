@@ -54,6 +54,13 @@ Documented caps for RT-S2+ prototype implementation. Values are **governance con
 | `session_cleanup_timeout` | **120 s** after `stop_session`, `discard_session`, or `failed` | Orphan process prevention |
 | `cleanup_pending_max_age` | **300 s** | Forced teardown from `cleanup_pending` |
 | `bridge_disconnected_reconnect_timeout` | **30 s** | Before `failed` + cleanup |
+| `max_capture_bundle_bytes` | **5 MiB** | Per capture bundle (PLAT-RT-S5) |
+| `max_staged_captures` | **32** | Staging dirs under `runs/rt_sandbox/captures/` |
+| `max_runtime_templates_in_catalog` | **16** | Builtin RT template defs (PLAT-RT-S6) |
+| `max_entities_per_template_apply` | **8** | Per `apply_runtime_template` |
+| `max_template_applies_per_session` | **32** | Session-scoped applies |
+| `max_workflows_in_catalog` | **8** | Builtin workflow defs |
+| `max_workflow_steps` | **12** | Per workflow definition |
 
 ### 3.1 Limit enforcement
 

@@ -20,6 +20,7 @@ def send_command(
     url: str,
     session_id: str | None = None,
     issued_by: str = "maintainer_cli",
+    payload: dict | None = None,
 ) -> dict:
     body = {
         "schema": "rt_bridge_request_v1",
@@ -30,6 +31,8 @@ def send_command(
     }
     if session_id:
         body["session_id"] = session_id
+    if payload is not None:
+        body["payload"] = payload
     data = json.dumps(body).encode("utf-8")
     req = urllib.request.Request(
         url,
@@ -51,19 +54,46 @@ def main() -> int:
             "resume",
             "stop_session",
             "discard_session",
+            "reset_session",
+            "spawn_entity",
+            "move_entity",
+            "delete_entity",
+            "subscribe_telemetry",
+            "unsubscribe_telemetry",
             "capture_session",
+            "list_runtime_templates",
+            "apply_runtime_template",
+            "start_workflow",
+            "advance_workflow",
+            "reset_workflow",
+            "reload_workflow",
+            "get_workflow_state",
             "federation_register",
         ],
         help="bridge command",
     )
     parser.add_argument("--url", default=DEFAULT_URL)
     parser.add_argument("--session-id", default=None)
+    parser.add_argument(
+        "--payload",
+        default=None,
+        help="JSON payload for entity/telemetry commands",
+    )
+    parser.add_argument("--payload-file", default=None, help="Path to JSON payload file")
     args = parser.parse_args()
+
+    payload = None
+    if args.payload_file:
+        payload = json.loads(Path(args.payload_file).read_text(encoding="utf-8"))
+    elif args.payload:
+        payload = json.loads(args.payload)
+
     try:
         out = send_command(
             args.command,
             url=args.url,
             session_id=args.session_id,
+            payload=payload,
         )
     except urllib.error.URLError as exc:
         print(json.dumps({"ok": False, "error_code": "BRIDGE_DISCONNECTED", "message": str(exc)}))

@@ -69,15 +69,21 @@ Every response includes:
 | `move_entity` | Entity must exist in session |
 | `delete_entity` | Entity must exist in session |
 
-#### Entity catalog v0 (prototype stub — RT-S3)
+#### Entity catalog v1 (PLAT-RT-S3)
 
 | `entity_type` | Max per session | Notes |
 |---------------|-----------------|-------|
-| `prototype_target` | 16 | Non-weapon simulation actor |
-| `prototype_static_obstacle` | 16 | Static geometry only |
+| `radar` | 8 | Static/sensor placeholder — no threat classification |
+| `interceptor` | 8 | Movable sandbox actor — not engage/intercept commands |
+| `drone` | 8 | Movable sandbox actor |
+| `waypoint_marker` | 8 | Static marker |
 | **Total** | ≤ `max_entity_count` (32) | No fleet or order-of-battle semantics |
 
+**World bounds (prototype):** `x,y ∈ [-500, 500]`, `z ∈ [0, 200]` (prototype units). Out-of-bounds pose → `INVALID_POSE`.
+
 Types not in this table → `COMMAND_FORBIDDEN` until a new wave extends the catalog.
+
+**Payload:** `spawn_entity` / `move_entity` require `payload` with `entity_type`, `pose` (`x`, `y`, `z`, optional `yaw_deg`). `delete_entity` requires `payload.entity_id`. Optional `payload.entity_id` on spawn (bridge assigns UUID if omitted).
 
 ### 3.3 Runtime commands
 
@@ -99,15 +105,21 @@ Prototype sub-commands (illustrative):
 
 Telemetry path is **read-only** — no writes via subscription channel.
 
-#### Telemetry allow-list v0 (prototype stub — RT-S4)
+#### Telemetry allow-list v1 (PLAT-RT-S4)
 
-| Channel class | Example topics (illustrative) | Cap |
-|---------------|------------------------------|-----|
-| `entity_pose_mirror` | Session-scoped pose snapshots only | ≤ 10 Hz aggregate |
-| `clock_mirror` | Sim clock / pause state | ≤ 10 Hz aggregate |
-| `session_health` | bridge heartbeat, resource limit events | ≤ 10 Hz aggregate |
+| `channel` | Payload (read-only) | Cap |
+|-----------|---------------------|-----|
+| `session_health` | `state`, `stub_alive`, `governance_banner` | ≤ 10 Hz aggregate |
+| `lifecycle_state` | `state`, `previous_state`, `command_type` | ≤ 10 Hz aggregate |
+| `world_summary` | `entity_count`, `revision`, `by_type`, `bounds` | ≤ 10 Hz aggregate |
+| `entity_pose_mirror` | `entities[]` with session-scoped poses | ≤ 10 Hz aggregate |
+| `clock_mirror` | `paused` (derived from session state) | ≤ 10 Hz aggregate |
 
-**Forbidden subscriptions:** `/tracks/state` as live tactical picture, weapon/engage topics, federation/orchestration status, any topic that implies operational C2 or readiness scoring.
+**Pull transport (local-only):** `GET /v1/telemetry/pull?session_id=&subscription_id=&max_events=` — read-only drain of subscribed channel events. Loopback bridge only; not exposed in SA viewer.
+
+**Subscription limits:** max **5** channels per subscription; max **1** active subscription per session (resubscribe replaces).
+
+**Forbidden subscriptions:** `/tracks/state`, weapon/engage topics, federation/orchestration status, tactical/readiness channels.
 
 Topics outside this table → `COMMAND_FORBIDDEN` until a new wave extends the allow-list.
 
@@ -117,6 +129,35 @@ Topics outside this table → `COMMAND_FORBIDDEN` until a new wave extends the a
 |---------|---------------|
 | `capture_session` | `stopped` only; emits capture candidate |
 | `discard_session` | Any non-terminal except `discarded` |
+
+#### Capture response v1 (PLAT-RT-S5)
+
+On success, bridge returns:
+
+| Field | Notes |
+|-------|-------|
+| `capture_candidate_id` | UUID for staging dir |
+| `staging_refs` | `snapshot_ref`, `capture_report_ref`, `audit_ref`, `telemetry_summary_ref` |
+| `state` | `captured` |
+| `governance_banner` | Capture-specific non-authority banner |
+
+Staging root: `runs/rt_sandbox/captures/<capture_candidate_id>/`. No automatic SA import.
+
+### 3.6 Templates and workflows (PLAT-RT-S6)
+
+See [rt_workflow_contract_v1.md](rt_workflow_contract_v1.md).
+
+| Command | Preconditions |
+|---------|---------------|
+| `list_runtime_templates` | None or active session |
+| `apply_runtime_template` | `running` or `paused` |
+| `start_workflow` | `running` or `paused`; workflow idle |
+| `advance_workflow` | workflow `in_progress` |
+| `reset_workflow` | active session |
+| `reload_workflow` | active session; payload `workflow_id` |
+| `get_workflow_state` | active session (read-only) |
+
+Templates are RT-local builtins only — not `fixtures/scenarios/` lineage. Capture report may include additive `workflow_summary` and `templates_applied` — no automatic `scenario_pack_ref`.
 
 ---
 
@@ -128,6 +169,7 @@ Topics outside this table → `COMMAND_FORBIDDEN` until a new wave extends the a
 | HITL / C2 | `mission_approve`, `operator_authorize`, `command_authority_grant` | `COMMAND_FORBIDDEN` |
 | SA / federation | `corpus_promote`, `federation_register`, `publish_to_collection` | `COMMAND_FORBIDDEN` |
 | Orchestration | `launch_queue`, `run_experiment_queue` | `COMMAND_FORBIDDEN` |
+| SA import / corpus | `import_scenario`, `import_replay`, `auto_capture`, `save_template_to_corpus`, `promote_workflow` | `COMMAND_FORBIDDEN` |
 | Parser / topics | `publish_topic`, `alter_parser_contract` | `COMMAND_FORBIDDEN` |
 | Browser shortcut | Any direct ROS publish from UI | `COMMAND_FORBIDDEN` |
 
@@ -154,7 +196,10 @@ Exceeded → `RESOURCE_LIMIT_EXCEEDED`; session may → `failed`.
 | `OK` | Success |
 | `COMMAND_FORBIDDEN` | Not on allow-list |
 | `INVALID_STATE` | Lifecycle precondition failed |
+| `INVALID_POSE` | Pose outside world bounds or malformed |
+| `ENTITY_NOT_FOUND` | Unknown `entity_id` in session |
 | `RESOURCE_LIMIT_EXCEEDED` | Cap exceeded |
+| `WORKFLOW_STEP_FAILED` | Workflow step could not complete (PLAT-RT-S6) |
 | `SESSION_NOT_FOUND` | Unknown `session_id` |
 | `RUNTIME_UNAVAILABLE` | Gazebo/ROS child down |
 | `BRIDGE_DISCONNECTED` | Transport loss (client-side) |
@@ -213,8 +258,8 @@ Violations of these assumptions require a new governance review — not silent e
   "issued_by": "rt_ui_prototype",
   "authority_scope": "rt_sandbox_prototype",
   "payload": {
-    "entity_type": "prototype_target",
-    "pose": { "x": 0, "y": 0, "z": 10 }
+    "entity_type": "drone",
+    "pose": { "x": 0, "y": 0, "z": 10, "yaw_deg": 0 }
   }
 }
 ```

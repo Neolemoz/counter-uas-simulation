@@ -5,6 +5,7 @@ from __future__ import annotations
 import time
 from collections import deque
 from dataclasses import dataclass, field
+from typing import Any
 
 GOVERNANCE_BANNER = "RT SANDBOX — experimental simulation; not operational state"
 
@@ -15,17 +16,70 @@ SESSION_COMMANDS = frozenset(
         "resume",
         "stop_session",
         "discard_session",
+        "reset_session",
+        "capture_session",
     }
 )
 
-RT_S2_FORBIDDEN_COMMANDS = frozenset(
+ENTITY_COMMANDS = frozenset(
     {
-        "capture_session",
         "spawn_entity",
         "move_entity",
         "delete_entity",
+    }
+)
+
+TELEMETRY_COMMANDS = frozenset(
+    {
         "subscribe_telemetry",
         "unsubscribe_telemetry",
+    }
+)
+
+TEMPLATE_COMMANDS = frozenset(
+    {
+        "list_runtime_templates",
+        "apply_runtime_template",
+    }
+)
+
+WORKFLOW_COMMANDS = frozenset(
+    {
+        "start_workflow",
+        "advance_workflow",
+        "reset_workflow",
+        "reload_workflow",
+        "get_workflow_state",
+    }
+)
+
+ALLOWED_COMMANDS = (
+    SESSION_COMMANDS
+    | ENTITY_COMMANDS
+    | TELEMETRY_COMMANDS
+    | TEMPLATE_COMMANDS
+    | WORKFLOW_COMMANDS
+)
+
+ENTITY_CATALOG = frozenset({"radar", "interceptor", "drone", "waypoint_marker"})
+
+ENTITY_TYPE_LIMITS: dict[str, int] = {
+    "radar": 8,
+    "interceptor": 8,
+    "drone": 8,
+    "waypoint_marker": 8,
+}
+
+MAX_ENTITY_COUNT = 32
+
+WORLD_BOUNDS: dict[str, dict[str, float]] = {
+    "x": {"min": -500.0, "max": 500.0},
+    "y": {"min": -500.0, "max": 500.0},
+    "z": {"min": 0.0, "max": 200.0},
+}
+
+RT_FORBIDDEN_COMMANDS = frozenset(
+    {
         "send_runtime_command",
         "engage",
         "intercept",
@@ -37,6 +91,13 @@ RT_S2_FORBIDDEN_COMMANDS = frozenset(
         "run_experiment_queue",
         "publish_topic",
         "alter_parser_contract",
+        "import_scenario",
+        "import_replay",
+        "auto_capture",
+        "publish_template",
+        "save_template_to_corpus",
+        "promote_workflow",
+        "orchestration_apply",
     }
 )
 
@@ -58,6 +119,17 @@ class GovernanceConfig:
     session_cleanup_timeout_s: float = 120.0
     cleanup_pending_max_age_s: float = 300.0
     max_session_duration_s: float = 3600.0
+    max_entity_count: int = MAX_ENTITY_COUNT
+    telemetry_update_rate_cap_hz: float = 10.0
+    max_telemetry_channels_per_subscription: int = 5
+    telemetry_ring_buffer_size: int = 64
+    max_capture_bundle_bytes: int = 5 * 1024 * 1024
+    max_staged_captures: int = 32
+    max_runtime_templates_in_catalog: int = 16
+    max_entities_per_template_apply: int = 8
+    max_template_applies_per_session: int = 32
+    max_workflows_in_catalog: int = 8
+    max_workflow_steps: int = 12
     authority_scope: str = "rt_sandbox_prototype"
 
 
@@ -84,7 +156,7 @@ class RateLimiter:
 
 def classify_command(command_type: str) -> str | None:
     """Return error_code if forbidden, else None."""
-    if command_type in RT_S2_FORBIDDEN_COMMANDS:
+    if command_type in RT_FORBIDDEN_COMMANDS:
         return "COMMAND_FORBIDDEN"
     low = command_type.lower()
     for sub in FORBIDDEN_SUBSTRINGS:
@@ -92,6 +164,119 @@ def classify_command(command_type: str) -> str | None:
             return "COMMAND_FORBIDDEN"
     if command_type == "resume_session":
         return "COMMAND_FORBIDDEN"
-    if command_type not in SESSION_COMMANDS:
+    if command_type not in ALLOWED_COMMANDS:
         return "COMMAND_FORBIDDEN"
+    return None
+
+
+def validate_capture_payload(command_type: str, payload: Any) -> str | None:
+    """Return error_code if capture payload invalid."""
+    if command_type != "capture_session":
+        return None
+    from rt_sandbox.capture import validate_capture_payload as _validate
+
+    return _validate(payload)
+
+
+def pose_in_bounds(pose: dict[str, float]) -> bool:
+    for axis in ("x", "y", "z"):
+        if axis not in pose:
+            return False
+        bounds = WORLD_BOUNDS[axis]
+        v = float(pose[axis])
+        if v < bounds["min"] or v > bounds["max"]:
+            return False
+    return True
+
+
+def validate_pose(pose: Any) -> str | None:
+    """Return error_code if invalid."""
+    if not isinstance(pose, dict):
+        return "INVALID_POSE"
+    for key in ("x", "y", "z"):
+        if key not in pose:
+            return "INVALID_POSE"
+        try:
+            float(pose[key])
+        except (TypeError, ValueError):
+            return "INVALID_POSE"
+    if "yaw_deg" in pose:
+        try:
+            float(pose["yaw_deg"])
+        except (TypeError, ValueError):
+            return "INVALID_POSE"
+    if not pose_in_bounds({k: float(pose[k]) for k in ("x", "y", "z")}):
+        return "INVALID_POSE"
+    return None
+
+
+def validate_entity_payload(command_type: str, payload: Any) -> str | None:
+    """Return error_code if payload invalid."""
+    if not isinstance(payload, dict):
+        return "INVALID_POSE"
+    if command_type == "spawn_entity":
+        entity_type = payload.get("entity_type")
+        if not isinstance(entity_type, str) or entity_type not in ENTITY_CATALOG:
+            return "COMMAND_FORBIDDEN"
+        pose = payload.get("pose")
+        return validate_pose(pose)
+    if command_type == "move_entity":
+        entity_id = payload.get("entity_id")
+        if not isinstance(entity_id, str) or not entity_id:
+            return "ENTITY_NOT_FOUND"
+        return validate_pose(payload.get("pose"))
+    if command_type == "delete_entity":
+        entity_id = payload.get("entity_id")
+        if not isinstance(entity_id, str) or not entity_id:
+            return "ENTITY_NOT_FOUND"
+    return None
+
+
+def validate_telemetry_payload(command_type: str, payload: Any) -> str | None:
+    """Return error_code if payload invalid."""
+    from rt_sandbox.telemetry_subscriptions import (
+        MAX_CHANNELS_PER_SUBSCRIPTION,
+        TELEMETRY_CHANNELS,
+    )
+
+    if not isinstance(payload, dict):
+        return "COMMAND_FORBIDDEN"
+    if command_type == "subscribe_telemetry":
+        channels = payload.get("channels")
+        if not isinstance(channels, list) or not channels:
+            return "COMMAND_FORBIDDEN"
+        if len(channels) > MAX_CHANNELS_PER_SUBSCRIPTION:
+            return "RESOURCE_LIMIT_EXCEEDED"
+        for ch in channels:
+            if not isinstance(ch, str) or ch not in TELEMETRY_CHANNELS:
+                return "COMMAND_FORBIDDEN"
+        return None
+    if command_type == "unsubscribe_telemetry":
+        sub_id = payload.get("subscription_id")
+        if not isinstance(sub_id, str) or not sub_id:
+            return "SESSION_NOT_FOUND"
+    return None
+
+
+def validate_template_command_payload(command_type: str, payload: Any) -> str | None:
+    if command_type == "list_runtime_templates":
+        return None
+    if command_type == "apply_runtime_template":
+        from rt_sandbox.templates import validate_template_payload
+
+        return validate_template_payload(payload)
+    return None
+
+
+def validate_workflow_command_payload(command_type: str, payload: Any) -> str | None:
+    if command_type == "get_workflow_state":
+        return None
+    if command_type in {"reset_workflow"}:
+        return None
+    if command_type in {"start_workflow", "reload_workflow"}:
+        from rt_sandbox.workflow import validate_workflow_payload
+
+        return validate_workflow_payload(payload)
+    if command_type == "advance_workflow":
+        return None
     return None
