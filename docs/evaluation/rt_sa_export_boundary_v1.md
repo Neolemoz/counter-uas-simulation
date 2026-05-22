@@ -131,8 +131,24 @@ RT interactive capture is a **separate entrypoint** (RT-S5). RT-S1 documents bou
 
 ---
 
-## 8. Related
+## 8. Gazebo runtime state and replay authority (PLAN-RT-G1)
+
+| Concern | Rule |
+|---------|------|
+| Gazebo/ROS live state | **Transient** — not replay authority |
+| Live telemetry | Explanatory mirrors only — not SA compare clocks |
+| `capture_session` | Snapshots bridge-staged artifacts — not automatic SA import |
+| Sim-only state | Omitted from SA bundles unless PLAT-RT-G5 normalization + conversion manifest |
+| Runtime provenance | Explanatory fields only until G5; never `session_id` as lineage parent |
+
+**Invariant (unchanged):** `capture_session ≠ SA replay import`.
+
+---
+
+## 9. Related
 
 - [rt_capture_continuity_v1.md](rt_capture_continuity_v1.md)
 - [rt_session_lifecycle_v1.md](rt_session_lifecycle_v1.md)
 - [rt_s1_governance_review_r1.md](rt_s1_governance_review_r1.md)
+- [rt_gazebo_ros_boundary_v1.md](rt_gazebo_ros_boundary_v1.md)
+- [rt_runtime_synchronization_v1.md](rt_runtime_synchronization_v1.md)

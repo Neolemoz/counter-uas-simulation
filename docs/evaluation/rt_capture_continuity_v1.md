@@ -112,8 +112,22 @@ See [rt_session_lifecycle_v1.md](rt_session_lifecycle_v1.md) § Failure vs captu
 
 ---
 
-## 7. Related
+## 7. Runtime provenance from simulation (PLAN-RT-G1)
+
+Until PLAT-RT-G5:
+
+- Capture bundles reflect **bridge world state** and audit — not live Gazebo authority.
+- Additive `runtime_provenance` fields (sim world name, adapter revision) may appear in `runtime_capture_report_v1` as **explanatory only**.
+- Sim snapshots require `runtime_to_replay_conversion_v1` and maintainer approval before SA import.
+- Failed Gazebo/ROS sessions **must not** emit importable conversion manifests.
+
+G5 aligns sim artifacts with existing PLAT-RT-S5 staging without auto federation or corpus writes.
+
+---
+
+## 8. Related
 
 - [rt_sa_export_boundary_v1.md](rt_sa_export_boundary_v1.md)
 - [rt_session_lifecycle_v1.md](rt_session_lifecycle_v1.md)
 - [rt_roadmap_s2_s6_v1.md](rt_roadmap_s2_s6_v1.md) — RT-S5 implementation wave
+- [rt_roadmap_g2_g5_v1.md](rt_roadmap_g2_g5_v1.md) — RT-G5 capture normalization

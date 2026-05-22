@@ -91,10 +91,25 @@ Types not in this table → `COMMAND_FORBIDDEN` until a new wave extends the cat
 |---------|-------|
 | `send_runtime_command` | Sub-command allow-list only; default **deny-all** |
 
-Prototype sub-commands (illustrative):
+**PLAT-RT-S2–S6:** `RuntimeStub` only — no Gazebo/ROS. Sub-commands below are **deferred** until PLAT-RT-G2+.
+
+Prototype sub-commands (illustrative, pre-G2):
 
 - `set_clock_pause` (when not using `pause_session`)
 - `reload_world_config` (maintainer-only flag in future)
+
+#### Adapter profile (PLAN-RT-G1 — deferred to G2+)
+
+See [rt_gazebo_ros_boundary_v1.md](rt_gazebo_ros_boundary_v1.md) § 8.
+
+| Sub-command | Wave | Notes |
+|-------------|------|-------|
+| `adapter_attach` | G2 | Start adapter + sim; replaces stub when successful |
+| `adapter_detach` | G2 | Teardown adapter without full session stop |
+| `set_clock_pause` | G2/G3 | Prefer `pause_session` |
+| `reload_world_config` | G2+ | Maintainer-only |
+
+Until G2 freeze audit: all adapter sub-commands → `COMMAND_FORBIDDEN`.
 
 ### 3.4 Telemetry
 
@@ -271,3 +286,5 @@ Violations of these assumptions require a new governance review — not silent e
 - [rt_session_lifecycle_v1.md](rt_session_lifecycle_v1.md)
 - [rt_runtime_governance_v1.md](rt_runtime_governance_v1.md)
 - [rt_sa_export_boundary_v1.md](rt_sa_export_boundary_v1.md)
+- [rt_gazebo_ros_boundary_v1.md](rt_gazebo_ros_boundary_v1.md)
+- [rt_g1_gazebo_ros_integration_plan.md](../platform/rt_g1_gazebo_ros_integration_plan.md)

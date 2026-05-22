@@ -157,9 +157,28 @@ Audit logs are explanatory; not parser contracts or federation authority.
 
 ---
 
-## 10. Related
+## 10. RT-G1 — Gazebo/ROS integration governance (PLAN-RT-G1)
+
+Additive rules for future **RT Runtime Adapter** integration. No implementation in PLAN-RT-G1.
+
+| Rule | Requirement |
+|------|-------------|
+| Deny-by-default ROS | Adapter topic allow-list empty until PLAT-RT-G2 freeze audit extends |
+| Browser credentials | Never stores ROS/DDS tokens — unchanged |
+| Adapter isolation | One adapter subprocess tree per active session; bridge supervises teardown |
+| Local-only | Loopback bridge + localhost adapter; no public network exposure |
+| Orphan cleanup | Gazebo/ROS children killed on `cleanup_pending`; `cleanup_pending_max_age` applies (R5) |
+| Parser freeze | RT path must not publish to parser-contract topics |
+| Stub fallback | `RuntimeStub` remains when adapter disabled (maintainer flag) until G2 |
+
+Full boundary: [rt_gazebo_ros_boundary_v1.md](rt_gazebo_ros_boundary_v1.md). Sync model: [rt_runtime_synchronization_v1.md](rt_runtime_synchronization_v1.md).
+
+---
+
+## 11. Related
 
 - [rt_session_lifecycle_v1.md](rt_session_lifecycle_v1.md)
 - [rt_bridge_contract_v1.md](rt_bridge_contract_v1.md)
 - [rt_sa_export_boundary_v1.md](rt_sa_export_boundary_v1.md)
 - [rt_s1_governance_review_r1.md](rt_s1_governance_review_r1.md)
+- [rt_g1_gazebo_ros_integration_plan.md](../platform/rt_g1_gazebo_ros_integration_plan.md)
