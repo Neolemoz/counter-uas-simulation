@@ -281,7 +281,7 @@ def test_runtime_crashed_on_dead_stub(manager: BridgeSessionManager) -> None:
     start = _cmd(manager, "start_session")
     sid = start["session_id"]
     assert manager._session is not None
-    manager._session.stub.kill_for_crash_simulation()
+    manager._session.runtime.kill_for_crash_simulation()
     out = _cmd(manager, "pause_session", sid)
     assert out["ok"] is False
     assert out["error_code"] == "RUNTIME_UNAVAILABLE"
@@ -904,3 +904,127 @@ def test_http_workflow_state_loopback(tmp_path: Path) -> None:
     finally:
         server.shutdown()
         server.server_close()
+
+
+@pytest.fixture
+def adapter_manager(tmp_path: Path) -> BridgeSessionManager:
+    (tmp_path / "AGENTS.md").write_text("# test repo\n", encoding="utf-8")
+    (tmp_path / "runs" / "rt_sandbox").mkdir(parents=True, exist_ok=True)
+    cfg = GovernanceConfig(
+        command_rate_burst=1000,
+        command_rate_sustained=1000.0,
+        bridge_ready_timeout_s=5.0,
+        session_cleanup_timeout_s=0.5,
+        cleanup_pending_max_age_s=1.0,
+        max_session_duration_s=60.0,
+        enable_gazebo_adapter=True,
+        adapter_mode="mock",
+        adapter_ipc_timeout_s=10.0,
+    )
+    return BridgeSessionManager(config=cfg, repo_root=tmp_path)
+
+
+def test_send_runtime_command_allowed_in_classifier() -> None:
+    assert classify_command("send_runtime_command") is None
+
+
+def test_send_runtime_command_forbidden_when_adapter_disabled(
+    manager: BridgeSessionManager,
+) -> None:
+    start = _cmd(manager, "start_session")
+    sid = start["session_id"]
+    out = _cmd(
+        manager,
+        "send_runtime_command",
+        sid,
+        payload={"sub_command": "adapter_health"},
+    )
+    assert out["ok"] is False
+    assert out["error_code"] == "COMMAND_FORBIDDEN"
+
+
+def test_mock_adapter_session_lifecycle(adapter_manager: BridgeSessionManager) -> None:
+    start = _cmd(adapter_manager, "start_session")
+    assert start["ok"] is True
+    sid = start["session_id"]
+    assert adapter_manager._session is not None
+    from rt_sandbox.runtime_adapter import GazeboRuntimeAdapter
+
+    assert isinstance(adapter_manager._session.runtime, GazeboRuntimeAdapter)
+    assert adapter_manager._session.runtime.is_alive()
+    assert _cmd(adapter_manager, "pause_session", sid)["ok"] is True
+    assert _cmd(adapter_manager, "resume", sid)["ok"] is True
+    assert _cmd(adapter_manager, "stop_session", sid)["ok"] is True
+    assert _cmd(adapter_manager, "discard_session", sid)["ok"] is True
+
+
+def test_mock_adapter_entity_sync_audit(adapter_manager: BridgeSessionManager) -> None:
+    start = _cmd(adapter_manager, "start_session")
+    sid = start["session_id"]
+    spawn = _cmd(
+        adapter_manager,
+        "spawn_entity",
+        sid,
+        payload={"entity_type": "drone", "pose": _pose(1, 2, 3)},
+    )
+    assert spawn["ok"] is True
+    assert "entity_id" in spawn
+    audit = AuditLog(adapter_manager._repo_root).path_for(sid)
+    data = json.loads(audit.read_text(encoding="utf-8"))
+    spawn_entries = [e for e in data["entries"] if e["command_type"] == "spawn_entity"]
+    assert spawn_entries
+    detail = spawn_entries[-1].get("detail") or {}
+    assert "adapter_sync" in detail
+    assert detail["adapter_sync"].get("sim_entity_ref")
+
+
+def test_ros_allowlist_rejects_tracks_state(adapter_manager: BridgeSessionManager) -> None:
+    start = _cmd(adapter_manager, "start_session")
+    assert start["ok"] is True
+    from rt_sandbox.runtime_adapter import GazeboRuntimeAdapter
+
+    runtime = adapter_manager._session.runtime
+    assert isinstance(runtime, GazeboRuntimeAdapter)
+    resp = runtime.validate_topic("/tracks/state")
+    assert resp.ok is False
+    assert resp.error_code == "COMMAND_FORBIDDEN"
+
+
+def test_send_runtime_command_adapter_health(adapter_manager: BridgeSessionManager) -> None:
+    start = _cmd(adapter_manager, "start_session")
+    sid = start["session_id"]
+    out = _cmd(
+        adapter_manager,
+        "send_runtime_command",
+        sid,
+        payload={"sub_command": "adapter_health"},
+    )
+    assert out["ok"] is True
+    assert out["runtime_health"]["adapter_alive"] is True
+    assert out["runtime_health"]["adapter_mode"] == "mock"
+
+
+def test_runtime_subcommand_forbidden(adapter_manager: BridgeSessionManager) -> None:
+    start = _cmd(adapter_manager, "start_session")
+    sid = start["session_id"]
+    out = _cmd(
+        adapter_manager,
+        "send_runtime_command",
+        sid,
+        payload={"sub_command": "reload_world_config"},
+    )
+    assert out["ok"] is False
+    assert out["error_code"] == "COMMAND_FORBIDDEN"
+
+
+def test_adapter_orphan_cleanup_on_crash(adapter_manager: BridgeSessionManager) -> None:
+    start = _cmd(adapter_manager, "start_session")
+    sid = start["session_id"]
+    adapter_manager._session.runtime.kill_for_crash_simulation()
+    out = _cmd(adapter_manager, "pause_session", sid)
+    assert out["ok"] is False
+    assert out["error_code"] == "RUNTIME_UNAVAILABLE"
+    audit = AuditLog(adapter_manager._repo_root).path_for(sid)
+    data = json.loads(audit.read_text(encoding="utf-8"))
+    types = {e["command_type"] for e in data["entries"]}
+    assert "runtime_crashed" in types

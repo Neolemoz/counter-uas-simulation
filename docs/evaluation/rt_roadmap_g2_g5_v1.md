@@ -33,12 +33,12 @@ PLAT-RT-S5 capture boundary remains authoritative for export; G5 aligns sim snap
 |---------|-----------|
 | `RT Runtime Adapter` subprocess on localhost | Distributed runtime / remote DDS |
 | Adapter spawn/teardown wired to session lifecycle | Browser→ROS authority |
-| Deny-by-default ROS proxy skeleton | Pose sync to sim (deferred to G3) |
+| Deny-by-default ROS proxy; minimal one-way pose push | Bidirectional stale-sync (G3) |
 | `send_runtime_command` adapter sub-commands in wave audit | SA viewer integration |
 | Replace `RuntimeStub` when adapter attached | Auto SA replay import |
 | Maintainer flag: adapter off → stub fallback | rosbridge / `web/` extension |
 
-**Stop line:** No bidirectional pose sync; no full telemetry bridge; no capture schema changes beyond additive audit fields.
+**Stop line:** No bidirectional stale-sync; no full telemetry bridge (G4); no capture schema normalization (G5).
 
 ---
 

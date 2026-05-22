@@ -38,6 +38,15 @@ flowchart TB
 - `entity_pose_mirror` telemetry reflects bridge state.
 - `RuntimeStub` does not apply poses to Gazebo.
 
+### 2.1.1 PLAT-RT-G2 foundation (minimal one-way sync)
+
+When `enable_gazebo_adapter=true`:
+
+- Bridge remains **command authority** for entity registry.
+- Entity ops push poses to adapter worker via IPC (`apply_pose`, `delete_entity`).
+- Worker publishes to allow-listed `entity_pose_cmd` / `entity_state` topics (mock or live).
+- **No** sim feedback overwriting bridge registry; **no** stale-sync detection (G3).
+
 ### 2.2 G3 target (transient pose synchronization)
 
 | Rule | Description |

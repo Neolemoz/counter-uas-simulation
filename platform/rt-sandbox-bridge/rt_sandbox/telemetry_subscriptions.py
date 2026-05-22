@@ -175,9 +175,13 @@ def build_channel_payload(session: SessionRecord, channel: str) -> dict[str, Any
     from rt_sandbox.lifecycle import SessionState
 
     if channel == "session_health":
+        health = session.runtime.health_payload()
         return {
             "state": session.state.value,
-            "stub_alive": session.stub.is_alive(),
+            "stub_alive": health.get("stub_alive", False),
+            "adapter_alive": health.get("adapter_alive", False),
+            "adapter_mode": health.get("adapter_mode"),
+            "adapter_pid": health.get("adapter_pid"),
             "governance_banner": GOVERNANCE_BANNER,
         }
     if channel == "lifecycle_state":

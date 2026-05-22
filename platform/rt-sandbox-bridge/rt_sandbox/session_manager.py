@@ -24,6 +24,7 @@ from rt_sandbox.governance import (
     validate_capture_payload,
     validate_entity_payload,
     validate_template_command_payload,
+    validate_runtime_subcommand,
     validate_telemetry_payload,
     validate_workflow_command_payload,
 )
@@ -38,7 +39,9 @@ from rt_sandbox.workflow import (
     list_workflows_metadata,
     new_workflow_state,
 )
+from rt_sandbox.adapter_sync import sync_delete, sync_move, sync_reset_world, sync_spawn
 from rt_sandbox.lifecycle import SessionState, can_transition, is_active_state
+from rt_sandbox.runtime_handle import RuntimeHandle, create_runtime, runtime_is_adapter
 from rt_sandbox.runtime_stub import RuntimeStub
 from rt_sandbox.telemetry import TelemetryBuffer
 from rt_sandbox.telemetry_subscriptions import (
@@ -56,7 +59,7 @@ class SessionRecord:
     created_monotonic: float
     bridge_ready_deadline: float
     cleanup_after: float | None = None
-    stub: RuntimeStub = field(default_factory=RuntimeStub)
+    runtime: RuntimeHandle = field(default_factory=RuntimeStub)
     world: WorldStateStore | None = None
     issued_by: str = "rt_ui_prototype"
     workflow: WorkflowState | None = None
@@ -92,7 +95,7 @@ class BridgeSessionManager:
             SessionState.RUNNING,
             SessionState.PAUSED,
         }:
-            if not self._session.stub.is_alive():
+            if not self._session.runtime.is_alive():
                 base = self._response_base(
                     str(body.get("command_id", "")),
                     self._session.session_id,
@@ -186,6 +189,14 @@ class BridgeSessionManager:
             return self._handle_workflow(
                 session,
                 command_type,
+                payload,
+                base,
+                command_id,
+                issued_by,
+            )
+        if command_type == "send_runtime_command":
+            return self._handle_runtime_command(
+                session,
                 payload,
                 base,
                 command_id,
@@ -370,7 +381,7 @@ class BridgeSessionManager:
     ) -> dict[str, Any]:
         if not can_transition(session.state, command_type):
             return self._fail(base, "INVALID_STATE", session.state.value)
-        if not session.stub.is_alive():
+        if not session.runtime.is_alive():
             return self._runtime_crashed(session, base, command_id, issued_by)
         if session.world is None:
             return self._fail(base, "INVALID_STATE", "world not initialized")
@@ -400,6 +411,21 @@ class BridgeSessionManager:
                 "pose": dict(record.pose),
                 "state": session.state.value,
             }
+            sync_result = sync_spawn(
+                session.runtime,
+                self.config,
+                record.entity_id,
+                record.entity_type,
+                dict(record.pose),
+            )
+            if sync_result and sync_result.get("error_code"):
+                return self._fail(
+                    base,
+                    str(sync_result["error_code"]),
+                    str(sync_result.get("error_message", "adapter sync failed")),
+                )
+            if sync_result:
+                detail["adapter_sync"] = sync_result
             self._audit.append(
                 session.session_id,
                 command_id=command_id,
@@ -428,6 +454,21 @@ class BridgeSessionManager:
                 "pose": dict(record.pose),
                 "state": session.state.value,
             }
+            sync_result = sync_move(
+                session.runtime,
+                self.config,
+                record.entity_id,
+                record.entity_type,
+                dict(record.pose),
+            )
+            if sync_result and sync_result.get("error_code"):
+                return self._fail(
+                    base,
+                    str(sync_result["error_code"]),
+                    str(sync_result.get("error_message", "adapter sync failed")),
+                )
+            if sync_result:
+                detail["adapter_sync"] = sync_result
             self._audit.append(
                 session.session_id,
                 command_id=command_id,
@@ -452,6 +493,19 @@ class BridgeSessionManager:
                 "entity_type": record.entity_type,
                 "state": session.state.value,
             }
+            sync_result = sync_delete(
+                session.runtime,
+                self.config,
+                record.entity_id,
+            )
+            if sync_result and sync_result.get("error_code"):
+                return self._fail(
+                    base,
+                    str(sync_result["error_code"]),
+                    str(sync_result.get("error_message", "adapter sync failed")),
+                )
+            if sync_result:
+                detail["adapter_sync"] = sync_result
             self._audit.append(
                 session.session_id,
                 command_id=command_id,
@@ -466,6 +520,76 @@ class BridgeSessionManager:
             return self._entity_ok(session, base, detail=detail)
 
         return self._fail(base, "COMMAND_FORBIDDEN", command_type)
+
+    def _handle_runtime_command(
+        self,
+        session: SessionRecord,
+        payload: Any,
+        base: dict[str, Any],
+        command_id: str,
+        issued_by: str,
+    ) -> dict[str, Any]:
+        if not self.config.enable_gazebo_adapter:
+            return self._fail(
+                base,
+                "COMMAND_FORBIDDEN",
+                "gazebo adapter disabled",
+            )
+        err = validate_runtime_subcommand(payload)
+        if err:
+            return self._fail(base, err, "invalid runtime sub_command")
+        assert isinstance(payload, dict)
+        sub = str(payload["sub_command"])
+        if not runtime_is_adapter(session.runtime):
+            return self._fail(base, "INVALID_STATE", "adapter not active")
+        if not session.runtime.is_alive():
+            return self._runtime_crashed(session, base, command_id, issued_by)
+
+        if sub == "adapter_health":
+            health = session.runtime.health_payload()
+            self._audit.append(
+                session.session_id,
+                command_id=command_id,
+                command_type="adapter_health",
+                issued_by=issued_by,
+                result="OK",
+                detail=health,
+            )
+            resp = self._ok(base, state=session.state.value)
+            resp["runtime_health"] = health
+            return resp
+
+        if sub == "adapter_attach":
+            try:
+                pid = session.runtime.start()
+            except OSError as exc:
+                return self._fail(base, "RUNTIME_UNAVAILABLE", str(exc))
+            detail = {"runtime_pid": pid, "adapter_mode": session.runtime.mode}
+            self._audit.append(
+                session.session_id,
+                command_id=command_id,
+                command_type="adapter_attach",
+                issued_by=issued_by,
+                result="OK",
+                detail=detail,
+            )
+            resp = self._ok(base, state=session.state.value)
+            resp["runtime_health"] = session.runtime.health_payload()
+            return resp
+
+        if sub == "adapter_detach":
+            session.runtime.terminate()
+            self._audit.append(
+                session.session_id,
+                command_id=command_id,
+                command_type="adapter_detach",
+                issued_by=issued_by,
+                result="OK",
+                detail={"detached": True},
+            )
+            return self._ok(base, state=session.state.value)
+
+        return self._fail(base, "COMMAND_FORBIDDEN", sub)
 
     def _entity_ok(
         self,
@@ -578,7 +702,7 @@ class BridgeSessionManager:
 
         if not can_transition(session.state, command_type):
             return self._fail(base, "INVALID_STATE", session.state.value)
-        if not session.stub.is_alive():
+        if not session.runtime.is_alive():
             return self._runtime_crashed(session, base, command_id, issued_by)
         if session.world is None:
             return self._fail(base, "INVALID_STATE", "world not initialized")
@@ -641,7 +765,7 @@ class BridgeSessionManager:
 
         if not can_transition(session.state, command_type):
             return self._fail(base, "INVALID_STATE", session.state.value)
-        if not session.stub.is_alive():
+        if not session.runtime.is_alive():
             return self._runtime_crashed(session, base, command_id, issued_by)
         if session.world is None:
             return self._fail(base, "INVALID_STATE", "world not initialized")
@@ -823,6 +947,7 @@ class BridgeSessionManager:
                 return self._fail(base, "INVALID_STATE", "session already active")
 
         session_id = str(uuid.uuid4())
+        runtime = create_runtime(self.config, session_id)
         record = SessionRecord(
             session_id=session_id,
             state=SessionState.CREATED,
@@ -830,27 +955,47 @@ class BridgeSessionManager:
             bridge_ready_deadline=now + self.config.bridge_ready_timeout_s,
             issued_by=issued_by,
             world=WorldStateStore(session_id=session_id),
+            runtime=runtime,
         )
         record.world.registry.max_entity_count = self.config.max_entity_count
         self._session = record
         base["session_id"] = session_id
 
         try:
-            pid = record.stub.start()
+            pid = record.runtime.start()
             record.state = SessionState.RUNNING
+            runtime_detail: dict[str, Any] = {
+                "runtime_pid": pid,
+                "runtime_kind": getattr(record.runtime, "kind", "unknown"),
+                "state": record.state.value,
+            }
+            if runtime_is_adapter(record.runtime):
+                runtime_detail["adapter_mode"] = getattr(
+                    record.runtime, "mode", None
+                )
             self._audit.append(
                 session_id,
                 command_id=command_id,
                 command_type="start_session",
                 issued_by=issued_by,
                 result="OK",
-                detail={"stub_pid": pid, "state": record.state.value},
+                detail=runtime_detail,
             )
+            if runtime_is_adapter(record.runtime):
+                self._audit.append(
+                    session_id,
+                    command_id=command_id,
+                    command_type="adapter_attach",
+                    issued_by=issued_by,
+                    result="OK",
+                    detail=runtime_detail,
+                )
             summary = record.world.world_summary() if record.world else {}
+            health = record.runtime.health_payload()
             hb = self._telemetry.maybe_emit(
                 session_id,
                 record.state.value,
-                record.stub.is_alive(),
+                health.get("stub_alive") or health.get("adapter_alive", False),
                 world_summary=summary,
             )
             self._publish_channels_for_transition(
@@ -882,10 +1027,10 @@ class BridgeSessionManager:
     ) -> dict[str, Any]:
         if not can_transition(session.state, "pause_session"):
             return self._fail(base, "INVALID_STATE", session.state.value)
-        if not session.stub.is_alive():
+        if not session.runtime.is_alive():
             return self._runtime_crashed(session, base, command_id, issued_by)
         prev = session.state
-        session.stub.pause()
+        session.runtime.pause()
         session.state = SessionState.PAUSED
         self._audit.append(
             session.session_id,
@@ -907,10 +1052,10 @@ class BridgeSessionManager:
     ) -> dict[str, Any]:
         if not can_transition(session.state, "resume"):
             return self._fail(base, "INVALID_STATE", session.state.value)
-        if not session.stub.is_alive():
+        if not session.runtime.is_alive():
             return self._runtime_crashed(session, base, command_id, issued_by)
         prev = session.state
-        session.stub.resume()
+        session.runtime.resume()
         session.state = SessionState.RUNNING
         self._audit.append(
             session.session_id,
@@ -949,6 +1094,7 @@ class BridgeSessionManager:
         if session.workflow is not None:
             self._clear_workflow_state(session, issued_by=issued_by, command_id=command_id)
             detail["workflow_reset"] = True
+        sync_reset_world(session.runtime, self.config)
         self._audit.append(
             session.session_id,
             command_id=command_id,
@@ -974,7 +1120,7 @@ class BridgeSessionManager:
         if not can_transition(session.state, "stop_session"):
             return self._fail(base, "INVALID_STATE", session.state.value)
         prev = session.state
-        session.stub.stop()
+        session.runtime.stop()
         session.state = SessionState.STOPPED
         session.cleanup_after = now + self.config.session_cleanup_timeout_s
         self._audit.append(
@@ -1069,7 +1215,12 @@ class BridgeSessionManager:
             command_id=command_id,
             extra_detail={"trigger": "capture_session"},
         )
-        session.stub.terminate()
+        self._terminate_runtime_with_audit(
+            session,
+            trigger="capture_session",
+            command_id=command_id,
+            issued_by=issued_by,
+        )
         session.world = None
         session.workflow = None
         session.template_apply_count = 0
@@ -1137,7 +1288,12 @@ class BridgeSessionManager:
             command_id=command_id,
             extra_detail={"trigger": "discard_session"},
         )
-        session.stub.terminate()
+        self._terminate_runtime_with_audit(
+            session,
+            trigger="discard_session",
+            command_id=command_id,
+            issued_by=issued_by,
+        )
         session.state = SessionState.DISCARDED
         session.cleanup_after = None
         session.world = None
@@ -1153,6 +1309,35 @@ class BridgeSessionManager:
             detail={"state": session.state.value, "cleanup": "complete"},
         )
         return self._ok(base, state=session.state.value)
+
+    def _terminate_runtime_with_audit(
+        self,
+        session: SessionRecord,
+        *,
+        trigger: str,
+        command_id: str | None = None,
+        issued_by: str = "bridge",
+    ) -> None:
+        was_adapter = runtime_is_adapter(session.runtime)
+        adapter_pid = getattr(session.runtime, "pid", None)
+        session.runtime.terminate()
+        if was_adapter:
+            self._audit.append(
+                session.session_id,
+                command_id=command_id,
+                command_type="adapter_teardown",
+                issued_by=issued_by,
+                result="OK",
+                detail={"trigger": trigger, "adapter_pid": adapter_pid},
+            )
+            self._audit.append(
+                session.session_id,
+                command_id=command_id,
+                command_type="orphan_cleanup",
+                issued_by=issued_by,
+                result="OK",
+                detail={"trigger": trigger},
+            )
 
     def _runtime_crashed(
         self,
@@ -1171,7 +1356,16 @@ class BridgeSessionManager:
             result="RUNTIME_UNAVAILABLE",
             detail={"state": session.state.value},
         )
-        return self._fail(base, "RUNTIME_UNAVAILABLE", "runtime stub exited")
+        if runtime_is_adapter(session.runtime):
+            self._audit.append(
+                session.session_id,
+                command_id=command_id,
+                command_type="adapter_teardown",
+                issued_by=issued_by,
+                result="RUNTIME_UNAVAILABLE",
+                detail={"trigger": "runtime_crashed"},
+            )
+        return self._fail(base, "RUNTIME_UNAVAILABLE", "runtime backend exited")
 
     def _tick_timeouts(self, now: float) -> None:
         session = self._session
@@ -1180,7 +1374,7 @@ class BridgeSessionManager:
 
         if session.state == SessionState.CREATED and now > session.bridge_ready_deadline:
             session.state = SessionState.FAILED
-            session.stub.terminate()
+            session.runtime.terminate()
             self._clear_world_with_audit(session, extra_detail={"trigger": "bridge_ready_timeout"})
             self._clear_telemetry_with_audit(
                 session, extra_detail={"trigger": "bridge_ready_timeout"}
@@ -1197,7 +1391,7 @@ class BridgeSessionManager:
             )
 
         if session.state == SessionState.RUNNING and now - session.created_monotonic > self.config.max_session_duration_s:
-            session.stub.stop()
+            session.runtime.stop()
             session.state = SessionState.STOPPED
             session.cleanup_after = now + self.config.session_cleanup_timeout_s
             self._audit.append(
@@ -1209,7 +1403,7 @@ class BridgeSessionManager:
                 detail={"state": session.state.value},
             )
 
-        if session.state in {SessionState.RUNNING, SessionState.PAUSED} and not session.stub.is_alive():
+        if session.state in {SessionState.RUNNING, SessionState.PAUSED} and not session.runtime.is_alive():
             session.state = SessionState.RUNTIME_CRASHED
             session.cleanup_after = now + self.config.cleanup_pending_max_age_s
             self._audit.append(
@@ -1231,7 +1425,7 @@ class BridgeSessionManager:
                 self._clear_telemetry_with_audit(
                     session, extra_detail={"trigger": "auto_cleanup"}
                 )
-                session.stub.terminate()
+                self._terminate_runtime_with_audit(session, trigger="auto_cleanup")
                 session.state = SessionState.DISCARDED
                 session.world = None
                 session.cleanup_after = None
@@ -1248,7 +1442,7 @@ class BridgeSessionManager:
                 self._clear_telemetry_with_audit(
                     session, extra_detail={"trigger": "auto_cleanup"}
                 )
-                session.stub.terminate()
+                session.runtime.terminate()
                 session.state = SessionState.DISCARDED
                 session.world = None
                 session.cleanup_after = None

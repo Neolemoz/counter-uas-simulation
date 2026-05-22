@@ -44,7 +44,9 @@ All paths require an **active RT session** and **running or paused** lifecycle s
 | Session stop | Bridge → Adapter | `stop_session`, `discard_session`, cleanup | Partial orphan leave-behind |
 | Telemetry drain | Bridge internal | Existing PLAT-RT-S4 pull path | WebSocket in SA viewer |
 
-**PLAT-RT-S2–S6 (current):** No row in this table is live except bridge-internal mirrors from `WorldStateStore` and `RuntimeStub`. Adapter column is **documentation only**.
+**PLAT-RT-S2–S6 (default):** Bridge-internal mirrors from `WorldStateStore` and `RuntimeStub` when `enable_gazebo_adapter=false`.
+
+**PLAT-RT-G2 (when adapter enabled):** Session start, pause/resume, entity pose cmd, clock observation via adapter worker. No `/tracks/state` publish.
 
 ---
 
@@ -140,20 +142,21 @@ Detail: [rt_runtime_synchronization_v1.md](rt_runtime_synchronization_v1.md) § 
 
 ---
 
-## 8. `send_runtime_command` adapter profile (deferred)
+## 8. `send_runtime_command` adapter profile (PLAT-RT-G2)
 
-Bridge command `send_runtime_command` remains **deny-by-default** until PLAT-RT-G2 documents sub-commands.
+Active when `enable_gazebo_adapter=true`. See [rt_bridge_contract_v1.md](rt_bridge_contract_v1.md) § 3.3.
 
-Illustrative future sub-commands (not active in RT-G1):
+## 9. PLAT-RT-G2 allow-listed topics
 
-| Sub-command | Phase | Notes |
-|-------------|-------|-------|
-| `adapter_attach` | G2 | Start adapter + sim; maintainer-gated in prototype |
-| `adapter_detach` | G2 | Tear down without full session stop |
-| `set_clock_pause` | G2/G3 | Prefer `pause_session` |
-| `reload_world_config` | G2+ | Maintainer-only |
+For session UUID `{session_id}`:
 
-See additive § in [rt_bridge_contract_v1.md](rt_bridge_contract_v1.md).
+| Topic | Direction (worker) |
+|-------|-------------------|
+| `/rt_sandbox/{session_id}/entity_pose_cmd` | Subscribe (bridge applies via IPC) |
+| `/rt_sandbox/{session_id}/entity_state` | Publish (mock mirror) |
+| `/rt_sandbox/{session_id}/clock` | Publish (pause observation) |
+
+Implementation: [ros_allowlist.py](../../platform/rt-sandbox-bridge/rt_sandbox/ros_allowlist.py).
 
 ---
 

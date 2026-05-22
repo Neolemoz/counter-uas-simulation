@@ -53,12 +53,15 @@ WORKFLOW_COMMANDS = frozenset(
     }
 )
 
+RUNTIME_COMMANDS = frozenset({"send_runtime_command"})
+
 ALLOWED_COMMANDS = (
     SESSION_COMMANDS
     | ENTITY_COMMANDS
     | TELEMETRY_COMMANDS
     | TEMPLATE_COMMANDS
     | WORKFLOW_COMMANDS
+    | RUNTIME_COMMANDS
 )
 
 ENTITY_CATALOG = frozenset({"radar", "interceptor", "drone", "waypoint_marker"})
@@ -78,9 +81,16 @@ WORLD_BOUNDS: dict[str, dict[str, float]] = {
     "z": {"min": 0.0, "max": 200.0},
 }
 
+RUNTIME_SUBCOMMANDS = frozenset(
+    {
+        "adapter_attach",
+        "adapter_detach",
+        "adapter_health",
+    }
+)
+
 RT_FORBIDDEN_COMMANDS = frozenset(
     {
-        "send_runtime_command",
         "engage",
         "intercept",
         "strike",
@@ -131,6 +141,19 @@ class GovernanceConfig:
     max_workflows_in_catalog: int = 8
     max_workflow_steps: int = 12
     authority_scope: str = "rt_sandbox_prototype"
+    enable_gazebo_adapter: bool = False
+    adapter_mode: str = "mock"
+    adapter_ready_timeout_s: float = 60.0
+    adapter_ipc_timeout_s: float = 5.0
+    ros_domain_id_offset: int = 42
+
+    def ros_domain_id_for_session(self, session_id: str) -> int:
+        """Derive isolated ROS_DOMAIN_ID from session UUID (live mode only)."""
+        try:
+            tail = int(session_id.replace("-", "")[:8], 16)
+        except ValueError:
+            tail = 0
+        return self.ros_domain_id_offset + (tail % 10000)
 
 
 @dataclass
@@ -279,4 +302,14 @@ def validate_workflow_command_payload(command_type: str, payload: Any) -> str | 
         return validate_workflow_payload(payload)
     if command_type == "advance_workflow":
         return None
+    return None
+
+
+def validate_runtime_subcommand(payload: Any) -> str | None:
+    """Return error_code if send_runtime_command payload invalid."""
+    if not isinstance(payload, dict):
+        return "COMMAND_FORBIDDEN"
+    sub = payload.get("sub_command")
+    if not isinstance(sub, str) or sub not in RUNTIME_SUBCOMMANDS:
+        return "COMMAND_FORBIDDEN"
     return None

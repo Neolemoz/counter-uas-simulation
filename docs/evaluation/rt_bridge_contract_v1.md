@@ -91,25 +91,23 @@ Types not in this table → `COMMAND_FORBIDDEN` until a new wave extends the cat
 |---------|-------|
 | `send_runtime_command` | Sub-command allow-list only; default **deny-all** |
 
-**PLAT-RT-S2–S6:** `RuntimeStub` only — no Gazebo/ROS. Sub-commands below are **deferred** until PLAT-RT-G2+.
+**PLAT-RT-S2–S6 (default):** `RuntimeStub` when `enable_gazebo_adapter=false`.
 
-Prototype sub-commands (illustrative, pre-G2):
+**PLAT-RT-G2:** `GazeboRuntimeAdapter` when `enable_gazebo_adapter=true` (mock or live).
 
-- `set_clock_pause` (when not using `pause_session`)
-- `reload_world_config` (maintainer-only flag in future)
+#### Adapter profile (PLAT-RT-G2)
 
-#### Adapter profile (PLAN-RT-G1 — deferred to G2+)
+Requires `enable_gazebo_adapter=true` on bridge. Payload: `{"sub_command": "<name>"}`.
 
-See [rt_gazebo_ros_boundary_v1.md](rt_gazebo_ros_boundary_v1.md) § 8.
+| Sub-command | Active | Notes |
+|-------------|--------|-------|
+| `adapter_attach` | Yes | Re-attach worker (idempotent) |
+| `adapter_detach` | Yes | Teardown worker without full session stop |
+| `adapter_health` | Yes | Returns `runtime_health` in response |
+| `reload_world_config` | No | `COMMAND_FORBIDDEN` until future wave |
+| `set_clock_pause` | No | Use `pause_session` |
 
-| Sub-command | Wave | Notes |
-|-------------|------|-------|
-| `adapter_attach` | G2 | Start adapter + sim; replaces stub when successful |
-| `adapter_detach` | G2 | Teardown adapter without full session stop |
-| `set_clock_pause` | G2/G3 | Prefer `pause_session` |
-| `reload_world_config` | G2+ | Maintainer-only |
-
-Until G2 freeze audit: all adapter sub-commands → `COMMAND_FORBIDDEN`.
+Auto-attach: `start_session` attaches adapter when flag enabled.
 
 ### 3.4 Telemetry
 
@@ -124,7 +122,7 @@ Telemetry path is **read-only** — no writes via subscription channel.
 
 | `channel` | Payload (read-only) | Cap |
 |-----------|---------------------|-----|
-| `session_health` | `state`, `stub_alive`, `governance_banner` | ≤ 10 Hz aggregate |
+| `session_health` | `state`, `stub_alive`, `adapter_alive`, `adapter_mode`, `adapter_pid`, `governance_banner` | ≤ 10 Hz aggregate |
 | `lifecycle_state` | `state`, `previous_state`, `command_type` | ≤ 10 Hz aggregate |
 | `world_summary` | `entity_count`, `revision`, `by_type`, `bounds` | ≤ 10 Hz aggregate |
 | `entity_pose_mirror` | `entities[]` with session-scoped poses | ≤ 10 Hz aggregate |

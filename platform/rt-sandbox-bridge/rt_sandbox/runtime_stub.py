@@ -5,13 +5,14 @@ from __future__ import annotations
 import subprocess
 import sys
 from dataclasses import dataclass
-from typing import TextIO
+from typing import Any
 
 
 @dataclass
 class RuntimeStub:
     """Simulated runtime child for orphan/cleanup tests."""
 
+    kind: str = "stub"
     pid: int | None = None
     paused: bool = False
     _proc: subprocess.Popen[bytes] | None = None
@@ -60,3 +61,25 @@ class RuntimeStub:
             self._proc.wait(timeout=2)
         self._proc = None
         self.pid = None
+
+    def health_payload(self) -> dict[str, Any]:
+        return {
+            "stub_alive": self.is_alive(),
+            "adapter_alive": False,
+            "adapter_mode": None,
+            "adapter_pid": None,
+        }
+
+    def apply_pose(
+        self,
+        entity_id: str,
+        entity_type: str,
+        pose: dict[str, float],
+    ) -> dict[str, Any] | None:
+        return None
+
+    def delete_entity(self, entity_id: str) -> dict[str, Any] | None:
+        return None
+
+    def reset_world(self) -> None:
+        return

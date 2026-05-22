@@ -175,10 +175,25 @@ Full boundary: [rt_gazebo_ros_boundary_v1.md](rt_gazebo_ros_boundary_v1.md). Syn
 
 ---
 
-## 11. Related
+## 11. PLAT-RT-G2 — adapter prototype governance
+
+| Constant / flag | Default | Notes |
+|-----------------|---------|-------|
+| `enable_gazebo_adapter` | `false` | Stub fallback preserves S2–S6 behavior |
+| `adapter_mode` | `mock` | `live` invokes `ros2 launch` in worker (maintainer) |
+| `adapter_ipc_timeout_s` | `5.0` | Bridge ↔ worker IPC |
+| `adapter_ready_timeout_s` | `60.0` | Aligns with bridge ready timeout |
+| `ros_domain_id_offset` | `42` | Live-mode DDS isolation |
+
+Allowed session topics (worker-enforced): `/rt_sandbox/{session_id}/entity_pose_cmd`, `entity_state`, `clock` — see [rt_gazebo_ros_boundary_v1.md](rt_gazebo_ros_boundary_v1.md).
+
+---
+
+## 12. Related
 
 - [rt_session_lifecycle_v1.md](rt_session_lifecycle_v1.md)
 - [rt_bridge_contract_v1.md](rt_bridge_contract_v1.md)
 - [rt_sa_export_boundary_v1.md](rt_sa_export_boundary_v1.md)
 - [rt_s1_governance_review_r1.md](rt_s1_governance_review_r1.md)
 - [rt_g1_gazebo_ros_integration_plan.md](../platform/rt_g1_gazebo_ros_integration_plan.md)
+- [rt_g2_gazebo_adapter_plan.md](../platform/rt_g2_gazebo_adapter_plan.md)
