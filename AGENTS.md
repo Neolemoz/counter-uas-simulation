@@ -127,8 +127,9 @@ Runtime research may proceed only in narrow, default-off, parser-safe waves. It 
 
 - [RT-S1 Interactive Sandbox](docs/platform/rt_s1_interactive_sandbox_architecture_plan.md) — transient Browser → RT Backend Bridge → ROS2/Gazebo workflows (PLAN-RT-S1, docs frozen); see [rt_s1_freeze_audit.md](docs/evaluation/rt_s1_freeze_audit.md), [rt_s1_architecture_readiness_review_r1.md](docs/evaluation/rt_s1_architecture_readiness_review_r1.md)
 - Contracts: [rt_bridge_contract_v1.md](docs/evaluation/rt_bridge_contract_v1.md), [rt_session_lifecycle_v1.md](docs/evaluation/rt_session_lifecycle_v1.md), [rt_sa_export_boundary_v1.md](docs/evaluation/rt_sa_export_boundary_v1.md), [rt_runtime_governance_v1.md](docs/evaluation/rt_runtime_governance_v1.md)
-- Roadmap: [rt_roadmap_s2_s6_v1.md](docs/evaluation/rt_roadmap_s2_s6_v1.md) — RT-S2 bridge prototype through RT-S6 advanced sandbox (not started)
+- Roadmap: [rt_roadmap_s2_s6_v1.md](docs/evaluation/rt_roadmap_s2_s6_v1.md) — RT-S3+ world editing through RT-S6 (PLAT-RT-S2 frozen)
+- [RT-S2 Bridge Prototype](docs/platform/rt_s2_bridge_prototype_plan.md) — loopback HTTP bridge + session manager + runtime stub (PLAT-RT-S2, frozen); see [rt_s2_freeze_audit.md](docs/evaluation/rt_s2_freeze_audit.md)
 
 **Vocabulary:** “RT interactive sandbox” (PLAT-RT-S*) is **not** the SA replay workstation “sandbox” (PLAN-SA-H*) and **not** registry RT-1..7 realism waves.
 
-Forbidden on the RT Sandbox frontier: rosbridge and legacy `web/` extension for RT, browser→ROS direct execution, SA viewer live hooks, federation/orchestration authority from RT sessions, tactical/HITL/C2 semantics, cloud/multi-user infra, production security infra in RT-S1. Local loopback transport to RT bridge only (RT-S2+ per readiness review). Stop line: PLAN-RT-S1 frozen; no RT-S2 code without PLAT-RT-S2 wave audit.
+Forbidden on the RT Sandbox frontier: rosbridge and legacy `web/` extension for RT, browser→ROS direct execution, SA viewer live hooks, federation/orchestration authority from RT sessions, tactical/HITL/C2 semantics, cloud/multi-user infra, production security infra. Local loopback transport to RT bridge only. Stop line after PLAT-RT-S2: no RT-S3 entity editing without new wave audit.

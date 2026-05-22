@@ -24,7 +24,7 @@ Async recovery (PLAT-SA-I3, frozen): [sa_i3_async_recovery_plan.md](../platform/
 
 Multi-corpus federation (PLAT-SA-F2A, frozen): [sa_f2a_multi_corpus_federation_plan.md](sa_f2a_multi_corpus_federation_plan.md). Commands: `build_replay_federation_index.py --check`, `audit_replay_federation_integrity.py --check --strict`, `audit_federation_recovery_continuity.py --check --strict`, `gen_f2a_federation_fixtures.py`. Stop line: no cloud federation, live sync, collaborative editing, or browser orchestration.
 
-RT interactive sandbox (PLAN-RT-S1, **docs frozen** — worktree `codex-a01-phase2`, branch `feature/rt-s1-sandbox-architecture`): [rt_s1_interactive_sandbox_architecture_plan.md](../platform/rt_s1_interactive_sandbox_architecture_plan.md), [rt_s1_architecture_readiness_review_r1.md](rt_s1_architecture_readiness_review_r1.md). No SA maintainer commands. Stop line: no RT-S2 bridge code without PLAT-RT-S2 wave audit; no SA viewer RT hooks; no federation writes from RT sessions.
+RT interactive sandbox (PLAN-RT-S1 docs frozen; PLAT-RT-S2 bridge frozen — worktree `codex-a01-phase2`): [rt_s2_bridge_prototype_plan.md](../platform/rt_s2_bridge_prototype_plan.md). Dev-only: `python3 scripts/rt/run_rt_bridge.py` then `python3 scripts/rt/rt_bridge_client.py start_session`. Audit logs: `runs/rt_sandbox/audit/`. Not wired to SA viewer. Stop line: no RT-S3 spawn/move; no capture/federation from RT bridge.
 
 ## Pre-merge / pre-share gate
 

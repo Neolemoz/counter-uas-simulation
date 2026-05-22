@@ -1,7 +1,7 @@
 # RT Roadmap RT-S2 through RT-S6 (`rt_roadmap_s2_s6_v1`)
 
 **Phase:** PLAN-RT-S1 — future scoped waves (docs only)  
-**Prerequisite:** PLAN-RT-S1 frozen per [rt_s1_freeze_audit.md](rt_s1_freeze_audit.md); RT-S2 readiness per [rt_s1_architecture_readiness_review_r1.md](rt_s1_architecture_readiness_review_r1.md)
+**Prerequisite:** PLAN-RT-S1 frozen; PLAT-RT-S2 frozen per [rt_s2_freeze_audit.md](rt_s2_freeze_audit.md)
 
 ---
 
