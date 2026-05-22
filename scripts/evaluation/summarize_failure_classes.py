@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Histogram F1–F5 failure_class over logs listed in a monte_carlo per-run CSV (log_path column)."""
+"""Histogram F1-F5 failure_class over failed logs listed in a monte_carlo CSV."""
 
 from __future__ import annotations
 
@@ -19,31 +19,20 @@ import stats_helpers as stats  # noqa: E402
 from classify_run import classify_run_failure_evidence  # noqa: E402
 
 
-def main() -> int:
-    ap = argparse.ArgumentParser(description='Count failure_class over MC CSV log_path column.')
-    ap.add_argument('csv_path', type=Path, help='monte_carlo *.csv with log_path header')
-    ap.add_argument(
-        '--out-json',
-        type=Path,
-        default=None,
-        help='Optional path to write {"failure_hist": {...}, ...}',
-    )
-    args = ap.parse_args()
-    p = args.csv_path
+def summarize_failure_classes(p: Path) -> dict[str, object]:
     if not p.is_file():
-        print(f'missing CSV: {p}', file=sys.stderr)
-        return 2
+        raise FileNotFoundError(p)
     with p.open(encoding='utf-8', newline='') as f:
         r = csv.DictReader(f)
         if 'log_path' not in (r.fieldnames or []):
-            print('CSV must include log_path column', file=sys.stderr)
-            return 2
+            raise ValueError('CSV must include log_path column')
         rows = list(r)
 
     hist: Counter[str] = Counter()
     cohorts: set[str] = set()
     evidence_rows: list[dict[str, object]] = []
     missing_logs: list[str] = []
+    n_success = 0
     for row in rows:
         lp = (row.get('log_path') or '').strip()
         if not lp:
@@ -62,7 +51,11 @@ def main() -> int:
             except (OSError, json.JSONDecodeError):
                 pass
         evidence = classify_run_failure_evidence(log_path, capture_rc=None)
-        hist[str(evidence['failure_class'])] += 1
+        failure_class = evidence.get('failure_class')
+        if failure_class is None:
+            n_success += 1
+        else:
+            hist[str(failure_class)] += 1
         evidence_rows.append(evidence)
 
     total = int(sum(hist.values()))
@@ -72,9 +65,10 @@ def main() -> int:
     }
     f5_count = int(hist.get('F5_unknown', 0))
 
-    payload = {
+    return {
         'csv': str(p.resolve()),
         'n_classified': total,
+        'n_success': n_success,
         'failure_hist': dict(sorted(hist.items())),
         'failure_class_ci95': class_ci95,
         'f5_unknown_rate': (f5_count / total) if total else None,
@@ -83,6 +77,27 @@ def main() -> int:
         'missing_logs': missing_logs,
         'meta_cohorts_seen': sorted(cohorts),
     }
+
+
+def main() -> int:
+    ap = argparse.ArgumentParser(description='Count failure_class over MC CSV log_path column.')
+    ap.add_argument('csv_path', type=Path, help='monte_carlo *.csv with log_path header')
+    ap.add_argument(
+        '--out-json',
+        type=Path,
+        default=None,
+        help='Optional path to write {"failure_hist": {...}, ...}',
+    )
+    args = ap.parse_args()
+    p = args.csv_path
+    try:
+        payload = summarize_failure_classes(p)
+    except FileNotFoundError:
+        print(f'missing CSV: {p}', file=sys.stderr)
+        return 2
+    except ValueError as exc:
+        print(str(exc), file=sys.stderr)
+        return 2
     txt = json.dumps(payload, indent=2, sort_keys=True) + '\n'
     print(txt, end='')
     if args.out_json:
