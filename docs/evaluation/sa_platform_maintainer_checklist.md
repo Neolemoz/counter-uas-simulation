@@ -24,7 +24,7 @@ Async recovery (PLAT-SA-I3, frozen): [sa_i3_async_recovery_plan.md](../platform/
 
 Multi-corpus federation (PLAT-SA-F2A, frozen): [sa_f2a_multi_corpus_federation_plan.md](sa_f2a_multi_corpus_federation_plan.md). Commands: `build_replay_federation_index.py --check`, `audit_replay_federation_integrity.py --check --strict`, `audit_federation_recovery_continuity.py --check --strict`, `gen_f2a_federation_fixtures.py`. Stop line: no cloud federation, live sync, collaborative editing, or browser orchestration.
 
-RT interactive sandbox (PLAN-RT-S1 docs frozen; PLAT-RT-S2 bridge frozen — worktree `codex-a01-phase2`): [rt_s2_bridge_prototype_plan.md](../platform/rt_s2_bridge_prototype_plan.md). Dev-only: `python3 scripts/rt/run_rt_bridge.py` then `python3 scripts/rt/rt_bridge_client.py start_session`. Audit logs: `runs/rt_sandbox/audit/`. Not wired to SA viewer. Stop line: no RT-S3 spawn/move; no capture/federation from RT bridge.
+RT interactive sandbox (PLAN-RT-S1 docs frozen; PLAT-RT-S2–S6 frozen): [rt_s6_sandbox_workflow_plan.md](../platform/rt_s6_sandbox_workflow_plan.md). Dev-only: `run_rt_bridge.py` → template/workflow commands → `stop_session` → `capture_session`; inspect `scripts/rt/rt_workflow_inspect.py list-templates`; capture `scripts/rt/rt_capture_inspect.py list`; approve `scripts/rt/rt_capture_approve.py <capture_id>` (manifest only, no SA import). Staging: `runs/rt_sandbox/captures/`. Not wired to SA viewer. Stop line: no Gazebo/ROS / SA ingestion from bridge.
 
 ## Pre-merge / pre-share gate
 

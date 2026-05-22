@@ -1,9 +1,9 @@
 # RT Capture Continuity (`rt_capture_continuity_v1`)
 
-**Phase:** PLAN-RT-S1 — future artifact schemas (docs only)  
+**Phase:** PLAT-RT-S5 — schemas implemented in `platform/rt-sandbox-bridge/rt_sandbox/capture.py`  
 **Authority:** [rt_sa_export_boundary_v1.md](rt_sa_export_boundary_v1.md)
 
-Defines **future** continuity artifacts for RT sandbox sessions and replay-import safety. No schema implementation in RT-S1.
+Defines continuity artifacts for RT sandbox sessions and replay-import safety. Implementation: PLAT-RT-S5; SA import remains maintainer-gated.
 
 ---
 
