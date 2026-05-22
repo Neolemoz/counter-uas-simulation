@@ -1,0 +1,8 @@
+overlay_id: delayed_detection
+seed_required: true
+scenario_scope: single_target_runtime_realism
+launch_args:
+  use_noisy_measurement: true
+  noise_delay_mean_s: 0.20
+  noise_delay_jitter_s: 0.05
+notes: Additive delayed-detection overlay; legacy semantics unchanged when disabled.

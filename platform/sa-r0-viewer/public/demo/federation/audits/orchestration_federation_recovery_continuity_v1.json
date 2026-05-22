@@ -1,0 +1,29 @@
+{
+  "artifact_type": "orchestration_federation_recovery_continuity_v1",
+  "batch_audit_ref": "fixtures/orchestration/synthesis/async_batch_audit_v1.json",
+  "continuity_ok": true,
+  "corpus_group_scopes": [
+    {
+      "corpus_group_id": "canonical_r1",
+      "orchestration_scope": "fixtures/orchestration/",
+      "study_label": "Canonical replay corpus index"
+    },
+    {
+      "corpus_group_id": "release_r1_snapshot",
+      "orchestration_scope": "fixtures/orchestration/",
+      "study_label": "Frozen release snapshot (sa_r0_corpus_r1_r1)"
+    }
+  ],
+  "federation_id": "sa_replay_federation_r0_v1",
+  "governance": {
+    "anti_claims": [
+      "Quarantine and supersession invariants from I3 remain unchanged.",
+      "Browser does not clear holds or reconcile history."
+    ],
+    "notice": "Federation recovery continuity rollup for reviewer cognition only \u2014 not live recovery authority."
+  },
+  "lineage_index_ref": "fixtures/orchestration/reconciliation/reconciliation_lineage_index_v1.json",
+  "recovery_issues": [],
+  "report_revision": "9bf40c18a4b22428c00ae5ddb17ff9e721207f22ebe705fd7dffdfd150749e3b",
+  "schema_version": "orchestration_federation_recovery_continuity_v1"
+}

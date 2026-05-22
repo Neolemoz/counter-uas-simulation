@@ -1,0 +1,5 @@
+overlay_id: crossing_targets
+seed_required: true
+scenario_scope: future_multi_target_realism
+status: metadata_only
+notes: Placeholder reusable scenario-pack entry for later multi-target crossing-stress work; no runtime defaults changed in this wave.

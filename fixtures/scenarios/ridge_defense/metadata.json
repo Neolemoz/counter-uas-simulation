@@ -1,0 +1,57 @@
+{
+  "ambiguity_profile": {
+    "level": "low"
+  },
+  "artifact_type": "scenario_topology_v1",
+  "governance": {
+    "anti_claims": [
+      "not deployed geography",
+      "not operational effectiveness",
+      "not tactical authority"
+    ],
+    "constraints": [
+      "replay-safe",
+      "explanatory-only",
+      "non-authoritative",
+      "parser-safe"
+    ],
+    "notice": "Fictional scenario topology for replay visualization only."
+  },
+  "ingress_archetype": "ridge",
+  "narrative_focus": [
+    "ridge_masking",
+    "protected_area"
+  ],
+  "overlay_descriptors": [
+    {
+      "count": 1,
+      "kind": "degraded_visibility"
+    },
+    {
+      "count": 1,
+      "kind": "los_blocked"
+    },
+    {
+      "count": 1,
+      "kind": "ridge_mask"
+    }
+  ],
+  "provenance": {
+    "fictional_disclaimer": "All coordinates and terrain are fictional replay fixtures.",
+    "fixture_source": "fixtures/scenarios/ridge_defense"
+  },
+  "replay_duration_class": "medium",
+  "replay_tags": [
+    "terrain_masking",
+    "protected_area"
+  ],
+  "scenario_id": "ridge_defense_demo",
+  "schema_version": "scenario_topology_v1",
+  "terrain_profile": "ridged",
+  "title": "Ridge defense replay (demo fixture)",
+  "topology_tags": [
+    "ridge_defense",
+    "protected_area",
+    "terrain_aware"
+  ]
+}

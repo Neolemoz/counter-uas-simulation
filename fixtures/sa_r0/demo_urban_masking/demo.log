@@ -1,0 +1,28 @@
+=== run_id: replay_urban_masking_demo ===
+[interception_logic_node-1] [P_HEATMAP] pos=(-1100.000, 40.000, 85.000)
+[interception_logic_node-1] [P_HEATMAP] pos=(-1068.000, 57.000, 86.000)
+[interception_logic_node-1] [P_HEATMAP] pos=(-1036.000, 74.000, 87.000)
+[interception_logic_node-1] [P_HEATMAP] pos=(-1004.000, 51.000, 88.000)
+[interception_logic_node-1] [P_HEATMAP] pos=(-972.000, 68.000, 85.000)
+[interception_logic_node-1] [P_HEATMAP] pos=(-940.000, 45.000, 86.000)
+[tracking_node-1] Candidate detected: track_id=31
+[interception_logic_node-1] [P_HEATMAP] pos=(-908.000, 62.000, 87.000)
+[interception_logic_node-1] [P_HEATMAP] pos=(-876.000, 79.000, 88.000)
+[interception_logic_node-1] [P_HEATMAP] pos=(-844.000, 56.000, 85.000)
+[noisy_measurement_node-1] [REALISM_EVENT] fragmented_gap_start fragmentation_index=1 gap_ticks=5
+[interception_logic_node-1] [P_HEATMAP] pos=(-812.000, 73.000, 86.000)
+[interception_logic_node-1] [P_HEATMAP] pos=(-780.000, 50.000, 87.000)
+[interception_logic_node-1] [P_HEATMAP] pos=(-748.000, 67.000, 88.000)
+[noisy_measurement_node-1] [REALISM_EVENT] stale_detection count=1 stale_s=0.200
+[interception_logic_node-1] [P_HEATMAP] pos=(-716.000, 44.000, 85.000)
+[interception_logic_node-1] [P_HEATMAP] pos=(-684.000, 61.000, 86.000)
+[interception_logic_node-1] [P_HEATMAP] pos=(-652.000, 78.000, 87.000)
+[interception_logic_node-1] [P_HEATMAP] pos=(-620.000, 55.000, 88.000)
+[interception_logic_node-1] [P_HEATMAP] pos=(-588.000, 72.000, 85.000)
+[interception_logic_node-1] [P_HEATMAP] pos=(-556.000, 49.000, 86.000)
+[interception_logic_node-1] [P_HEATMAP] pos=(-524.000, 66.000, 87.000)
+[interception_logic_node-1] [P_HEATMAP] pos=(-492.000, 43.000, 88.000)
+[interception_logic_node-1] [P_HEATMAP] pos=(-460.000, 60.000, 85.000)
+[interception_logic_node-1] [P_HEATMAP] pos=(-428.000, 77.000, 86.000)
+[interception_logic_node-1] interceptor_pos=(-55.000, 6.000, 41.000) target_pos=(-350.000, 55.000, 82.000)
+[interception_logic_node-1] [METRICS] id=interceptor_0  | dist=24.000 m | t_go=4.0 s | vel=16.0 m/s | mode=predict

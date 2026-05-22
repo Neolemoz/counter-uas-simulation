@@ -1,0 +1,13 @@
+{
+  "artifact_type": "authoring_promotion_summary_v1",
+  "event_id": "promote-2026-05-21T11:55:54Z",
+  "from_status": "validated",
+  "governance_banner": "PROMOTION SUMMARY \u2014 CLI audit trail; not operational authority",
+  "orchestration_handoff_refs": [],
+  "pack_id": "corridor_defense",
+  "recorded_at": "2026-05-21T11:55:54Z",
+  "schema_version": "1",
+  "to_status": "promoted",
+  "validation_pack_fingerprint": "sha256:95a2bc2160037637af4af3f9533e3c10bec1844ec1bb29cd95f2cab6b7c863cc",
+  "validation_snapshot_ref": "fixtures/orchestration/validation_mirrors/corridor_defense_validation_mirror.json"
+}

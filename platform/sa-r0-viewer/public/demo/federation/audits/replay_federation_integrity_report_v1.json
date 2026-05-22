@@ -1,0 +1,587 @@
+{
+  "artifact_type": "replay_federation_integrity_report_v1",
+  "federation_id": "sa_replay_federation_r0_v1",
+  "findings": [
+    {
+      "groups": [
+        "canonical_r1",
+        "release_r1_snapshot"
+      ],
+      "kind": "replay_duplication_across_groups",
+      "message": "fixtures/sa_r0/demo_corridor_defense/index.json appears in groups ['canonical_r1', 'release_r1_snapshot']",
+      "severity": "warning",
+      "supersession_note": "expected release snapshot duplication"
+    },
+    {
+      "groups": [
+        "canonical_r1",
+        "release_r1_snapshot"
+      ],
+      "kind": "replay_duplication_across_groups",
+      "message": "fixtures/sa_r0/demo_delayed_detection/index.json appears in groups ['canonical_r1', 'release_r1_snapshot']",
+      "severity": "warning",
+      "supersession_note": "expected release snapshot duplication"
+    },
+    {
+      "groups": [
+        "canonical_r1",
+        "release_r1_snapshot"
+      ],
+      "kind": "replay_duplication_across_groups",
+      "message": "fixtures/sa_r0/demo_long_range_ingress/index.json appears in groups ['canonical_r1', 'release_r1_snapshot']",
+      "severity": "warning",
+      "supersession_note": "expected release snapshot duplication"
+    },
+    {
+      "groups": [
+        "canonical_r1",
+        "release_r1_snapshot"
+      ],
+      "kind": "replay_duplication_across_groups",
+      "message": "fixtures/sa_r0/demo_multi_ridge/index.json appears in groups ['canonical_r1', 'release_r1_snapshot']",
+      "severity": "warning",
+      "supersession_note": "expected release snapshot duplication"
+    },
+    {
+      "groups": [
+        "canonical_r1",
+        "release_r1_snapshot"
+      ],
+      "kind": "replay_duplication_across_groups",
+      "message": "fixtures/sa_r0/demo_ridge_defense/index.json appears in groups ['canonical_r1', 'release_r1_snapshot']",
+      "severity": "warning",
+      "supersession_note": "expected release snapshot duplication"
+    },
+    {
+      "groups": [
+        "canonical_r1",
+        "release_r1_snapshot"
+      ],
+      "kind": "replay_duplication_across_groups",
+      "message": "fixtures/sa_r0/demo_saturation_ingress/index.json appears in groups ['canonical_r1', 'release_r1_snapshot']",
+      "severity": "warning",
+      "supersession_note": "expected release snapshot duplication"
+    },
+    {
+      "groups": [
+        "canonical_r1",
+        "release_r1_snapshot"
+      ],
+      "kind": "replay_duplication_across_groups",
+      "message": "fixtures/sa_r0/demo_urban_masking/index.json appears in groups ['canonical_r1', 'release_r1_snapshot']",
+      "severity": "warning",
+      "supersession_note": "expected release snapshot duplication"
+    },
+    {
+      "groups": [
+        "canonical_r1",
+        "release_r1_snapshot"
+      ],
+      "kind": "replay_duplication_across_groups",
+      "message": "fixtures/sa_r0/demo_valley_ingress/index.json appears in groups ['canonical_r1', 'release_r1_snapshot']",
+      "severity": "warning",
+      "supersession_note": "expected release snapshot duplication"
+    },
+    {
+      "groups": [
+        "canonical_r1",
+        "release_r1_snapshot"
+      ],
+      "kind": "replay_duplication_across_groups",
+      "message": "fixtures/sa_r0/demo_valley_ingress_delayed_interceptor_base/index.json appears in groups ['canonical_r1', 'release_r1_snapshot']",
+      "severity": "warning",
+      "supersession_note": "expected release snapshot duplication"
+    },
+    {
+      "groups": [
+        "canonical_r1",
+        "release_r1_snapshot"
+      ],
+      "kind": "replay_duplication_across_groups",
+      "message": "fixtures/sa_r0/demo_valley_ingress_extra_valley_sensor/index.json appears in groups ['canonical_r1', 'release_r1_snapshot']",
+      "severity": "warning",
+      "supersession_note": "expected release snapshot duplication"
+    },
+    {
+      "groups": [
+        "canonical_r1",
+        "release_r1_snapshot"
+      ],
+      "kind": "replay_duplication_across_groups",
+      "message": "fixtures/sa_r0/demo_valley_ingress_radar_shifted_north/index.json appears in groups ['canonical_r1', 'release_r1_snapshot']",
+      "severity": "warning",
+      "supersession_note": "expected release snapshot duplication"
+    },
+    {
+      "groups": [
+        "canonical_r1",
+        "release_r1_snapshot"
+      ],
+      "kind": "replay_duplication_across_groups",
+      "message": "fixtures/sa_r0/demo_valley_ingress_reduced_overlap_layout/index.json appears in groups ['canonical_r1', 'release_r1_snapshot']",
+      "severity": "warning",
+      "supersession_note": "expected release snapshot duplication"
+    },
+    {
+      "groups": [
+        "canonical_r1",
+        "release_r1_snapshot"
+      ],
+      "kind": "replay_duplication_across_groups",
+      "message": "fixtures/sa_r0/presentations/showcase_ambiguity_heavy.json appears in groups ['canonical_r1', 'release_r1_snapshot']",
+      "severity": "warning",
+      "supersession_note": "expected release snapshot duplication"
+    },
+    {
+      "groups": [
+        "canonical_r1",
+        "release_r1_snapshot"
+      ],
+      "kind": "replay_duplication_across_groups",
+      "message": "fixtures/sa_r0/presentations/showcase_best_narratives.json appears in groups ['canonical_r1', 'release_r1_snapshot']",
+      "severity": "warning",
+      "supersession_note": "expected release snapshot duplication"
+    },
+    {
+      "groups": [
+        "canonical_r1",
+        "release_r1_snapshot"
+      ],
+      "kind": "replay_duplication_across_groups",
+      "message": "fixtures/sa_r0/presentations/showcase_cross_sweep_synthesis.json appears in groups ['canonical_r1', 'release_r1_snapshot']",
+      "severity": "warning",
+      "supersession_note": "expected release snapshot duplication"
+    },
+    {
+      "groups": [
+        "canonical_r1",
+        "release_r1_snapshot"
+      ],
+      "kind": "replay_duplication_across_groups",
+      "message": "fixtures/sa_r0/presentations/showcase_topology_divergence.json appears in groups ['canonical_r1', 'release_r1_snapshot']",
+      "severity": "warning",
+      "supersession_note": "expected release snapshot duplication"
+    },
+    {
+      "groups": [
+        "canonical_r1",
+        "release_r1_snapshot"
+      ],
+      "kind": "replay_duplication_across_groups",
+      "message": "fixtures/sa_r0/presentations/walkthrough_assignment_instability.json appears in groups ['canonical_r1', 'release_r1_snapshot']",
+      "severity": "warning",
+      "supersession_note": "expected release snapshot duplication"
+    },
+    {
+      "groups": [
+        "canonical_r1",
+        "release_r1_snapshot"
+      ],
+      "kind": "replay_duplication_across_groups",
+      "message": "fixtures/sa_r0/presentations/walkthrough_valley_ingress_long.json appears in groups ['canonical_r1', 'release_r1_snapshot']",
+      "severity": "warning",
+      "supersession_note": "expected release snapshot duplication"
+    },
+    {
+      "groups": [
+        "canonical_r1",
+        "release_r1_snapshot"
+      ],
+      "kind": "replay_duplication_across_groups",
+      "message": "fixtures/sa_r0/research_bundles/sa_r0_corpus_r1/manifest.json appears in groups ['canonical_r1', 'release_r1_snapshot']",
+      "severity": "warning",
+      "supersession_note": "expected release snapshot duplication"
+    },
+    {
+      "groups": [
+        "canonical_r1",
+        "release_r1_snapshot"
+      ],
+      "kind": "replay_duplication_across_groups",
+      "message": "fixtures/sa_r0/sweeps/delayed_detection_sweep/reports/replay_compare_report_v1.json appears in groups ['canonical_r1', 'release_r1_snapshot']",
+      "severity": "warning",
+      "supersession_note": "expected release snapshot duplication"
+    },
+    {
+      "groups": [
+        "canonical_r1",
+        "release_r1_snapshot"
+      ],
+      "kind": "replay_duplication_across_groups",
+      "message": "fixtures/sa_r0/sweeps/delayed_detection_sweep/reports/replay_presentation_report_v1.json appears in groups ['canonical_r1', 'release_r1_snapshot']",
+      "severity": "warning",
+      "supersession_note": "expected release snapshot duplication"
+    },
+    {
+      "groups": [
+        "canonical_r1",
+        "release_r1_snapshot"
+      ],
+      "kind": "replay_duplication_across_groups",
+      "message": "fixtures/sa_r0/sweeps/delayed_detection_sweep/reports/replay_publication_report_v1.json appears in groups ['canonical_r1', 'release_r1_snapshot']",
+      "severity": "warning",
+      "supersession_note": "expected release snapshot duplication"
+    },
+    {
+      "groups": [
+        "canonical_r1",
+        "release_r1_snapshot"
+      ],
+      "kind": "replay_duplication_across_groups",
+      "message": "fixtures/sa_r0/sweeps/delayed_detection_sweep/reports/replay_review_report_v1.json appears in groups ['canonical_r1', 'release_r1_snapshot']",
+      "severity": "warning",
+      "supersession_note": "expected release snapshot duplication"
+    },
+    {
+      "groups": [
+        "canonical_r1",
+        "release_r1_snapshot"
+      ],
+      "kind": "replay_duplication_across_groups",
+      "message": "fixtures/sa_r0/sweeps/delayed_detection_sweep/sweep.json appears in groups ['canonical_r1', 'release_r1_snapshot']",
+      "severity": "warning",
+      "supersession_note": "expected release snapshot duplication"
+    },
+    {
+      "groups": [
+        "canonical_r1",
+        "release_r1_snapshot"
+      ],
+      "kind": "replay_duplication_across_groups",
+      "message": "fixtures/sa_r0/sweeps/ridge_overlap_sweep/reports/replay_compare_report_v1.json appears in groups ['canonical_r1', 'release_r1_snapshot']",
+      "severity": "warning",
+      "supersession_note": "expected release snapshot duplication"
+    },
+    {
+      "groups": [
+        "canonical_r1",
+        "release_r1_snapshot"
+      ],
+      "kind": "replay_duplication_across_groups",
+      "message": "fixtures/sa_r0/sweeps/ridge_overlap_sweep/reports/replay_presentation_report_v1.json appears in groups ['canonical_r1', 'release_r1_snapshot']",
+      "severity": "warning",
+      "supersession_note": "expected release snapshot duplication"
+    },
+    {
+      "groups": [
+        "canonical_r1",
+        "release_r1_snapshot"
+      ],
+      "kind": "replay_duplication_across_groups",
+      "message": "fixtures/sa_r0/sweeps/ridge_overlap_sweep/reports/replay_publication_report_v1.json appears in groups ['canonical_r1', 'release_r1_snapshot']",
+      "severity": "warning",
+      "supersession_note": "expected release snapshot duplication"
+    },
+    {
+      "groups": [
+        "canonical_r1",
+        "release_r1_snapshot"
+      ],
+      "kind": "replay_duplication_across_groups",
+      "message": "fixtures/sa_r0/sweeps/ridge_overlap_sweep/reports/replay_review_report_v1.json appears in groups ['canonical_r1', 'release_r1_snapshot']",
+      "severity": "warning",
+      "supersession_note": "expected release snapshot duplication"
+    },
+    {
+      "groups": [
+        "canonical_r1",
+        "release_r1_snapshot"
+      ],
+      "kind": "replay_duplication_across_groups",
+      "message": "fixtures/sa_r0/sweeps/ridge_overlap_sweep/sweep.json appears in groups ['canonical_r1', 'release_r1_snapshot']",
+      "severity": "warning",
+      "supersession_note": "expected release snapshot duplication"
+    },
+    {
+      "groups": [
+        "canonical_r1",
+        "release_r1_snapshot"
+      ],
+      "kind": "replay_duplication_across_groups",
+      "message": "fixtures/sa_r0/sweeps/saturation_assignment_sweep/reports/replay_compare_report_v1.json appears in groups ['canonical_r1', 'release_r1_snapshot']",
+      "severity": "warning",
+      "supersession_note": "expected release snapshot duplication"
+    },
+    {
+      "groups": [
+        "canonical_r1",
+        "release_r1_snapshot"
+      ],
+      "kind": "replay_duplication_across_groups",
+      "message": "fixtures/sa_r0/sweeps/saturation_assignment_sweep/reports/replay_presentation_report_v1.json appears in groups ['canonical_r1', 'release_r1_snapshot']",
+      "severity": "warning",
+      "supersession_note": "expected release snapshot duplication"
+    },
+    {
+      "groups": [
+        "canonical_r1",
+        "release_r1_snapshot"
+      ],
+      "kind": "replay_duplication_across_groups",
+      "message": "fixtures/sa_r0/sweeps/saturation_assignment_sweep/reports/replay_publication_report_v1.json appears in groups ['canonical_r1', 'release_r1_snapshot']",
+      "severity": "warning",
+      "supersession_note": "expected release snapshot duplication"
+    },
+    {
+      "groups": [
+        "canonical_r1",
+        "release_r1_snapshot"
+      ],
+      "kind": "replay_duplication_across_groups",
+      "message": "fixtures/sa_r0/sweeps/saturation_assignment_sweep/reports/replay_review_report_v1.json appears in groups ['canonical_r1', 'release_r1_snapshot']",
+      "severity": "warning",
+      "supersession_note": "expected release snapshot duplication"
+    },
+    {
+      "groups": [
+        "canonical_r1",
+        "release_r1_snapshot"
+      ],
+      "kind": "replay_duplication_across_groups",
+      "message": "fixtures/sa_r0/sweeps/saturation_assignment_sweep/sweep.json appears in groups ['canonical_r1', 'release_r1_snapshot']",
+      "severity": "warning",
+      "supersession_note": "expected release snapshot duplication"
+    },
+    {
+      "groups": [
+        "canonical_r1",
+        "release_r1_snapshot"
+      ],
+      "kind": "replay_duplication_across_groups",
+      "message": "fixtures/sa_r0/sweeps/valley_sensor_sweep/reports/replay_compare_report_v1.json appears in groups ['canonical_r1', 'release_r1_snapshot']",
+      "severity": "warning",
+      "supersession_note": "expected release snapshot duplication"
+    },
+    {
+      "groups": [
+        "canonical_r1",
+        "release_r1_snapshot"
+      ],
+      "kind": "replay_duplication_across_groups",
+      "message": "fixtures/sa_r0/sweeps/valley_sensor_sweep/reports/replay_presentation_report_v1.json appears in groups ['canonical_r1', 'release_r1_snapshot']",
+      "severity": "warning",
+      "supersession_note": "expected release snapshot duplication"
+    },
+    {
+      "groups": [
+        "canonical_r1",
+        "release_r1_snapshot"
+      ],
+      "kind": "replay_duplication_across_groups",
+      "message": "fixtures/sa_r0/sweeps/valley_sensor_sweep/reports/replay_publication_report_v1.json appears in groups ['canonical_r1', 'release_r1_snapshot']",
+      "severity": "warning",
+      "supersession_note": "expected release snapshot duplication"
+    },
+    {
+      "groups": [
+        "canonical_r1",
+        "release_r1_snapshot"
+      ],
+      "kind": "replay_duplication_across_groups",
+      "message": "fixtures/sa_r0/sweeps/valley_sensor_sweep/reports/replay_review_report_v1.json appears in groups ['canonical_r1', 'release_r1_snapshot']",
+      "severity": "warning",
+      "supersession_note": "expected release snapshot duplication"
+    },
+    {
+      "groups": [
+        "canonical_r1",
+        "release_r1_snapshot"
+      ],
+      "kind": "replay_duplication_across_groups",
+      "message": "fixtures/sa_r0/sweeps/valley_sensor_sweep/sweep.json appears in groups ['canonical_r1', 'release_r1_snapshot']",
+      "severity": "warning",
+      "supersession_note": "expected release snapshot duplication"
+    },
+    {
+      "groups": [
+        "canonical_r1",
+        "release_r1_snapshot"
+      ],
+      "kind": "replay_duplication_across_groups",
+      "message": "fixtures/sa_r0/synthesis/assets/index.json appears in groups ['canonical_r1', 'release_r1_snapshot']",
+      "severity": "warning",
+      "supersession_note": "expected release snapshot duplication"
+    },
+    {
+      "groups": [
+        "canonical_r1",
+        "release_r1_snapshot"
+      ],
+      "kind": "replay_duplication_across_groups",
+      "message": "fixtures/sa_r0/synthesis/cognition_rollup_summary.md appears in groups ['canonical_r1', 'release_r1_snapshot']",
+      "severity": "warning",
+      "supersession_note": "expected release snapshot duplication"
+    },
+    {
+      "groups": [
+        "canonical_r1",
+        "release_r1_snapshot"
+      ],
+      "kind": "replay_duplication_across_groups",
+      "message": "fixtures/sa_r0/synthesis/cross_sweep_summary.md appears in groups ['canonical_r1', 'release_r1_snapshot']",
+      "severity": "warning",
+      "supersession_note": "expected release snapshot duplication"
+    },
+    {
+      "groups": [
+        "canonical_r1",
+        "release_r1_snapshot"
+      ],
+      "kind": "replay_duplication_across_groups",
+      "message": "fixtures/sa_r0/synthesis/cross_sweep_synthesis_v1.json appears in groups ['canonical_r1', 'release_r1_snapshot']",
+      "severity": "warning",
+      "supersession_note": "expected release snapshot duplication"
+    },
+    {
+      "groups": [
+        "canonical_r1",
+        "release_r1_snapshot"
+      ],
+      "kind": "replay_duplication_across_groups",
+      "message": "fixtures/sa_r0/synthesis/linkage_summary.md appears in groups ['canonical_r1', 'release_r1_snapshot']",
+      "severity": "warning",
+      "supersession_note": "expected release snapshot duplication"
+    },
+    {
+      "groups": [
+        "canonical_r1",
+        "release_r1_snapshot"
+      ],
+      "kind": "replay_duplication_across_groups",
+      "message": "fixtures/sa_r0/synthesis/replay_linkage_index_v1.json appears in groups ['canonical_r1', 'release_r1_snapshot']",
+      "severity": "warning",
+      "supersession_note": "expected release snapshot duplication"
+    },
+    {
+      "groups": [
+        "canonical_r1",
+        "release_r1_snapshot"
+      ],
+      "kind": "replay_duplication_across_groups",
+      "message": "fixtures/scenarios/corridor_defense/metadata.json appears in groups ['canonical_r1', 'release_r1_snapshot']",
+      "severity": "warning",
+      "supersession_note": "expected release snapshot duplication"
+    },
+    {
+      "groups": [
+        "canonical_r1",
+        "release_r1_snapshot"
+      ],
+      "kind": "replay_duplication_across_groups",
+      "message": "fixtures/scenarios/delayed_detection/metadata.json appears in groups ['canonical_r1', 'release_r1_snapshot']",
+      "severity": "warning",
+      "supersession_note": "expected release snapshot duplication"
+    },
+    {
+      "groups": [
+        "canonical_r1",
+        "release_r1_snapshot"
+      ],
+      "kind": "replay_duplication_across_groups",
+      "message": "fixtures/scenarios/long_range_ingress/metadata.json appears in groups ['canonical_r1', 'release_r1_snapshot']",
+      "severity": "warning",
+      "supersession_note": "expected release snapshot duplication"
+    },
+    {
+      "groups": [
+        "canonical_r1",
+        "release_r1_snapshot"
+      ],
+      "kind": "replay_duplication_across_groups",
+      "message": "fixtures/scenarios/multi_ridge/metadata.json appears in groups ['canonical_r1', 'release_r1_snapshot']",
+      "severity": "warning",
+      "supersession_note": "expected release snapshot duplication"
+    },
+    {
+      "groups": [
+        "canonical_r1",
+        "release_r1_snapshot"
+      ],
+      "kind": "replay_duplication_across_groups",
+      "message": "fixtures/scenarios/ridge_defense/metadata.json appears in groups ['canonical_r1', 'release_r1_snapshot']",
+      "severity": "warning",
+      "supersession_note": "expected release snapshot duplication"
+    },
+    {
+      "groups": [
+        "canonical_r1",
+        "release_r1_snapshot"
+      ],
+      "kind": "replay_duplication_across_groups",
+      "message": "fixtures/scenarios/saturation_ingress/metadata.json appears in groups ['canonical_r1', 'release_r1_snapshot']",
+      "severity": "warning",
+      "supersession_note": "expected release snapshot duplication"
+    },
+    {
+      "groups": [
+        "canonical_r1",
+        "release_r1_snapshot"
+      ],
+      "kind": "replay_duplication_across_groups",
+      "message": "fixtures/scenarios/urban_masking/metadata.json appears in groups ['canonical_r1', 'release_r1_snapshot']",
+      "severity": "warning",
+      "supersession_note": "expected release snapshot duplication"
+    },
+    {
+      "groups": [
+        "canonical_r1",
+        "release_r1_snapshot"
+      ],
+      "kind": "replay_duplication_across_groups",
+      "message": "fixtures/scenarios/valley_ingress/metadata.json appears in groups ['canonical_r1', 'release_r1_snapshot']",
+      "severity": "warning",
+      "supersession_note": "expected release snapshot duplication"
+    },
+    {
+      "groups": [
+        "canonical_r1",
+        "release_r1_snapshot"
+      ],
+      "kind": "replay_duplication_across_groups",
+      "message": "fixtures/scenarios/valley_ingress_delayed_interceptor_base/metadata.json appears in groups ['canonical_r1', 'release_r1_snapshot']",
+      "severity": "warning",
+      "supersession_note": "expected release snapshot duplication"
+    },
+    {
+      "groups": [
+        "canonical_r1",
+        "release_r1_snapshot"
+      ],
+      "kind": "replay_duplication_across_groups",
+      "message": "fixtures/scenarios/valley_ingress_extra_valley_sensor/metadata.json appears in groups ['canonical_r1', 'release_r1_snapshot']",
+      "severity": "warning",
+      "supersession_note": "expected release snapshot duplication"
+    },
+    {
+      "groups": [
+        "canonical_r1",
+        "release_r1_snapshot"
+      ],
+      "kind": "replay_duplication_across_groups",
+      "message": "fixtures/scenarios/valley_ingress_radar_shifted_north/metadata.json appears in groups ['canonical_r1', 'release_r1_snapshot']",
+      "severity": "warning",
+      "supersession_note": "expected release snapshot duplication"
+    },
+    {
+      "groups": [
+        "canonical_r1",
+        "release_r1_snapshot"
+      ],
+      "kind": "replay_duplication_across_groups",
+      "message": "fixtures/scenarios/valley_ingress_reduced_overlap_layout/metadata.json appears in groups ['canonical_r1', 'release_r1_snapshot']",
+      "severity": "warning",
+      "supersession_note": "expected release snapshot duplication"
+    }
+  ],
+  "generation_revision": "f2a_v1",
+  "governance": {
+    "anti_claims": [
+      "Orphan group detection indicates registry drift, not runtime faults.",
+      "Cross-group duplication may be expected for release snapshots."
+    ],
+    "notice": "Federation integrity report for maintainer review only \u2014 cross-corpus drift inventory, not operational failure."
+  },
+  "integrity_ok": true,
+  "report_revision": "c4b05d11d183a5cd029205147bb529269d897ef912ea29442d970ac2abdb4dea",
+  "schema_version": "replay_federation_integrity_report_v1"
+}

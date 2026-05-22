@@ -1,0 +1,87 @@
+# Parameters aligned with gazebo_target_sim / target_sphere.sdf scale (dome km-class, radar at asset).
+# Use with: ros2 launch counter_uas bringup.launch.py counter_uas_config:=config_gazebo_counter_uas.yaml
+world_sim_node:
+  ros__parameters:
+    scenario: single
+
+radar_sim_node:
+  ros__parameters:
+    scenario: single
+    radar:
+      range: 7000.0
+      position_x: 0.0
+      position_y: 0.0
+      position_z: 0.0
+      azimuth_half_deg: 180.0
+      elevation_half_deg: 70.0
+      detection_probability: 0.97
+      seed: -1
+
+camera_sim_node:
+  ros__parameters:
+    scenario: single
+    camera:
+      mount_x: 0.0
+      mount_y: 0.0
+      mount_z: 0.0
+      yaw_deg: 180.0
+      horizontal_fov_deg: 72.0
+      vertical_fov_deg: 50.0
+      max_range_m: 8000.0
+      detection_probability: 0.9
+
+fusion_node:
+  ros__parameters:
+    scenario: single
+    fusion:
+      distance_threshold: 250.0
+      radar_weight: 1.15
+      camera_weight: 1.0
+
+tracking_node:
+  ros__parameters:
+    scenario: single
+    mahalanobis_gate_threshold: 16.27
+    # Gates sized for the *real* fused-detection cadence at km-scale.  Empirically the
+    # paired-input fusion stream emits ~3.3 Hz (≈300 ms between fused points) with the
+    # default radar/camera rates, and a 50 m/s LOS target moves ~15 m per inter-detection
+    # interval.  The first candidate→candidate match has only one position in history so
+    # the predictive gate degrades to "last position", so we need gate ≥ per-interval
+    # displacement.  20 m gate + 2-hit confirmation gets a track born after a single
+    # follow-up detection (≈ 300–600 ms after first contact).
+    candidate_match_gate_m: 20.0
+    candidate_predictive_gate: true
+    association_gate_m: 25.0
+    confirmation_hits: 2
+    # Fusion stream is paired but periodic (~3 Hz).  Miss tolerance of 5 cycles (= 0.5 s
+    # @ 10 Hz tracking) lets a candidate survive at least one silent cycle between
+    # detection bursts so it can accumulate the 2 hits required to promote.
+    candidate_max_missed_frames: 5
+    # The KF velocity often starts at 0 at confirmation; bump the cap so a 35–45 m/s target
+    # is not silently rejected by the speed sanity check.
+    max_track_speed_mps: 80.0
+    max_update_jump_m: 25.0
+
+viz_node:
+  ros__parameters:
+    scenario: single
+    threat:
+      medium_distance: 3500.0
+      high_distance: 1500.0
+
+threat_assessment_node:
+  ros__parameters:
+    tracks_topic: /tracks
+    high_distance_m: 1500.0
+    medium_distance_m: 3500.0
+
+# NOTE: ``interception_logic_node`` is launched from gazebo_target.launch.py with an inline
+# parameter dict and does NOT consume this YAML.  Its acceleration / turn-rate envelope is
+# tuned via the ``interceptor_max_accel_m_s2`` and ``interceptor_max_turn_rate_rad_s`` launch
+# arguments (defaults 30 m/s² and 2.5 rad/s — sized for the km-scale dome).
+# Experiment / evaluation overlays (still not read from this YAML): ``eng_*`` rollout gate,
+# ``guidance_terminal_*``, ``guidance_u_max_step_rad`` — declare those via
+# gazebo_target.launch.py / gazebo_target_multi.launch.py ``--launch-args`` (run_capture).
+#
+# Adding params below for interception_logic_node would silently have no effect.
+

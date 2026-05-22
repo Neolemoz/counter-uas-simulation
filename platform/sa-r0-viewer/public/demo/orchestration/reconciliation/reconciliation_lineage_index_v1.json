@@ -1,0 +1,41 @@
+{
+  "artifact_type": "orchestration_reconciliation_lineage_index_v1",
+  "failed_executions": [],
+  "generated_at": "2026-05-22T04:42:17Z",
+  "governance": {
+    "anti_claims": [
+      "not live recovery authority",
+      "not parser contract",
+      "not operational readiness"
+    ],
+    "notice": "Recovery and reconciliation artifacts for offline reviewer cognition only."
+  },
+  "governance_banner": "RECONCILIATION LINEAGE INDEX \u2014 read-only navigation",
+  "quarantine_holds": [
+    {
+      "corpus_group_id": "canonical_r1",
+      "manifest_id": "capture_pipeline_template",
+      "reason": "async_execution_status quarantined"
+    }
+  ],
+  "retry_groups": [
+    {
+      "attempt_count": 2,
+      "corpus_group_id": "canonical_r1",
+      "manifest_id": "ridge_defense_synthetic_pipeline",
+      "worker_refs": [
+        "fixtures/orchestration/workers/cli-worker-ridge-ref_1.json",
+        "fixtures/orchestration/workers/cli-worker-ridge-ref_2.json"
+      ]
+    }
+  ],
+  "schema_version": "1",
+  "supersede_edges": [
+    {
+      "corpus_group_id": "canonical_r1",
+      "from_manifest_id": "valley_ingress_validation_only",
+      "notes": "superseded by successor snapshot valley_ingress_validation_only_queue_v2",
+      "to_manifest_id": "superseded by successor snapshot valley_ingress_validation_only_queue_v2"
+    }
+  ]
+}

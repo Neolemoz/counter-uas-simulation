@@ -1,0 +1,12 @@
+{
+  "artifact_type": "orchestration_operations_summary_v1",
+  "generated_at": "2026-05-22T00:31:39Z",
+  "governance_banner": "OPERATIONS SUMMARY \u2014 explanatory; CLI authoritative",
+  "manifest_id": "urban_masking_validation_only",
+  "operations_status": "queued",
+  "queue_snapshot_ref": "fixtures/orchestration/queues/urban_masking_validation_only_queue.json",
+  "scenario_pack_ids": [
+    "urban_masking"
+  ],
+  "schema_version": "1"
+}

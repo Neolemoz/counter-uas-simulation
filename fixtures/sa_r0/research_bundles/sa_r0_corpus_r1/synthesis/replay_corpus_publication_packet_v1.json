@@ -1,0 +1,82 @@
+{
+  "artifact_type": "replay_corpus_publication_packet_v1",
+  "corpus_id": "sa_r0_corpus_r1",
+  "generation_revision": "f1d_v1",
+  "governance": {
+    "anti_claims": [
+      "Publication inventory lists replay-local artifacts only.",
+      "Archive export does not imply readiness or authority."
+    ],
+    "notice": "Replay corpus publication packet for offline research archive only \u2014 not deployment packaging or operational release certification."
+  },
+  "included_artifacts": [
+    {
+      "kind": "drift_report",
+      "path": "fixtures/sa_r0/corpus_audits/replay_corpus_drift_report_v1.json",
+      "sha256": "d7dbf06e893730e5d9c2589d0efa862df03adb92ae2fef0f28879d4f46ec7838"
+    },
+    {
+      "kind": "release_diff",
+      "path": "fixtures/sa_r0/corpus_audits/replay_corpus_release_diff_v1.json",
+      "sha256": "ac79d84a9430779af5e42d235669695a85ec4350130c0201bafcc64299adb177"
+    },
+    {
+      "kind": "release_manifest",
+      "path": "fixtures/sa_r0/corpus_releases/sa_r0_corpus_r1_r1/replay_corpus_release_manifest_v1.json",
+      "sha256": "201dc51790eb2425b72c1027847944546d690efd8bbe3c81d250fb2a9d43f35a"
+    },
+    {
+      "kind": "research_bundle",
+      "path": "fixtures/sa_r0/research_bundles/sa_r0_corpus_r1/manifest.json",
+      "sha256": "2125f9817134cfbb6bda3d0571a038033447e244105bce9385d7401096b71728"
+    },
+    {
+      "kind": "publication_packet",
+      "path": "fixtures/sa_r0/sweeps/delayed_detection_sweep/reports/replay_publication_report_v1.json",
+      "sha256": "b0f379aa05da096c3a5db4c888e3ce6e1a07c93ae46c1fcb3b969844057791ba"
+    },
+    {
+      "kind": "publication_packet",
+      "path": "fixtures/sa_r0/sweeps/ridge_overlap_sweep/reports/replay_publication_report_v1.json",
+      "sha256": "e37da53c6b5489314515ca0f1fdee2b23b9ba8fea8ee0b5539c5e2044d7ae2cf"
+    },
+    {
+      "kind": "publication_packet",
+      "path": "fixtures/sa_r0/sweeps/saturation_assignment_sweep/reports/replay_publication_report_v1.json",
+      "sha256": "be5ac9dc97834c5894e1f39dc9880c0ae97baa415aa9577199e12bf49be2a4dd"
+    },
+    {
+      "kind": "publication_packet",
+      "path": "fixtures/sa_r0/sweeps/valley_sensor_sweep/reports/replay_publication_report_v1.json",
+      "sha256": "979882d99c5e1462b44a92097dcad98c2452cc7176a1c436aa5e1215f127b2b6"
+    },
+    {
+      "kind": "synthesis",
+      "path": "fixtures/sa_r0/synthesis/cross_sweep_synthesis_v1.json",
+      "sha256": "0d7119dca50cf0e43648201dc6ef0e4bb9a8c5ecd7cc3905b89bd93cf6fc1b17"
+    },
+    {
+      "kind": "evolution_manifest",
+      "path": "fixtures/sa_r0/synthesis/replay_corpus_evolution_manifest_v1.json",
+      "sha256": "27b11378ba61a8b323a9b31b1fd2123e7c7506323b22db1dd7cf6802229a156f"
+    },
+    {
+      "kind": "evolution_summary",
+      "path": "fixtures/sa_r0/synthesis/replay_corpus_evolution_summary_v1.json",
+      "sha256": "a3e9c548450e94cc4d291d9fd27132c4b6bf4d721b535800b902d7d5f31a2916"
+    },
+    {
+      "kind": "corpus_index",
+      "path": "fixtures/sa_r0/synthesis/replay_corpus_index_v1.json",
+      "sha256": "37cb8a2d05c5b6ba566a332f6372a54303af5cc0b1ca5ab6613649178474a46c"
+    },
+    {
+      "kind": "linkage",
+      "path": "fixtures/sa_r0/synthesis/replay_linkage_index_v1.json",
+      "sha256": "8395ea5685702b9042f03af97a8bb8a180f29ac9d112ef8f2046cb58c22f6806"
+    }
+  ],
+  "publication_revision": "ceec078398221c4a78c91e56097974c471add2763a5e53d41236501bc4b02c24",
+  "release_id": "sa_r0_corpus_r1_r1",
+  "schema_version": "replay_corpus_publication_packet_v1"
+}

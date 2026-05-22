@@ -1,0 +1,43 @@
+{
+  "artifact_type": "replay_federation_lineage_graph_v1",
+  "edges": [
+    {
+      "edge_id": "canonical_r1__release_r1_snapshot__federation_release_derived",
+      "evidence": {
+        "note": "Release snapshot frozen from canonical corpus index at sa_r0_corpus_r1_r1",
+        "source_paths": [
+          "fixtures/sa_r0/corpus_releases/sa_r0_corpus_r1_r1/replay_corpus_index_v1.json",
+          "fixtures/sa_r0/synthesis/replay_corpus_index_v1.json"
+        ]
+      },
+      "from_corpus_group_id": "canonical_r1",
+      "ref_kind": "federation_release_derived",
+      "to_corpus_group_id": "release_r1_snapshot"
+    },
+    {
+      "edge_id": "canonical_r1__orchestration_recovery__federation_recovery_continuity",
+      "evidence": {
+        "note": "I3 async recovery plane scoped to canonical orchestration fixtures",
+        "source_paths": [
+          "fixtures/orchestration/reconciliation/reconciliation_lineage_index_v1.json",
+          "fixtures/orchestration/synthesis/async_batch_audit_v1.json"
+        ]
+      },
+      "from_corpus_group_id": "canonical_r1",
+      "ref_kind": "federation_recovery_continuity",
+      "to_corpus_group_id": "canonical_r1"
+    }
+  ],
+  "federation_id": "sa_replay_federation_r0_v1",
+  "generation_revision": "f2a_v1",
+  "governance": {
+    "anti_claims": [
+      "Federation groups partition offline fixture indexes; they do not live-sync corpora.",
+      "Cross-corpus lineage documents structural partitioning, not causal inference.",
+      "Federation integrity does not certify replay effectiveness or readiness.",
+      "Recovery continuity summaries are explanatory; CLI remains authoritative for promote."
+    ],
+    "notice": "Replay federation index for offline multi-corpus research operations only \u2014 deterministic registry and cross-study lineage, not cloud sync or operational authority."
+  },
+  "schema_version": "replay_federation_lineage_graph_v1"
+}

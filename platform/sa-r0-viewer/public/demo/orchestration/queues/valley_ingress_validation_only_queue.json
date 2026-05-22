@@ -1,0 +1,53 @@
+{
+  "artifact_type": "experiment_run_queue_v1",
+  "created_at": "2026-05-21T08:51:09+00:00",
+  "dry_run": false,
+  "governance_banner": "ORCHESTRATION MIRROR \u2014 not live execution state",
+  "jobs": [
+    {
+      "artifact_refs": [
+        "fixtures/orchestration/validation_mirrors/valley_ingress_validation_mirror.json"
+      ],
+      "error_hint": "",
+      "finished_at": "2026-05-21T08:51:09+00:00",
+      "job_id": "valley_ingress_validate",
+      "phase": "validation_mirror",
+      "provenance": {
+        "bundle_path": null,
+        "corpus_ref": null,
+        "scenario_pack_ref": "fixtures/scenarios/valley_ingress"
+      },
+      "scenario_pack_id": "valley_ingress",
+      "started_at": "2026-05-21T08:51:09+00:00",
+      "status": "completed"
+    }
+  ],
+  "manifest_id": "valley_ingress_validation_only",
+  "manifest_ref": "fixtures/orchestration/manifests/valley_ingress_validation.json",
+  "queue_id": "valley_ingress_validation_only_queue",
+  "schema_version": "experiment_run_queue_v1",
+  "steps": [
+    {
+      "command": "lint_scenario_pack /home/neociel/drone/codex-a01-phase2/fixtures/scenarios/valley_ingress",
+      "duration_ms": 0,
+      "hint": "",
+      "status": "completed",
+      "step_id": "validate",
+      "step_type": "validate_scenario",
+      "validation": {
+        "issues": [],
+        "ok": true,
+        "warnings": []
+      }
+    },
+    {
+      "artifact_refs": [
+        "fixtures/orchestration/validation_mirrors/valley_ingress_validation_mirror.json"
+      ],
+      "command": "write mirror /home/neociel/drone/codex-a01-phase2/fixtures/orchestration/validation_mirrors/valley_ingress_validation_mirror.json",
+      "status": "completed",
+      "step_id": "validation_mirror",
+      "step_type": "validation_mirror"
+    }
+  ]
+}

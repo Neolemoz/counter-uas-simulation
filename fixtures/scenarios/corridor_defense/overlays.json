@@ -1,0 +1,140 @@
+{
+  "overlays": [
+    {
+      "active_t_range": [
+        0,
+        22
+      ],
+      "caveat": "Constrained ingress corridor.",
+      "geometry": {
+        "type": "polygon",
+        "vertices_enu_m": [
+          [
+            -1600,
+            -60,
+            0
+          ],
+          [
+            -200,
+            -80,
+            0
+          ],
+          [
+            -180,
+            80,
+            0
+          ],
+          [
+            -1580,
+            60,
+            0
+          ]
+        ]
+      },
+      "kind": "ingress_corridor",
+      "overlay_id": "ingress_corridor_narrow"
+    },
+    {
+      "active_t_range": [
+        4,
+        18
+      ],
+      "caveat": "Flank LOS blockage.",
+      "geometry": {
+        "type": "polygon",
+        "vertices_enu_m": [
+          [
+            -1200,
+            100,
+            0
+          ],
+          [
+            -600,
+            120,
+            0
+          ],
+          [
+            -580,
+            380,
+            0
+          ],
+          [
+            -1180,
+            360,
+            0
+          ]
+        ]
+      },
+      "kind": "los_blocked",
+      "overlay_id": "los_blocked_corridor_flank"
+    },
+    {
+      "active_t_range": [
+        4,
+        18
+      ],
+      "caveat": "South flank blockage.",
+      "geometry": {
+        "type": "polygon",
+        "vertices_enu_m": [
+          [
+            -1200,
+            -380,
+            0
+          ],
+          [
+            -600,
+            -360,
+            0
+          ],
+          [
+            -580,
+            -120,
+            0
+          ],
+          [
+            -1180,
+            -100,
+            0
+          ]
+        ]
+      },
+      "kind": "los_blocked",
+      "overlay_id": "los_blocked_corridor_flank_s"
+    },
+    {
+      "active_t_range": [
+        8,
+        16
+      ],
+      "caveat": "Corridor mid degradation.",
+      "geometry": {
+        "type": "polygon",
+        "vertices_enu_m": [
+          [
+            -900,
+            -40,
+            0
+          ],
+          [
+            -500,
+            -50,
+            0
+          ],
+          [
+            -480,
+            50,
+            0
+          ],
+          [
+            -880,
+            40,
+            0
+          ]
+        ]
+      },
+      "kind": "degraded_visibility",
+      "overlay_id": "degraded_corridor_mid"
+    }
+  ]
+}

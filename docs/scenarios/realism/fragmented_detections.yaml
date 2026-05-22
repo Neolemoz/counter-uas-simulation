@@ -1,0 +1,9 @@
+overlay_id: fragmented_detections
+seed_required: true
+scenario_scope: single_target_sensing_realism
+launch_args:
+  use_noisy_measurement: true
+  fragmentation_prob: 0.15
+  fragmentation_min_ticks: 2
+  fragmentation_max_ticks: 5
+notes: Additive bounded continuity-gap overlay for coast/recovery and candidate confirmation stress. Wave 1 lifecycle-stress profiles may override this with deterministic staggered fragmentation.

@@ -1,0 +1,35 @@
+{
+  "artifact_type": "replay_storyboard_v1",
+  "estimated_minutes": 15,
+  "governance": {
+    "anti_claims": [
+      "Not deployment readiness or validated effectiveness.",
+      "Not causal proof of runtime behavior."
+    ],
+    "notice": "Derived replay presentation artifact \u2014 explanatory review only, not operational authority."
+  },
+  "scenes": [
+    {
+      "copy": "Compare ridge, multi-ridge, valley, and corridor packs in one sweep family.",
+      "importance_tags": [
+        "topology"
+      ],
+      "label": "Ridge overlap sweep",
+      "scene_id": "ridge_sweep",
+      "target_url": "?sweep=ridge_overlap_sweep&presentation=showcase_topology_divergence&chapter=0"
+    },
+    {
+      "copy": "Sync-clock filmstrip across topology variants \u2014 not operational comparison.",
+      "importance_tags": [
+        "topology",
+        "pacing"
+      ],
+      "label": "Cohort filmstrip",
+      "scene_id": "filmstrip",
+      "target_url": "?sweep=ridge_overlap_sweep&filmstrip=0,1,2"
+    }
+  ],
+  "schema_version": "replay_storyboard_v1",
+  "storyboard_id": "showcase_topology_divergence",
+  "title": "Showcase: topology-sensitive divergence"
+}

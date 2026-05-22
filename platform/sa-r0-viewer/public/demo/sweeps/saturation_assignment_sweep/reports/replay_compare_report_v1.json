@@ -1,0 +1,89 @@
+{
+  "artifact_type": "replay_compare_report_v1",
+  "governance": {
+    "anti_claims": [
+      "Sweep aggregates are not parser authority.",
+      "Spatial layers are replay concentration, not probability or readiness.",
+      "No deployment confidence or tactical superiority implied."
+    ],
+    "notice": "Deterministic replay sweep for spatial analytics exploration only \u2014 explanatory replay family, not operational planning."
+  },
+  "interpretation_caveats": [
+    "Explanatory replay compare report \u2014 not parser authority.",
+    "Spatial aggregates are replay concentration, not probability."
+  ],
+  "members": [
+    {
+      "demo_bundle_url": "/demo/sweeps/saturation_assignment_sweep/members/seed_9230_saturation/index.json",
+      "member_id": "seed_9230_saturation",
+      "pack_id": "saturation_ingress",
+      "seed": 9230
+    },
+    {
+      "demo_bundle_url": "/demo/sweeps/saturation_assignment_sweep/members/seed_9231_corridor/index.json",
+      "member_id": "seed_9231_corridor",
+      "pack_id": "corridor_defense",
+      "seed": 9231
+    },
+    {
+      "demo_bundle_url": "/demo/sweeps/saturation_assignment_sweep/members/seed_9232_saturation_b/index.json",
+      "member_id": "seed_9232_saturation_b",
+      "pack_id": "saturation_ingress",
+      "seed": 9232
+    },
+    {
+      "demo_bundle_url": "/demo/sweeps/saturation_assignment_sweep/members/seed_9233_corridor_b/index.json",
+      "member_id": "seed_9233_corridor_b",
+      "pack_id": "corridor_defense",
+      "seed": 9233
+    }
+  ],
+  "replay_aggregation": {
+    "dominant_patterns": [
+      "Replay variants under baseline saturation_ingress show localized spatial concentration \u2014 explanatory only."
+    ],
+    "outcome_histogram": {
+      "ambiguity_window_count": [
+        2,
+        2,
+        2,
+        2
+      ],
+      "first_detection_t": [
+        5,
+        5,
+        5,
+        5
+      ],
+      "los_degraded_count": [
+        12,
+        12,
+        12,
+        12
+      ]
+    }
+  },
+  "schema_version": "replay_compare_report_v1",
+  "spatial_aggregate_summary": {
+    "grid": {
+      "origin_enu_m": [
+        -2500.0,
+        -500.0
+      ],
+      "size": [
+        40,
+        30
+      ],
+      "spacing_m": 100.0
+    },
+    "layer_keys": [
+      "ambiguity_density",
+      "first_detection",
+      "intercept_outcome",
+      "los_degraded",
+      "replay_event_clusters",
+      "topology_sensitivity"
+    ]
+  },
+  "sweep_id": "saturation_assignment_sweep"
+}

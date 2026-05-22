@@ -1,0 +1,13 @@
+{
+  "artifact_type": "experiment_validation_mirror_v1",
+  "checked_at": "2026-05-21T11:55:54Z",
+  "governance_banner": "VALIDATION MIRROR \u2014 not certification or deployment authority",
+  "issues": [],
+  "job_id": "validate",
+  "manifest_id": "authoring",
+  "ok": true,
+  "scenario_pack_id": "long_range_ingress",
+  "scenario_pack_ref": "fixtures/scenarios/long_range_ingress",
+  "schema_version": "experiment_validation_mirror_v1",
+  "warnings": []
+}

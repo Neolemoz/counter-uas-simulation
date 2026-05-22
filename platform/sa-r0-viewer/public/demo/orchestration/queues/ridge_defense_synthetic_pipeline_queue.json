@@ -1,0 +1,61 @@
+{
+  "artifact_type": "experiment_run_queue_v1",
+  "created_at": "2026-05-22T04:03:46+00:00",
+  "dry_run": true,
+  "governance_banner": "ORCHESTRATION MIRROR \u2014 not live execution state",
+  "jobs": [
+    {
+      "artifact_refs": [],
+      "error_hint": "",
+      "finished_at": "2026-05-22T04:03:46+00:00",
+      "job_id": "ridge_defense_synthetic",
+      "phase": "corpus_regen",
+      "provenance": {
+        "bundle_path": "fixtures/sa_r0/demo_ridge_defense",
+        "corpus_ref": "demo_ridge_defense",
+        "scenario_pack_ref": "fixtures/scenarios/ridge_defense"
+      },
+      "scenario_pack_id": "ridge_defense",
+      "started_at": "2026-05-22T04:03:46+00:00",
+      "status": "dry_run"
+    }
+  ],
+  "manifest_id": "ridge_defense_synthetic_pipeline",
+  "manifest_ref": "fixtures/orchestration/manifests/ridge_defense_synthetic.json",
+  "queue_id": "ridge_defense_synthetic_pipeline_queue",
+  "schema_version": "experiment_run_queue_v1",
+  "steps": [
+    {
+      "command": "validate /home/neociel/drone/codex-a01-phase2/fixtures/scenarios/ridge_defense",
+      "status": "dry_run",
+      "step_id": "validate",
+      "step_type": "validate_scenario"
+    },
+    {
+      "command": "write mirror /home/neociel/drone/codex-a01-phase2/fixtures/orchestration/validation_mirrors/ridge_defense_validation_mirror.json",
+      "status": "dry_run",
+      "step_id": "validation_mirror",
+      "step_type": "validation_mirror"
+    },
+    {
+      "command": "/usr/bin/python3 /home/neociel/drone/codex-a01-phase2/scripts/evaluation/sync_sa_catalog.py",
+      "duration_ms": 0,
+      "status": "dry_run",
+      "step_id": "catalog_sync",
+      "step_type": "synthetic_demo_regen"
+    },
+    {
+      "command": "verify /home/neociel/drone/codex-a01-phase2/fixtures/sa_r0/demo_ridge_defense/index.json",
+      "status": "dry_run",
+      "step_id": "bundle_verify",
+      "step_type": "bundle_verify"
+    },
+    {
+      "command": "/usr/bin/python3 /home/neociel/drone/codex-a01-phase2/scripts/evaluation/run_replay_corpus_regen.py --dry-run",
+      "duration_ms": 0,
+      "status": "dry_run",
+      "step_id": "corpus_regen",
+      "step_type": "corpus_regen"
+    }
+  ]
+}

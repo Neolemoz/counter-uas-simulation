@@ -1,0 +1,36 @@
+{
+  "artifact_type": "replay_storyboard_v1",
+  "estimated_minutes": 16,
+  "governance": {
+    "anti_claims": [
+      "Not deployment readiness or validated effectiveness.",
+      "Not causal proof of runtime behavior."
+    ],
+    "notice": "Derived replay presentation artifact \u2014 explanatory review only, not operational authority."
+  },
+  "scenes": [
+    {
+      "copy": "Saturation-driven ambiguity patterns across matched-seed variants.",
+      "importance_tags": [
+        "ambiguity",
+        "assignment"
+      ],
+      "label": "Saturation assignment",
+      "scene_id": "saturation",
+      "target_url": "?sweep=saturation_assignment_sweep&presentation=showcase_ambiguity_heavy&chapter=0"
+    },
+    {
+      "copy": "Sensor placement changes amplify ambiguity concentration in valley ingress.",
+      "importance_tags": [
+        "ambiguity",
+        "topology"
+      ],
+      "label": "Valley sensor sweep",
+      "scene_id": "valley_sensor",
+      "target_url": "?sweep=valley_sensor_sweep&chapter=0"
+    }
+  ],
+  "schema_version": "replay_storyboard_v1",
+  "storyboard_id": "showcase_ambiguity_heavy",
+  "title": "Showcase: ambiguity-heavy sweeps"
+}

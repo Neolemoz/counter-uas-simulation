@@ -1,0 +1,34 @@
+{
+  "artifact_type": "experiment_orchestration_ops_manifest_v1",
+  "audit_report_ref": "fixtures/orchestration/audits/delayed_detection_validation_only_queue_report.json",
+  "authoring_pack_refs": [
+    "delayed_detection"
+  ],
+  "governance": {
+    "anti_claims": [
+      "not live execution authority",
+      "not operational deployment state",
+      "not parser contract"
+    ],
+    "notice": "Orchestration operations sidecar for offline experiment workflow only."
+  },
+  "manifest_fingerprint": "sha256:acb4b36bbf411d12ff47d69fd1026d1b5ed2db9e5582588379e9cb3c384f9d3f",
+  "manifest_id": "delayed_detection_validation_only",
+  "operations_lineage": [
+    {
+      "actor": "cli:promote_experiment_manifest",
+      "event_id": "ops-2026-05-22T00:31:35Z",
+      "from_status": "validated",
+      "notes": "I1 backfill",
+      "to_status": "queued"
+    }
+  ],
+  "operations_status": "queued",
+  "operations_summary_ref": "fixtures/orchestration/ops/delayed_detection_validation_only_orchestration_operations_summary_v1.json",
+  "queue_snapshot_ref": "fixtures/orchestration/queues/delayed_detection_validation_only_queue.json",
+  "scenario_pack_ids": [
+    "delayed_detection"
+  ],
+  "schema_version": "1",
+  "updated_at": "2026-05-22T00:31:35Z"
+}

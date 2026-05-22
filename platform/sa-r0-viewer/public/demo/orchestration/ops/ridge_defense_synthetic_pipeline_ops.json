@@ -1,0 +1,41 @@
+{
+  "artifact_type": "experiment_orchestration_ops_manifest_v1",
+  "audit_report_ref": "fixtures/orchestration/audits/ridge_defense_synthetic_pipeline_queue_report.json",
+  "authoring_pack_refs": [
+    "ridge_defense"
+  ],
+  "governance": {
+    "anti_claims": [
+      "not live execution authority",
+      "not operational deployment state",
+      "not parser contract"
+    ],
+    "notice": "Orchestration operations sidecar for offline experiment workflow only."
+  },
+  "manifest_fingerprint": "sha256:d8e3c794c7f1bf1caa1719386c4a5e8381e13ff906fa91bd90d9bd373082da68",
+  "manifest_id": "ridge_defense_synthetic_pipeline",
+  "operations_lineage": [
+    {
+      "actor": "cli:promote_experiment_manifest",
+      "event_id": "ops-2026-05-22T00:31:37Z",
+      "from_status": "validated",
+      "notes": "I1 backfill",
+      "to_status": "queued"
+    },
+    {
+      "actor": "cli:promote_experiment_manifest",
+      "event_id": "ops-2026-05-22T00:31:43Z",
+      "from_status": "queued",
+      "notes": "I1 synthetic reference",
+      "to_status": "replay_generated"
+    }
+  ],
+  "operations_status": "replay_generated",
+  "operations_summary_ref": "fixtures/orchestration/ops/ridge_defense_synthetic_pipeline_orchestration_operations_summary_v1.json",
+  "queue_snapshot_ref": "fixtures/orchestration/queues/ridge_defense_synthetic_pipeline_queue.json",
+  "scenario_pack_ids": [
+    "ridge_defense"
+  ],
+  "schema_version": "1",
+  "updated_at": "2026-05-22T00:31:43Z"
+}

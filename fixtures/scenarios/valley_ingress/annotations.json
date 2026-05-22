@@ -1,0 +1,39 @@
+{
+  "annotations": [
+    {
+      "annotation_id": "anno_valley_degraded",
+      "kind": "visibility_degraded",
+      "title": "Valley ingress degradation",
+      "body": "Sensor confidence degraded in valley ingress corridor — not operational assessment.",
+      "linked_event_ids": ["narrative_event_0001_detection_detection_block"]
+    },
+    {
+      "annotation_id": "anno_ridge_occluded",
+      "kind": "los_blockage",
+      "title": "Ridge occlusion",
+      "body": "Target occluded behind ridge (replay-local association — not causal proof).",
+      "linked_event_ids": ["narrative_event_0003_ambiguity_realism_fragmented_gap_start"]
+    },
+    {
+      "annotation_id": "anno_delayed_confirm",
+      "kind": "los_blockage",
+      "title": "Delayed track confirmation",
+      "body": "Track confirmation delayed during valley ingress — explanatory replay evidence only.",
+      "linked_event_ids": ["narrative_event_0001_detection_detection_block"]
+    },
+    {
+      "annotation_id": "anno_reacquired",
+      "kind": "los_blockage",
+      "title": "Track reacquired",
+      "body": "Track reacquired after terrain masking — explanatory replay evidence only.",
+      "linked_event_ids": ["narrative_event_0003_ambiguity_realism_fragmented_gap_start"]
+    },
+    {
+      "annotation_id": "anno_masking_window",
+      "kind": "visibility_degraded",
+      "title": "Terrain masking window",
+      "body": "Target temporarily lost behind terrain during fragmented-gap window — not readiness status.",
+      "linked_event_ids": ["narrative_event_0003_ambiguity_realism_fragmented_gap_start"]
+    }
+  ]
+}

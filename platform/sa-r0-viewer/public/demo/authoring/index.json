@@ -1,0 +1,55 @@
+{
+  "artifact_type": "scenario_authoring_mirror_index_v1",
+  "entries": [
+    {
+      "pack_id": "corridor_defense",
+      "url": "/demo/authoring/corridor_defense.json"
+    },
+    {
+      "pack_id": "delayed_detection",
+      "url": "/demo/authoring/delayed_detection.json"
+    },
+    {
+      "pack_id": "long_range_ingress",
+      "url": "/demo/authoring/long_range_ingress.json"
+    },
+    {
+      "pack_id": "multi_ridge",
+      "url": "/demo/authoring/multi_ridge.json"
+    },
+    {
+      "pack_id": "ridge_defense",
+      "url": "/demo/authoring/ridge_defense.json"
+    },
+    {
+      "pack_id": "saturation_ingress",
+      "url": "/demo/authoring/saturation_ingress.json"
+    },
+    {
+      "pack_id": "urban_masking",
+      "url": "/demo/authoring/urban_masking.json"
+    },
+    {
+      "pack_id": "valley_ingress",
+      "url": "/demo/authoring/valley_ingress.json"
+    },
+    {
+      "pack_id": "valley_ingress_delayed_interceptor_base",
+      "url": "/demo/authoring/valley_ingress_delayed_interceptor_base.json"
+    },
+    {
+      "pack_id": "valley_ingress_extra_valley_sensor",
+      "url": "/demo/authoring/valley_ingress_extra_valley_sensor.json"
+    },
+    {
+      "pack_id": "valley_ingress_radar_shifted_north",
+      "url": "/demo/authoring/valley_ingress_radar_shifted_north.json"
+    },
+    {
+      "pack_id": "valley_ingress_reduced_overlap_layout",
+      "url": "/demo/authoring/valley_ingress_reduced_overlap_layout.json"
+    }
+  ],
+  "governance_banner": "AUTHORING MIRROR \u2014 CLI promotes; not live configuration",
+  "schema_version": "1"
+}

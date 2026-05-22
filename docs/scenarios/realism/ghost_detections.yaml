@@ -1,0 +1,11 @@
+overlay_id: ghost_detections
+seed_required: true
+scenario_scope: single_target_sensing_realism
+launch_args:
+  use_noisy_measurement: true
+  ghost_detection_prob: 0.20
+  ghost_placement_mode: broad
+  ghost_offset_xy_min_m: 3.0
+  ghost_offset_xy_max_m: 12.0
+  ghost_offset_z_std_m: 0.5
+notes: Additive ghost / false-detection overlay; preserves Point-path compatibility semantics. Wave 1 lifecycle-stress profiles may override ghost_placement_mode to near_threshold.

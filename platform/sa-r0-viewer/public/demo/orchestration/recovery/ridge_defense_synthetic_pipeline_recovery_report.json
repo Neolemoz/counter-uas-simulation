@@ -1,0 +1,67 @@
+{
+  "artifact_type": "orchestration_recovery_report_v1",
+  "async_execution_status": null,
+  "generated_at": "2026-05-22T04:39:08Z",
+  "governance": {
+    "anti_claims": [
+      "not live recovery authority",
+      "not parser contract",
+      "not operational readiness"
+    ],
+    "notice": "Recovery and reconciliation artifacts for offline reviewer cognition only."
+  },
+  "governance_banner": "RECOVERY REPORT \u2014 explanatory; CLI authoritative",
+  "manifest_id": "ridge_defense_synthetic_pipeline",
+  "quarantine_hold": false,
+  "recovery_continuity_ok": true,
+  "recovery_issues": [],
+  "recovery_warnings": [],
+  "replay_reconciliation": {
+    "current_replay_fingerprint": "sha256:5f412328ab752f5c961468bc0a281849bc9cfbfa30c10f1001474e1f2f348fb4",
+    "issues": [],
+    "manifest_id": "ridge_defense_synthetic_pipeline",
+    "ok": true,
+    "stored_replay_fingerprint": "sha256:5f412328ab752f5c961468bc0a281849bc9cfbfa30c10f1001474e1f2f348fb4"
+  },
+  "retry_chain": [
+    {
+      "claim_id": "claim-ridge_defense_synthetic_pipeline-ridge_defense_synthetic_pipeline_queue",
+      "claim_status": "closed",
+      "hop_type": "claim",
+      "ref": "fixtures/orchestration/claims/ridge_defense_synthetic_pipeline_queue_claim.json",
+      "snapshot_hash": "sha256:4645fce86ac7aa515053a8d79b161b2f6afbb173141714c9540aefb56fe54032"
+    },
+    {
+      "execution_attempt": 1,
+      "execution_fingerprint": "sha256:ea4c1596f78a48fd08b7faafadb65e626817b0c9c2cea18a9892e203ece61d0d",
+      "hop_type": "worker",
+      "ref": "fixtures/orchestration/workers/cli-worker-ridge-ref_1.json",
+      "retry_parent_ref": null,
+      "worker_id": "cli-worker-ridge-ref"
+    },
+    {
+      "execution_attempt": 2,
+      "execution_fingerprint": "sha256:ea4c1596f78a48fd08b7faafadb65e626817b0c9c2cea18a9892e203ece61d0d",
+      "hop_type": "worker",
+      "ref": "fixtures/orchestration/workers/cli-worker-ridge-ref_2.json",
+      "retry_parent_ref": "fixtures/orchestration/workers/cli-worker-ridge-ref_1.json",
+      "worker_id": "cli-worker-ridge-ref"
+    },
+    {
+      "event_id": "async-2026-05-22T04:50:00Z",
+      "from_status": null,
+      "hop_type": "lineage",
+      "notes": "bounded worker fault on attempt 1",
+      "to_status": "failed"
+    },
+    {
+      "event_id": "async-2026-05-22T05:00:00Z",
+      "from_status": "failed",
+      "hop_type": "lineage",
+      "notes": "CLI re-queued attempt 2",
+      "to_status": "retrying"
+    }
+  ],
+  "schema_version": "1",
+  "superseded": false
+}

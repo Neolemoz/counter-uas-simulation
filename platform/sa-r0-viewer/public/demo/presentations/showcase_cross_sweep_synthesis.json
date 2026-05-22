@@ -1,0 +1,59 @@
+{
+  "artifact_type": "replay_storyboard_v1",
+  "estimated_minutes": 14,
+  "governance": {
+    "anti_claims": [
+      "Not deployment readiness or validated effectiveness.",
+      "Not causal proof of runtime behavior.",
+      "Cross-sweep synthesis is replay-local explanatory rollup only."
+    ],
+    "notice": "Derived replay presentation artifact \u2014 explanatory review only, not operational authority."
+  },
+  "scenes": [
+    {
+      "chapter": 0,
+      "copy": "Load ridge overlap sweep, then open the synthesis panel for corpus-wide rollups \u2014 explanatory only.",
+      "importance_tags": [
+        "topology",
+        "ambiguity"
+      ],
+      "label": "Cross-sweep synthesis overview",
+      "scene_id": "synthesis_overview",
+      "target_url": "?sweep=ridge_overlap_sweep&presentation=showcase_cross_sweep_synthesis&chapter=0"
+    },
+    {
+      "chapter": 1,
+      "copy": "Review linkage panel for related replay families \u2014 not causal doctrine.",
+      "importance_tags": [
+        "topology"
+      ],
+      "label": "Ridge overlap + linkage",
+      "scene_id": "ridge_linkage",
+      "target_url": "?sweep=ridge_overlap_sweep&presentation=showcase_cross_sweep_synthesis&chapter=1"
+    },
+    {
+      "chapter": 2,
+      "copy": "Compare delayed detection ingress variation against saturation assignment cohort.",
+      "importance_tags": [
+        "pacing",
+        "assignment"
+      ],
+      "label": "Delayed detection vs saturation",
+      "scene_id": "detection_saturation",
+      "target_url": "?sweep=delayed_detection_sweep&presentation=showcase_cross_sweep_synthesis&chapter=2"
+    },
+    {
+      "chapter": 3,
+      "copy": "Open `/demo/sweeps/saturation_assignment_sweep/reports/publication_packet.html` for offline mentor handoff.",
+      "importance_tags": [
+        "topology"
+      ],
+      "label": "Publication packet",
+      "scene_id": "publication",
+      "target_url": "?sweep=saturation_assignment_sweep&presentation=showcase_cross_sweep_synthesis&chapter=3"
+    }
+  ],
+  "schema_version": "replay_storyboard_v1",
+  "storyboard_id": "showcase_cross_sweep_synthesis",
+  "title": "Showcase: cross-sweep synthesis corpus"
+}

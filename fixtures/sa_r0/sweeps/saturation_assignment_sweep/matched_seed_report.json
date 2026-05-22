@@ -1,0 +1,38 @@
+{
+  "artifact_type": "matched_seed_comparison_report",
+  "governance": {
+    "constraints": [
+      "Explanatory only"
+    ],
+    "notice": "Synthetic fixture for sweep review \u2014 not statistical superiority."
+  },
+  "interpretation_caveats": [
+    "Matched seeds support descriptive comparison, not statistical superiority claims."
+  ],
+  "paired_seeds": [
+    {
+      "baseline": {
+        "success": false
+      },
+      "candidate": {
+        "success": false
+      },
+      "seed": 9230
+    },
+    {
+      "baseline": {
+        "success": false
+      },
+      "candidate": {
+        "success": false
+      },
+      "seed": 9231
+    }
+  ],
+  "summary": {
+    "bucket_counts": {
+      "descriptive": 2
+    },
+    "paired_seed_count": 2
+  }
+}

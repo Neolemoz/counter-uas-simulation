@@ -11,12 +11,20 @@
 
   <exec_depend>launch</exec_depend>
   <exec_depend>launch_ros</exec_depend>
+  <exec_depend>rclpy</exec_depend>
+  <exec_depend>nav_msgs</exec_depend>
+  <exec_depend>std_msgs</exec_depend>
+  <exec_depend>gazebo_target_sim</exec_depend>
+  <exec_depend>ros_gz_bridge</exec_depend>
   <exec_depend>world_sim</exec_depend>
   <exec_depend>radar_sim</exec_depend>
   <exec_depend>camera_sim</exec_depend>
   <exec_depend>fusion</exec_depend>
   <exec_depend>tracking</exec_depend>
+  <exec_depend>threat_assessment</exec_depend>
   <exec_depend>visualization</exec_depend>
+
+  <test_depend>python3-pytest</test_depend>
 
   <export>
     <build_type>ament_python</build_type>

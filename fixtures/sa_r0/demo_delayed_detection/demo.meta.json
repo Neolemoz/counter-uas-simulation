@@ -1,0 +1,14 @@
+{
+  "cmd": [
+    "ros2",
+    "launch",
+    "counter_uas",
+    "bringup.launch.py",
+    "target_start_x_m:=-820.0",
+    "target_start_y_m:=25.0",
+    "target_start_z_m:=120.0",
+    "noise_seed:=101"
+  ],
+  "cohort": "sa_b2_demo",
+  "run_id": "replay_delayed_detection_demo"
+}

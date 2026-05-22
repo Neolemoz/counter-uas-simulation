@@ -1,0 +1,10 @@
+overlay_id: burst_dropout
+seed_required: true
+scenario_scope: single_target_runtime_realism
+launch_args:
+  use_noisy_measurement: true
+  dropout_prob: 0.05
+  burst_dropout_prob: 0.20
+  burst_dropout_min_ticks: 2
+  burst_dropout_max_ticks: 4
+notes: Clustered measurement-loss overlay for coast/recovery evaluation.

@@ -1,0 +1,58 @@
+{
+  "ambiguity_profile": {
+    "focus_tags": [
+      "assignment_ambiguity",
+      "multi_threat"
+    ],
+    "level": "saturation"
+  },
+  "artifact_type": "scenario_topology_v1",
+  "governance": {
+    "anti_claims": [
+      "not deployed geography",
+      "not operational effectiveness",
+      "not tactical authority"
+    ],
+    "constraints": [
+      "replay-safe",
+      "explanatory-only",
+      "non-authoritative",
+      "parser-safe"
+    ],
+    "notice": "Fictional scenario topology for replay visualization only."
+  },
+  "ingress_archetype": "open",
+  "narrative_focus": [
+    "assignment_ambiguity",
+    "prioritization_pressure"
+  ],
+  "overlay_descriptors": [
+    {
+      "count": 1,
+      "kind": "degraded_visibility"
+    },
+    {
+      "count": 2,
+      "kind": "ingress_corridor"
+    }
+  ],
+  "provenance": {
+    "fictional_disclaimer": "Fictional replay fixture.",
+    "fixture_source": "fixtures/scenarios/saturation_ingress"
+  },
+  "replay_duration_class": "medium",
+  "replay_tags": [
+    "multi_threat",
+    "assignment_ambiguity",
+    "compressed_intercept_window"
+  ],
+  "scenario_id": "saturation_ingress_demo",
+  "schema_version": "scenario_topology_v1",
+  "terrain_profile": "flat",
+  "title": "Saturation ingress multi-threat replay",
+  "topology_tags": [
+    "saturation_ingress",
+    "multi_threat",
+    "assignment_ambiguity"
+  ]
+}

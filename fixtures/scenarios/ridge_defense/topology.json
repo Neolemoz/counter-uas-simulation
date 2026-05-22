@@ -1,0 +1,48 @@
+{
+  "georef_anchor": {"lat_deg": 35.0, "lon_deg": -116.0, "h_m": 0.0},
+  "entities_static": [
+    {
+      "entity_id": "radar_01",
+      "kind": "radar",
+      "position_enu_m": [0.0, 0.0, 12.0],
+      "label": "Radar site (replay fixture)",
+      "authoritative": false
+    },
+    {
+      "entity_id": "eoir_01",
+      "kind": "eoir",
+      "position_enu_m": [250.0, 80.0, 18.0],
+      "label": "EO/IR site (replay fixture)",
+      "authoritative": false
+    },
+    {
+      "entity_id": "passive_rf_01",
+      "kind": "passive_rf",
+      "position_enu_m": [-120.0, 220.0, 10.0],
+      "label": "Passive RF sensor (replay fixture)",
+      "authoritative": false
+    },
+    {
+      "entity_id": "fusion_center",
+      "kind": "fusion_center",
+      "position_enu_m": [0.0, 0.0, 0.0],
+      "label": "Fusion center (replay fixture)",
+      "authoritative": false
+    },
+    {
+      "entity_id": "int_base_01",
+      "kind": "interceptor_base",
+      "position_enu_m": [0.0, 0.0, 0.0],
+      "label": "Interceptor base INT-01 (replay fixture)",
+      "authoritative": false
+    },
+    {
+      "entity_id": "int_base_02",
+      "kind": "interceptor_base",
+      "position_enu_m": [320.0, -80.0, 0.0],
+      "label": "Interceptor base INT-02 (replay fixture)",
+      "authoritative": false
+    }
+  ],
+  "zones": []
+}

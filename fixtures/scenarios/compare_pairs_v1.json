@@ -1,0 +1,102 @@
+{
+  "artifact_type": "scenario_compare_pairs_v1",
+  "schema_version": "scenario_compare_pairs_v1",
+  "governance": {
+    "notice": "Curated compare pairs for explanatory replay review only — not operational benchmarking.",
+    "anti_claims": [
+      "not deployment readiness",
+      "not validated effectiveness",
+      "not tactical superiority"
+    ]
+  },
+  "pairs": [
+    {
+      "pair_id": "valley_vs_ridge_replay",
+      "label": "Valley ingress vs ridge defense (replay interpretation)",
+      "mode": "replay_ab",
+      "slot_a": {
+        "pack_id": "valley_ingress",
+        "demo_bundle_url": "/demo/valley_ingress/index.json"
+      },
+      "slot_b": {
+        "pack_id": "ridge_defense",
+        "demo_bundle_url": "/demo/index.json"
+      },
+      "governance_notice": "Different topology and replay logs — compare replay interpretation only."
+    },
+    {
+      "pair_id": "saturation_vs_corridor",
+      "label": "Saturation ingress vs corridor defense",
+      "mode": "replay_ab",
+      "slot_a": {
+        "pack_id": "saturation_ingress",
+        "demo_bundle_url": "/demo/saturation_ingress/index.json"
+      },
+      "slot_b": {
+        "pack_id": "corridor_defense",
+        "demo_bundle_url": "/demo/corridor_defense/index.json"
+      },
+      "governance_notice": "Multi-threat vs corridor geometry — explanatory replay diff only."
+    },
+    {
+      "pair_id": "valley_radar_shifted_north",
+      "label": "Valley baseline vs radar shifted north",
+      "mode": "sensor_study",
+      "shared_log_ref": "valley_ingress",
+      "slot_a": {
+        "pack_id": "valley_ingress",
+        "demo_bundle_url": "/demo/valley_ingress/index.json"
+      },
+      "slot_b": {
+        "pack_id": "valley_ingress_radar_shifted_north",
+        "demo_bundle_url": "/demo/valley_ingress_radar_shifted_north/index.json"
+      },
+      "governance_notice": "Same replay log; static radar position differs — not sensor truth."
+    },
+    {
+      "pair_id": "valley_extra_sensor",
+      "label": "Valley baseline vs extra valley sensor",
+      "mode": "sensor_study",
+      "shared_log_ref": "valley_ingress",
+      "slot_a": {
+        "pack_id": "valley_ingress",
+        "demo_bundle_url": "/demo/valley_ingress/index.json"
+      },
+      "slot_b": {
+        "pack_id": "valley_ingress_extra_valley_sensor",
+        "demo_bundle_url": "/demo/valley_ingress_extra_valley_sensor/index.json"
+      },
+      "governance_notice": "Same replay log; additional static site — explanatory layout study."
+    },
+    {
+      "pair_id": "valley_reduced_overlap",
+      "label": "Valley baseline vs reduced overlap layout",
+      "mode": "sensor_study",
+      "shared_log_ref": "valley_ingress",
+      "slot_a": {
+        "pack_id": "valley_ingress",
+        "demo_bundle_url": "/demo/valley_ingress/index.json"
+      },
+      "slot_b": {
+        "pack_id": "valley_ingress_reduced_overlap_layout",
+        "demo_bundle_url": "/demo/valley_ingress_reduced_overlap_layout/index.json"
+      },
+      "governance_notice": "Same replay log; zone overlap reduced — not doctrine."
+    },
+    {
+      "pair_id": "valley_delayed_interceptor_base",
+      "label": "Valley baseline vs delayed interceptor base",
+      "mode": "sensor_study",
+      "shared_log_ref": "valley_ingress",
+      "slot_a": {
+        "pack_id": "valley_ingress",
+        "demo_bundle_url": "/demo/valley_ingress/index.json"
+      },
+      "slot_b": {
+        "pack_id": "valley_ingress_delayed_interceptor_base",
+        "demo_bundle_url": "/demo/valley_ingress_delayed_interceptor_base/index.json"
+      },
+      "governance_notice": "Same replay log; interceptor base offset — replay-local geometry only."
+    }
+  ]
+}

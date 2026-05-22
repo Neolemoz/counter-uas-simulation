@@ -1,0 +1,54 @@
+{
+  "annotations": [
+    {
+      "annotation_id": "anno_prioritization",
+      "body": "Multiple threats create replay prioritization pressure — not assignment authority.",
+      "kind": "tti_explanation",
+      "linked_event_ids": [
+        "narrative_event_0002_selection_selection_block"
+      ],
+      "narrative_rank": 1,
+      "title": "Prioritization pressure"
+    },
+    {
+      "annotation_id": "anno_assignment_switch",
+      "body": "Selection evidence shifts between interceptors — explanatory only.",
+      "kind": "tti_explanation",
+      "linked_event_ids": [
+        "narrative_event_0005_selection_selection_block"
+      ],
+      "narrative_rank": 1,
+      "title": "Assignment switching"
+    },
+    {
+      "annotation_id": "anno_overlap_tracks",
+      "body": "Overlapping ingress paths increase narrative complexity in replay.",
+      "kind": "visibility_degraded",
+      "linked_event_ids": [
+        "narrative_event_0003_ambiguity_realism_fragmented_gap_start"
+      ],
+      "narrative_rank": 2,
+      "title": "Overlapping trajectories"
+    },
+    {
+      "annotation_id": "anno_ambiguity_heavy",
+      "body": "Concurrent tracks during gap window — not fusion truth.",
+      "kind": "visibility_degraded",
+      "linked_event_ids": [
+        "narrative_event_0003_ambiguity_realism_fragmented_gap_start"
+      ],
+      "narrative_rank": 2,
+      "title": "Ambiguity-heavy window"
+    },
+    {
+      "annotation_id": "anno_oracle_mismatch",
+      "body": "Replay-local oracle mismatch under saturation — not tactical doctrine.",
+      "kind": "tti_explanation",
+      "linked_event_ids": [
+        "narrative_event_0006_divergence_selection_oracle_mismatch"
+      ],
+      "narrative_rank": 1,
+      "title": "Oracle disagreement"
+    }
+  ]
+}

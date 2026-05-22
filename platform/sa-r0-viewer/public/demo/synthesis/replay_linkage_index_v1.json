@@ -1,0 +1,273 @@
+{
+  "artifact_type": "replay_linkage_index_v1",
+  "edges": [
+    {
+      "copy": "`delayed_detection_sweep` and `ridge_overlap_sweep` show similar ambiguity window count medians across replay variants \u2014 replay-local concentration only.",
+      "edge_id": "delayed_detection_sweep__ridge_overlap_sweep__metric_similarity",
+      "evidence": {
+        "metric": "median_ambiguity",
+        "values": [
+          2.0,
+          2.0
+        ]
+      },
+      "link_kind": "metric_similarity",
+      "source": "delayed_detection_sweep",
+      "target": "ridge_overlap_sweep"
+    },
+    {
+      "copy": "`delayed_detection_sweep` and `ridge_overlap_sweep` share replay pattern `los_fragmented_replay` in reviewer exploration \u2014 explanatory similarity only.",
+      "edge_id": "delayed_detection_sweep__ridge_overlap_sweep__shared_pattern",
+      "evidence": {
+        "pattern_id": "los_fragmented_replay"
+      },
+      "link_kind": "shared_pattern",
+      "source": "delayed_detection_sweep",
+      "target": "ridge_overlap_sweep"
+    },
+    {
+      "copy": "Curated storyboard references relate `delayed_detection_sweep` and `ridge_overlap_sweep` \u2014 both sweeps appear in topology-divergence showcase decks",
+      "edge_id": "delayed_detection_sweep__ridge_overlap_sweep__storyline_reference",
+      "evidence": {
+        "storyboard_id": "showcase_topology_divergence"
+      },
+      "link_kind": "storyline_reference",
+      "source": "delayed_detection_sweep",
+      "target": "ridge_overlap_sweep"
+    },
+    {
+      "copy": "`delayed_detection_sweep` and `saturation_assignment_sweep` show similar ambiguity window count medians across replay variants \u2014 replay-local concentration only.",
+      "edge_id": "delayed_detection_sweep__saturation_assignment_sweep__metric_similarity",
+      "evidence": {
+        "metric": "median_ambiguity",
+        "values": [
+          2.0,
+          2.0
+        ]
+      },
+      "link_kind": "metric_similarity",
+      "source": "delayed_detection_sweep",
+      "target": "saturation_assignment_sweep"
+    },
+    {
+      "copy": "`delayed_detection_sweep` and `saturation_assignment_sweep` share replay pattern `los_fragmented_replay` in reviewer exploration \u2014 explanatory similarity only.",
+      "edge_id": "delayed_detection_sweep__saturation_assignment_sweep__shared_pattern",
+      "evidence": {
+        "pattern_id": "los_fragmented_replay"
+      },
+      "link_kind": "shared_pattern",
+      "source": "delayed_detection_sweep",
+      "target": "saturation_assignment_sweep"
+    },
+    {
+      "copy": "Curated storyboard references relate `delayed_detection_sweep` and `saturation_assignment_sweep` \u2014 ingress-timing variation themes in assignment instability walkthrough",
+      "edge_id": "delayed_detection_sweep__saturation_assignment_sweep__storyline_reference",
+      "evidence": {
+        "storyboard_id": "walkthrough_assignment_instability"
+      },
+      "link_kind": "storyline_reference",
+      "source": "delayed_detection_sweep",
+      "target": "saturation_assignment_sweep"
+    },
+    {
+      "copy": "`delayed_detection_sweep` and `valley_sensor_sweep` show similar ambiguity window count medians across replay variants \u2014 replay-local concentration only.",
+      "edge_id": "delayed_detection_sweep__valley_sensor_sweep__metric_similarity",
+      "evidence": {
+        "metric": "median_ambiguity",
+        "values": [
+          2.0,
+          2.0
+        ]
+      },
+      "link_kind": "metric_similarity",
+      "source": "delayed_detection_sweep",
+      "target": "valley_sensor_sweep"
+    },
+    {
+      "copy": "`delayed_detection_sweep` and `valley_sensor_sweep` share replay pattern `los_fragmented_replay` in reviewer exploration \u2014 explanatory similarity only.",
+      "edge_id": "delayed_detection_sweep__valley_sensor_sweep__shared_pattern",
+      "evidence": {
+        "pattern_id": "los_fragmented_replay"
+      },
+      "link_kind": "shared_pattern",
+      "source": "delayed_detection_sweep",
+      "target": "valley_sensor_sweep"
+    },
+    {
+      "copy": "`ridge_overlap_sweep` and `saturation_assignment_sweep` show similar ambiguity window count medians across replay variants \u2014 replay-local concentration only.",
+      "edge_id": "ridge_overlap_sweep__saturation_assignment_sweep__metric_similarity",
+      "evidence": {
+        "metric": "median_ambiguity",
+        "values": [
+          2.0,
+          2.0
+        ]
+      },
+      "link_kind": "metric_similarity",
+      "source": "ridge_overlap_sweep",
+      "target": "saturation_assignment_sweep"
+    },
+    {
+      "copy": "`ridge_overlap_sweep` and `saturation_assignment_sweep` share replay pattern `los_fragmented_replay` in reviewer exploration \u2014 explanatory similarity only.",
+      "edge_id": "ridge_overlap_sweep__saturation_assignment_sweep__shared_pattern",
+      "evidence": {
+        "pattern_id": "los_fragmented_replay"
+      },
+      "link_kind": "shared_pattern",
+      "source": "ridge_overlap_sweep",
+      "target": "saturation_assignment_sweep"
+    },
+    {
+      "copy": "`ridge_overlap_sweep` and `saturation_assignment_sweep` share topology key `corridor_defense` in fixture replay families \u2014 not operational equivalence.",
+      "edge_id": "ridge_overlap_sweep__saturation_assignment_sweep__shared_topology",
+      "evidence": {
+        "topology_key": "corridor_defense"
+      },
+      "link_kind": "shared_topology",
+      "source": "ridge_overlap_sweep",
+      "target": "saturation_assignment_sweep"
+    },
+    {
+      "copy": "`ridge_overlap_sweep` and `valley_sensor_sweep` show similar ambiguity window count medians across replay variants \u2014 replay-local concentration only.",
+      "edge_id": "ridge_overlap_sweep__valley_sensor_sweep__metric_similarity",
+      "evidence": {
+        "metric": "median_ambiguity",
+        "values": [
+          2.0,
+          2.0
+        ]
+      },
+      "link_kind": "metric_similarity",
+      "source": "ridge_overlap_sweep",
+      "target": "valley_sensor_sweep"
+    },
+    {
+      "copy": "`ridge_overlap_sweep` and `valley_sensor_sweep` share replay pattern `los_fragmented_replay` in reviewer exploration \u2014 explanatory similarity only.",
+      "edge_id": "ridge_overlap_sweep__valley_sensor_sweep__shared_pattern",
+      "evidence": {
+        "pattern_id": "los_fragmented_replay"
+      },
+      "link_kind": "shared_pattern",
+      "source": "ridge_overlap_sweep",
+      "target": "valley_sensor_sweep"
+    },
+    {
+      "copy": "`ridge_overlap_sweep` and `valley_sensor_sweep` share topology key `valley_ingress` in fixture replay families \u2014 not operational equivalence.",
+      "edge_id": "ridge_overlap_sweep__valley_sensor_sweep__shared_topology",
+      "evidence": {
+        "topology_key": "valley_ingress"
+      },
+      "link_kind": "shared_topology",
+      "source": "ridge_overlap_sweep",
+      "target": "valley_sensor_sweep"
+    },
+    {
+      "copy": "Curated storyboard references relate `ridge_overlap_sweep` and `valley_sensor_sweep` \u2014 valley and ridge fixture families share LOS-fragmented replay exploration themes",
+      "edge_id": "ridge_overlap_sweep__valley_sensor_sweep__storyline_reference",
+      "evidence": {
+        "storyboard_id": "showcase_cross_sweep_synthesis"
+      },
+      "link_kind": "storyline_reference",
+      "source": "ridge_overlap_sweep",
+      "target": "valley_sensor_sweep"
+    },
+    {
+      "copy": "`saturation_assignment_sweep` and `valley_sensor_sweep` show similar ambiguity window count medians across replay variants \u2014 replay-local concentration only.",
+      "edge_id": "saturation_assignment_sweep__valley_sensor_sweep__metric_similarity",
+      "evidence": {
+        "metric": "median_ambiguity",
+        "values": [
+          2.0,
+          2.0
+        ]
+      },
+      "link_kind": "metric_similarity",
+      "source": "saturation_assignment_sweep",
+      "target": "valley_sensor_sweep"
+    },
+    {
+      "copy": "`saturation_assignment_sweep` and `valley_sensor_sweep` share replay pattern `los_fragmented_replay` in reviewer exploration \u2014 explanatory similarity only.",
+      "edge_id": "saturation_assignment_sweep__valley_sensor_sweep__shared_pattern",
+      "evidence": {
+        "pattern_id": "los_fragmented_replay"
+      },
+      "link_kind": "shared_pattern",
+      "source": "saturation_assignment_sweep",
+      "target": "valley_sensor_sweep"
+    }
+  ],
+  "governance": {
+    "anti_claims": [
+      "Linkage edges are replay-derived heuristics, not validated doctrine.",
+      "Shared patterns indicate descriptive similarity in fixture replays only."
+    ],
+    "notice": "Replay linkage index for reviewer exploration only \u2014 rule-based relationships between sweep families, not causal inference."
+  },
+  "nodes": [
+    {
+      "baseline_topology_key": "valley_ingress",
+      "dominant_patterns": [
+        "los_fragmented_replay"
+      ],
+      "experiment_tags": [
+        "valley",
+        "sensor_placement"
+      ],
+      "sweep_id": "valley_sensor_sweep",
+      "topology_keys": [
+        "valley_ingress",
+        "valley_ingress_radar_shifted_north",
+        "valley_ingress_extra_valley_sensor",
+        "valley_ingress_reduced_overlap_layout",
+        "valley_ingress_delayed_interceptor_base"
+      ]
+    },
+    {
+      "baseline_topology_key": "ridge_defense",
+      "dominant_patterns": [
+        "los_fragmented_replay"
+      ],
+      "experiment_tags": [
+        "ridge",
+        "topology_sweep"
+      ],
+      "sweep_id": "ridge_overlap_sweep",
+      "topology_keys": [
+        "ridge_defense",
+        "multi_ridge",
+        "valley_ingress",
+        "corridor_defense"
+      ]
+    },
+    {
+      "baseline_topology_key": "delayed_detection",
+      "dominant_patterns": [
+        "los_fragmented_replay"
+      ],
+      "experiment_tags": [
+        "detection_timing",
+        "ingress_variation"
+      ],
+      "sweep_id": "delayed_detection_sweep",
+      "topology_keys": [
+        "delayed_detection"
+      ]
+    },
+    {
+      "baseline_topology_key": "saturation_ingress",
+      "dominant_patterns": [
+        "los_fragmented_replay"
+      ],
+      "experiment_tags": [
+        "multi_threat",
+        "matched_seed"
+      ],
+      "sweep_id": "saturation_assignment_sweep",
+      "topology_keys": [
+        "saturation_ingress",
+        "corridor_defense"
+      ]
+    }
+  ],
+  "schema_version": "replay_linkage_index_v1"
+}

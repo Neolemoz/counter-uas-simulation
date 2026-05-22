@@ -1,0 +1,26 @@
+{
+  "artifact_type": "experiment_orchestration_async_manifest_v1",
+  "async_execution_status": "superseded",
+  "async_lineage": [
+    {
+      "actor": "cli:record_async_execution",
+      "event_id": "async-2026-05-22T05:10:00Z",
+      "from_status": null,
+      "notes": "superseded by successor snapshot valley_ingress_validation_only_queue_v2",
+      "to_status": "superseded"
+    }
+  ],
+  "governance": {
+    "anti_claims": [
+      "not live execution authority",
+      "not distributed worker registry",
+      "not parser contract"
+    ],
+    "notice": "Async orchestration sidecar for offline experiment bookkeeping only."
+  },
+  "manifest_id": "valley_ingress_validation_only",
+  "queue_snapshot_hash": "sha256:0000000000000000000000000000000000000000000000000000000000000001",
+  "schema_version": "1",
+  "updated_at": "2026-05-22T05:10:00Z",
+  "worker_execution_refs": []
+}

@@ -1,0 +1,12 @@
+{
+  "artifact_type": "orchestration_operations_summary_v1",
+  "generated_at": "2026-05-22T00:31:42Z",
+  "governance_banner": "OPERATIONS SUMMARY \u2014 explanatory; CLI authoritative",
+  "manifest_id": "valley_ingress_reduced_overlap_layout_validation_only",
+  "operations_status": "queued",
+  "queue_snapshot_ref": "fixtures/orchestration/queues/valley_ingress_reduced_overlap_layout_validation_only_queue.json",
+  "scenario_pack_ids": [
+    "valley_ingress_reduced_overlap_layout"
+  ],
+  "schema_version": "1"
+}

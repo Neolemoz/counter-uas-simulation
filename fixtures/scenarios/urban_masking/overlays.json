@@ -1,0 +1,276 @@
+{
+  "overlays": [
+    {
+      "active_t_range": [
+        2,
+        28
+      ],
+      "caveat": "Fictional obstruction block \u2014 not urban simulation.",
+      "geometry": {
+        "type": "polygon",
+        "vertices_enu_m": [
+          [
+            -400,
+            320,
+            0
+          ],
+          [
+            -280,
+            320,
+            0
+          ],
+          [
+            -280,
+            440,
+            0
+          ],
+          [
+            -400,
+            440,
+            0
+          ]
+        ]
+      },
+      "kind": "degraded_visibility",
+      "overlay_id": "mask_nw"
+    },
+    {
+      "active_t_range": [
+        2,
+        28
+      ],
+      "caveat": "Fictional obstruction block \u2014 not urban simulation.",
+      "geometry": {
+        "type": "polygon",
+        "vertices_enu_m": [
+          [
+            -200,
+            380,
+            0
+          ],
+          [
+            -100,
+            380,
+            0
+          ],
+          [
+            -100,
+            480,
+            0
+          ],
+          [
+            -200,
+            480,
+            0
+          ]
+        ]
+      },
+      "kind": "degraded_visibility",
+      "overlay_id": "mask_n1"
+    },
+    {
+      "active_t_range": [
+        2,
+        28
+      ],
+      "caveat": "Fictional obstruction block \u2014 not urban simulation.",
+      "geometry": {
+        "type": "polygon",
+        "vertices_enu_m": [
+          [
+            80,
+            350,
+            0
+          ],
+          [
+            190,
+            350,
+            0
+          ],
+          [
+            190,
+            460,
+            0
+          ],
+          [
+            80,
+            460,
+            0
+          ]
+        ]
+      },
+      "kind": "degraded_visibility",
+      "overlay_id": "mask_ne"
+    },
+    {
+      "active_t_range": [
+        2,
+        28
+      ],
+      "caveat": "Fictional obstruction block \u2014 not urban simulation.",
+      "geometry": {
+        "type": "polygon",
+        "vertices_enu_m": [
+          [
+            -120,
+            120,
+            0
+          ],
+          [
+            10,
+            120,
+            0
+          ],
+          [
+            10,
+            250,
+            0
+          ],
+          [
+            -120,
+            250,
+            0
+          ]
+        ]
+      },
+      "kind": "degraded_visibility",
+      "overlay_id": "mask_c"
+    },
+    {
+      "active_t_range": [
+        2,
+        28
+      ],
+      "caveat": "Fictional obstruction block \u2014 not urban simulation.",
+      "geometry": {
+        "type": "polygon",
+        "vertices_enu_m": [
+          [
+            -350,
+            -80,
+            0
+          ],
+          [
+            -260,
+            -80,
+            0
+          ],
+          [
+            -260,
+            10,
+            0
+          ],
+          [
+            -350,
+            10,
+            0
+          ]
+        ]
+      },
+      "kind": "degraded_visibility",
+      "overlay_id": "mask_sw"
+    },
+    {
+      "active_t_range": [
+        2,
+        28
+      ],
+      "caveat": "Fictional obstruction block \u2014 not urban simulation.",
+      "geometry": {
+        "type": "polygon",
+        "vertices_enu_m": [
+          [
+            -80,
+            -200,
+            0
+          ],
+          [
+            20,
+            -200,
+            0
+          ],
+          [
+            20,
+            -100,
+            0
+          ],
+          [
+            -80,
+            -100,
+            0
+          ]
+        ]
+      },
+      "kind": "degraded_visibility",
+      "overlay_id": "mask_s"
+    },
+    {
+      "active_t_range": [
+        2,
+        28
+      ],
+      "caveat": "Fictional obstruction block \u2014 not urban simulation.",
+      "geometry": {
+        "type": "polygon",
+        "vertices_enu_m": [
+          [
+            200,
+            -120,
+            0
+          ],
+          [
+            285,
+            -120,
+            0
+          ],
+          [
+            285,
+            -35,
+            0
+          ],
+          [
+            200,
+            -35,
+            0
+          ]
+        ]
+      },
+      "kind": "degraded_visibility",
+      "overlay_id": "mask_se"
+    },
+    {
+      "active_t_range": [
+        2,
+        28
+      ],
+      "caveat": "Fictional obstruction block \u2014 not urban simulation.",
+      "geometry": {
+        "type": "polygon",
+        "vertices_enu_m": [
+          [
+            280,
+            180,
+            0
+          ],
+          [
+            375,
+            180,
+            0
+          ],
+          [
+            375,
+            275,
+            0
+          ],
+          [
+            280,
+            275,
+            0
+          ]
+        ]
+      },
+      "kind": "degraded_visibility",
+      "overlay_id": "mask_e"
+    }
+  ]
+}

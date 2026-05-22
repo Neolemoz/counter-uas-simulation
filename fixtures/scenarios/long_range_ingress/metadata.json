@@ -1,0 +1,54 @@
+{
+  "ambiguity_profile": {
+    "level": "low"
+  },
+  "artifact_type": "scenario_topology_v1",
+  "governance": {
+    "anti_claims": [
+      "not deployed geography",
+      "not operational effectiveness",
+      "not tactical authority"
+    ],
+    "constraints": [
+      "replay-safe",
+      "explanatory-only",
+      "non-authoritative",
+      "parser-safe"
+    ],
+    "notice": "Fictional scenario topology for replay visualization only."
+  },
+  "ingress_archetype": "valley",
+  "narrative_focus": [
+    "launch_sequence",
+    "terrain_following"
+  ],
+  "overlay_descriptors": [
+    {
+      "count": 1,
+      "kind": "ingress_corridor"
+    },
+    {
+      "count": 1,
+      "kind": "ridge_mask"
+    }
+  ],
+  "provenance": {
+    "fictional_disclaimer": "Fictional replay fixture.",
+    "fixture_source": "fixtures/scenarios/long_range_ingress"
+  },
+  "replay_duration_class": "long",
+  "replay_tags": [
+    "launch_sequence",
+    "terrain_following",
+    "long_range"
+  ],
+  "scenario_id": "long_range_ingress_demo",
+  "schema_version": "scenario_topology_v1",
+  "terrain_profile": "valley",
+  "title": "Long-range ingress cinematic replay",
+  "topology_tags": [
+    "long_range_ingress",
+    "launch_sequence",
+    "terrain_following"
+  ]
+}

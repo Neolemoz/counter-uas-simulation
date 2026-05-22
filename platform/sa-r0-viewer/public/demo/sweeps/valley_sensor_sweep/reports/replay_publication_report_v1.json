@@ -1,0 +1,115 @@
+{
+  "artifact_type": "replay_publication_report_v1",
+  "chapters": [
+    {
+      "chapter_index": null,
+      "kind": "analytics_panel",
+      "label": "Sweep overview",
+      "step_id": "overview"
+    },
+    {
+      "chapter_index": null,
+      "kind": "cohort_filmstrip",
+      "label": "LOS-fragmented replay concentration",
+      "step_id": "cohort_los_fragmented_replay_cohort"
+    },
+    {
+      "chapter_index": null,
+      "kind": "compare_pair",
+      "label": "Baseline comparison",
+      "step_id": "baseline_compare"
+    },
+    {
+      "chapter_index": 0,
+      "kind": "chapter",
+      "label": "Member 1: Ingress",
+      "step_id": "member_0_chapter"
+    },
+    {
+      "chapter_index": 0,
+      "kind": "chapter",
+      "label": "Member 2: Ingress",
+      "step_id": "member_1_chapter"
+    },
+    {
+      "chapter_index": 0,
+      "kind": "chapter",
+      "label": "Member 3: Ingress",
+      "step_id": "member_2_chapter"
+    }
+  ],
+  "citations": [
+    {
+      "label": "[Replay: valley_sensor_sweep]",
+      "url": "?sweep=valley_sensor_sweep"
+    },
+    {
+      "label": "[Replay: valley_sensor_sweep/seed_9200_baseline]",
+      "url": "?sweep=valley_sensor_sweep&member=seed_9200_baseline"
+    },
+    {
+      "label": "[Replay: valley_sensor_sweep/seed_9201_radar_shifted]",
+      "url": "?sweep=valley_sensor_sweep&member=seed_9201_radar_shifted"
+    },
+    {
+      "label": "[Replay: valley_sensor_sweep/seed_9202_extra_sensor]",
+      "url": "?sweep=valley_sensor_sweep&member=seed_9202_extra_sensor"
+    },
+    {
+      "label": "[Replay: valley_sensor_sweep/seed_9203_reduced_overlap]",
+      "url": "?sweep=valley_sensor_sweep&member=seed_9203_reduced_overlap"
+    },
+    {
+      "label": "[Replay: valley_sensor_sweep/seed_9204_delayed_base]",
+      "url": "?sweep=valley_sensor_sweep&member=seed_9204_delayed_base"
+    }
+  ],
+  "corpus_ref": {
+    "corpus_id": "sa_r0_corpus_r1",
+    "entry_id": "publication_packet__valley_sensor_sweep_publication",
+    "index_revision": "cf644076b570350467afc409f07ec3fc7bbb18692fde2a1858873ae4af2d3207",
+    "lineage_parent_ids": [
+      "sweep_family__valley_sensor_sweep"
+    ]
+  },
+  "cross_sweep_appendix": {
+    "included": true,
+    "synthesis_artifact": "cross_sweep_synthesis_v1.json"
+  },
+  "figures": [
+    {
+      "caption": "Ambiguity hotspot spatial grid",
+      "label": "valley_sensor_sweep_ambiguity_hotspot.png",
+      "path": "/home/neociel/drone/codex-a01-phase2/fixtures/sa_r0/sweeps/valley_sensor_sweep/reports/figures/valley_sensor_sweep_ambiguity_hotspot.png"
+    },
+    {
+      "caption": "LOS degradation spatial grid",
+      "label": "valley_sensor_sweep_los_degraded.png",
+      "path": "/home/neociel/drone/codex-a01-phase2/fixtures/sa_r0/sweeps/valley_sensor_sweep/reports/figures/valley_sensor_sweep_los_degraded.png"
+    },
+    {
+      "caption": "Topology sensitivity spatial grid",
+      "label": "valley_sensor_sweep_topology_sensitivity.png",
+      "path": "/home/neociel/drone/codex-a01-phase2/fixtures/sa_r0/sweeps/valley_sensor_sweep/reports/figures/valley_sensor_sweep_topology_sensitivity.png"
+    },
+    {
+      "caption": "Cohort pattern strip",
+      "label": "valley_sensor_sweep_cohort_strip.png",
+      "path": "/home/neociel/drone/codex-a01-phase2/fixtures/sa_r0/sweeps/valley_sensor_sweep/reports/figures/valley_sensor_sweep_cohort_strip.png"
+    }
+  ],
+  "governance": {
+    "anti_claims": [
+      "Sweep aggregates are not parser authority.",
+      "Spatial layers are replay concentration, not probability or readiness.",
+      "No deployment confidence or tactical superiority implied."
+    ],
+    "notice": "Deterministic replay sweep for spatial analytics exploration only \u2014 explanatory replay family, not operational planning."
+  },
+  "interpretation_caveats": [
+    "Publication packet \u2014 explanatory replay review only.",
+    "Figure numbering is for documentation; not operational scoring."
+  ],
+  "schema_version": "replay_publication_report_v1",
+  "sweep_id": "valley_sensor_sweep"
+}

@@ -1,0 +1,14 @@
+{
+  "run_id": "replay_valley_ingress_demo",
+  "cohort": "sa_r0_demo",
+  "cmd": [
+    "ros2",
+    "launch",
+    "counter_uas",
+    "bringup.launch.py",
+    "target_start_x_m:=-2200.0",
+    "target_start_y_m:=120.0",
+    "target_start_z_m:=80.0",
+    "noise_seed:=202"
+  ]
+}

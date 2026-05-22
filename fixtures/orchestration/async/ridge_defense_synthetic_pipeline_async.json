@@ -1,0 +1,38 @@
+{
+  "artifact_type": "experiment_orchestration_async_manifest_v1",
+  "async_lineage": [
+    {
+      "actor": "cli:record_async_execution",
+      "event_id": "async-2026-05-22T04:50:00Z",
+      "from_status": null,
+      "notes": "bounded worker fault on attempt 1",
+      "to_status": "failed"
+    },
+    {
+      "actor": "cli:record_async_execution",
+      "event_id": "async-2026-05-22T05:00:00Z",
+      "from_status": "failed",
+      "notes": "CLI re-queued attempt 2",
+      "to_status": "retrying"
+    }
+  ],
+  "execution_fingerprint": "sha256:959e07e3fdf9db3c5bd284e19b3f62ec54566bf5041409b529100fe5d4f72ea5",
+  "governance": {
+    "anti_claims": [
+      "not live execution authority",
+      "not distributed worker registry",
+      "not parser contract"
+    ],
+    "notice": "Async orchestration sidecar for offline experiment bookkeeping only."
+  },
+  "manifest_id": "ridge_defense_synthetic_pipeline",
+  "queue_claim_ref": "fixtures/orchestration/claims/ridge_defense_synthetic_pipeline_queue_claim.json",
+  "queue_snapshot_hash": "sha256:34790e370679b6d344ec4f17de662b07125b2eeae897e7bee04422fd8a5db867",
+  "replay_fingerprint": "sha256:5f412328ab752f5c961468bc0a281849bc9cfbfa30c10f1001474e1f2f348fb4",
+  "schema_version": "1",
+  "updated_at": "2026-05-22T08:07:05Z",
+  "worker_execution_refs": [
+    "fixtures/orchestration/workers/cli-worker-ridge-ref_1.json",
+    "fixtures/orchestration/workers/cli-worker-ridge-ref_2.json"
+  ]
+}

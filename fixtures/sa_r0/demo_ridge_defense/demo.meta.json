@@ -1,0 +1,14 @@
+{
+  "run_id": "replay_obs_unit",
+  "cohort": "sa_r0_demo",
+  "cmd": [
+    "ros2",
+    "launch",
+    "counter_uas",
+    "bringup.launch.py",
+    "target_start_x_m:=-1500.0",
+    "target_start_y_m:=0.0",
+    "target_start_z_m:=300.0",
+    "noise_seed:=101"
+  ]
+}

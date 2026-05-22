@@ -1,0 +1,34 @@
+# Scenario catalog — documentation + future loader input (see README.md).
+#
+# scale_config: filename under share/counter_uas/config/
+
+scenarios:
+  - id: gazebo_single_hostile_km
+    description: Single sphere target, km-scale domes (gazebo_target.launch.py defaults).
+    scale_config: config.yaml
+    intercept_measurement_source_tracks: tracks
+    perception_topics:
+      ground_truth: /drone/position
+      radar: /radar/detections
+      camera: /camera/detections
+      fused: /fused_detections
+      tracks: /tracks
+      threat: /threat_level
+
+  - id: lab_toy_10m
+    description: Short-range radar/camera tuning (~10 m).
+    scale_config: config_lab_toy.yaml
+    intercept_measurement_source_tracks: tracks
+    perception_topics:
+      ground_truth: /drone/position
+      radar: /radar/detections
+      camera: /camera/detections
+      fused: /fused_detections
+      tracks: /tracks
+      threat: /threat_level
+
+  - id: gazebo_multi_hostile
+    description: Three targets + assignment (gazebo_target_multi.launch.py); engagement uses per-target GT topics.
+    scale_config: config.yaml
+    intercept_measurement_source_tracks: ground_truth
+    notes: Multi-target mode ignores single-channel tracks fusion for assignment; use recorded /drone_i/position for replay.

@@ -1,0 +1,28 @@
+{
+  "artifact_type": "scenario_authoring_manifest_v1",
+  "governance": {
+    "anti_claims": [
+      "not operational deployment state",
+      "not simulation launch authority",
+      "not parser contract"
+    ],
+    "notice": "Authoring manifest for fixture topology workflow only."
+  },
+  "pack_id": "valley_ingress_reduced_overlap_layout",
+  "parent_pack_id": "valley_ingress",
+  "promotion_lineage": [
+    {
+      "actor": "cli:promote_scenario_pack",
+      "event_id": "promote-2026-05-21T11:28:57Z",
+      "from_status": "validated",
+      "notes": "",
+      "to_status": "promoted"
+    }
+  ],
+  "promotion_status": "promoted",
+  "schema_version": "1",
+  "topology_variant_class": "sensor_layout_experiment",
+  "updated_at": "2026-05-21T11:28:57Z",
+  "validation_pack_fingerprint": "sha256:ecbd42a63c0f4fd982fc3414a849407bfab77b7f13bba9f8d45b0e5c0b2eac3d",
+  "validation_snapshot_ref": "fixtures/orchestration/validation_mirrors/valley_ingress_reduced_overlap_layout_validation_mirror.json"
+}

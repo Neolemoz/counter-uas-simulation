@@ -1,0 +1,9 @@
+=== run_id: replay_obs_unit ===
+[interception_logic_node-1] [P_HEATMAP] pos=(-1200.000, 50.000, 300.000)
+[interception_logic_node-1] interceptor_pos=(-100.000, 10.000, 50.000) target_pos=(-1150.000, 45.000, 295.000)
+[interception_logic_node-1] [METRICS] id=interceptor_0  | dist=12.500 m | t_go=2.5 s | vel=18.0 m/s | mode=predict
+[tracking_node-1] Candidate detected: track_id=7
+[noisy_measurement_node-1] [REALISM_EVENT] fragmented_gap_start fragmentation_index=1 gap_ticks=3
+[interception_logic_node-1] interceptor_pos=(-80.000, 12.000, 48.000) target_pos=(-1100.000, 40.000, 290.000)
+[interception_logic_node-1] [P_HEATMAP] pos=(-1050.000, 35.000, 285.000)
+[interception_logic_node-1] interceptor_pos=(-60.000, 15.000, 45.000) target_pos=(-1000.000, 30.000, 280.000)

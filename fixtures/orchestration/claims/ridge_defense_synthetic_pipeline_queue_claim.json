@@ -1,0 +1,23 @@
+{
+  "artifact_type": "queue_claim_token_v1",
+  "claim_id": "claim-ridge_defense_synthetic_pipeline-ridge_defense_synthetic_pipeline_queue",
+  "claim_status": "closed",
+  "claimed_at": "2026-05-22T04:16:54Z",
+  "closed_at": "2026-05-22T04:16:54Z",
+  "governance": {
+    "anti_claims": [
+      "not distributed lock",
+      "not parser contract"
+    ],
+    "notice": "Queue claim token for offline async bookkeeping only."
+  },
+  "manifest_fingerprint": "sha256:d8e3c794c7f1bf1caa1719386c4a5e8381e13ff906fa91bd90d9bd373082da68",
+  "manifest_id": "ridge_defense_synthetic_pipeline",
+  "queue_id": "ridge_defense_synthetic_pipeline_queue",
+  "queue_snapshot_ref": "fixtures/orchestration/queues/ridge_defense_synthetic_pipeline_queue.json",
+  "schema_version": "1",
+  "snapshot_hash": "sha256:34790e370679b6d344ec4f17de662b07125b2eeae897e7bee04422fd8a5db867",
+  "terminal_reason": "worker_record_closed",
+  "worker_id": "cli-worker-ridge-ref",
+  "execution_fingerprint": "sha256:959e07e3fdf9db3c5bd284e19b3f62ec54566bf5041409b529100fe5d4f72ea5"
+}

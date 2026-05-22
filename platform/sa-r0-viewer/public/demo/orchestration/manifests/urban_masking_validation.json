@@ -1,0 +1,33 @@
+{
+  "artifact_type": "experiment_job_manifest_v1",
+  "governance": {
+    "anti_claims": [
+      "not operational effectiveness",
+      "not live sensor truth"
+    ],
+    "notice": "Scenario validation mirror for replay fixtures only \u2014 no bundle regen in this job."
+  },
+  "jobs": [
+    {
+      "job_id": "urban_masking_validate",
+      "outputs": {
+        "viewer_demo_pack_id": "urban_masking"
+      },
+      "pipeline": [
+        {
+          "step_id": "validate",
+          "step_type": "validate_scenario"
+        },
+        {
+          "step_id": "validation_mirror",
+          "step_type": "validation_mirror"
+        }
+      ],
+      "scenario_pack_id": "urban_masking",
+      "scenario_pack_ref": "fixtures/scenarios/urban_masking"
+    }
+  ],
+  "manifest_id": "urban_masking_validation_only",
+  "schema_version": "experiment_job_manifest_v1",
+  "title": "urban_masking validation-only gate"
+}

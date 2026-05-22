@@ -1,0 +1,901 @@
+{
+  "artifact_type": "replay_research_bundle_v1",
+  "corpus_id": "sa_r0_corpus_r1",
+  "corpus_ref": {
+    "corpus_id": "sa_r0_corpus_r1",
+    "entry_id": "research_bundle__sa_r0_corpus_r1",
+    "index_revision": "cf644076b570350467afc409f07ec3fc7bbb18692fde2a1858873ae4af2d3207",
+    "lineage_parent_ids": [
+      "publication_packet__valley_sensor_sweep_publication",
+      "sweep_family__delayed_detection_sweep",
+      "sweep_family__ridge_overlap_sweep",
+      "sweep_family__saturation_assignment_sweep",
+      "sweep_family__valley_sensor_sweep",
+      "synthesis_report__cross_sweep_summary",
+      "synthesis_report__cross_sweep_synthesis_v1",
+      "synthesis_report__linkage_summary"
+    ]
+  },
+  "governance": {
+    "notice": "Portable offline replay research bundle \u2014 explanatory artifacts only, not operational deployment or validated doctrine."
+  },
+  "included_files": [
+    {
+      "path": "assets/chapters/delayed_detection_sweep_chapter_1.png",
+      "sha256": "6a7424cff466db44edea33dfe97730b5fc40dc762c8a859aa82930b5b7c292a1",
+      "size_bytes": 14543
+    },
+    {
+      "path": "assets/chapters/delayed_detection_sweep_chapter_2.png",
+      "sha256": "d1198670798b2fcaec4be1f9a180a867c9a8fe4a32f4c810fba2d8046f23428e",
+      "size_bytes": 15370
+    },
+    {
+      "path": "assets/chapters/delayed_detection_sweep_chapter_3.png",
+      "sha256": "56047236e0eff6d217aa753c8e6b4715b8840db3a760e3166615cdc8abe4dea5",
+      "size_bytes": 14921
+    },
+    {
+      "path": "assets/chapters/delayed_detection_sweep_chapter_4.png",
+      "sha256": "5670d3a76ae7e2559172f0e434d5c50e646febdf08a4df79fd35fa19423a1ad9",
+      "size_bytes": 14566
+    },
+    {
+      "path": "assets/chapters/delayed_detection_sweep_chapter_5.png",
+      "sha256": "a2bbc3f26912fc8c4ce676272368ef8fd37f8f14dd22bf7d46ec159e4b051290",
+      "size_bytes": 14715
+    },
+    {
+      "path": "assets/chapters/delayed_detection_sweep_chapter_6.png",
+      "sha256": "c8ab33aec5c161f27173f0ff0ac143d7fa368d39b48f95e13659c05c89adaf99",
+      "size_bytes": 14876
+    },
+    {
+      "path": "assets/chapters/ridge_overlap_sweep_chapter_1.png",
+      "sha256": "7f74a8621f5517da7622a5d3cab4302ed9c01e87d37d17a14007cc0d7d2e906a",
+      "size_bytes": 12779
+    },
+    {
+      "path": "assets/chapters/ridge_overlap_sweep_chapter_2.png",
+      "sha256": "d1198670798b2fcaec4be1f9a180a867c9a8fe4a32f4c810fba2d8046f23428e",
+      "size_bytes": 15370
+    },
+    {
+      "path": "assets/chapters/ridge_overlap_sweep_chapter_3.png",
+      "sha256": "56047236e0eff6d217aa753c8e6b4715b8840db3a760e3166615cdc8abe4dea5",
+      "size_bytes": 14921
+    },
+    {
+      "path": "assets/chapters/ridge_overlap_sweep_chapter_4.png",
+      "sha256": "5670d3a76ae7e2559172f0e434d5c50e646febdf08a4df79fd35fa19423a1ad9",
+      "size_bytes": 14566
+    },
+    {
+      "path": "assets/chapters/ridge_overlap_sweep_chapter_5.png",
+      "sha256": "a2bbc3f26912fc8c4ce676272368ef8fd37f8f14dd22bf7d46ec159e4b051290",
+      "size_bytes": 14715
+    },
+    {
+      "path": "assets/chapters/ridge_overlap_sweep_chapter_6.png",
+      "sha256": "c8ab33aec5c161f27173f0ff0ac143d7fa368d39b48f95e13659c05c89adaf99",
+      "size_bytes": 14876
+    },
+    {
+      "path": "assets/chapters/saturation_assignment_sweep_chapter_1.png",
+      "sha256": "858ed3574ed120e2c5f5d3c52ef1ad39c3b0372fa52323f5d789fdcebfbd4375",
+      "size_bytes": 14480
+    },
+    {
+      "path": "assets/chapters/saturation_assignment_sweep_chapter_2.png",
+      "sha256": "d1198670798b2fcaec4be1f9a180a867c9a8fe4a32f4c810fba2d8046f23428e",
+      "size_bytes": 15370
+    },
+    {
+      "path": "assets/chapters/saturation_assignment_sweep_chapter_3.png",
+      "sha256": "56047236e0eff6d217aa753c8e6b4715b8840db3a760e3166615cdc8abe4dea5",
+      "size_bytes": 14921
+    },
+    {
+      "path": "assets/chapters/saturation_assignment_sweep_chapter_4.png",
+      "sha256": "5670d3a76ae7e2559172f0e434d5c50e646febdf08a4df79fd35fa19423a1ad9",
+      "size_bytes": 14566
+    },
+    {
+      "path": "assets/chapters/saturation_assignment_sweep_chapter_5.png",
+      "sha256": "a2bbc3f26912fc8c4ce676272368ef8fd37f8f14dd22bf7d46ec159e4b051290",
+      "size_bytes": 14715
+    },
+    {
+      "path": "assets/chapters/saturation_assignment_sweep_chapter_6.png",
+      "sha256": "c8ab33aec5c161f27173f0ff0ac143d7fa368d39b48f95e13659c05c89adaf99",
+      "size_bytes": 14876
+    },
+    {
+      "path": "assets/chapters/valley_sensor_sweep_chapter_1.png",
+      "sha256": "83b59feb544129a38421be7dacb80698fce85ddf5cacf624a1b391e1a1b77200",
+      "size_bytes": 13465
+    },
+    {
+      "path": "assets/chapters/valley_sensor_sweep_chapter_2.png",
+      "sha256": "10d75247f0cf85605526a1bdff235f6795a0fd1ca6c4d1ce571c7e1767565b62",
+      "size_bytes": 15381
+    },
+    {
+      "path": "assets/chapters/valley_sensor_sweep_chapter_3.png",
+      "sha256": "56047236e0eff6d217aa753c8e6b4715b8840db3a760e3166615cdc8abe4dea5",
+      "size_bytes": 14921
+    },
+    {
+      "path": "assets/chapters/valley_sensor_sweep_chapter_4.png",
+      "sha256": "5670d3a76ae7e2559172f0e434d5c50e646febdf08a4df79fd35fa19423a1ad9",
+      "size_bytes": 14566
+    },
+    {
+      "path": "assets/chapters/valley_sensor_sweep_chapter_5.png",
+      "sha256": "a2bbc3f26912fc8c4ce676272368ef8fd37f8f14dd22bf7d46ec159e4b051290",
+      "size_bytes": 14715
+    },
+    {
+      "path": "assets/chapters/valley_sensor_sweep_chapter_6.png",
+      "sha256": "c8ab33aec5c161f27173f0ff0ac143d7fa368d39b48f95e13659c05c89adaf99",
+      "size_bytes": 14876
+    },
+    {
+      "path": "assets/delayed_detection_sweep_cohort_thumb.png",
+      "sha256": "bb205ec3f1e52e8cb5e07696dfffe2843562f64205d3877bb6f36198758602c6",
+      "size_bytes": 10649
+    },
+    {
+      "path": "assets/delayed_detection_sweep_topology_card.png",
+      "sha256": "daf9d78e3bf6e5230679248630f8e26ed1c4c68df5cdf45ce0264d74fdd673f7",
+      "size_bytes": 12520
+    },
+    {
+      "path": "assets/index.json",
+      "sha256": "f8a057aecea462b7190b17a27e9d309d80c76bb29fdcd3197e13aeca4c376237",
+      "size_bytes": 843
+    },
+    {
+      "path": "assets/patterns/pattern_assignment_instability_replay.png",
+      "sha256": "683349b840726adb1b3fe1261a1ab2fbb148022edcd183c1429fed3995ab8dee",
+      "size_bytes": 10373
+    },
+    {
+      "path": "assets/patterns/pattern_corridor_pressure_replay.png",
+      "sha256": "5cb3c899d4b1701e16c84e28d1dab134964ca0699a332d8588837f30a5d7a9db",
+      "size_bytes": 9374
+    },
+    {
+      "path": "assets/patterns/pattern_delayed_detection_replay.png",
+      "sha256": "46a459671e357af9ab7d53b946f2256f3b90fdb86e0583467fdc2db64cfdb3c2",
+      "size_bytes": 9601
+    },
+    {
+      "path": "assets/patterns/pattern_los_fragmented_replay.png",
+      "sha256": "a78499b223133a6bc959e01cb4b1bfa03a9ce4eb4cc55bd6cb7d65d1c25957b3",
+      "size_bytes": 8921
+    },
+    {
+      "path": "assets/patterns/pattern_saturation_driven_ambiguity.png",
+      "sha256": "bd004f08ed19964e3f942cced06fa36f9911c95eb18a41b55a7366ba5aca572d",
+      "size_bytes": 9476
+    },
+    {
+      "path": "assets/patterns/pattern_topology_sensitive_divergence.png",
+      "sha256": "e664b74d109ffaa41d76a854c63dad8a2f6c8948ff71900441e569797b819715",
+      "size_bytes": 10426
+    },
+    {
+      "path": "assets/ridge_overlap_sweep_cohort_thumb.png",
+      "sha256": "58c7a4f50fd10767096d0093d16a5af1e9eee319341417141f16ad9661165809",
+      "size_bytes": 9951
+    },
+    {
+      "path": "assets/ridge_overlap_sweep_topology_card.png",
+      "sha256": "e1f5c7af8f3c4bb0e53dd02cc06697f06c903eacb2bc920aea2db71d1a651386",
+      "size_bytes": 11165
+    },
+    {
+      "path": "assets/saturation_assignment_sweep_cohort_thumb.png",
+      "sha256": "fb2572555461b93fc1a43c362b77758b85a1d97ae6dadf87c5d71dcfd0193ed3",
+      "size_bytes": 11230
+    },
+    {
+      "path": "assets/saturation_assignment_sweep_topology_card.png",
+      "sha256": "8598fe11fd4bf5a0164f6fc656f67a18cd3d48156c5582d798574a2f31d77c93",
+      "size_bytes": 12903
+    },
+    {
+      "path": "assets/valley_sensor_sweep_cohort_thumb.png",
+      "sha256": "ca528cff17f379d37b65e4fd0ca0011ebd6eadcedb6386acff49a165982f473e",
+      "size_bytes": 10122
+    },
+    {
+      "path": "assets/valley_sensor_sweep_topology_card.png",
+      "sha256": "ee19e8780af62f246027491323e7d6fa42db6a3da9f26191a0f77149a8dc3d87",
+      "size_bytes": 11398
+    },
+    {
+      "path": "figures/cross_sweep_comparison_grid.png",
+      "sha256": "f1f85871463df53b9e805ea279cde5b1e00d6215f9a03d0ed2a25af457c905df",
+      "size_bytes": 34042
+    },
+    {
+      "path": "provenance/generator_versions.json",
+      "sha256": "868b85599929f38c7672b0f9802c64b70d8052604fdf68b6af1f9816a13d3c8b",
+      "size_bytes": 218
+    },
+    {
+      "path": "sweeps/delayed_detection_sweep/reports/ambiguity_hotspot_summary.md",
+      "sha256": "8622e6652b5d35a3fad6a517f7f39ce6a26251eed3857e20fc6ed14678b24773",
+      "size_bytes": 237
+    },
+    {
+      "path": "sweeps/delayed_detection_sweep/reports/analytics_summary.md",
+      "sha256": "637188dc187d7d1233e4d29e0d897b4ed1c02d1305879f2dc450bb92e40da054",
+      "size_bytes": 674
+    },
+    {
+      "path": "sweeps/delayed_detection_sweep/reports/figures/delayed_detection_sweep_ambiguity_hotspot.png",
+      "sha256": "1761eb58bdb8b4b8603443af32fc99a329269bc7e6641cf3408542a9b06e9668",
+      "size_bytes": 29610
+    },
+    {
+      "path": "sweeps/delayed_detection_sweep/reports/figures/delayed_detection_sweep_cohort_strip.png",
+      "sha256": "54ab831b5ad5e4ebf64f29f58d4bf5afa6731631147d3e816a012f51b0b0c47d",
+      "size_bytes": 24900
+    },
+    {
+      "path": "sweeps/delayed_detection_sweep/reports/figures/delayed_detection_sweep_los_degraded.png",
+      "sha256": "c2a57a49e6eafa3ec9c56de21393828af8cfef74a87378f48e4457e805e47139",
+      "size_bytes": 30993
+    },
+    {
+      "path": "sweeps/delayed_detection_sweep/reports/figures/delayed_detection_sweep_topology_sensitivity.png",
+      "sha256": "65c0ef77fad29881c4885b1c8b6ccd6530ea68d7811b79921c79dad7c7f5e26d",
+      "size_bytes": 37578
+    },
+    {
+      "path": "sweeps/delayed_detection_sweep/reports/guided_walkthrough_report.md",
+      "sha256": "5604e37646d56de75107dde803e316e181e5abc0fa3fa1f61e2b7b8f45941a8c",
+      "size_bytes": 1327
+    },
+    {
+      "path": "sweeps/delayed_detection_sweep/reports/presentation_summary.md",
+      "sha256": "d3c258ab134fea957e8e9ff03a9c623bd203fefcc693e2423a2a0f8123ea5660",
+      "size_bytes": 1774
+    },
+    {
+      "path": "sweeps/delayed_detection_sweep/reports/publication_packet.html",
+      "sha256": "d5334869a2d687ee4a6b63c211d223abf01b6b809e1ffd52ecddb2c8d14d50b2",
+      "size_bytes": 6497
+    },
+    {
+      "path": "sweeps/delayed_detection_sweep/reports/replay_cluster_report.md",
+      "sha256": "aa3a7a49fb452e670748c4a2f2d15088bad3baca743cb37a59f0b48c5ea10fd4",
+      "size_bytes": 659
+    },
+    {
+      "path": "sweeps/delayed_detection_sweep/reports/replay_compare_report_v1.json",
+      "sha256": "cdc253864c718a906de3c00fa09876f778e8bd884970edc8d7fe59085925be56",
+      "size_bytes": 2455
+    },
+    {
+      "path": "sweeps/delayed_detection_sweep/reports/replay_presentation_report_v1.json",
+      "sha256": "7649aad37fb8eb1fd2012ed3ce225e41510da27914db2567282a9104893dee49",
+      "size_bytes": 4230
+    },
+    {
+      "path": "sweeps/delayed_detection_sweep/reports/replay_publication_report_v1.json",
+      "sha256": "b0f379aa05da096c3a5db4c888e3ce6e1a07c93ae46c1fcb3b969844057791ba",
+      "size_bytes": 3952
+    },
+    {
+      "path": "sweeps/delayed_detection_sweep/reports/replay_review_report_v1.json",
+      "sha256": "c80702d9a60034b64c914dfea37c7ee6bfe13ed95e54836a27b06e3f6475082c",
+      "size_bytes": 3897
+    },
+    {
+      "path": "sweeps/delayed_detection_sweep/reports/review_packet.html",
+      "sha256": "812eb11fa7d16d9bff09d28195d4421d4556ecc60d5d81abc56282d026c68495",
+      "size_bytes": 2494
+    },
+    {
+      "path": "sweeps/delayed_detection_sweep/reports/sweep_narrative_summary.md",
+      "sha256": "6bc54bede8495defff9a83ad36d7f6edefd2b0aa562a4760e25ba6eb3a507750",
+      "size_bytes": 851
+    },
+    {
+      "path": "sweeps/delayed_detection_sweep/reports/sweep_presentation_packet.md",
+      "sha256": "7dfc21cedee46bbc9a83b3edc829cbc7b321b503c567caf33115e9e5b42b8b53",
+      "size_bytes": 4078
+    },
+    {
+      "path": "sweeps/delayed_detection_sweep/reports/topology_divergence_report.md",
+      "sha256": "8f9113fc60f95b9cfcf55624a057d30ab5e4801e01a34d46d27e70e076d74649",
+      "size_bytes": 381
+    },
+    {
+      "path": "sweeps/delayed_detection_sweep/reports/topology_sweep_summary.md",
+      "sha256": "7b751dd65824e098ebfb57d6c4b2852dda5460d7da749936d544ac6161def9c4",
+      "size_bytes": 370
+    },
+    {
+      "path": "sweeps/delayed_detection_sweep/reports/topology_walkthrough_report.md",
+      "sha256": "96e75e9e43803feafd483051634aa841a7bc6262ba7fbaca5be1f904db313c14",
+      "size_bytes": 587
+    },
+    {
+      "path": "sweeps/ridge_overlap_sweep/reports/ambiguity_hotspot_summary.md",
+      "sha256": "17668023e1c0506e06dec97f3ba9907421a862ab1664571d4353876e274b5d8f",
+      "size_bytes": 351
+    },
+    {
+      "path": "sweeps/ridge_overlap_sweep/reports/analytics_summary.md",
+      "sha256": "1f9496067fd71062e9655a35c4dfdbb8bcde126dd33b190a6637c8535573fa2e",
+      "size_bytes": 734
+    },
+    {
+      "path": "sweeps/ridge_overlap_sweep/reports/figures/ridge_overlap_sweep_ambiguity_hotspot.png",
+      "sha256": "9e5895da1857ea54de1e4838447ad7821af1bcc2786d695f28ba41aa121ab9ef",
+      "size_bytes": 31667
+    },
+    {
+      "path": "sweeps/ridge_overlap_sweep/reports/figures/ridge_overlap_sweep_cohort_strip.png",
+      "sha256": "847381ba87d982484d6938d4d5dac700260ddd3adc59aea83e360142f7b5dd89",
+      "size_bytes": 23913
+    },
+    {
+      "path": "sweeps/ridge_overlap_sweep/reports/figures/ridge_overlap_sweep_los_degraded.png",
+      "sha256": "89e9a307d7aaf5f5ad597c750a8b34c5eddbbb1818315ad1d8c7273d067e726b",
+      "size_bytes": 30726
+    },
+    {
+      "path": "sweeps/ridge_overlap_sweep/reports/figures/ridge_overlap_sweep_topology_sensitivity.png",
+      "sha256": "472bf96428108081f1ba92e93cc3d151f7543c3bfbbb859afea567b0f0021040",
+      "size_bytes": 31074
+    },
+    {
+      "path": "sweeps/ridge_overlap_sweep/reports/guided_walkthrough_report.md",
+      "sha256": "5402fd1f71a01f61a1f94ef90c3dac87db3e92db11b7297a4b80c19abe1b672e",
+      "size_bytes": 1295
+    },
+    {
+      "path": "sweeps/ridge_overlap_sweep/reports/presentation_summary.md",
+      "sha256": "7a0b74f21e0afcce46a1e5e508ef1bb36979d7b5badb8930ee5f8314e53a87ef",
+      "size_bytes": 1725
+    },
+    {
+      "path": "sweeps/ridge_overlap_sweep/reports/publication_packet.html",
+      "sha256": "4c9400ca7a1cb11cb2df4a746652c031469589a9988c7f331df85df7de876cbb",
+      "size_bytes": 6376
+    },
+    {
+      "path": "sweeps/ridge_overlap_sweep/reports/replay_cluster_report.md",
+      "sha256": "88389a23dc49f635264de565e2e13238a02cbcaf02ddbbccd3b47cac19d8d710",
+      "size_bytes": 796
+    },
+    {
+      "path": "sweeps/ridge_overlap_sweep/reports/replay_compare_report_v1.json",
+      "sha256": "30282277535180eaf65287c254e1c36caa694f77ac3f00a1b23ab2edb6f76d5a",
+      "size_bytes": 2509
+    },
+    {
+      "path": "sweeps/ridge_overlap_sweep/reports/replay_presentation_report_v1.json",
+      "sha256": "6d5c472a475981e72180b76f9e64c3af3827265647ac3b8162d6c68bd3864f3e",
+      "size_bytes": 4597
+    },
+    {
+      "path": "sweeps/ridge_overlap_sweep/reports/replay_publication_report_v1.json",
+      "sha256": "e37da53c6b5489314515ca0f1fdee2b23b9ba8fea8ee0b5539c5e2044d7ae2cf",
+      "size_bytes": 3872
+    },
+    {
+      "path": "sweeps/ridge_overlap_sweep/reports/replay_review_report_v1.json",
+      "sha256": "fd891910edf93111c12ff0bd0f673f195b8cd2b38287ef6f41f7187819d204cc",
+      "size_bytes": 4697
+    },
+    {
+      "path": "sweeps/ridge_overlap_sweep/reports/review_packet.html",
+      "sha256": "773fe0adc4fe4ab806c1e5d0615b4644e60a0bbbbe87c7a34150dea5c2ad882b",
+      "size_bytes": 2437
+    },
+    {
+      "path": "sweeps/ridge_overlap_sweep/reports/sweep_narrative_summary.md",
+      "sha256": "2cc5772ea85201e8dc40b19cdf291fcfdd34d3249ee9f94f09b60041b1a3d0af",
+      "size_bytes": 1240
+    },
+    {
+      "path": "sweeps/ridge_overlap_sweep/reports/sweep_presentation_packet.md",
+      "sha256": "4fdb36f43ceec150755c8d2fe0c43a42b298750ebc3128399b4ad70577d6f72e",
+      "size_bytes": 3968
+    },
+    {
+      "path": "sweeps/ridge_overlap_sweep/reports/topology_divergence_report.md",
+      "sha256": "6176ad26c24b03946ca7976c5f3c55b9e537d30d347d12757478c51a99ade58a",
+      "size_bytes": 514
+    },
+    {
+      "path": "sweeps/ridge_overlap_sweep/reports/topology_sweep_summary.md",
+      "sha256": "5030035edb54da06f3e22e4c219404df40554aba32e91e7f485edab1e31b3aec",
+      "size_bytes": 358
+    },
+    {
+      "path": "sweeps/ridge_overlap_sweep/reports/topology_walkthrough_report.md",
+      "sha256": "4993ab84cf1d7f34ee6d3ea8386d72f23bd70b76976f4c9873d85922eb79765a",
+      "size_bytes": 562
+    },
+    {
+      "path": "sweeps/saturation_assignment_sweep/reports/ambiguity_hotspot_summary.md",
+      "sha256": "53e081994526ac457f07186aef42ffb7dfb16852cc1e9d4ed73712d186e1ada9",
+      "size_bytes": 281
+    },
+    {
+      "path": "sweeps/saturation_assignment_sweep/reports/analytics_summary.md",
+      "sha256": "0cb50b9f06a17cea8d62590349cbd429ce20ee791aa6126a75e75d17cea562ee",
+      "size_bytes": 679
+    },
+    {
+      "path": "sweeps/saturation_assignment_sweep/reports/figures/saturation_assignment_sweep_ambiguity_hotspot.png",
+      "sha256": "0feed9de5ebb3adccb27edb2151d96fc43ac2ffd1006a255f14b1942224211fe",
+      "size_bytes": 34607
+    },
+    {
+      "path": "sweeps/saturation_assignment_sweep/reports/figures/saturation_assignment_sweep_cohort_strip.png",
+      "sha256": "bf60ce8bf1cfb840c6c06e2703419bd0b62b586c8882a5d95dd4b2849c100fcf",
+      "size_bytes": 23988
+    },
+    {
+      "path": "sweeps/saturation_assignment_sweep/reports/figures/saturation_assignment_sweep_los_degraded.png",
+      "sha256": "0d4922f3458cc84c1539ac251e7594eb74859ed6d8ff1b263534780d57cf5236",
+      "size_bytes": 31229
+    },
+    {
+      "path": "sweeps/saturation_assignment_sweep/reports/figures/saturation_assignment_sweep_topology_sensitivity.png",
+      "sha256": "0e114aa8eb41c0ba744eaa3497f8395ae80f17dd46d69665d4168e75c1acf7e2",
+      "size_bytes": 38712
+    },
+    {
+      "path": "sweeps/saturation_assignment_sweep/reports/guided_walkthrough_report.md",
+      "sha256": "512b312c476fe3ba8a597391442ea3a75170009487fcdba773db407c7e9fef99",
+      "size_bytes": 1336
+    },
+    {
+      "path": "sweeps/saturation_assignment_sweep/reports/presentation_summary.md",
+      "sha256": "800cdd2717acafa79543d8ec9023d696f4c593ca5e6e3812483108ebe6596b98",
+      "size_bytes": 1785
+    },
+    {
+      "path": "sweeps/saturation_assignment_sweep/reports/publication_packet.html",
+      "sha256": "1f57229892b7adf69fd47b816f373171f163ec22c8b4dcecf9cb08f2aedf4c77",
+      "size_bytes": 6592
+    },
+    {
+      "path": "sweeps/saturation_assignment_sweep/reports/replay_cluster_report.md",
+      "sha256": "13992596ef888bec032bdff05d60be0a045d8d6ea120b2035334415c31a006b1",
+      "size_bytes": 831
+    },
+    {
+      "path": "sweeps/saturation_assignment_sweep/reports/replay_compare_report_v1.json",
+      "sha256": "fea9ca3d6d3cf794b8eaf0c3dd4c3983c3d4cb910563a74eed6aa44be63c70cc",
+      "size_bytes": 2468
+    },
+    {
+      "path": "sweeps/saturation_assignment_sweep/reports/replay_presentation_report_v1.json",
+      "sha256": "bb4fa0dbcd0a5dcb3816301641213fdc5fc950f18dd87e969ffdf9cbdf671636",
+      "size_bytes": 4443
+    },
+    {
+      "path": "sweeps/saturation_assignment_sweep/reports/replay_publication_report_v1.json",
+      "sha256": "be5ac9dc97834c5894e1f39dc9880c0ae97baa415aa9577199e12bf49be2a4dd",
+      "size_bytes": 4044
+    },
+    {
+      "path": "sweeps/saturation_assignment_sweep/reports/replay_review_report_v1.json",
+      "sha256": "74694af917ab46329a2749ce650e8bb0ae88c00b1b73642f23252e9a1ff092b1",
+      "size_bytes": 4486
+    },
+    {
+      "path": "sweeps/saturation_assignment_sweep/reports/review_packet.html",
+      "sha256": "178bcdc2087a7176314410d126e43c7751a919fbee80dbcbc702a2b3ad3eb230",
+      "size_bytes": 2513
+    },
+    {
+      "path": "sweeps/saturation_assignment_sweep/reports/sweep_narrative_summary.md",
+      "sha256": "fd9966f98616acfecb55ffbb9430755b7f9416bc3a36f642c5ee80e7b9e5ad4c",
+      "size_bytes": 1034
+    },
+    {
+      "path": "sweeps/saturation_assignment_sweep/reports/sweep_presentation_packet.md",
+      "sha256": "fb16c96217c9ed33bf8c6e4d56da8660773faf427ae34a10c0d14606f982d475",
+      "size_bytes": 4109
+    },
+    {
+      "path": "sweeps/saturation_assignment_sweep/reports/topology_divergence_report.md",
+      "sha256": "94fd50615b8474509b8057516b2e31d684f2733b13c4f31266fc31cfb37e33c5",
+      "size_bytes": 474
+    },
+    {
+      "path": "sweeps/saturation_assignment_sweep/reports/topology_sweep_summary.md",
+      "sha256": "b81563406a68e3fd0e6f1daa0d92484098e85a88c702a5be8db24ef4f544edd0",
+      "size_bytes": 371
+    },
+    {
+      "path": "sweeps/saturation_assignment_sweep/reports/topology_walkthrough_report.md",
+      "sha256": "acdd304fd3fba6b7bfb58b70c2d43b76bf6fe9fdb0b5d2022cf06d9785658568",
+      "size_bytes": 594
+    },
+    {
+      "path": "sweeps/valley_sensor_sweep/reports/ambiguity_hotspot_summary.md",
+      "sha256": "06d83009bc19f61a10d6f4fea92e9e5e99db03eb36d23a07da88f59c588e42cc",
+      "size_bytes": 157
+    },
+    {
+      "path": "sweeps/valley_sensor_sweep/reports/analytics_summary.md",
+      "sha256": "228f0f91ebdc378feb88836886a9a9845734fa0f6b6422d828b8d27f20f82181",
+      "size_bytes": 655
+    },
+    {
+      "path": "sweeps/valley_sensor_sweep/reports/figures/valley_sensor_sweep_ambiguity_hotspot.png",
+      "sha256": "451baee7db0fdae1b60c841a96dc1ee07f51bfd9641dd4512e500cbbe6210762",
+      "size_bytes": 30403
+    },
+    {
+      "path": "sweeps/valley_sensor_sweep/reports/figures/valley_sensor_sweep_cohort_strip.png",
+      "sha256": "d79a1fe4a53624f31fbbefca419080c5492a5c4075b22bbdd1916b2ff9acadcd",
+      "size_bytes": 26819
+    },
+    {
+      "path": "sweeps/valley_sensor_sweep/reports/figures/valley_sensor_sweep_los_degraded.png",
+      "sha256": "c7ebf8cef9af21637d95f013ab7e003a892c2a9401b3ec59129eb3a8a4f98f10",
+      "size_bytes": 29688
+    },
+    {
+      "path": "sweeps/valley_sensor_sweep/reports/figures/valley_sensor_sweep_topology_sensitivity.png",
+      "sha256": "be606bd2e2c7de2c58092cb477b76b31b8356ce62625beeb8659eafbbea656a6",
+      "size_bytes": 36475
+    },
+    {
+      "path": "sweeps/valley_sensor_sweep/reports/guided_walkthrough_report.md",
+      "sha256": "0c96970bb0b7094718ca4fddcaf5eb63be84a9cad9a896fecafe6a36ce44f31d",
+      "size_bytes": 1299
+    },
+    {
+      "path": "sweeps/valley_sensor_sweep/reports/presentation_summary.md",
+      "sha256": "fde87218bc0bc084c1581d68e10c81f2cbe34fb574c89f3dea5db191ef74ff03",
+      "size_bytes": 1723
+    },
+    {
+      "path": "sweeps/valley_sensor_sweep/reports/publication_packet.html",
+      "sha256": "9ada02a39bfa0202946a29a8d9423bd6c3c0e3bd1bb5f4043b7f54177402917e",
+      "size_bytes": 6511
+    },
+    {
+      "path": "sweeps/valley_sensor_sweep/reports/replay_cluster_report.md",
+      "sha256": "d54a1b4e5dd8ac674135139a8028ef30dcfce3e5363ae2a8ea903d7890dc4657",
+      "size_bytes": 960
+    },
+    {
+      "path": "sweeps/valley_sensor_sweep/reports/replay_compare_report_v1.json",
+      "sha256": "e439bd6496e80bfa4cf6bed2727ee7f4bfc24d4b17cb9af9a5b5778e08b75c98",
+      "size_bytes": 2740
+    },
+    {
+      "path": "sweeps/valley_sensor_sweep/reports/replay_presentation_report_v1.json",
+      "sha256": "e6a470adb5ac4b75b0575dd26f9946806487afaa65f45590fbf4cedb8fbf1f9d",
+      "size_bytes": 4329
+    },
+    {
+      "path": "sweeps/valley_sensor_sweep/reports/replay_publication_report_v1.json",
+      "sha256": "979882d99c5e1462b44a92097dcad98c2452cc7176a1c436aa5e1215f127b2b6",
+      "size_bytes": 4016
+    },
+    {
+      "path": "sweeps/valley_sensor_sweep/reports/replay_review_report_v1.json",
+      "sha256": "1a1d020070f7c52b425202352dcf3b47733e0b1de5824183cab5f8b0de4527e6",
+      "size_bytes": 4837
+    },
+    {
+      "path": "sweeps/valley_sensor_sweep/reports/review_packet.html",
+      "sha256": "a75694675f397188c220513effa41943fe1a381f6774f989e6648b2696ade3af",
+      "size_bytes": 2435
+    },
+    {
+      "path": "sweeps/valley_sensor_sweep/reports/sweep_narrative_summary.md",
+      "sha256": "a5418280c10d9298f05f27ebf52aa8535195d301a9a6c534168093c9988d35cb",
+      "size_bytes": 998
+    },
+    {
+      "path": "sweeps/valley_sensor_sweep/reports/sweep_presentation_packet.md",
+      "sha256": "3b582719c12b820cd3822d105093d794770e67d06df58761c81bbad07def4bc5",
+      "size_bytes": 3965
+    },
+    {
+      "path": "sweeps/valley_sensor_sweep/reports/topology_divergence_report.md",
+      "sha256": "2c72c204f2f50b84af4e1ce949bda254db61550b00ee43ec121a13f57e24fa34",
+      "size_bytes": 747
+    },
+    {
+      "path": "sweeps/valley_sensor_sweep/reports/topology_sweep_summary.md",
+      "sha256": "e53f9e2fe98ea1ced056c3db8f9d5eb3a8742339b54be7a81ddebdae51f0af22",
+      "size_bytes": 494
+    },
+    {
+      "path": "sweeps/valley_sensor_sweep/reports/topology_walkthrough_report.md",
+      "sha256": "71e2ddda10251452b14518b0a09c4fc441179ee8052559acf5ea532cc4d815ba",
+      "size_bytes": 557
+    },
+    {
+      "path": "synthesis/assets/chapters/delayed_detection_sweep_chapter_1.png",
+      "sha256": "6a7424cff466db44edea33dfe97730b5fc40dc762c8a859aa82930b5b7c292a1",
+      "size_bytes": 14543
+    },
+    {
+      "path": "synthesis/assets/chapters/delayed_detection_sweep_chapter_2.png",
+      "sha256": "d1198670798b2fcaec4be1f9a180a867c9a8fe4a32f4c810fba2d8046f23428e",
+      "size_bytes": 15370
+    },
+    {
+      "path": "synthesis/assets/chapters/delayed_detection_sweep_chapter_3.png",
+      "sha256": "56047236e0eff6d217aa753c8e6b4715b8840db3a760e3166615cdc8abe4dea5",
+      "size_bytes": 14921
+    },
+    {
+      "path": "synthesis/assets/chapters/delayed_detection_sweep_chapter_4.png",
+      "sha256": "5670d3a76ae7e2559172f0e434d5c50e646febdf08a4df79fd35fa19423a1ad9",
+      "size_bytes": 14566
+    },
+    {
+      "path": "synthesis/assets/chapters/delayed_detection_sweep_chapter_5.png",
+      "sha256": "a2bbc3f26912fc8c4ce676272368ef8fd37f8f14dd22bf7d46ec159e4b051290",
+      "size_bytes": 14715
+    },
+    {
+      "path": "synthesis/assets/chapters/delayed_detection_sweep_chapter_6.png",
+      "sha256": "c8ab33aec5c161f27173f0ff0ac143d7fa368d39b48f95e13659c05c89adaf99",
+      "size_bytes": 14876
+    },
+    {
+      "path": "synthesis/assets/chapters/ridge_overlap_sweep_chapter_1.png",
+      "sha256": "7f74a8621f5517da7622a5d3cab4302ed9c01e87d37d17a14007cc0d7d2e906a",
+      "size_bytes": 12779
+    },
+    {
+      "path": "synthesis/assets/chapters/ridge_overlap_sweep_chapter_2.png",
+      "sha256": "d1198670798b2fcaec4be1f9a180a867c9a8fe4a32f4c810fba2d8046f23428e",
+      "size_bytes": 15370
+    },
+    {
+      "path": "synthesis/assets/chapters/ridge_overlap_sweep_chapter_3.png",
+      "sha256": "56047236e0eff6d217aa753c8e6b4715b8840db3a760e3166615cdc8abe4dea5",
+      "size_bytes": 14921
+    },
+    {
+      "path": "synthesis/assets/chapters/ridge_overlap_sweep_chapter_4.png",
+      "sha256": "5670d3a76ae7e2559172f0e434d5c50e646febdf08a4df79fd35fa19423a1ad9",
+      "size_bytes": 14566
+    },
+    {
+      "path": "synthesis/assets/chapters/ridge_overlap_sweep_chapter_5.png",
+      "sha256": "a2bbc3f26912fc8c4ce676272368ef8fd37f8f14dd22bf7d46ec159e4b051290",
+      "size_bytes": 14715
+    },
+    {
+      "path": "synthesis/assets/chapters/ridge_overlap_sweep_chapter_6.png",
+      "sha256": "c8ab33aec5c161f27173f0ff0ac143d7fa368d39b48f95e13659c05c89adaf99",
+      "size_bytes": 14876
+    },
+    {
+      "path": "synthesis/assets/chapters/saturation_assignment_sweep_chapter_1.png",
+      "sha256": "858ed3574ed120e2c5f5d3c52ef1ad39c3b0372fa52323f5d789fdcebfbd4375",
+      "size_bytes": 14480
+    },
+    {
+      "path": "synthesis/assets/chapters/saturation_assignment_sweep_chapter_2.png",
+      "sha256": "d1198670798b2fcaec4be1f9a180a867c9a8fe4a32f4c810fba2d8046f23428e",
+      "size_bytes": 15370
+    },
+    {
+      "path": "synthesis/assets/chapters/saturation_assignment_sweep_chapter_3.png",
+      "sha256": "56047236e0eff6d217aa753c8e6b4715b8840db3a760e3166615cdc8abe4dea5",
+      "size_bytes": 14921
+    },
+    {
+      "path": "synthesis/assets/chapters/saturation_assignment_sweep_chapter_4.png",
+      "sha256": "5670d3a76ae7e2559172f0e434d5c50e646febdf08a4df79fd35fa19423a1ad9",
+      "size_bytes": 14566
+    },
+    {
+      "path": "synthesis/assets/chapters/saturation_assignment_sweep_chapter_5.png",
+      "sha256": "a2bbc3f26912fc8c4ce676272368ef8fd37f8f14dd22bf7d46ec159e4b051290",
+      "size_bytes": 14715
+    },
+    {
+      "path": "synthesis/assets/chapters/saturation_assignment_sweep_chapter_6.png",
+      "sha256": "c8ab33aec5c161f27173f0ff0ac143d7fa368d39b48f95e13659c05c89adaf99",
+      "size_bytes": 14876
+    },
+    {
+      "path": "synthesis/assets/chapters/valley_sensor_sweep_chapter_1.png",
+      "sha256": "83b59feb544129a38421be7dacb80698fce85ddf5cacf624a1b391e1a1b77200",
+      "size_bytes": 13465
+    },
+    {
+      "path": "synthesis/assets/chapters/valley_sensor_sweep_chapter_2.png",
+      "sha256": "10d75247f0cf85605526a1bdff235f6795a0fd1ca6c4d1ce571c7e1767565b62",
+      "size_bytes": 15381
+    },
+    {
+      "path": "synthesis/assets/chapters/valley_sensor_sweep_chapter_3.png",
+      "sha256": "56047236e0eff6d217aa753c8e6b4715b8840db3a760e3166615cdc8abe4dea5",
+      "size_bytes": 14921
+    },
+    {
+      "path": "synthesis/assets/chapters/valley_sensor_sweep_chapter_4.png",
+      "sha256": "5670d3a76ae7e2559172f0e434d5c50e646febdf08a4df79fd35fa19423a1ad9",
+      "size_bytes": 14566
+    },
+    {
+      "path": "synthesis/assets/chapters/valley_sensor_sweep_chapter_5.png",
+      "sha256": "a2bbc3f26912fc8c4ce676272368ef8fd37f8f14dd22bf7d46ec159e4b051290",
+      "size_bytes": 14715
+    },
+    {
+      "path": "synthesis/assets/chapters/valley_sensor_sweep_chapter_6.png",
+      "sha256": "c8ab33aec5c161f27173f0ff0ac143d7fa368d39b48f95e13659c05c89adaf99",
+      "size_bytes": 14876
+    },
+    {
+      "path": "synthesis/assets/delayed_detection_sweep_cohort_thumb.png",
+      "sha256": "bb205ec3f1e52e8cb5e07696dfffe2843562f64205d3877bb6f36198758602c6",
+      "size_bytes": 10649
+    },
+    {
+      "path": "synthesis/assets/delayed_detection_sweep_topology_card.png",
+      "sha256": "daf9d78e3bf6e5230679248630f8e26ed1c4c68df5cdf45ce0264d74fdd673f7",
+      "size_bytes": 12520
+    },
+    {
+      "path": "synthesis/assets/index.json",
+      "sha256": "f8a057aecea462b7190b17a27e9d309d80c76bb29fdcd3197e13aeca4c376237",
+      "size_bytes": 843
+    },
+    {
+      "path": "synthesis/assets/patterns/pattern_assignment_instability_replay.png",
+      "sha256": "683349b840726adb1b3fe1261a1ab2fbb148022edcd183c1429fed3995ab8dee",
+      "size_bytes": 10373
+    },
+    {
+      "path": "synthesis/assets/patterns/pattern_corridor_pressure_replay.png",
+      "sha256": "5cb3c899d4b1701e16c84e28d1dab134964ca0699a332d8588837f30a5d7a9db",
+      "size_bytes": 9374
+    },
+    {
+      "path": "synthesis/assets/patterns/pattern_delayed_detection_replay.png",
+      "sha256": "46a459671e357af9ab7d53b946f2256f3b90fdb86e0583467fdc2db64cfdb3c2",
+      "size_bytes": 9601
+    },
+    {
+      "path": "synthesis/assets/patterns/pattern_los_fragmented_replay.png",
+      "sha256": "a78499b223133a6bc959e01cb4b1bfa03a9ce4eb4cc55bd6cb7d65d1c25957b3",
+      "size_bytes": 8921
+    },
+    {
+      "path": "synthesis/assets/patterns/pattern_saturation_driven_ambiguity.png",
+      "sha256": "bd004f08ed19964e3f942cced06fa36f9911c95eb18a41b55a7366ba5aca572d",
+      "size_bytes": 9476
+    },
+    {
+      "path": "synthesis/assets/patterns/pattern_topology_sensitive_divergence.png",
+      "sha256": "e664b74d109ffaa41d76a854c63dad8a2f6c8948ff71900441e569797b819715",
+      "size_bytes": 10426
+    },
+    {
+      "path": "synthesis/assets/ridge_overlap_sweep_cohort_thumb.png",
+      "sha256": "58c7a4f50fd10767096d0093d16a5af1e9eee319341417141f16ad9661165809",
+      "size_bytes": 9951
+    },
+    {
+      "path": "synthesis/assets/ridge_overlap_sweep_topology_card.png",
+      "sha256": "e1f5c7af8f3c4bb0e53dd02cc06697f06c903eacb2bc920aea2db71d1a651386",
+      "size_bytes": 11165
+    },
+    {
+      "path": "synthesis/assets/saturation_assignment_sweep_cohort_thumb.png",
+      "sha256": "fb2572555461b93fc1a43c362b77758b85a1d97ae6dadf87c5d71dcfd0193ed3",
+      "size_bytes": 11230
+    },
+    {
+      "path": "synthesis/assets/saturation_assignment_sweep_topology_card.png",
+      "sha256": "8598fe11fd4bf5a0164f6fc656f67a18cd3d48156c5582d798574a2f31d77c93",
+      "size_bytes": 12903
+    },
+    {
+      "path": "synthesis/assets/valley_sensor_sweep_cohort_thumb.png",
+      "sha256": "ca528cff17f379d37b65e4fd0ca0011ebd6eadcedb6386acff49a165982f473e",
+      "size_bytes": 10122
+    },
+    {
+      "path": "synthesis/assets/valley_sensor_sweep_topology_card.png",
+      "sha256": "ee19e8780af62f246027491323e7d6fa42db6a3da9f26191a0f77149a8dc3d87",
+      "size_bytes": 11398
+    },
+    {
+      "path": "synthesis/cognition_rollup_summary.md",
+      "sha256": "b4fca43a93c2cb9668bd1a5bfeb552349fc3056644bf8ba6d6f51c7d4e2e6c1f",
+      "size_bytes": 964
+    },
+    {
+      "path": "synthesis/cross_sweep_publication_report.md",
+      "sha256": "e9507f46f6a736cfb61619435808589417fcf5af00d319c2b89f6a13ad193cb9",
+      "size_bytes": 2422
+    },
+    {
+      "path": "synthesis/cross_sweep_summary.md",
+      "sha256": "6ebe666ff7ef403bec176598b38b880a2a2c2fa7be1fc2c46ec05d5e017b77f7",
+      "size_bytes": 1396
+    },
+    {
+      "path": "synthesis/cross_sweep_synthesis_v1.json",
+      "sha256": "0d7119dca50cf0e43648201dc6ef0e4bb9a8c5ecd7cc3905b89bd93cf6fc1b17",
+      "size_bytes": 7551
+    },
+    {
+      "path": "synthesis/figures/cross_sweep_comparison_grid.png",
+      "sha256": "f1f85871463df53b9e805ea279cde5b1e00d6215f9a03d0ed2a25af457c905df",
+      "size_bytes": 34042
+    },
+    {
+      "path": "synthesis/linkage_summary.md",
+      "sha256": "24bc1a0d74afbe49403f94bd77133806638ccc9ead742735a1a67e425f9d581e",
+      "size_bytes": 4534
+    },
+    {
+      "path": "synthesis/replay_corpus_evolution_manifest_v1.json",
+      "sha256": "27b11378ba61a8b323a9b31b1fd2123e7c7506323b22db1dd7cf6802229a156f",
+      "size_bytes": 7484
+    },
+    {
+      "path": "synthesis/replay_corpus_evolution_summary_v1.json",
+      "sha256": "a3e9c548450e94cc4d291d9fd27132c4b6bf4d721b535800b902d7d5f31a2916",
+      "size_bytes": 27008
+    },
+    {
+      "path": "synthesis/replay_corpus_index_v1.json",
+      "sha256": "01f82d108260218e9e9670fc1b6791d603d6e94f9aacbda6d049654d660b34bd",
+      "size_bytes": 151600
+    },
+    {
+      "path": "synthesis/replay_corpus_publication_packet_v1.json",
+      "sha256": "013e23c64e2d3a8579ef200d9870442daff46d9b2936204b5f9de8515bd90335",
+      "size_bytes": 3496
+    },
+    {
+      "path": "synthesis/replay_linkage_index_v1.json",
+      "sha256": "8395ea5685702b9042f03af97a8bb8a180f29ac9d112ef8f2046cb58c22f6806",
+      "size_bytes": 10418
+    },
+    {
+      "path": "synthesis/storyline_linkage_overlay_v1.json",
+      "sha256": "c5dbceb9536f3833a47af10f7ec8d19ca71db75de1969f795086899688c4c445",
+      "size_bytes": 895
+    }
+  ],
+  "provenance": {
+    "generators": {
+      "build_cross_sweep_synthesis.py": "e2_v1",
+      "build_replay_cognition_rollup.py": "e2_v1",
+      "build_replay_corpus_index.py": "f1a_v1",
+      "build_replay_linkage.py": "e2_v1",
+      "export_research_bundle.py": "f1a_v1"
+    },
+    "source_root": "fixtures/sa_r0"
+  },
+  "schema_version": "replay_research_bundle_v1",
+  "sweep_ids": [
+    "valley_sensor_sweep",
+    "ridge_overlap_sweep",
+    "delayed_detection_sweep",
+    "saturation_assignment_sweep"
+  ]
+}

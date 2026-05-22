@@ -1,0 +1,250 @@
+{
+  "overlays": [
+    {
+      "active_t_range": [
+        4,
+        14
+      ],
+      "caveat": "West ridge \u2014 explanatory only.",
+      "geometry": {
+        "ridge_outline_enu_m": [
+          [
+            -800,
+            -100,
+            45
+          ],
+          [
+            -600,
+            50,
+            55
+          ]
+        ],
+        "type": "polygon",
+        "vertices_enu_m": [
+          [
+            -900,
+            -300,
+            0
+          ],
+          [
+            -500,
+            -250,
+            0
+          ],
+          [
+            -450,
+            150,
+            0
+          ],
+          [
+            -850,
+            200,
+            0
+          ]
+        ]
+      },
+      "kind": "ridge_mask",
+      "overlay_id": "ridge_mask_west"
+    },
+    {
+      "active_t_range": [
+        10,
+        22
+      ],
+      "caveat": "Mid ridge chain \u2014 not terrain truth.",
+      "geometry": {
+        "ridge_outline_enu_m": [
+          [
+            -450,
+            20,
+            50
+          ],
+          [
+            -280,
+            120,
+            48
+          ]
+        ],
+        "type": "polygon",
+        "vertices_enu_m": [
+          [
+            -550,
+            -180,
+            0
+          ],
+          [
+            -250,
+            -140,
+            0
+          ],
+          [
+            -200,
+            200,
+            0
+          ],
+          [
+            -500,
+            240,
+            0
+          ]
+        ]
+      },
+      "kind": "ridge_mask",
+      "overlay_id": "ridge_mask_mid"
+    },
+    {
+      "active_t_range": [
+        16,
+        32
+      ],
+      "caveat": "East ridge \u2014 replay localization.",
+      "geometry": {
+        "ridge_outline_enu_m": [
+          [
+            -280,
+            40,
+            42
+          ],
+          [
+            -80,
+            150,
+            52
+          ]
+        ],
+        "type": "polygon",
+        "vertices_enu_m": [
+          [
+            -350,
+            -120,
+            0
+          ],
+          [
+            50,
+            -80,
+            0
+          ],
+          [
+            80,
+            260,
+            0
+          ],
+          [
+            -320,
+            300,
+            0
+          ]
+        ]
+      },
+      "kind": "ridge_mask",
+      "overlay_id": "ridge_mask_east"
+    },
+    {
+      "active_t_range": [
+        6,
+        12
+      ],
+      "caveat": "LOS blocked west pocket.",
+      "geometry": {
+        "type": "polygon",
+        "vertices_enu_m": [
+          [
+            -750,
+            -80,
+            0
+          ],
+          [
+            -520,
+            -60,
+            0
+          ],
+          [
+            -500,
+            120,
+            0
+          ],
+          [
+            -730,
+            100,
+            0
+          ]
+        ]
+      },
+      "kind": "los_blocked",
+      "linked_event_ids": [
+        "narrative_event_0003_ambiguity_realism_fragmented_gap_start"
+      ],
+      "overlay_id": "los_blocked_west"
+    },
+    {
+      "active_t_range": [
+        18,
+        26
+      ],
+      "caveat": "LOS blocked east pocket.",
+      "geometry": {
+        "type": "polygon",
+        "vertices_enu_m": [
+          [
+            -320,
+            40,
+            0
+          ],
+          [
+            -120,
+            60,
+            0
+          ],
+          [
+            -100,
+            220,
+            0
+          ],
+          [
+            -300,
+            200,
+            0
+          ]
+        ]
+      },
+      "kind": "los_blocked",
+      "linked_event_ids": [
+        "narrative_event_0003_ambiguity_realism_fragmented_gap_start"
+      ],
+      "overlay_id": "los_blocked_east"
+    },
+    {
+      "active_t_range": [
+        12,
+        20
+      ],
+      "caveat": "Staggered visibility degradation.",
+      "geometry": {
+        "type": "polygon",
+        "vertices_enu_m": [
+          [
+            -600,
+            80,
+            0
+          ],
+          [
+            -400,
+            100,
+            0
+          ],
+          [
+            -380,
+            280,
+            0
+          ],
+          [
+            -580,
+            260,
+            0
+          ]
+        ]
+      },
+      "kind": "degraded_visibility",
+      "overlay_id": "degraded_reacquire"
+    }
+  ]
+}

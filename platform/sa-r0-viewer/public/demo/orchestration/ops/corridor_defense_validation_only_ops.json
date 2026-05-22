@@ -1,0 +1,34 @@
+{
+  "artifact_type": "experiment_orchestration_ops_manifest_v1",
+  "audit_report_ref": "fixtures/orchestration/audits/corridor_defense_validation_only_queue_report.json",
+  "authoring_pack_refs": [
+    "corridor_defense"
+  ],
+  "governance": {
+    "anti_claims": [
+      "not live execution authority",
+      "not operational deployment state",
+      "not parser contract"
+    ],
+    "notice": "Orchestration operations sidecar for offline experiment workflow only."
+  },
+  "manifest_fingerprint": "sha256:ae6ba7a7850784cc975071f6359dc6085a16a1d06f3043caac8d0c3e6a29ba5b",
+  "manifest_id": "corridor_defense_validation_only",
+  "operations_lineage": [
+    {
+      "actor": "cli:promote_experiment_manifest",
+      "event_id": "ops-2026-05-22T00:31:34Z",
+      "from_status": "validated",
+      "notes": "I1 backfill",
+      "to_status": "queued"
+    }
+  ],
+  "operations_status": "queued",
+  "operations_summary_ref": "fixtures/orchestration/ops/corridor_defense_validation_only_orchestration_operations_summary_v1.json",
+  "queue_snapshot_ref": "fixtures/orchestration/queues/corridor_defense_validation_only_queue.json",
+  "scenario_pack_ids": [
+    "corridor_defense"
+  ],
+  "schema_version": "1",
+  "updated_at": "2026-05-22T00:31:34Z"
+}

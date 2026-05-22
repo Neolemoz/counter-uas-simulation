@@ -1,0 +1,106 @@
+{
+  "overlays": [
+    {
+      "active_t_range": [
+        0,
+        30
+      ],
+      "caveat": "Threat A ingress.",
+      "geometry": {
+        "type": "polygon",
+        "vertices_enu_m": [
+          [
+            -1900,
+            60,
+            0
+          ],
+          [
+            -1100,
+            40,
+            0
+          ],
+          [
+            -1080,
+            200,
+            0
+          ],
+          [
+            -1880,
+            220,
+            0
+          ]
+        ]
+      },
+      "kind": "ingress_corridor",
+      "overlay_id": "ingress_a"
+    },
+    {
+      "active_t_range": [
+        6,
+        32
+      ],
+      "caveat": "Threat B ingress.",
+      "geometry": {
+        "type": "polygon",
+        "vertices_enu_m": [
+          [
+            -1850,
+            -220,
+            0
+          ],
+          [
+            -1050,
+            -200,
+            0
+          ],
+          [
+            -1030,
+            -40,
+            0
+          ],
+          [
+            -1830,
+            -20,
+            0
+          ]
+        ]
+      },
+      "kind": "ingress_corridor",
+      "overlay_id": "ingress_b"
+    },
+    {
+      "active_t_range": [
+        14,
+        28
+      ],
+      "caveat": "Trajectory overlap pocket.",
+      "geometry": {
+        "type": "polygon",
+        "vertices_enu_m": [
+          [
+            -1200,
+            -80,
+            0
+          ],
+          [
+            -900,
+            -90,
+            0
+          ],
+          [
+            -880,
+            120,
+            0
+          ],
+          [
+            -1180,
+            130,
+            0
+          ]
+        ]
+      },
+      "kind": "degraded_visibility",
+      "overlay_id": "overlap_ambiguity"
+    }
+  ]
+}

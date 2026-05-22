@@ -1,0 +1,72 @@
+{
+  "overlays": [
+    {
+      "active_t_range": [
+        0,
+        14
+      ],
+      "caveat": "Late acquisition pocket.",
+      "geometry": {
+        "type": "polygon",
+        "vertices_enu_m": [
+          [
+            -900,
+            -100,
+            0
+          ],
+          [
+            -500,
+            -120,
+            0
+          ],
+          [
+            -480,
+            80,
+            0
+          ],
+          [
+            -880,
+            100,
+            0
+          ]
+        ]
+      },
+      "kind": "degraded_visibility",
+      "overlay_id": "late_acquisition_zone"
+    },
+    {
+      "active_t_range": [
+        15,
+        28
+      ],
+      "caveat": "Rapid ingress into protected volume.",
+      "geometry": {
+        "type": "polygon",
+        "vertices_enu_m": [
+          [
+            -700,
+            -40,
+            0
+          ],
+          [
+            -150,
+            -50,
+            0
+          ],
+          [
+            -130,
+            60,
+            0
+          ],
+          [
+            -680,
+            70,
+            0
+          ]
+        ]
+      },
+      "kind": "ingress_corridor",
+      "overlay_id": "protected_escalation"
+    }
+  ]
+}

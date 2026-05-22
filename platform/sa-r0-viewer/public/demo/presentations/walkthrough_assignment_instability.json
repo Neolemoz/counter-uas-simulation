@@ -1,0 +1,35 @@
+{
+  "artifact_type": "replay_storyboard_v1",
+  "estimated_minutes": 17,
+  "governance": {
+    "anti_claims": [
+      "Not deployment readiness or validated effectiveness.",
+      "Not causal proof of runtime behavior."
+    ],
+    "notice": "Derived replay presentation artifact \u2014 explanatory review only, not operational authority."
+  },
+  "scenes": [
+    {
+      "copy": "Review assignment instability narrative across saturation vs corridor packs.",
+      "importance_tags": [
+        "assignment"
+      ],
+      "label": "Saturation sweep overview",
+      "scene_id": "saturation_overview",
+      "target_url": "?sweep=saturation_assignment_sweep&presentation=walkthrough_assignment_instability&chapter=0"
+    },
+    {
+      "copy": "Matched-seed stagger variants show detection timing divergence.",
+      "importance_tags": [
+        "pacing",
+        "assignment"
+      ],
+      "label": "Delayed detection stagger",
+      "scene_id": "delayed_stagger",
+      "target_url": "?sweep=delayed_detection_sweep&chapter=0"
+    }
+  ],
+  "schema_version": "replay_storyboard_v1",
+  "storyboard_id": "walkthrough_assignment_instability",
+  "title": "Assignment instability walkthrough"
+}

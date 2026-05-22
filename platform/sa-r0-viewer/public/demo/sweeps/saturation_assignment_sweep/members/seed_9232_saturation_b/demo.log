@@ -1,0 +1,16 @@
+=== run_id: replay_saturation_ingress_demo ===
+[interception_logic_node-1] [P_HEATMAP] threat_id=threat_uav_0 pos=(-1800.000, 80.000, 110.000)
+[interception_logic_node-1] [P_HEATMAP] threat_id=threat_uav_1 pos=(-1750.000, -120.000, 105.000)
+[interception_logic_node-1] [P_HEATMAP] threat_id=threat_uav_0 pos=(-1700.000, 85.000, 108.000)
+[interception_logic_node-1] [P_HEATMAP] threat_id=threat_uav_1 pos=(-1650.000, -115.000, 102.000)
+[tracking_node-1] Candidate detected: track_id=21
+[tracking_node-1] Candidate detected: track_id=22
+[noisy_measurement_node-1] [REALISM_EVENT] fragmented_gap_start fragmentation_index=1 gap_ticks=2
+[interception_logic_node-1] [METRICS] id=interceptor_0  | dist=42.000 m | t_go=7.5 s | vel=16.0 m/s | mode=predict
+[interception_logic_node-1] interceptor_id=interceptor_0 interceptor_pos=(-50.000, 5.000, 40.000) target_pos=(-1600.000, 82.000, 105.000) threat_id=threat_uav_0
+[interception_logic_node-1] [METRICS] id=interceptor_1  | dist=48.000 m | t_go=8.2 s | vel=15.5 m/s | mode=predict
+[interception_logic_node-1] interceptor_id=interceptor_1 interceptor_pos=(90.000, -15.000, 42.000) target_pos=(-1580.000, -110.000, 100.000) threat_id=threat_uav_1
+[interception_logic_node-1] [P_HEATMAP] threat_id=threat_uav_0 pos=(-1500.000, 90.000, 100.000)
+[interception_logic_node-1] [P_HEATMAP] threat_id=threat_uav_1 pos=(-1480.000, -105.000, 98.000)
+[interception_logic_node-1] [METRICS] id=interceptor_0  | dist=28.000 m | t_go=4.5 s | vel=17.0 m/s | mode=predict
+[interception_logic_node-1] [METRICS] id=interceptor_1  | dist=32.000 m | t_go=5.1 s | vel=16.5 m/s | mode=predict

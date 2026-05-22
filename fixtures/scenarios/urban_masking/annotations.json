@@ -1,0 +1,42 @@
+{
+  "annotations": [
+    {
+      "annotation_id": "anno_unstable_continuity",
+      "body": "Fragmented samples through fictional mask blocks — not track robustness proof.",
+      "kind": "visibility_degraded",
+      "linked_event_ids": [
+        "narrative_event_0003_ambiguity_realism_fragmented_gap_start"
+      ],
+      "narrative_rank": 1,
+      "title": "Unstable track continuity"
+    },
+    {
+      "annotation_id": "anno_confidence_deg",
+      "body": "Replay-local degraded visibility semantics only.",
+      "kind": "visibility_degraded",
+      "linked_event_ids": [
+        "narrative_event_0003_ambiguity_realism_fragmented_gap_start"
+      ],
+      "narrative_rank": 2,
+      "title": "Confidence degradation"
+    },
+    {
+      "annotation_id": "anno_clutter_interp",
+      "body": "Dense overlays stress replay readability — not urban geography.",
+      "kind": "los_blockage",
+      "linked_event_ids": [],
+      "narrative_rank": 3,
+      "title": "Cluttered interpretation"
+    },
+    {
+      "annotation_id": "anno_stale_evidence",
+      "body": "Stale detection marker localized — explanatory only.",
+      "kind": "visibility_degraded",
+      "linked_event_ids": [
+        "narrative_event_0003_ambiguity_realism_fragmented_gap_start"
+      ],
+      "narrative_rank": 2,
+      "title": "Stale detection evidence"
+    }
+  ]
+}

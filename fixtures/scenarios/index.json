@@ -1,0 +1,543 @@
+{
+  "artifact_type": "scenario_topology_catalog",
+  "governance": {
+    "notice": "Catalog for portable scenario packs \u2014 not authoritative deployment data."
+  },
+  "packs": [
+    {
+      "ambiguity_profile": {
+        "level": "low"
+      },
+      "category": "terrain_masking",
+      "demo_bundle": "fixtures/sa_r0/demo_ridge_defense/index.json",
+      "demo_bundle_url": "/demo/index.json",
+      "ingress_archetype": "ridge",
+      "narrative_focus": [
+        "ridge_masking",
+        "protected_area"
+      ],
+      "overlay_descriptors": [
+        {
+          "count": 1,
+          "kind": "degraded_visibility"
+        },
+        {
+          "count": 1,
+          "kind": "los_blocked"
+        },
+        {
+          "count": 1,
+          "kind": "ridge_mask"
+        }
+      ],
+      "pack_id": "ridge_defense",
+      "pack_path": "fixtures/scenarios/ridge_defense",
+      "replay_duration_class": "medium",
+      "replay_tags": [
+        "terrain_masking",
+        "protected_area"
+      ],
+      "scenario_id": "ridge_defense_demo",
+      "terrain_profile": "ridged",
+      "title": "Ridge defense replay (demo fixture)",
+      "topology_tags": [
+        "ridge_defense",
+        "protected_area",
+        "terrain_aware"
+      ]
+    },
+    {
+      "ambiguity_profile": {
+        "level": "moderate"
+      },
+      "category": "ingress_geometry",
+      "demo_bundle": "fixtures/sa_r0/demo_valley_ingress/index.json",
+      "demo_bundle_url": "/demo/valley_ingress/index.json",
+      "ingress_archetype": "valley",
+      "narrative_focus": [
+        "valley_masking",
+        "reacquisition"
+      ],
+      "overlay_descriptors": [
+        {
+          "count": 1,
+          "kind": "ingress_corridor"
+        },
+        {
+          "count": 1,
+          "kind": "los_blocked"
+        },
+        {
+          "count": 1,
+          "kind": "ridge_mask"
+        }
+      ],
+      "pack_id": "valley_ingress",
+      "pack_path": "fixtures/scenarios/valley_ingress",
+      "replay_duration_class": "medium",
+      "replay_tags": [
+        "terrain_masking",
+        "reacquisition",
+        "delayed_track_confirmation"
+      ],
+      "scenario_id": "valley_ingress_demo",
+      "terrain_profile": "valley",
+      "title": "Valley ingress replay (demo fixture)",
+      "topology_tags": [
+        "valley_ingress",
+        "terrain_masking",
+        "delayed_track_confirmation",
+        "reacquisition"
+      ]
+    },
+    {
+      "ambiguity_profile": {
+        "focus_tags": [
+          "chained_masking",
+          "intermittent_visibility"
+        ],
+        "level": "high"
+      },
+      "category": "terrain_masking",
+      "demo_bundle": "fixtures/sa_r0/demo_multi_ridge/index.json",
+      "demo_bundle_url": "/demo/multi_ridge/index.json",
+      "ingress_archetype": "open",
+      "narrative_focus": [
+        "chained_masking",
+        "reacquisition"
+      ],
+      "overlay_descriptors": [
+        {
+          "count": 1,
+          "kind": "degraded_visibility"
+        },
+        {
+          "count": 2,
+          "kind": "los_blocked"
+        },
+        {
+          "count": 3,
+          "kind": "ridge_mask"
+        }
+      ],
+      "pack_id": "multi_ridge",
+      "pack_path": "fixtures/scenarios/multi_ridge",
+      "replay_duration_class": "medium",
+      "replay_tags": [
+        "chained_masking",
+        "intermittent_visibility",
+        "multi_track"
+      ],
+      "scenario_id": "multi_ridge_demo",
+      "terrain_profile": "ridged",
+      "title": "Multi-ridge chained masking replay",
+      "topology_tags": [
+        "multi_ridge",
+        "chained_masking",
+        "reacquisition",
+        "intermittent_visibility"
+      ]
+    },
+    {
+      "ambiguity_profile": {
+        "level": "moderate"
+      },
+      "category": "corridor_defense",
+      "demo_bundle": "fixtures/sa_r0/demo_corridor_defense/index.json",
+      "demo_bundle_url": "/demo/corridor_defense/index.json",
+      "ingress_archetype": "corridor",
+      "narrative_focus": [
+        "corridor_ingress",
+        "timing_pressure"
+      ],
+      "overlay_descriptors": [
+        {
+          "count": 1,
+          "kind": "degraded_visibility"
+        },
+        {
+          "count": 1,
+          "kind": "ingress_corridor"
+        },
+        {
+          "count": 2,
+          "kind": "los_blocked"
+        }
+      ],
+      "pack_id": "corridor_defense",
+      "pack_path": "fixtures/scenarios/corridor_defense",
+      "replay_duration_class": "medium",
+      "replay_tags": [
+        "narrow_corridor",
+        "timing_pressure",
+        "overlapping_radar"
+      ],
+      "scenario_id": "corridor_defense_demo",
+      "terrain_profile": "flat",
+      "title": "Corridor defense narrow ingress replay",
+      "topology_tags": [
+        "corridor_defense",
+        "narrow_corridor",
+        "overlapping_radar",
+        "timing_pressure"
+      ]
+    },
+    {
+      "ambiguity_profile": {
+        "focus_tags": [
+          "assignment_ambiguity",
+          "multi_threat"
+        ],
+        "level": "saturation"
+      },
+      "category": "multi_threat",
+      "demo_bundle": "fixtures/sa_r0/demo_saturation_ingress/index.json",
+      "demo_bundle_url": "/demo/saturation_ingress/index.json",
+      "ingress_archetype": "open",
+      "narrative_focus": [
+        "assignment_ambiguity",
+        "prioritization_pressure"
+      ],
+      "overlay_descriptors": [
+        {
+          "count": 1,
+          "kind": "degraded_visibility"
+        },
+        {
+          "count": 2,
+          "kind": "ingress_corridor"
+        }
+      ],
+      "pack_id": "saturation_ingress",
+      "pack_path": "fixtures/scenarios/saturation_ingress",
+      "replay_duration_class": "medium",
+      "replay_tags": [
+        "multi_threat",
+        "assignment_ambiguity",
+        "compressed_intercept_window"
+      ],
+      "scenario_id": "saturation_ingress_demo",
+      "terrain_profile": "flat",
+      "title": "Saturation ingress multi-threat replay",
+      "topology_tags": [
+        "saturation_ingress",
+        "multi_threat",
+        "assignment_ambiguity"
+      ]
+    },
+    {
+      "ambiguity_profile": {
+        "focus_tags": [
+          "fragmented_tracking",
+          "urban_clutter"
+        ],
+        "level": "high"
+      },
+      "category": "terrain_masking",
+      "demo_bundle": "fixtures/sa_r0/demo_urban_masking/index.json",
+      "demo_bundle_url": "/demo/urban_masking/index.json",
+      "ingress_archetype": "open",
+      "narrative_focus": [
+        "urban_clutter",
+        "fragmented_tracking"
+      ],
+      "overlay_descriptors": [
+        {
+          "count": 8,
+          "kind": "degraded_visibility"
+        }
+      ],
+      "pack_id": "urban_masking",
+      "pack_path": "fixtures/scenarios/urban_masking",
+      "replay_duration_class": "medium",
+      "replay_tags": [
+        "fragmented_tracking",
+        "cluttered_replay",
+        "urban_clutter"
+      ],
+      "scenario_id": "urban_masking_demo",
+      "terrain_profile": "urban_clutter",
+      "title": "Urban masking fictional obstruction replay",
+      "topology_tags": [
+        "urban_masking",
+        "fragmented_tracking",
+        "cluttered_replay"
+      ]
+    },
+    {
+      "ambiguity_profile": {
+        "level": "moderate"
+      },
+      "category": "detection_timing",
+      "demo_bundle": "fixtures/sa_r0/demo_delayed_detection/index.json",
+      "demo_bundle_url": "/demo/delayed_detection/index.json",
+      "ingress_archetype": "open",
+      "narrative_focus": [
+        "late_acquisition",
+        "urgency"
+      ],
+      "overlay_descriptors": [
+        {
+          "count": 1,
+          "kind": "degraded_visibility"
+        },
+        {
+          "count": 1,
+          "kind": "ingress_corridor"
+        }
+      ],
+      "pack_id": "delayed_detection",
+      "pack_path": "fixtures/scenarios/delayed_detection",
+      "replay_duration_class": "medium",
+      "replay_tags": [
+        "late_acquisition",
+        "compressed_intercept_window",
+        "urgency"
+      ],
+      "scenario_id": "delayed_detection_demo",
+      "terrain_profile": "flat",
+      "title": "Delayed detection compressed window replay",
+      "topology_tags": [
+        "delayed_detection",
+        "late_acquisition",
+        "urgency"
+      ]
+    },
+    {
+      "ambiguity_profile": {
+        "level": "low"
+      },
+      "category": "ingress_geometry",
+      "demo_bundle": "fixtures/sa_r0/demo_long_range_ingress/index.json",
+      "demo_bundle_url": "/demo/long_range_ingress/index.json",
+      "ingress_archetype": "valley",
+      "narrative_focus": [
+        "launch_sequence",
+        "terrain_following"
+      ],
+      "overlay_descriptors": [
+        {
+          "count": 1,
+          "kind": "ingress_corridor"
+        },
+        {
+          "count": 1,
+          "kind": "ridge_mask"
+        }
+      ],
+      "pack_id": "long_range_ingress",
+      "pack_path": "fixtures/scenarios/long_range_ingress",
+      "replay_duration_class": "long",
+      "replay_tags": [
+        "launch_sequence",
+        "terrain_following",
+        "long_range"
+      ],
+      "scenario_id": "long_range_ingress_demo",
+      "terrain_profile": "valley",
+      "title": "Long-range ingress cinematic replay",
+      "topology_tags": [
+        "long_range_ingress",
+        "launch_sequence",
+        "terrain_following"
+      ]
+    },
+    {
+      "ambiguity_profile": {
+        "level": "moderate"
+      },
+      "baseline_pack_id": "valley_ingress",
+      "category": "topology_experiment",
+      "demo_bundle": "fixtures/sa_r0/demo_valley_ingress_radar_shifted_north/index.json",
+      "demo_bundle_url": "/demo/valley_ingress_radar_shifted_north/index.json",
+      "ingress_archetype": "valley",
+      "narrative_focus": [
+        "valley_masking",
+        "reacquisition",
+        "sensor_placement"
+      ],
+      "overlay_descriptors": [
+        {
+          "count": 1,
+          "kind": "ingress_corridor"
+        },
+        {
+          "count": 1,
+          "kind": "los_blocked"
+        },
+        {
+          "count": 1,
+          "kind": "ridge_mask"
+        }
+      ],
+      "pack_id": "valley_ingress_radar_shifted_north",
+      "pack_path": "fixtures/scenarios/valley_ingress_radar_shifted_north",
+      "replay_duration_class": "medium",
+      "replay_tags": [
+        "terrain_masking",
+        "reacquisition",
+        "delayed_track_confirmation",
+        "sensor_placement"
+      ],
+      "scenario_id": "valley_ingress_radar_shifted_north_demo",
+      "terrain_profile": "valley",
+      "title": "Valley ingress \u2014 radar shifted north (experiment)",
+      "topology_tags": [
+        "valley_ingress",
+        "terrain_masking",
+        "delayed_track_confirmation",
+        "reacquisition",
+        "sensor_experiment",
+        "topology_experiment"
+      ]
+    },
+    {
+      "ambiguity_profile": {
+        "level": "moderate"
+      },
+      "baseline_pack_id": "valley_ingress",
+      "category": "topology_experiment",
+      "demo_bundle": "fixtures/sa_r0/demo_valley_ingress_extra_valley_sensor/index.json",
+      "demo_bundle_url": "/demo/valley_ingress_extra_valley_sensor/index.json",
+      "ingress_archetype": "valley",
+      "narrative_focus": [
+        "valley_masking",
+        "reacquisition",
+        "sensor_placement"
+      ],
+      "overlay_descriptors": [
+        {
+          "count": 1,
+          "kind": "ingress_corridor"
+        },
+        {
+          "count": 1,
+          "kind": "los_blocked"
+        },
+        {
+          "count": 1,
+          "kind": "ridge_mask"
+        }
+      ],
+      "pack_id": "valley_ingress_extra_valley_sensor",
+      "pack_path": "fixtures/scenarios/valley_ingress_extra_valley_sensor",
+      "replay_duration_class": "medium",
+      "replay_tags": [
+        "terrain_masking",
+        "reacquisition",
+        "delayed_track_confirmation",
+        "sensor_placement"
+      ],
+      "scenario_id": "valley_ingress_extra_valley_sensor_demo",
+      "terrain_profile": "valley",
+      "title": "Valley ingress \u2014 extra valley sensor (experiment)",
+      "topology_tags": [
+        "valley_ingress",
+        "terrain_masking",
+        "delayed_track_confirmation",
+        "reacquisition",
+        "sensor_experiment",
+        "topology_experiment"
+      ]
+    },
+    {
+      "ambiguity_profile": {
+        "level": "moderate"
+      },
+      "baseline_pack_id": "valley_ingress",
+      "category": "topology_experiment",
+      "demo_bundle": "fixtures/sa_r0/demo_valley_ingress_reduced_overlap_layout/index.json",
+      "demo_bundle_url": "/demo/valley_ingress_reduced_overlap_layout/index.json",
+      "ingress_archetype": "valley",
+      "narrative_focus": [
+        "valley_masking",
+        "reacquisition",
+        "sensor_placement"
+      ],
+      "overlay_descriptors": [
+        {
+          "count": 1,
+          "kind": "ingress_corridor"
+        },
+        {
+          "count": 1,
+          "kind": "los_blocked"
+        },
+        {
+          "count": 1,
+          "kind": "ridge_mask"
+        }
+      ],
+      "pack_id": "valley_ingress_reduced_overlap_layout",
+      "pack_path": "fixtures/scenarios/valley_ingress_reduced_overlap_layout",
+      "replay_duration_class": "medium",
+      "replay_tags": [
+        "terrain_masking",
+        "reacquisition",
+        "delayed_track_confirmation",
+        "sensor_placement"
+      ],
+      "scenario_id": "valley_ingress_reduced_overlap_layout_demo",
+      "terrain_profile": "valley",
+      "title": "Valley ingress \u2014 reduced overlap layout (experiment)",
+      "topology_tags": [
+        "valley_ingress",
+        "terrain_masking",
+        "delayed_track_confirmation",
+        "reacquisition",
+        "sensor_experiment",
+        "topology_experiment"
+      ]
+    },
+    {
+      "ambiguity_profile": {
+        "level": "moderate"
+      },
+      "baseline_pack_id": "valley_ingress",
+      "category": "topology_experiment",
+      "demo_bundle": "fixtures/sa_r0/demo_valley_ingress_delayed_interceptor_base/index.json",
+      "demo_bundle_url": "/demo/valley_ingress_delayed_interceptor_base/index.json",
+      "ingress_archetype": "valley",
+      "narrative_focus": [
+        "valley_masking",
+        "reacquisition",
+        "sensor_placement"
+      ],
+      "overlay_descriptors": [
+        {
+          "count": 1,
+          "kind": "ingress_corridor"
+        },
+        {
+          "count": 1,
+          "kind": "los_blocked"
+        },
+        {
+          "count": 1,
+          "kind": "ridge_mask"
+        }
+      ],
+      "pack_id": "valley_ingress_delayed_interceptor_base",
+      "pack_path": "fixtures/scenarios/valley_ingress_delayed_interceptor_base",
+      "replay_duration_class": "medium",
+      "replay_tags": [
+        "terrain_masking",
+        "reacquisition",
+        "delayed_track_confirmation",
+        "sensor_placement"
+      ],
+      "scenario_id": "valley_ingress_delayed_interceptor_base_demo",
+      "terrain_profile": "valley",
+      "title": "Valley ingress \u2014 delayed interceptor base (experiment)",
+      "topology_tags": [
+        "valley_ingress",
+        "terrain_masking",
+        "delayed_track_confirmation",
+        "reacquisition",
+        "sensor_experiment",
+        "topology_experiment"
+      ]
+    }
+  ],
+  "schema_version": "scenario_topology_catalog_v1"
+}

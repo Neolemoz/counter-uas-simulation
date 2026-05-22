@@ -8,3 +8,10 @@ log/
 *.pyc
 __pycache__/
 .pytest_cache/
+
+# Local run trees (logs, Gazebo/Mesa caches); keep analysis inputs elsewhere or `git add -f` if needed.
+runs/
+
+# Python virtual envs (do not commit thousands of pip-managed files).
+.venv/
+venv/

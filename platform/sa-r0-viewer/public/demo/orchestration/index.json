@@ -1,0 +1,387 @@
+{
+  "artifact_type": "orchestration_mirror_index_v1",
+  "entries": [
+    {
+      "id": "capture_pipeline_template_queue",
+      "kind": "queues",
+      "url": "/demo/orchestration/queues/capture_pipeline_template_queue.json"
+    },
+    {
+      "id": "corridor_defense_validation_only_queue",
+      "kind": "queues",
+      "url": "/demo/orchestration/queues/corridor_defense_validation_only_queue.json"
+    },
+    {
+      "id": "delayed_detection_validation_only_queue",
+      "kind": "queues",
+      "url": "/demo/orchestration/queues/delayed_detection_validation_only_queue.json"
+    },
+    {
+      "id": "long_range_ingress_validation_only_queue",
+      "kind": "queues",
+      "url": "/demo/orchestration/queues/long_range_ingress_validation_only_queue.json"
+    },
+    {
+      "id": "multi_ridge_validation_only_queue",
+      "kind": "queues",
+      "url": "/demo/orchestration/queues/multi_ridge_validation_only_queue.json"
+    },
+    {
+      "id": "ridge_defense_synthetic_pipeline_queue",
+      "kind": "queues",
+      "url": "/demo/orchestration/queues/ridge_defense_synthetic_pipeline_queue.json"
+    },
+    {
+      "id": "saturation_ingress_validation_only_queue",
+      "kind": "queues",
+      "url": "/demo/orchestration/queues/saturation_ingress_validation_only_queue.json"
+    },
+    {
+      "id": "urban_masking_validation_only_queue",
+      "kind": "queues",
+      "url": "/demo/orchestration/queues/urban_masking_validation_only_queue.json"
+    },
+    {
+      "id": "valley_ingress_delayed_interceptor_base_validation_only_queue",
+      "kind": "queues",
+      "url": "/demo/orchestration/queues/valley_ingress_delayed_interceptor_base_validation_only_queue.json"
+    },
+    {
+      "id": "valley_ingress_extra_valley_sensor_validation_only_queue",
+      "kind": "queues",
+      "url": "/demo/orchestration/queues/valley_ingress_extra_valley_sensor_validation_only_queue.json"
+    },
+    {
+      "id": "valley_ingress_radar_shifted_north_validation_only_queue",
+      "kind": "queues",
+      "url": "/demo/orchestration/queues/valley_ingress_radar_shifted_north_validation_only_queue.json"
+    },
+    {
+      "id": "valley_ingress_reduced_overlap_layout_validation_only_queue",
+      "kind": "queues",
+      "url": "/demo/orchestration/queues/valley_ingress_reduced_overlap_layout_validation_only_queue.json"
+    },
+    {
+      "id": "valley_ingress_validation_only_queue",
+      "kind": "queues",
+      "url": "/demo/orchestration/queues/valley_ingress_validation_only_queue.json"
+    },
+    {
+      "id": "corridor_defense_validation_mirror",
+      "kind": "validation_mirrors",
+      "url": "/demo/orchestration/validation_mirrors/corridor_defense_validation_mirror.json"
+    },
+    {
+      "id": "delayed_detection_validation_mirror",
+      "kind": "validation_mirrors",
+      "url": "/demo/orchestration/validation_mirrors/delayed_detection_validation_mirror.json"
+    },
+    {
+      "id": "long_range_ingress_validation_mirror",
+      "kind": "validation_mirrors",
+      "url": "/demo/orchestration/validation_mirrors/long_range_ingress_validation_mirror.json"
+    },
+    {
+      "id": "multi_ridge_validation_mirror",
+      "kind": "validation_mirrors",
+      "url": "/demo/orchestration/validation_mirrors/multi_ridge_validation_mirror.json"
+    },
+    {
+      "id": "ridge_defense_validation_mirror",
+      "kind": "validation_mirrors",
+      "url": "/demo/orchestration/validation_mirrors/ridge_defense_validation_mirror.json"
+    },
+    {
+      "id": "saturation_ingress_validation_mirror",
+      "kind": "validation_mirrors",
+      "url": "/demo/orchestration/validation_mirrors/saturation_ingress_validation_mirror.json"
+    },
+    {
+      "id": "urban_masking_validation_mirror",
+      "kind": "validation_mirrors",
+      "url": "/demo/orchestration/validation_mirrors/urban_masking_validation_mirror.json"
+    },
+    {
+      "id": "valley_ingress_delayed_interceptor_base_validation_mirror",
+      "kind": "validation_mirrors",
+      "url": "/demo/orchestration/validation_mirrors/valley_ingress_delayed_interceptor_base_validation_mirror.json"
+    },
+    {
+      "id": "valley_ingress_extra_valley_sensor_validation_mirror",
+      "kind": "validation_mirrors",
+      "url": "/demo/orchestration/validation_mirrors/valley_ingress_extra_valley_sensor_validation_mirror.json"
+    },
+    {
+      "id": "valley_ingress_radar_shifted_north_validation_mirror",
+      "kind": "validation_mirrors",
+      "url": "/demo/orchestration/validation_mirrors/valley_ingress_radar_shifted_north_validation_mirror.json"
+    },
+    {
+      "id": "valley_ingress_reduced_overlap_layout_validation_mirror",
+      "kind": "validation_mirrors",
+      "url": "/demo/orchestration/validation_mirrors/valley_ingress_reduced_overlap_layout_validation_mirror.json"
+    },
+    {
+      "id": "valley_ingress_validation_mirror",
+      "kind": "validation_mirrors",
+      "url": "/demo/orchestration/validation_mirrors/valley_ingress_validation_mirror.json"
+    },
+    {
+      "id": "capture_pipeline_template",
+      "kind": "manifests",
+      "url": "/demo/orchestration/manifests/capture_pipeline_template.json"
+    },
+    {
+      "id": "corridor_defense_validation_only",
+      "kind": "manifests",
+      "url": "/demo/orchestration/manifests/corridor_defense_validation.json"
+    },
+    {
+      "id": "delayed_detection_validation_only",
+      "kind": "manifests",
+      "url": "/demo/orchestration/manifests/delayed_detection_validation.json"
+    },
+    {
+      "id": "long_range_ingress_validation_only",
+      "kind": "manifests",
+      "url": "/demo/orchestration/manifests/long_range_ingress_validation.json"
+    },
+    {
+      "id": "multi_ridge_validation_only",
+      "kind": "manifests",
+      "url": "/demo/orchestration/manifests/multi_ridge_validation.json"
+    },
+    {
+      "id": "ridge_defense_synthetic_pipeline",
+      "kind": "manifests",
+      "url": "/demo/orchestration/manifests/ridge_defense_synthetic.json"
+    },
+    {
+      "id": "saturation_ingress_validation_only",
+      "kind": "manifests",
+      "url": "/demo/orchestration/manifests/saturation_ingress_validation.json"
+    },
+    {
+      "id": "urban_masking_validation_only",
+      "kind": "manifests",
+      "url": "/demo/orchestration/manifests/urban_masking_validation.json"
+    },
+    {
+      "id": "valley_ingress_delayed_interceptor_base_validation_only",
+      "kind": "manifests",
+      "url": "/demo/orchestration/manifests/valley_ingress_delayed_interceptor_base_validation.json"
+    },
+    {
+      "id": "valley_ingress_extra_valley_sensor_validation_only",
+      "kind": "manifests",
+      "url": "/demo/orchestration/manifests/valley_ingress_extra_valley_sensor_validation.json"
+    },
+    {
+      "id": "valley_ingress_radar_shifted_north_validation_only",
+      "kind": "manifests",
+      "url": "/demo/orchestration/manifests/valley_ingress_radar_shifted_north_validation.json"
+    },
+    {
+      "id": "valley_ingress_reduced_overlap_layout_validation_only",
+      "kind": "manifests",
+      "url": "/demo/orchestration/manifests/valley_ingress_reduced_overlap_layout_validation.json"
+    },
+    {
+      "id": "valley_ingress_validation_only",
+      "kind": "manifests",
+      "url": "/demo/orchestration/manifests/valley_ingress_validation.json"
+    },
+    {
+      "id": "capture_pipeline_template_queue_report",
+      "kind": "audits",
+      "url": "/demo/orchestration/audits/capture_pipeline_template_queue_report.json"
+    },
+    {
+      "id": "corridor_defense_validation_only_queue_report",
+      "kind": "audits",
+      "url": "/demo/orchestration/audits/corridor_defense_validation_only_queue_report.json"
+    },
+    {
+      "id": "delayed_detection_validation_only_queue_report",
+      "kind": "audits",
+      "url": "/demo/orchestration/audits/delayed_detection_validation_only_queue_report.json"
+    },
+    {
+      "id": "long_range_ingress_validation_only_queue_report",
+      "kind": "audits",
+      "url": "/demo/orchestration/audits/long_range_ingress_validation_only_queue_report.json"
+    },
+    {
+      "id": "multi_ridge_validation_only_queue_report",
+      "kind": "audits",
+      "url": "/demo/orchestration/audits/multi_ridge_validation_only_queue_report.json"
+    },
+    {
+      "id": "ridge_defense_synthetic_pipeline_queue_report",
+      "kind": "audits",
+      "url": "/demo/orchestration/audits/ridge_defense_synthetic_pipeline_queue_report.json"
+    },
+    {
+      "id": "saturation_ingress_validation_only_queue_report",
+      "kind": "audits",
+      "url": "/demo/orchestration/audits/saturation_ingress_validation_only_queue_report.json"
+    },
+    {
+      "id": "urban_masking_validation_only_queue_report",
+      "kind": "audits",
+      "url": "/demo/orchestration/audits/urban_masking_validation_only_queue_report.json"
+    },
+    {
+      "id": "valley_ingress_delayed_interceptor_base_validation_only_queue_report",
+      "kind": "audits",
+      "url": "/demo/orchestration/audits/valley_ingress_delayed_interceptor_base_validation_only_queue_report.json"
+    },
+    {
+      "id": "valley_ingress_extra_valley_sensor_validation_only_queue_report",
+      "kind": "audits",
+      "url": "/demo/orchestration/audits/valley_ingress_extra_valley_sensor_validation_only_queue_report.json"
+    },
+    {
+      "id": "valley_ingress_radar_shifted_north_validation_only_queue_report",
+      "kind": "audits",
+      "url": "/demo/orchestration/audits/valley_ingress_radar_shifted_north_validation_only_queue_report.json"
+    },
+    {
+      "id": "valley_ingress_reduced_overlap_layout_validation_only_queue_report",
+      "kind": "audits",
+      "url": "/demo/orchestration/audits/valley_ingress_reduced_overlap_layout_validation_only_queue_report.json"
+    },
+    {
+      "id": "valley_ingress_validation_only_queue_report",
+      "kind": "audits",
+      "url": "/demo/orchestration/audits/valley_ingress_validation_only_queue_report.json"
+    },
+    {
+      "id": "capture_pipeline_template",
+      "kind": "ops",
+      "url": "/demo/orchestration/ops/capture_pipeline_template_ops.json"
+    },
+    {
+      "id": "corridor_defense_validation_only",
+      "kind": "ops",
+      "url": "/demo/orchestration/ops/corridor_defense_validation_only_ops.json"
+    },
+    {
+      "id": "delayed_detection_validation_only",
+      "kind": "ops",
+      "url": "/demo/orchestration/ops/delayed_detection_validation_only_ops.json"
+    },
+    {
+      "id": "long_range_ingress_validation_only",
+      "kind": "ops",
+      "url": "/demo/orchestration/ops/long_range_ingress_validation_only_ops.json"
+    },
+    {
+      "id": "multi_ridge_validation_only",
+      "kind": "ops",
+      "url": "/demo/orchestration/ops/multi_ridge_validation_only_ops.json"
+    },
+    {
+      "id": "ridge_defense_synthetic_pipeline",
+      "kind": "ops",
+      "url": "/demo/orchestration/ops/ridge_defense_synthetic_pipeline_ops.json"
+    },
+    {
+      "id": "saturation_ingress_validation_only",
+      "kind": "ops",
+      "url": "/demo/orchestration/ops/saturation_ingress_validation_only_ops.json"
+    },
+    {
+      "id": "urban_masking_validation_only",
+      "kind": "ops",
+      "url": "/demo/orchestration/ops/urban_masking_validation_only_ops.json"
+    },
+    {
+      "id": "valley_ingress_delayed_interceptor_base_validation_only",
+      "kind": "ops",
+      "url": "/demo/orchestration/ops/valley_ingress_delayed_interceptor_base_validation_only_ops.json"
+    },
+    {
+      "id": "valley_ingress_extra_valley_sensor_validation_only",
+      "kind": "ops",
+      "url": "/demo/orchestration/ops/valley_ingress_extra_valley_sensor_validation_only_ops.json"
+    },
+    {
+      "id": "valley_ingress_radar_shifted_north_validation_only",
+      "kind": "ops",
+      "url": "/demo/orchestration/ops/valley_ingress_radar_shifted_north_validation_only_ops.json"
+    },
+    {
+      "id": "valley_ingress_reduced_overlap_layout_validation_only",
+      "kind": "ops",
+      "url": "/demo/orchestration/ops/valley_ingress_reduced_overlap_layout_validation_only_ops.json"
+    },
+    {
+      "id": "valley_ingress_validation_only",
+      "kind": "ops",
+      "url": "/demo/orchestration/ops/valley_ingress_validation_only_ops.json"
+    },
+    {
+      "id": "capture_pipeline_template",
+      "kind": "async",
+      "url": "/demo/orchestration/async/capture_pipeline_template_async.json"
+    },
+    {
+      "id": "ridge_defense_synthetic_pipeline",
+      "kind": "async",
+      "url": "/demo/orchestration/async/ridge_defense_synthetic_pipeline_async.json"
+    },
+    {
+      "id": "valley_ingress_validation_only",
+      "kind": "async",
+      "url": "/demo/orchestration/async/valley_ingress_validation_only_async.json"
+    },
+    {
+      "id": "ridge_defense_synthetic_pipeline_queue_claim",
+      "kind": "claims",
+      "url": "/demo/orchestration/claims/ridge_defense_synthetic_pipeline_queue_claim.json"
+    },
+    {
+      "id": "cli-worker-ridge-ref_1",
+      "kind": "workers",
+      "url": "/demo/orchestration/workers/cli-worker-ridge-ref_1.json"
+    },
+    {
+      "id": "cli-worker-ridge-ref_2",
+      "kind": "workers",
+      "url": "/demo/orchestration/workers/cli-worker-ridge-ref_2.json"
+    },
+    {
+      "id": "capture_pipeline_template_recovery_report",
+      "kind": "recovery",
+      "url": "/demo/orchestration/recovery/capture_pipeline_template_recovery_report.json"
+    },
+    {
+      "id": "recovery_integrity_report_v1",
+      "kind": "recovery",
+      "url": "/demo/orchestration/recovery/recovery_integrity_report_v1.json"
+    },
+    {
+      "id": "ridge_defense_synthetic_pipeline_recovery_report",
+      "kind": "recovery",
+      "url": "/demo/orchestration/recovery/ridge_defense_synthetic_pipeline_recovery_report.json"
+    },
+    {
+      "id": "valley_ingress_validation_only_recovery_report",
+      "kind": "recovery",
+      "url": "/demo/orchestration/recovery/valley_ingress_validation_only_recovery_report.json"
+    },
+    {
+      "id": "reconciliation_lineage_index_v1",
+      "kind": "reconciliation",
+      "url": "/demo/orchestration/reconciliation/reconciliation_lineage_index_v1.json"
+    },
+    {
+      "id": "async_batch_audit_v1",
+      "kind": "synthesis",
+      "url": "/demo/orchestration/synthesis/async_batch_audit_v1.json"
+    }
+  ],
+  "governance_banner": "ORCHESTRATION MIRROR \u2014 not live execution state",
+  "schema_version": "orchestration_mirror_index_v1"
+}

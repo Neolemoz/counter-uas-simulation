@@ -1,0 +1,34 @@
+{
+  "artifact_type": "experiment_orchestration_ops_manifest_v1",
+  "audit_report_ref": "fixtures/orchestration/audits/urban_masking_validation_only_queue_report.json",
+  "authoring_pack_refs": [
+    "urban_masking"
+  ],
+  "governance": {
+    "anti_claims": [
+      "not live execution authority",
+      "not operational deployment state",
+      "not parser contract"
+    ],
+    "notice": "Orchestration operations sidecar for offline experiment workflow only."
+  },
+  "manifest_fingerprint": "sha256:301af0f7a456fc6eb0dba7bf70968645df6eac63766fde556ed636eed8caef2d",
+  "manifest_id": "urban_masking_validation_only",
+  "operations_lineage": [
+    {
+      "actor": "cli:promote_experiment_manifest",
+      "event_id": "ops-2026-05-22T00:31:39Z",
+      "from_status": "validated",
+      "notes": "I1 backfill",
+      "to_status": "queued"
+    }
+  ],
+  "operations_status": "queued",
+  "operations_summary_ref": "fixtures/orchestration/ops/urban_masking_validation_only_orchestration_operations_summary_v1.json",
+  "queue_snapshot_ref": "fixtures/orchestration/queues/urban_masking_validation_only_queue.json",
+  "scenario_pack_ids": [
+    "urban_masking"
+  ],
+  "schema_version": "1",
+  "updated_at": "2026-05-22T00:31:39Z"
+}

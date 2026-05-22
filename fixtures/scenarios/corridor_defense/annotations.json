@@ -1,0 +1,40 @@
+{
+  "annotations": [
+    {
+      "annotation_id": "anno_corridor_pressure",
+      "body": "Ingress compressed into narrow corridor \u2014 replay timing stress only.",
+      "kind": "visibility_degraded",
+      "linked_event_ids": [
+        "narrative_event_0001_detection_candidate_spawn"
+      ],
+      "title": "Corridor pressure"
+    },
+    {
+      "annotation_id": "anno_overlapping_los",
+      "body": "North and south radars see partial flank blockage \u2014 not sensor truth.",
+      "kind": "los_blockage",
+      "linked_event_ids": [
+        "narrative_event_0003_ambiguity_realism_fragmented_gap_start"
+      ],
+      "title": "Overlapping LOS reasoning"
+    },
+    {
+      "annotation_id": "anno_compressed_tti",
+      "body": "TTI falls rapidly as threat enters protected corridor \u2014 not readiness.",
+      "kind": "tti_explanation",
+      "linked_event_ids": [
+        "narrative_event_0002_selection_selection_block"
+      ],
+      "title": "Compressed intercept timing"
+    },
+    {
+      "annotation_id": "anno_timing_escalation",
+      "body": "Short decision window localized near corridor entry.",
+      "kind": "tti_explanation",
+      "linked_event_ids": [
+        "narrative_event_0002_selection_selection_block"
+      ],
+      "title": "Timing escalation"
+    }
+  ]
+}

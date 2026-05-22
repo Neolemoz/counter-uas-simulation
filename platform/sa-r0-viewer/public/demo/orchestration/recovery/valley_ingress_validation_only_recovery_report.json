@@ -1,0 +1,37 @@
+{
+  "artifact_type": "orchestration_recovery_report_v1",
+  "async_execution_status": "superseded",
+  "generated_at": "2026-05-22T04:39:08Z",
+  "governance": {
+    "anti_claims": [
+      "not live recovery authority",
+      "not parser contract",
+      "not operational readiness"
+    ],
+    "notice": "Recovery and reconciliation artifacts for offline reviewer cognition only."
+  },
+  "governance_banner": "RECOVERY REPORT \u2014 explanatory; CLI authoritative",
+  "manifest_id": "valley_ingress_validation_only",
+  "quarantine_hold": false,
+  "recovery_continuity_ok": true,
+  "recovery_issues": [],
+  "recovery_warnings": [],
+  "replay_reconciliation": {
+    "current_replay_fingerprint": "sha256:6d2751ac339fe9f532cbf04cf3f058e1fa972a3331674c31e5c32504fe13e5f2",
+    "issues": [],
+    "manifest_id": "valley_ingress_validation_only",
+    "ok": true,
+    "stored_replay_fingerprint": null
+  },
+  "retry_chain": [
+    {
+      "event_id": "async-2026-05-22T05:10:00Z",
+      "from_status": null,
+      "hop_type": "lineage",
+      "notes": "superseded by successor snapshot valley_ingress_validation_only_queue_v2",
+      "to_status": "superseded"
+    }
+  ],
+  "schema_version": "1",
+  "superseded": true
+}

@@ -1,0 +1,63 @@
+{
+  "entities_static": [
+    {
+      "authoritative": false,
+      "entity_id": "radar_01",
+      "kind": "radar",
+      "label": "Radar sole site",
+      "position_enu_m": [
+        0.0,
+        0.0,
+        15.0
+      ]
+    },
+    {
+      "authoritative": false,
+      "entity_id": "int_base_01",
+      "kind": "interceptor_base",
+      "label": "INT-01",
+      "position_enu_m": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    }
+  ],
+  "georef_anchor": {
+    "h_m": 0.0,
+    "lat_deg": 35.3,
+    "lon_deg": -116.3
+  },
+  "zones": [
+    {
+      "caveat": "Compressed decision geometry.",
+      "display_label": "Tight protected zone",
+      "geometry": {
+        "center_enu_m": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "radius_m": 220.0,
+        "type": "circle"
+      },
+      "kind": "protected",
+      "zone_id": "protected_tight"
+    },
+    {
+      "caveat": "Escalation localization only.",
+      "display_label": "Close threat risk",
+      "geometry": {
+        "center_enu_m": [
+          -250.0,
+          30.0,
+          0.0
+        ],
+        "radius_m": 180.0,
+        "type": "circle"
+      },
+      "kind": "threat_risk",
+      "zone_id": "threat_risk_close"
+    }
+  ]
+}

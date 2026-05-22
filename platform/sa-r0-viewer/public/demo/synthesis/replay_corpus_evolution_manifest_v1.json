@@ -1,0 +1,186 @@
+{
+  "artifact_type": "replay_corpus_evolution_manifest_v1",
+  "chronology_tiers": [
+    {
+      "descriptor": "Topology experiment baseline",
+      "entry_count": 12,
+      "entry_ids": [
+        "topology_experiment__corridor_defense",
+        "topology_experiment__delayed_detection",
+        "topology_experiment__long_range_ingress",
+        "topology_experiment__multi_ridge",
+        "topology_experiment__ridge_defense",
+        "topology_experiment__saturation_ingress",
+        "topology_experiment__urban_masking",
+        "topology_experiment__valley_ingress",
+        "topology_experiment__valley_ingress_delayed_interceptor_base",
+        "topology_experiment__valley_ingress_extra_valley_sensor",
+        "topology_experiment__valley_ingress_radar_shifted_north",
+        "topology_experiment__valley_ingress_reduced_overlap_layout"
+      ],
+      "release_generation_id": "gen_topology",
+      "tier_id": "topology_baseline"
+    },
+    {
+      "descriptor": "Demo bundle replay wave",
+      "entry_count": 12,
+      "entry_ids": [
+        "demo_bundle__corridor_defense",
+        "demo_bundle__delayed_detection",
+        "demo_bundle__long_range_ingress",
+        "demo_bundle__multi_ridge",
+        "demo_bundle__ridge_defense",
+        "demo_bundle__saturation_ingress",
+        "demo_bundle__urban_masking",
+        "demo_bundle__valley_ingress",
+        "demo_bundle__valley_ingress_delayed_interceptor_base",
+        "demo_bundle__valley_ingress_extra_valley_sensor",
+        "demo_bundle__valley_ingress_radar_shifted_north",
+        "demo_bundle__valley_ingress_reduced_overlap_layout"
+      ],
+      "release_generation_id": "gen_topology_demo",
+      "tier_id": "topology_demo"
+    },
+    {
+      "descriptor": "Monte Carlo sweep generation (D2)",
+      "entry_count": 4,
+      "entry_ids": [
+        "sweep_family__delayed_detection_sweep",
+        "sweep_family__ridge_overlap_sweep",
+        "sweep_family__saturation_assignment_sweep",
+        "sweep_family__valley_sensor_sweep"
+      ],
+      "release_generation_id": "gen_sweep_d2",
+      "tier_id": "sweep_wave_d2"
+    },
+    {
+      "descriptor": "Presentation and storyboard wave (E1)",
+      "entry_count": 6,
+      "entry_ids": [
+        "presentation_deck__showcase_ambiguity_heavy",
+        "presentation_deck__showcase_best_narratives",
+        "presentation_deck__showcase_cross_sweep_synthesis",
+        "presentation_deck__showcase_topology_divergence",
+        "presentation_deck__walkthrough_assignment_instability",
+        "presentation_deck__walkthrough_valley_ingress_long"
+      ],
+      "release_generation_id": "gen_presentation",
+      "tier_id": "presentation_e1"
+    },
+    {
+      "descriptor": "Static export and publication packets (E1)",
+      "entry_count": 16,
+      "entry_ids": [
+        "publication_packet__delayed_detection_sweep_publication",
+        "publication_packet__ridge_overlap_sweep_publication",
+        "publication_packet__saturation_assignment_sweep_publication",
+        "publication_packet__valley_sensor_sweep_publication",
+        "replay_export__delayed_detection_sweep_compare",
+        "replay_export__delayed_detection_sweep_presentation",
+        "replay_export__delayed_detection_sweep_review",
+        "replay_export__ridge_overlap_sweep_compare",
+        "replay_export__ridge_overlap_sweep_presentation",
+        "replay_export__ridge_overlap_sweep_review",
+        "replay_export__saturation_assignment_sweep_compare",
+        "replay_export__saturation_assignment_sweep_presentation",
+        "replay_export__saturation_assignment_sweep_review",
+        "replay_export__valley_sensor_sweep_compare",
+        "replay_export__valley_sensor_sweep_presentation",
+        "replay_export__valley_sensor_sweep_review"
+      ],
+      "release_generation_id": "gen_export",
+      "tier_id": "export_e1"
+    },
+    {
+      "descriptor": "Cross-sweep synthesis wave (E2)",
+      "entry_count": 6,
+      "entry_ids": [
+        "synthesis_report__cognition_rollup_summary",
+        "synthesis_report__cross_sweep_summary",
+        "synthesis_report__cross_sweep_synthesis_v1",
+        "synthesis_report__linkage_summary",
+        "synthesis_report__presentation_assets_index_v1",
+        "synthesis_report__replay_linkage_index_v1"
+      ],
+      "release_generation_id": "gen_synthesis",
+      "tier_id": "synthesis_e2"
+    },
+    {
+      "descriptor": "Corpus release and research bundle",
+      "entry_count": 1,
+      "entry_ids": [
+        "research_bundle__sa_r0_corpus_r1"
+      ],
+      "release_generation_id": "gen_corpus_ops",
+      "tier_id": "corpus_release"
+    }
+  ],
+  "corpus_id": "sa_r0_corpus_r1",
+  "cross_release_diffs": [
+    {
+      "baseline_id": "sa_r0_corpus_r1_r1",
+      "diff": {
+        "artifact_type": "replay_corpus_release_diff_v1",
+        "baseline_id": "sa_r0_corpus_r1_r1",
+        "corpus_id": "sa_r0_corpus_r1",
+        "entries_added": [],
+        "entries_changed": [],
+        "entries_removed": [],
+        "governance": {
+          "anti_claims": [
+            "Non-empty diff between canonical index and frozen release is expected until release rebuild."
+          ],
+          "notice": "Corpus release diff for offline reproducibility review \u2014 structural index comparison only, not deployment certification."
+        },
+        "index_revision_delta": {
+          "baseline": "cf644076b570350467afc409f07ec3fc7bbb18692fde2a1858873ae4af2d3207",
+          "target": "cf644076b570350467afc409f07ec3fc7bbb18692fde2a1858873ae4af2d3207"
+        },
+        "lineage_edges_added": [],
+        "lineage_edges_removed": [],
+        "release_behind_canonical": false,
+        "schema_version": "replay_corpus_release_diff_v1",
+        "target_id": "canonical_index"
+      },
+      "diff_id": "sa_r0_corpus_r1_r1__vs__canonical_index",
+      "target_id": "canonical_index"
+    },
+    {
+      "artifact_path": "fixtures/sa_r0/corpus_audits/replay_corpus_release_diff_v1.json",
+      "baseline_id": "sa_r0_corpus_r1_r1",
+      "diff_id": "committed_release_diff",
+      "release_behind_canonical": false,
+      "target_id": "canonical_index"
+    }
+  ],
+  "generation_revision": "f1d_v1",
+  "governance": {
+    "anti_claims": [
+      "Evolution rollups document artifact derivation waves, not causal tactical doctrine.",
+      "Chronology tiers do not certify comparability across experiments.",
+      "Cross-release diffs are structural integrity comparisons only."
+    ],
+    "notice": "Replay corpus evolution manifest for long-horizon research review only \u2014 descriptive chronology and release comparison, not operational lifecycle management."
+  },
+  "releases": [
+    {
+      "index_path": "fixtures/sa_r0/corpus_releases/sa_r0_corpus_r1_r1/replay_corpus_index_v1.json",
+      "index_revision": "cf644076b570350467afc409f07ec3fc7bbb18692fde2a1858873ae4af2d3207",
+      "indexed_entry_count": 57,
+      "manifest_path": "fixtures/sa_r0/corpus_releases/sa_r0_corpus_r1_r1/replay_corpus_release_manifest_v1.json",
+      "parent_release_ids": [],
+      "release_id": "sa_r0_corpus_r1_r1"
+    },
+    {
+      "index_path": "fixtures/sa_r0/synthesis/replay_corpus_index_v1.json",
+      "index_revision": "cf644076b570350467afc409f07ec3fc7bbb18692fde2a1858873ae4af2d3207",
+      "indexed_entry_count": 57,
+      "manifest_path": null,
+      "parent_release_ids": [
+        "sa_r0_corpus_r1_r1"
+      ],
+      "release_id": "canonical_index"
+    }
+  ],
+  "schema_version": "replay_corpus_evolution_manifest_v1"
+}

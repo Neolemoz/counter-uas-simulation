@@ -114,8 +114,16 @@ class VizNode(Node):
         self.declare_parameter('scenario', 'single')
         self.declare_parameter('threat.medium_distance', 8.0)
         self.declare_parameter('threat.high_distance', 5.0)
+        # Track marker size (RViz). Default sized for the km-scale single-target world; for
+        # short-range labs override to ~0.5 m so the markers are not visually overpowering.
+        self.declare_parameter('track_marker_scale', 30.0)
+        self.declare_parameter('track_text_scale', 25.0)
+        self.declare_parameter('track_trail_width', 6.0)
         self._medium_d = float(self.get_parameter('threat.medium_distance').value)
         self._high_d = float(self.get_parameter('threat.high_distance').value)
+        self._track_marker_scale = max(float(self.get_parameter('track_marker_scale').value), 0.05)
+        self._track_text_scale = max(float(self.get_parameter('track_text_scale').value), 0.05)
+        self._track_trail_width = max(float(self.get_parameter('track_trail_width').value), 0.01)
 
         self._pub = self.create_publisher(MarkerArray, '/track_markers', 10)
         self.create_subscription(Point, '/tracks', self._on_track, 10)
@@ -233,9 +241,9 @@ class VizNode(Node):
             sph.pose.position.y = st.last.y
             sph.pose.position.z = st.last.z
             sph.pose.orientation.w = 1.0
-            sph.scale.x = 0.5
-            sph.scale.y = 0.5
-            sph.scale.z = 0.5
+            sph.scale.x = self._track_marker_scale
+            sph.scale.y = self._track_marker_scale
+            sph.scale.z = self._track_marker_scale
             if final_threat == 'LOW':
                 sph.color = ColorRGBA(r=0.0, g=1.0, b=0.0, a=1.0)
             elif final_threat == 'MEDIUM':
@@ -253,11 +261,13 @@ class VizNode(Node):
             txt.action = Marker.ADD
             txt.pose.position.x = st.last.x
             txt.pose.position.y = st.last.y
-            txt.pose.position.z = st.last.z + 1.0
+            # Lift the label proportionally to the marker so it doesn't sit inside the sphere
+            # at km-scale; for small-scale labs the user override pulls both numbers down.
+            txt.pose.position.z = st.last.z + max(1.0, self._track_marker_scale)
             txt.pose.orientation.w = 1.0
-            txt.scale.x = 0.6
-            txt.scale.y = 0.6
-            txt.scale.z = 0.6
+            txt.scale.x = self._track_text_scale
+            txt.scale.y = self._track_text_scale
+            txt.scale.z = self._track_text_scale
             txt.color = ColorRGBA(r=1.0, g=1.0, b=1.0, a=1.0)
             txt.text = f'ID: {tid}'
             ma.markers.append(txt)
@@ -270,7 +280,7 @@ class VizNode(Node):
             line.type = Marker.LINE_STRIP
             line.action = Marker.ADD
             line.pose.orientation.w = 1.0
-            line.scale.x = 0.1
+            line.scale.x = self._track_trail_width
             line.color = ColorRGBA(r=0.0, g=0.0, b=1.0, a=1.0)
             line.points = list(st.trail)
             ma.markers.append(line)

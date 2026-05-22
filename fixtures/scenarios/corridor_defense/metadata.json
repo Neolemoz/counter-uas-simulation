@@ -1,0 +1,59 @@
+{
+  "ambiguity_profile": {
+    "level": "moderate"
+  },
+  "artifact_type": "scenario_topology_v1",
+  "governance": {
+    "anti_claims": [
+      "not deployed geography",
+      "not operational effectiveness",
+      "not tactical authority"
+    ],
+    "constraints": [
+      "replay-safe",
+      "explanatory-only",
+      "non-authoritative",
+      "parser-safe"
+    ],
+    "notice": "Fictional scenario topology for replay visualization only."
+  },
+  "ingress_archetype": "corridor",
+  "narrative_focus": [
+    "corridor_ingress",
+    "timing_pressure"
+  ],
+  "overlay_descriptors": [
+    {
+      "count": 1,
+      "kind": "degraded_visibility"
+    },
+    {
+      "count": 1,
+      "kind": "ingress_corridor"
+    },
+    {
+      "count": 2,
+      "kind": "los_blocked"
+    }
+  ],
+  "provenance": {
+    "fictional_disclaimer": "Fictional replay fixture.",
+    "fixture_source": "fixtures/scenarios/corridor_defense"
+  },
+  "replay_duration_class": "medium",
+  "replay_tags": [
+    "narrow_corridor",
+    "timing_pressure",
+    "overlapping_radar"
+  ],
+  "scenario_id": "corridor_defense_demo",
+  "schema_version": "scenario_topology_v1",
+  "terrain_profile": "flat",
+  "title": "Corridor defense narrow ingress replay",
+  "topology_tags": [
+    "corridor_defense",
+    "narrow_corridor",
+    "overlapping_radar",
+    "timing_pressure"
+  ]
+}
