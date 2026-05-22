@@ -88,6 +88,7 @@ Correct reading: [reviewer_interpretation_guide.md](reviewer_interpretation_guid
 | PLAN-VIZ-R2 | Static visualization R2 | planning | [replay_static_visualization_r2_plan.md](replay_static_visualization_r2_plan.md) | not implemented |
 | PLAN-SA-R1 | Situational awareness UI planning R1 | docs frozen | [situational_awareness_ui_planning_r1_freeze_audit.md](situational_awareness_ui_planning_r1_freeze_audit.md) | plan-only boundaries |
 | PLAN-SA-H1 | Sandbox UX architecture & information hierarchy | docs frozen | [sa_h1_sandbox_ux_freeze_audit.md](sa_h1_sandbox_ux_freeze_audit.md) | [h1_sandbox_ux_architecture_plan.md](../platform/h1_sandbox_ux_architecture_plan.md), layout notes |
+| PLAN-RT-S1 | RT interactive sandbox architecture (**not** RT-1..7 realism) | docs frozen | [rt_s1_freeze_audit.md](rt_s1_freeze_audit.md) | [rt_s1_interactive_sandbox_architecture_plan.md](../platform/rt_s1_interactive_sandbox_architecture_plan.md), [rt_s1_architecture_readiness_review_r1.md](rt_s1_architecture_readiness_review_r1.md), `rt_*_v1` contracts |
 | PLAT-SA-H2 | Sandbox workspace shell & UX refactor | frozen | [sa_h2_sandbox_workspace_freeze_audit.md](sa_h2_sandbox_workspace_freeze_audit.md) | `platform/sa-r0-viewer/src/workspace/` |
 | PLAT-SA-H3 | Offline experiment orchestration foundations | frozen | [sa_h3_offline_orchestration_freeze_audit.md](sa_h3_offline_orchestration_freeze_audit.md) | `fixtures/orchestration/`, `experiment_orchestration.py`, viewer `orchestration/` |
 | PLAT-SA-H4 | Sandbox replay workstation integration | frozen | [sa_h4_workstation_integration_freeze_audit.md](sa_h4_workstation_integration_freeze_audit.md) | `experimentNavigation.ts`, `workflow/`, `CompareWorkspaceView`, `ReportWorkspaceView`, continuity doc |
@@ -199,6 +200,7 @@ Checkpoint `75ea6d5` (PLAT-SA-F1a–F1d). Consolidation assessment — no implem
 - [sa_i1_orchestration_operations_plan.md](../platform/sa_i1_orchestration_operations_plan.md) — orchestration operations; see PLAN-SA-I1 / PLAT-SA-I1
 - [sa_i2_async_orchestration_plan.md](../platform/sa_i2_async_orchestration_plan.md) — async orchestration safety & determinism model; see PLAN-SA-I2 / PLAT-SA-I2
 - [sa_i3_async_recovery_plan.md](../platform/sa_i3_async_recovery_plan.md) — async recovery & batch review cognition; see PLAN-SA-I3 / PLAT-SA-I3
+- [rt_s1_interactive_sandbox_architecture_plan.md](../platform/rt_s1_interactive_sandbox_architecture_plan.md) — RT interactive sandbox architecture (PLAN-RT-S1, docs frozen; **not** RT-1..7 realism waves); see [rt_s1_freeze_audit.md](rt_s1_freeze_audit.md), [rt_s1_architecture_readiness_review_r1.md](rt_s1_architecture_readiness_review_r1.md)
 
 ## SA-R0 replay platform (frozen implementation)
 

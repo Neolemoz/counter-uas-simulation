@@ -71,7 +71,7 @@ Not toward:
 
 ## Current Frontiers
 
-Two frontiers are active. Do not merge them in a single wave.
+Three frontiers are defined. Do not merge them in a single wave.
 
 ### Platform frontier (replay analysis and reviewer UX)
 
@@ -122,3 +122,13 @@ Wave 2 status:
 - current blocker is sustained threshold crossing
 
 Runtime research may proceed only in narrow, default-off, parser-safe waves. It does not authorize replay UI implementation or operational semantics.
+
+### RT Sandbox frontier (interactive runtime — plan-only)
+
+- [RT-S1 Interactive Sandbox](docs/platform/rt_s1_interactive_sandbox_architecture_plan.md) — transient Browser → RT Backend Bridge → ROS2/Gazebo workflows (PLAN-RT-S1, docs frozen); see [rt_s1_freeze_audit.md](docs/evaluation/rt_s1_freeze_audit.md), [rt_s1_architecture_readiness_review_r1.md](docs/evaluation/rt_s1_architecture_readiness_review_r1.md)
+- Contracts: [rt_bridge_contract_v1.md](docs/evaluation/rt_bridge_contract_v1.md), [rt_session_lifecycle_v1.md](docs/evaluation/rt_session_lifecycle_v1.md), [rt_sa_export_boundary_v1.md](docs/evaluation/rt_sa_export_boundary_v1.md), [rt_runtime_governance_v1.md](docs/evaluation/rt_runtime_governance_v1.md)
+- Roadmap: [rt_roadmap_s2_s6_v1.md](docs/evaluation/rt_roadmap_s2_s6_v1.md) — RT-S2 bridge prototype through RT-S6 advanced sandbox (not started)
+
+**Vocabulary:** “RT interactive sandbox” (PLAT-RT-S*) is **not** the SA replay workstation “sandbox” (PLAN-SA-H*) and **not** registry RT-1..7 realism waves.
+
+Forbidden on the RT Sandbox frontier: rosbridge and legacy `web/` extension for RT, browser→ROS direct execution, SA viewer live hooks, federation/orchestration authority from RT sessions, tactical/HITL/C2 semantics, cloud/multi-user infra, production security infra in RT-S1. Local loopback transport to RT bridge only (RT-S2+ per readiness review). Stop line: PLAN-RT-S1 frozen; no RT-S2 code without PLAT-RT-S2 wave audit.
