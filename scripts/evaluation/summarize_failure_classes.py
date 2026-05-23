@@ -16,7 +16,7 @@ for parent in (_EVAL, _EVAL.parent):
         sys.path.insert(0, str(parent))
 
 import stats_helpers as stats  # noqa: E402
-from classify_run import classify_run_failure_evidence  # noqa: E402
+from classify_run import capture_rc_from_meta, classify_run_failure_evidence  # noqa: E402
 
 
 def main() -> int:
@@ -53,15 +53,17 @@ def main() -> int:
             missing_logs.append(lp)
             continue
         mp = log_path.with_suffix('.meta.json')
+        capture_rc = None
         if mp.is_file():
             try:
                 md = json.loads(mp.read_text(encoding='utf-8'))
                 co = md.get('cohort')
                 if co is not None and str(co).strip():
                     cohorts.add(str(co).strip())
+                capture_rc = capture_rc_from_meta(log_path, mp)
             except (OSError, json.JSONDecodeError):
                 pass
-        evidence = classify_run_failure_evidence(log_path, capture_rc=None)
+        evidence = classify_run_failure_evidence(log_path, capture_rc=capture_rc)
         hist[str(evidence['failure_class'])] += 1
         evidence_rows.append(evidence)
 

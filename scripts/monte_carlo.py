@@ -240,6 +240,7 @@ def _write_outputs(out_dir: Path, label: str, summary: dict, rows: list[dict]) -
         "geometry_id",
         "cohort",
         "meta_path",
+        "capture_rc",
         "git_commit",
         "git_dirty",
         "launch_args_raw",
@@ -291,6 +292,8 @@ def _enrich_result_with_meta(result: dict, log_path: Path) -> dict:
     geometry_id = str(result.get("geometry_id") or _note_value(notes, "geometry_id") or "")
     result.setdefault("meta_path", str(log_path.with_suffix(".meta.json")))
     result.setdefault("cohort", md.get("cohort") or "")
+    if md.get("capture_rc") is not None:
+        result.setdefault("capture_rc", md.get("capture_rc"))
     result.setdefault("git_commit", md.get("git_commit") or "")
     result.setdefault("git_dirty", md.get("git_dirty") if md.get("git_dirty") is not None else "")
     result.setdefault("launch_args_raw", md.get("launch_args_raw") or "")
@@ -368,6 +371,7 @@ def cmd_run(args: argparse.Namespace) -> int:
         return 2
 
     rows: list[dict] = []
+    skipped: list[str] = []
     base_args = args.launch_args or ""
     gid = getattr(args, "geometry_id", "").strip()
 
@@ -402,14 +406,17 @@ def cmd_run(args: argparse.Namespace) -> int:
         if r.returncode not in (0, 124):
             print(r.stderr, file=sys.stderr)
             print(f"[monte_carlo] run failed (rc={r.returncode}); skipping", file=sys.stderr)
+            skipped.append(f"seed={seed}: run_capture rc={r.returncode}")
             continue
         out_lines = (r.stdout or "").strip().splitlines()
         if not out_lines:
             print("[monte_carlo] run produced no output; skipping", file=sys.stderr)
+            skipped.append(f"seed={seed}: no run_capture output")
             continue
         log_path = Path(out_lines[0].strip())
         if not log_path.is_file():
             print(f"[monte_carlo] log path missing: {log_path}", file=sys.stderr)
+            skipped.append(f"seed={seed}: missing log {log_path}")
             continue
         result = analyze.parse_run_to_result(str(log_path))
         result["run_id"] = log_path.stem
@@ -425,8 +432,18 @@ def cmd_run(args: argparse.Namespace) -> int:
         print("no successful runs collected", file=sys.stderr)
         return 1
     summary = _summarise(rows, args.label)
+    summary["requested_runs"] = int(args.n)
+    summary["completed_runs"] = len(rows)
+    summary["skipped_runs"] = skipped
     _print_summary(summary)
     _write_outputs(Path(args.out_dir), args.label, summary, rows)
+    if len(rows) != int(args.n):
+        print(
+            f"[monte_carlo] incomplete cohort: collected {len(rows)}/{args.n} runs; "
+            "outputs were written for inspection but validation must fail",
+            file=sys.stderr,
+        )
+        return 1
     return 0
 
 

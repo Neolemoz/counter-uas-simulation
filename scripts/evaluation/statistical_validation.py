@@ -19,7 +19,7 @@ for parent in (_EVAL, _SCRIPTS):
         sys.path.insert(0, str(parent))
 
 import stats_helpers as stats  # noqa: E402
-from classify_run import classify_run_failure  # noqa: E402
+from classify_run import capture_rc_from_meta, classify_run_failure  # noqa: E402
 
 
 def _boolish(value: object) -> bool:
@@ -32,6 +32,18 @@ def _float_or_nan(value: object) -> float:
     except (TypeError, ValueError):
         return float("nan")
     return f if math.isfinite(f) else float("nan")
+
+
+def _int_or_none(value: object) -> int | None:
+    if value is None:
+        return None
+    text = str(value).strip()
+    if not text:
+        return None
+    try:
+        return int(float(text))
+    except ValueError:
+        return None
 
 
 def _read_csv(path: Path) -> list[dict[str, str]]:
@@ -175,7 +187,11 @@ def _failure_class(row: dict[str, str]) -> str:
     log_path = (row.get("log_path") or "").strip()
     if not log_path or not Path(log_path).is_file():
         return ""
-    return classify_run_failure(Path(log_path), capture_rc=None)
+    capture_rc = _int_or_none(row.get("capture_rc"))
+    if capture_rc is None:
+        meta_path = (row.get("meta_path") or "").strip()
+        capture_rc = capture_rc_from_meta(Path(log_path), Path(meta_path) if meta_path else None)
+    return classify_run_failure(Path(log_path), capture_rc=capture_rc)
 
 
 def paired_report(
