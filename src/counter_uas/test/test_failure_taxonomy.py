@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import importlib.util
+import json
 from pathlib import Path
 
 _REPO_ROOT = Path(__file__).resolve().parents[3]
@@ -25,6 +26,18 @@ def test_classify_run_failure_evidence_tracks_timeout(tmp_path: Path) -> None:
     evidence = classify.classify_run_failure_evidence(log, capture_rc=124)
     assert evidence['failure_class'] == 'F1_timeout'
     assert evidence['timeout_seen'] is True
+
+
+def test_classify_run_failure_reads_timeout_rc_from_meta(tmp_path: Path) -> None:
+    classify = _load_classify()
+    log = tmp_path / 'timeout.log'
+    log.write_text('[min_miss] = 42.0 m\n', encoding='utf-8')
+    meta = tmp_path / 'timeout.meta.json'
+    meta.write_text(json.dumps({'capture_rc': 124}), encoding='utf-8')
+
+    capture_rc = classify.capture_rc_from_meta(log, meta)
+    assert capture_rc == 124
+    assert classify.classify_run_failure(log, capture_rc=capture_rc) == 'F1_timeout'
 
 
 def test_classify_run_failure_evidence_tracks_instability(tmp_path: Path) -> None:

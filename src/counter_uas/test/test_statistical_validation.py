@@ -62,6 +62,40 @@ def test_paired_report_uses_matched_seed_rows() -> None:
     assert [r['seed'] for r in rows] == [1, 2]
 
 
+def test_paired_report_uses_capture_rc_for_timeout_failures(tmp_path: Path) -> None:
+    layer_c = _load_layer_c()
+    base_log = tmp_path / 'base.log'
+    cand_log = tmp_path / 'cand.log'
+    base_log.write_text('[min_miss] = 5.0 m\n', encoding='utf-8')
+    cand_log.write_text('[min_miss] = 6.0 m\n', encoding='utf-8')
+    base_meta = tmp_path / 'base.meta.json'
+    base_meta.write_text(json.dumps({'capture_rc': 124}), encoding='utf-8')
+    baseline = [
+        {
+            'success': 'false',
+            'miss_distance_m': '5.0',
+            'intercept_time_s': '',
+            'seed': '1',
+            'log_path': str(base_log),
+            'meta_path': str(base_meta),
+        },
+    ]
+    candidate = [
+        {
+            'success': 'false',
+            'miss_distance_m': '6.0',
+            'intercept_time_s': '',
+            'seed': '1',
+            'log_path': str(cand_log),
+        },
+    ]
+
+    report, rows = layer_c.paired_report(baseline, candidate)
+
+    assert rows[0]['failure_b'] == 'F1_timeout'
+    assert report['failure_transitions'] == {'F1_timeout->F5_unknown': 1}
+
+
 def test_validate_manifest_detects_mixed_cohorts(tmp_path: Path) -> None:
     layer_c = _load_layer_c()
     log_path = tmp_path / 'run.log'

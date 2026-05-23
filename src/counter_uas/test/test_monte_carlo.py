@@ -123,3 +123,52 @@ def test_aggregate_writes_outputs(tmp_path) -> None:
     assert 'noise_seed_mc' in csv_text and 'cohort' in csv_text and 'meta_path' in csv_text
     assert 'unit_cohort' in csv_text and 'cell_a' in csv_text
     assert 'run_a' in csv_text and 'run_b' in csv_text
+
+
+def test_run_mode_fails_partial_cohort(monkeypatch, tmp_path: Path) -> None:
+    mc = _load_mc()
+    log_path = tmp_path / 'run_a.log'
+    log_path.write_text(_HIT_LOG, encoding='utf-8')
+    log_path.with_suffix('.meta.json').write_text(
+        json.dumps({'capture_rc': 0, 'notes': 'mc_label=unit seed=100'}),
+        encoding='utf-8',
+    )
+
+    class FakeResult:
+        def __init__(self, returncode: int, stdout: str = '', stderr: str = '') -> None:
+            self.returncode = returncode
+            self.stdout = stdout
+            self.stderr = stderr
+
+    calls = {'n': 0}
+
+    def fake_run(*_args, **_kwargs):  # noqa: ANN001, ANN202
+        calls['n'] += 1
+        if calls['n'] == 1:
+            return FakeResult(0, stdout=f'{log_path}\n{log_path.with_suffix(".meta.json")}\n')
+        return FakeResult(2, stderr='launch failed')
+
+    monkeypatch.setattr(mc.subprocess, 'run', fake_run)
+
+    class Args:
+        pass
+
+    args = Args()
+    args.n = 2
+    args.seed_base = 100
+    args.launch_args = ''
+    args.geometry_id = ''
+    args.scenario = 'single'
+    args.timeout_s = 1.0
+    args.label = 'unit'
+    args.out_dir = str(tmp_path / 'mc')
+    args.cohort = ''
+
+    rc = mc.cmd_run(args)
+
+    assert rc == 1
+    payload = json.loads((tmp_path / 'mc' / 'unit.json').read_text(encoding='utf-8'))
+    assert payload['requested_runs'] == 2
+    assert payload['completed_runs'] == 1
+    assert payload['n_runs'] == 1
+    assert payload['skipped_runs']

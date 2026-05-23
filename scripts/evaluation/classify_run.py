@@ -19,6 +19,30 @@ _ENG_DELTA_RE = re.compile(r'delta_t_go_raw=([+-]?\d+(?:\.\d+)?(?:[eE][+-]?\d+)?
 _REASSIGN_RE = re.compile(r'reassign|assignment_switch|switch_tti', re.IGNORECASE)
 
 
+def _int_or_none(value: object) -> int | None:
+    if value is None:
+        return None
+    text = str(value).strip()
+    if not text:
+        return None
+    try:
+        return int(float(text))
+    except ValueError:
+        return None
+
+
+def capture_rc_from_meta(log_path: Path, meta_path: Path | None = None) -> int | None:
+    """Return run_capture's recorded process rc, if the sidecar metadata has it."""
+    mp = meta_path or log_path.with_suffix('.meta.json')
+    if not mp.is_file():
+        return None
+    try:
+        meta = json.loads(mp.read_text(encoding='utf-8'))
+    except (OSError, json.JSONDecodeError):
+        return None
+    return _int_or_none(meta.get('capture_rc'))
+
+
 def classify_run_failure_evidence(
     log_path: Path,
     *,
@@ -94,9 +118,10 @@ def main() -> int:
     if not args.log.is_file():
         print(f'missing log: {args.log}', file=sys.stderr)
         return 2
-    if args.meta is not None and args.meta.is_file():
-        _ = json.loads(args.meta.read_text(encoding='utf-8'))
-    evidence = classify_run_failure_evidence(args.log, capture_rc=args.capture_rc)
+    capture_rc = args.capture_rc
+    if capture_rc is None:
+        capture_rc = capture_rc_from_meta(args.log, args.meta)
+    evidence = classify_run_failure_evidence(args.log, capture_rc=capture_rc)
     print(json.dumps(evidence, sort_keys=True))
     return 0
 
