@@ -240,6 +240,7 @@ def _write_outputs(out_dir: Path, label: str, summary: dict, rows: list[dict]) -
         "geometry_id",
         "cohort",
         "meta_path",
+        "capture_rc",
         "git_commit",
         "git_dirty",
         "launch_args_raw",
@@ -291,6 +292,7 @@ def _enrich_result_with_meta(result: dict, log_path: Path) -> dict:
     geometry_id = str(result.get("geometry_id") or _note_value(notes, "geometry_id") or "")
     result.setdefault("meta_path", str(log_path.with_suffix(".meta.json")))
     result.setdefault("cohort", md.get("cohort") or "")
+    result.setdefault("capture_rc", md.get("capture_rc") if md.get("capture_rc") is not None else "")
     result.setdefault("git_commit", md.get("git_commit") or "")
     result.setdefault("git_dirty", md.get("git_dirty") if md.get("git_dirty") is not None else "")
     result.setdefault("launch_args_raw", md.get("launch_args_raw") or "")

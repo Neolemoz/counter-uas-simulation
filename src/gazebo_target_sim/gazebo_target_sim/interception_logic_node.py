@@ -3940,13 +3940,15 @@ class InterceptionLogicNode(Node):
         self._assignment_time = None
         self._last_assign_lock_log = None
         self._mc_engage_state.clear()
-        # Reset intercept filter and mode-hysteresis state so a new assignment
-        # starts from scratch with no stale prediction or committed mode.
+        # Reset all guidance memory so a new assignment starts from scratch with
+        # no stale prediction, command slew, or t_go speed filter state.
         for iid in self._ids:
             self._intercept_point_filtered[iid] = None
             self._guidance_mode[iid] = 'pursuit'
             self._valid_streak[iid] = 0
             self._invalid_streak[iid] = 0
+            self._t_go_filtered.pop(iid, None)
+            self._guidance_unit_prev.pop(iid, None)
         self._last_hit_range = {i: None for i in self._ids}
         self._feasible_at_engagement_start_by_pair.clear()
         self._feas_eng_latch_assign.clear()
