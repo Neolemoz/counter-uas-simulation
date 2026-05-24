@@ -54,6 +54,17 @@ def _meta_for_row(row: dict[str, str]) -> dict:
         return {}
 
 
+def _capture_rc_for_row(row: dict[str, str]) -> int | None:
+    for raw in (row.get("capture_rc"), _meta_for_row(row).get("capture_rc")):
+        if raw in (None, ""):
+            continue
+        try:
+            return int(float(raw))
+        except (TypeError, ValueError):
+            continue
+    return None
+
+
 def _note_value(notes: str, key: str) -> str:
     quoted = re.search(rf'\b{re.escape(key)}="([^"]+)"', notes)
     if quoted:
@@ -175,7 +186,7 @@ def _failure_class(row: dict[str, str]) -> str:
     log_path = (row.get("log_path") or "").strip()
     if not log_path or not Path(log_path).is_file():
         return ""
-    return classify_run_failure(Path(log_path), capture_rc=None)
+    return classify_run_failure(Path(log_path), capture_rc=_capture_rc_for_row(row))
 
 
 def paired_report(
