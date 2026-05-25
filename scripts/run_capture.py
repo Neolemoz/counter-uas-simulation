@@ -195,7 +195,11 @@ def run_capture(
                 check=False,
                 env=env,
             )
-            return log_path, meta_path, meta, int(r.returncode)
+            rc = int(r.returncode)
+            if rc == 124:
+                f.write("\n=== TIMEOUT ===\n")
+                f.flush()
+            return log_path, meta_path, meta, rc
         except subprocess.TimeoutExpired:
             f.write("\n=== TIMEOUT ===\n")
             f.flush()
