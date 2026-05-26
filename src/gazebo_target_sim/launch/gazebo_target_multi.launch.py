@@ -456,6 +456,10 @@ def _gz_multi_setup(context, *args, **kwargs):
                 'selected_id_topic': '/interceptor/selected_id',
                 'lock_selected_after_first': True,
                 'hit_threshold_m': 4.5,
+                # Multi interceptors also launch from ground level; default
+                # node guards are sized for airborne starts and block close hits.
+                'hit_min_interceptor_z_m': 0.05,
+                'hit_min_interceptor_travel_m': 1.0,
                 'hit_min_target_z_m': 0.5,
                 'aim_strike_on_mid_shell': True,
                 'target_velocity_smooth_alpha': tv_alpha,
