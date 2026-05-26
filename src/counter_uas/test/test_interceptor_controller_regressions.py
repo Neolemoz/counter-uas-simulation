@@ -12,9 +12,26 @@ _REPO_ROOT = Path(__file__).resolve().parents[3]
 _PKG_ROOT = _REPO_ROOT / "src" / "gazebo_target_sim"
 if str(_PKG_ROOT) not in sys.path:
     sys.path.insert(0, str(_PKG_ROOT))
+_MISSING = object()
 
 
 def _load_interceptor_module():  # noqa: ANN201
+    stub_names = (
+        "rclpy",
+        "rclpy.node",
+        "rclpy.time",
+        "geometry_msgs",
+        "geometry_msgs.msg",
+        "std_msgs",
+        "std_msgs.msg",
+        "visualization_msgs",
+        "visualization_msgs.msg",
+        "gazebo_target_sim_interfaces",
+        "gazebo_target_sim_interfaces.msg",
+        "gazebo_target_sim.clock_reset",
+    )
+    previous_modules = {name: sys.modules.get(name, _MISSING) for name in stub_names}
+
     rclpy_mod = types.ModuleType("rclpy")
     rclpy_mod.init = MagicMock()  # type: ignore[attr-defined]
     rclpy_mod.shutdown = MagicMock()  # type: ignore[attr-defined]
@@ -125,7 +142,14 @@ def _load_interceptor_module():  # noqa: ANN201
     mod = importlib.util.module_from_spec(spec)
     assert spec.loader is not None
     sys.modules[spec.name] = mod
-    spec.loader.exec_module(mod)
+    try:
+        spec.loader.exec_module(mod)
+    finally:
+        for name, previous in previous_modules.items():
+            if previous is _MISSING:
+                sys.modules.pop(name, None)
+            else:
+                sys.modules[name] = previous
     return mod
 
 
