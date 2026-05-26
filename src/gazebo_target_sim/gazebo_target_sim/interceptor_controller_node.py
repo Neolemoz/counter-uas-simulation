@@ -27,6 +27,7 @@ from gazebo_target_sim.kinematic_plant import (
     KinematicPlantParams,
     KinematicPlantState,
     PlantCommand,
+    norm3,
     reset_plant_memory,
     step_kinematic_plant,
 )
@@ -186,7 +187,7 @@ class InterceptorControllerNode(Node):
         self._timer = self.create_timer(self._dt, self._on_timer)
         # Snap all drones to origin at startup so stale Gazebo positions from
         # previous runs don't leave models floating in the air.
-        self.create_timer(1.5, self._reset_to_origin_once)
+        self._origin_reset_timer = self.create_timer(1.5, self._reset_to_origin_once)
         if bool(self.get_parameter('reset_on_sim_clock_rewind').value):
             subscribe_sim_time_reset(self, self._on_gz_sim_reset)
         self.get_logger().info(
@@ -196,10 +197,22 @@ class InterceptorControllerNode(Node):
 
     def _reset_to_origin_once(self) -> None:
         """One-shot timer: snap Gazebo model to origin on startup to clear stale poses."""
+        timer = getattr(self, '_origin_reset_timer', None)
+        if timer is None:
+            return
+        self.destroy_timer(timer)
+        self._origin_reset_timer = None
+        if not self._idle or self._impact_hidden:
+            return
         ox = float(self.get_parameter('origin_x').value)
         oy = float(self.get_parameter('origin_y').value)
         oz = float(self.get_parameter('origin_z').value)
-        self._call_set_pose(ox, oy, oz, 0.0, 0.0, 0.0, 1.0)
+        self._px, self._py, self._pz = ox, oy, oz
+        self._vx_s = self._vy_s = self._vz_s = 0.0
+        self._plant_state = KinematicPlantState(position=(self._px, self._py, self._pz))
+        self._plant_memory = reset_plant_memory(self._plant_params(self._dt))
+        self._last_timer_time = None
+        self._call_set_pose(self._px, self._py, self._pz, 0.0, 0.0, 0.0, 1.0)
 
     def _on_gz_sim_reset(self) -> None:
         self.get_logger().info(f'Sim reset (/clock rewind): {self._model!r} back to origin pose.')
@@ -322,7 +335,7 @@ class InterceptorControllerNode(Node):
         return max(1e-4, min(0.5, dt))
 
     def _quat_from_motion(self, vx: float, vy: float, vz: float, idle: bool) -> tuple[float, float, float, float]:
-        if idle or self._norm3(vx, vy, vz) < self._v_orient_floor:
+        if idle or norm3((vx, vy, vz)) < self._v_orient_floor:
             return (0.0, 0.0, 0.0, 1.0)
         return quat_align_body_x_to_velocity(vx, vy, vz)
 
