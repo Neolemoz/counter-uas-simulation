@@ -25,6 +25,7 @@ def _load_interceptor_module():  # noqa: ANN201
     rclpy_node_mod.Node = object  # type: ignore[attr-defined]
     rclpy_time_mod = types.ModuleType("rclpy.time")
     rclpy_time_mod.Time = object  # type: ignore[attr-defined]
+    rclpy_mod.time = rclpy_time_mod  # type: ignore[attr-defined]
 
     geom_mod = types.ModuleType("geometry_msgs.msg")
 

@@ -198,9 +198,10 @@ class InterceptorControllerNode(Node):
     def _reset_to_origin_once(self) -> None:
         """One-shot timer: snap Gazebo model to origin on startup to clear stale poses."""
         timer = getattr(self, '_origin_reset_timer', None)
-        if timer is not None:
-            self.destroy_timer(timer)
-            self._origin_reset_timer = None
+        if timer is None:
+            return
+        self.destroy_timer(timer)
+        self._origin_reset_timer = None
         if not self._idle or self._impact_hidden:
             return
         ox = float(self.get_parameter('origin_x').value)
