@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { rtTacticalReplayContinuitySchema } from "./tacticalReplayContinuitySchema";
 
 const sampleSchema = z.object({
   t: z.number(),
@@ -246,6 +247,7 @@ export const replaySaBundleSchema = z.object({
       ),
     })
     .optional(),
+  rt_tactical_replay_continuity: rtTacticalReplayContinuitySchema.optional(),
 });
 
 export type ReplaySaBundle = z.infer<typeof replaySaBundleSchema>;

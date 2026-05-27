@@ -2,6 +2,8 @@ import type { ReplaySaBundle } from "@/replay/bundleSchema";
 import type { WorkspaceSegment } from "@/workspace/types";
 import { segmentBanner } from "@/workspace/segmentBanners";
 import { ReplayModeBadge } from "./ReplayModeBadge";
+import { RtCaptureOriginBadge } from "@/replay/rt/RtCaptureOriginBadge";
+import { hasTacticalContinuity } from "@/replay/tacticalReplayContinuitySchema";
 import { sandboxTypography } from "@/theme/sandboxTheme";
 
 type Props = {
@@ -36,6 +38,9 @@ export function GovernanceChrome({
     <header className="border-b border-slate-800/80 bg-slate-950/95 px-4 py-3">
       <div className="mb-2 flex flex-wrap items-baseline gap-x-3 gap-y-1">
         <ReplayModeBadge />
+        {bundle && hasTacticalContinuity(bundle.rt_tactical_replay_continuity) && (
+          <RtCaptureOriginBadge continuity={bundle.rt_tactical_replay_continuity!} />
+        )}
         {compareMode && (
           <span className="rounded-md border border-amber-800/35 bg-amber-950/25 px-2 py-0.5 text-[11px] font-medium text-amber-200/90">
             Compare — explanatory diff

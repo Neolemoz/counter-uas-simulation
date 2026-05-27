@@ -1,9 +1,46 @@
 import { replaySaBundleSchema, type ReplaySaBundle } from "./bundleSchema";
 import { normalizeBundleForSchema } from "./normalizeBundle";
 import { loadScenarioCatalog, demoUrlFromPackId } from "./loadCatalog";
+import { rtTacticalReplayContinuitySchema } from "./tacticalReplayContinuitySchema";
 
 function parseBundleData(data: unknown): ReplaySaBundle {
   return replaySaBundleSchema.parse(normalizeBundleForSchema(data));
+}
+
+async function mergeTacticalAnnexSidecar(
+  bundle: ReplaySaBundle,
+  indexUrl: string,
+): Promise<ReplaySaBundle> {
+  if (bundle.rt_tactical_replay_continuity?.tactical_annex) {
+    return bundle;
+  }
+  const base = indexUrl.replace(/\/[^/]*$/, "");
+  const annexUrl = `${base}/tactical_annex.json`;
+  try {
+    const res = await fetch(annexUrl);
+    if (!res.ok) return bundle;
+    const annex: unknown = await res.json();
+    if (typeof annex !== "object" || annex === null) return bundle;
+    const annexObj = annex as Record<string, unknown>;
+    if (annexObj.schema !== "rt_tactical_capture_annex_v1") return bundle;
+    const block = rtTacticalReplayContinuitySchema.parse({
+      schema: "rt_tactical_replay_continuity_v1",
+      source: "rt_sandbox_capture_v1",
+      continuity_available: true,
+      capture_candidate_id: String(annexObj.capture_candidate_id ?? "unknown"),
+      governance_banner:
+        "RT tactical continuity — explanatory replay only; not operational authority",
+      provenance: {
+        imported_from_rt_capture: true,
+        tactical_annex_ref: "tactical_annex.json",
+        authority_stopped_at: "replay_sa_bundle_pack",
+      },
+      tactical_annex: annex,
+    });
+    return { ...bundle, rt_tactical_replay_continuity: block };
+  } catch {
+    return bundle;
+  }
 }
 
 export async function loadBundleFromUrl(url: string): Promise<ReplaySaBundle> {
@@ -12,7 +49,8 @@ export async function loadBundleFromUrl(url: string): Promise<ReplaySaBundle> {
     throw new Error(`Failed to load bundle: ${res.status} ${res.statusText}`);
   }
   const data: unknown = await res.json();
-  return parseBundleData(data);
+  const bundle = parseBundleData(data);
+  return mergeTacticalAnnexSidecar(bundle, url);
 }
 
 export function parseBundleJson(text: string): ReplaySaBundle {
@@ -44,6 +82,7 @@ const DEMO_ALIASES: Record<string, string> = {
   valley_ingress_extra_valley_sensor: "/demo/valley_ingress_extra_valley_sensor/index.json",
   valley_ingress_reduced_overlap_layout: "/demo/valley_ingress_reduced_overlap_layout/index.json",
   valley_ingress_delayed_interceptor_base: "/demo/valley_ingress_delayed_interceptor_base/index.json",
+  rt_tactical: "/demo/rt_tactical_continuity/index.json",
 };
 
 export function defaultDemoBundleUrl(): string {

@@ -28,6 +28,7 @@ Normative schema for the SA-R0 viewer input. **Evaluation-side only** — not a 
 | `views` | object | no | mock pane configs |
 | `panels` | object | no | telemetry_series, threat_assessment |
 | `corpus_ref` | object | no | F1a corpus index pointer (`corpus_id`, `entry_id`, `lineage_parent_ids`, `index_revision`) |
+| `rt_tactical_replay_continuity` | object | no | PLAT-RT-SA3 — embedded `rt_tactical_capture_annex_v1` copy; see [rt_sa_replay_tactical_visibility_v1.md](rt_sa_replay_tactical_visibility_v1.md) |
 
 ## Track sample
 

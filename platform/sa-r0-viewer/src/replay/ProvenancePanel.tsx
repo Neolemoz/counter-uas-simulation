@@ -18,6 +18,8 @@ export function ProvenancePanel({ bundle }: Props) {
   const packMeta = (src as { scenario_pack_metadata?: { provenance?: Record<string, string> } })
     .scenario_pack_metadata;
   const provenance = bundle.scenario.provenance ?? packMeta?.provenance;
+  const rtCont = bundle.rt_tactical_replay_continuity;
+  const rtProv = rtCont?.provenance;
 
   return (
     <div className="border-t border-slate-700 pt-2">
@@ -38,6 +40,29 @@ export function ProvenancePanel({ bundle }: Props) {
         <Row label="scenario_pack" value={String(src.scenario_pack ?? "—")} />
         <Row label="seed" value={String(lineage.seed ?? "—")} />
       </dl>
+      {rtCont?.continuity_available && rtProv && (
+        <div className="mt-2 rounded border border-cyan-900/40 bg-cyan-950/20 p-2">
+          <p className="text-[10px] font-semibold uppercase text-cyan-600/90">
+            RT capture provenance
+          </p>
+          <dl className="mt-1 grid gap-1">
+            <Row label="capture_id" value={rtCont.capture_candidate_id} />
+            <Row label="rt_capture_ref" value={String(rtProv.rt_capture_ref ?? "—")} />
+            <Row label="annex_ref" value={String(rtProv.tactical_annex_ref ?? "—")} />
+            <Row
+              label="authority_stopped"
+              value={String(rtProv.authority_stopped_at ?? "—")}
+            />
+            <Row
+              label="norm_embedded"
+              value={rtProv.normalized_manifest_embedded === true ? "yes" : "no"}
+            />
+          </dl>
+          <p className="mt-1 text-[10px] text-cyan-200/70">
+            RT authority ended before SA packaging — replay cognition only.
+          </p>
+        </div>
+      )}
       {provenance?.fictional_disclaimer && (
         <p className="mt-2 text-xs text-amber-200/90">{provenance.fictional_disclaimer}</p>
       )}

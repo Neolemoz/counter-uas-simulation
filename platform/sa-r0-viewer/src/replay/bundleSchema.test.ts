@@ -7,6 +7,10 @@ import { parseBundleJson } from "./loadBundle";
 const repoRoot = join(dirname(fileURLToPath(import.meta.url)), "../../../..");
 const ridgeDemoPath = join(repoRoot, "fixtures/sa_r0/demo_ridge_defense/index.json");
 const valleyDemoPath = join(repoRoot, "fixtures/sa_r0/demo_valley_ingress/index.json");
+const rtTacticalDemoPath = join(
+  repoRoot,
+  "platform/sa-r0-viewer/public/demo/rt_tactical_continuity/index.json",
+);
 
 describe("replay_sa_bundle_v1", () => {
   it("parses committed ridge demo bundle without Zod errors", () => {
@@ -26,5 +30,19 @@ describe("replay_sa_bundle_v1", () => {
     const bundle = parseBundleJson(text);
     expect(bundle.scenario.topology_tags).toContain("valley_ingress");
     expect(bundle.los_segments?.length).toBeGreaterThan(0);
+  });
+
+  it("parses RT tactical continuity demo with embedded annex", () => {
+    const bundle = parseBundleJson(readFileSync(rtTacticalDemoPath, "utf-8"));
+    const block = bundle.rt_tactical_replay_continuity;
+    expect(block?.continuity_available).toBe(true);
+    expect(block?.schema).toBe("rt_tactical_replay_continuity_v1");
+    expect(block?.tactical_annex?.authority_label).toBe("replay_boundary_scoped");
+    expect(bundle.rt_tactical_replay_continuity).toBeDefined();
+  });
+
+  it("parses ridge demo without rt_tactical_replay_continuity (backward compat)", () => {
+    const bundle = parseBundleJson(readFileSync(ridgeDemoPath, "utf-8"));
+    expect(bundle.rt_tactical_replay_continuity).toBeUndefined();
   });
 });

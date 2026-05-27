@@ -1,5 +1,7 @@
 import type { ReplaySaBundle } from "@/replay/bundleSchema";
 import { MetadataPanel } from "@/replay/MetadataPanel";
+import { TacticalReplayContinuityPanel } from "@/replay/rt/TacticalReplayContinuityPanel";
+import { hasTacticalContinuity } from "@/replay/tacticalReplayContinuitySchema";
 import { LayerToggles } from "@/replay/LayerToggles";
 import { TimelineScrubber } from "@/replay/timeline/TimelineScrubber";
 import { NarrativeTimeline } from "@/replay/narrative/NarrativeTimeline";
@@ -73,6 +75,16 @@ export function ReplayWorkspaceView({
       <CollapsiblePanelSection id="metadata.bundle" title="Bundle metadata" defaultCollapsed={false}>
         <MetadataPanel bundle={bundle} />
       </CollapsiblePanelSection>
+      {hasTacticalContinuity(bundle.rt_tactical_replay_continuity) ? (
+        <CollapsiblePanelSection
+          id="rt.tactical_continuity"
+          title="RT tactical continuity (explanatory)"
+          tier="t4"
+          defaultCollapsed
+        >
+          <TacticalReplayContinuityPanel bundle={bundle} />
+        </CollapsiblePanelSection>
+      ) : null}
       {bundle.presentation?.chapters?.length ? (
         <CollapsiblePanelSection
           id="presentation.controls"
