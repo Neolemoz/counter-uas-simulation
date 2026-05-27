@@ -47,16 +47,19 @@ When `enable_gazebo_adapter=true`:
 - Worker publishes to allow-listed `entity_pose_cmd` / `entity_state` topics (mock or live).
 - **No** sim feedback overwriting bridge registry; **no** stale-sync detection (G3).
 
-### 2.2 G3 target (transient pose synchronization)
+### 2.2 G3 target (transient pose synchronization) — PLAT-RT-G3 implemented
 
 | Rule | Description |
 |------|-------------|
 | Command authority | Bridge pose on `move_entity` / `spawn_entity` is **authoritative** for RT session |
 | Apply path | Bridge → Adapter → sim entity |
-| Feedback | Sim pose may differ transiently during physics step; adapter reports mirror |
-| Conflict | Sim feedback **does not** overwrite bridge command registry without explicit resync policy |
-| Stale sync | If mirror diverges beyond threshold → `INVALID_POSE` or `reset_session` |
-| ID map | `entity_id` (bridge UUID) ↔ `sim_entity_ref` (adapter handle) — 1:1 per session |
+| Feedback | Sim pose may differ transiently; `poll_feedback` IPC → `PoseSyncMirror` only |
+| Conflict | Sim feedback **does not** overwrite bridge command registry |
+| Stale sync | Drift > `pose_sync_drift_threshold_m` (default 2.0 m) → `SYNC_STALE`; recovery via `reset_session` |
+| ID map | `entity_id` ↔ `sim_entity_ref` — 1:1 per session; stored in mirror |
+| Feedback contract | [rt_adapter_feedback_v1.md](rt_adapter_feedback_v1.md) |
+| World summary | Additive `sync_health`, `sync_revision`, `feedback_entities` — not in `WorldSnapshot.entities` |
+| Telemetry | `entity_pose_mirror` remains registry-fed until G4 |
 
 ### 2.3 Forbidden sync patterns
 
@@ -86,12 +89,17 @@ When `enable_gazebo_adapter=true`:
 
 ## 4. Telemetry propagation boundaries
 
-| Channel | Source (current) | Source (G4 target) | Replay authority |
-|---------|------------------|--------------------|------------------|
-| `session_health` | Bridge + stub | Bridge + adapter | No |
-| `entity_pose_mirror` | Bridge registry | Adapter-fed mirror | No |
-| `world_summary` | Bridge registry | Bridge + optional sim metadata | No |
-| `clock_mirror` | Session state | Session + sim | No |
+| Channel | Source (PLAT-RT-G4) | Replay authority |
+|---------|---------------------|------------------|
+| `session_health` | Bridge + adapter poll | No |
+| `entity_pose_mirror` | Adapter feedback poses (`TelemetryMirror`) | No |
+| `world_summary` | Registry + G3 `sync_health` + G4 `telemetry_health` | No |
+| `clock_mirror` | Adapter worker sim clock | No |
+| `lifecycle_state` | Bridge only | No |
+
+Contract: [rt_adapter_telemetry_v1.md](rt_adapter_telemetry_v1.md). **PoseSyncMirror** remains authoritative for pose sync command failures; telemetry stale is explanatory only.
+
+**Revision hint (PLAT-RT-R3d):** `world_revision_hint` in telemetry bundles carries adapter `{telemetry_seq, sync_seq}` — not `world.revision`. Numeric divergence from bridge revision is expected; hint must not drive sync failure. See [rt_world_revision_hint_policy_v1.md](rt_world_revision_hint_policy_v1.md).
 
 **Caps (unchanged):** aggregate ≤ `telemetry_update_rate_cap_hz` (10 Hz); max 5 channels per subscription; SA viewer has **no** pull endpoint.
 
@@ -112,6 +120,8 @@ When `enable_gazebo_adapter=true`:
 | `discard_session` | Clear | Teardown sim |
 
 **World bounds:** Prototype units `x,y ∈ [-500, 500]`, `z ∈ [0, 200]` — out-of-bounds → `INVALID_POSE` before adapter apply.
+
+**Revision counters:** Bridge `world.revision` is command-authoritative. Adapter `sync_seq`, `telemetry_seq`, and `world_revision_hint` are explanatory and may numerically diverge from `world.revision`. See [rt_world_revision_hint_policy_v1.md](rt_world_revision_hint_policy_v1.md).
 
 ---
 
@@ -134,7 +144,7 @@ When `enable_gazebo_adapter=true`:
 | ROS node crash | `runtime_crashed` | Watchdog exit | Same |
 | Topic timeout (G4) | Degraded → optional `failed` | Unsubscribe stale mirrors | Same |
 | Stale entity sync (G3) | Command error or `reset_session` | Resync or partial reset | No SA write |
-| Adapter IPC disconnect | `bridge_disconnected` → `failed` | Reconnect window then kill | `bridge_disconnected_reconnect_timeout` (30 s) |
+| Adapter IPC disconnect | `runtime_crashed` or `failed` | Partial or full teardown per path | `cleanup_pending_max_age` (300 s) |
 | Cleanup timeout | `cleanup_pending` → `discarded` | Force kill | `cleanup_pending_max_age` (300 s) |
 
 ### 6.3 Non-authoritative failure state
@@ -147,7 +157,7 @@ When `enable_gazebo_adapter=true`:
 
 ## 7. Capture and provenance sync (G5 pointer)
 
-Until PLAT-RT-G5:
+PLAT-RT-G5 frozen — normalized capture artifacts (`rt_normalized_capture_v1`) align sim/runtime provenance with PLAT-RT-S5 staging. Prior note (pre-G5):
 
 - Capture bundles snapshot **bridge world** + audit + telemetry summary.
 - Sim-only state not in bridge registry may be **omitted** unless G5 normalization adds `runtime_to_replay_conversion_v1` fields.
@@ -161,3 +171,5 @@ Rule: **Gazebo runtime state is transient** — only normalized, maintainer-appr
 - [rt_session_lifecycle_v1.md](rt_session_lifecycle_v1.md)
 - [rt_capture_continuity_v1.md](rt_capture_continuity_v1.md)
 - [rt_runtime_governance_v1.md](rt_runtime_governance_v1.md)
+- [rt_revision_vocabulary_v1.md](rt_revision_vocabulary_v1.md)
+- [rt_authority_model_v1.md](rt_authority_model_v1.md)

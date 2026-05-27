@@ -112,22 +112,50 @@ See [rt_session_lifecycle_v1.md](rt_session_lifecycle_v1.md) § Failure vs captu
 
 ---
 
-## 7. Runtime provenance from simulation (PLAN-RT-G1)
+## 7. Runtime provenance and normalization (PLAT-RT-G5)
 
-Until PLAT-RT-G5:
+**Maintainer gate ordering:**
 
-- Capture bundles reflect **bridge world state** and audit — not live Gazebo authority.
-- Additive `runtime_provenance` fields (sim world name, adapter revision) may appear in `runtime_capture_report_v1` as **explanatory only**.
-- Sim snapshots require `runtime_to_replay_conversion_v1` and maintainer approval before SA import.
-- Failed Gazebo/ROS sessions **must not** emit importable conversion manifests.
+1. Raw capture — `capture_session` writes PLAT-RT-S5 artifacts (`candidate.json`, `snapshot.json`, `capture_report.json`, `telemetry_summary.json`).
+2. Normalization — `rt_normalized_capture_v1`, `rt_capture_provenance_v1`, `rt_normalization_validation_v1` (automatic at capture or `rt_capture_normalize.py`).
+3. Approval — `rt_capture_approval_v1` requires `normalization_status: normalized`.
+4. Conversion manifest — `runtime_to_replay_conversion_v1` links normalized staging refs.
+5. External SA packager — out of RT bridge scope; no automatic import.
 
-G5 aligns sim artifacts with existing PLAT-RT-S5 staging without auto federation or corpus writes.
+**Rules:**
+
+- Bridge registry poses remain command-authoritative in `entity_pose_history`; G3/G4 overlays are explanatory.
+- Normalized artifacts are replay-*ready* but not replay authority.
+- `session_id` must not be lineage parent in normalized or conversion manifests.
+- Failed sessions **must not** emit importable conversion manifests.
+- No auto federation or corpus writes from normalization.
+
+Export lineage and pose interpretation: [rt_runtime_export_semantics_v1.md](rt_runtime_export_semantics_v1.md), [rt_capture_pose_cognition_v1.md](rt_capture_pose_cognition_v1.md).
+
+Manual SA import workflow (PLAN-RT-R2f): [rt_manual_sa_import_workflow_v1.md](rt_manual_sa_import_workflow_v1.md), [rt_rt_sa_bridge_handoff_v1.md](rt_rt_sa_bridge_handoff_v1.md), [rt_sa_lineage_protection_v1.md](rt_sa_lineage_protection_v1.md).
 
 ---
 
-## 8. Related
+## 9. PLAT-RT-TAC5 tactical capture extension (implemented)
+
+PLAT-RT-TAC5 implements optional `rt_tactical_capture_annex_v1` timelines (selected, assignment, TTI, recommendations, mode switches, pause/resume, lock events, target switches) in normalized capture.
+
+- Annex is `replay_boundary_scoped` — not SA authority until maintainer import
+- Does not override `command_pose` in [rt_capture_pose_cognition_v1.md](rt_capture_pose_cognition_v1.md)
+- Failed/discarded sessions must not emit annex — §6 unchanged
+
+Full specification: [rt_tac1_tactical_capture_continuity_v1.md](rt_tac1_tactical_capture_continuity_v1.md).
+
+---
+
+## 10. Related
 
 - [rt_sa_export_boundary_v1.md](rt_sa_export_boundary_v1.md)
 - [rt_session_lifecycle_v1.md](rt_session_lifecycle_v1.md)
 - [rt_roadmap_s2_s6_v1.md](rt_roadmap_s2_s6_v1.md) — RT-S5 implementation wave
 - [rt_roadmap_g2_g5_v1.md](rt_roadmap_g2_g5_v1.md) — RT-G5 capture normalization
+- [rt_runtime_export_semantics_v1.md](rt_runtime_export_semantics_v1.md)
+- [rt_capture_pose_cognition_v1.md](rt_capture_pose_cognition_v1.md)
+- [rt_manual_sa_import_workflow_v1.md](rt_manual_sa_import_workflow_v1.md)
+- [rt_sa_lineage_protection_v1.md](rt_sa_lineage_protection_v1.md)
+- [rt_tac1_tactical_capture_continuity_v1.md](rt_tac1_tactical_capture_continuity_v1.md)

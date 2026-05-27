@@ -3,7 +3,9 @@
 **Phase:** PLAN-RT-S1 — interactive runtime sandbox (docs only)  
 **Authority:** [AGENTS.md](../../AGENTS.md); [rt_s1_interactive_sandbox_architecture_plan.md](../platform/rt_s1_interactive_sandbox_architecture_plan.md)
 
-Conceptual lifecycle for **RT interactive sandbox** sessions. No bridge or runtime implementation in RT-S1.
+Conceptual lifecycle for **RT interactive sandbox** sessions. RT-S1 naming; implementation truth table in [rt_lifecycle_transitions_v1.md](rt_lifecycle_transitions_v1.md) (PLAT-RT-R3b).
+
+> **Implementation status (PLAT-RT-R3b):** Happy-path and failure transitions through `runtime_crashed` are implemented in `lifecycle.py` / `session_lifecycle_handlers.py`. Session state `bridge_disconnected` is **enum-reserved** with `can_transition` rules; **no bridge handler sets this state** until a future wave. See [rt_lifecycle_transitions_v1.md](rt_lifecycle_transitions_v1.md) §4–§5.
 
 ---
 
@@ -57,8 +59,8 @@ stateDiagram-v2
 stateDiagram-v2
   running --> failed: command_or_policy_error
   paused --> failed: command_or_policy_error
-  running --> bridge_disconnected: transport_lost
-  bridge_disconnected --> failed: reconnect_timeout
+  running --> bridge_disconnected: transport_lost RESERVED
+  bridge_disconnected --> failed: reconnect_timeout RESERVED
   running --> runtime_crashed: gazebo_ros_exit
   runtime_crashed --> cleanup_pending: auto_teardown
   failed --> cleanup_pending: discard_or_timeout
@@ -66,11 +68,13 @@ stateDiagram-v2
   cleanup_pending --> discarded: cleanup_complete
 ```
 
+Edges marked **RESERVED** are documented for RT-S1 but not implemented in PLAT-RT-R3b. Adapter IPC loss maps to `runtime_crashed` / `failed`, not session `bridge_disconnected` — see [rt_lifecycle_transitions_v1.md](rt_lifecycle_transitions_v1.md) §5.
+
 | State | Meaning | Authoritative? |
 |-------|---------|----------------|
 | `failed` | Command rejected, resource limit exceeded, or unrecoverable bridge error | No |
 | `runtime_crashed` | Gazebo/ROS child exited unexpectedly | No |
-| `bridge_disconnected` | UI lost bridge transport; runtime may continue until cleanup policy fires | No |
+| `bridge_disconnected` | UI lost bridge transport; runtime may continue until cleanup policy fires | No (**reserved** — see [rt_lifecycle_transitions_v1.md](rt_lifecycle_transitions_v1.md) §4) |
 | `cleanup_pending` | Teardown in progress; only `discard_session` permitted | No |
 
 ### 3.1 Transient failure semantics
@@ -84,10 +88,12 @@ stateDiagram-v2
 
 | Trigger | Action |
 |---------|--------|
-| `discard_session` | Immediate transition toward `cleanup_pending` → `discarded` |
-| `stop_session` then idle | After `session_cleanup_timeout` (see [rt_runtime_governance_v1.md](rt_runtime_governance_v1.md)), auto `cleanup_pending` |
-| `failed` / `runtime_crashed` | Enter `cleanup_pending`; force discard after `cleanup_pending_max_age` |
-| `bridge_disconnected` | If reconnect not restored within timeout → `failed` → `cleanup_pending` |
+| `discard_session` | Immediate transition toward `cleanup_pending` → `discarded` (full teardown) |
+| `stop_session` then idle | After `session_cleanup_timeout`, auto-cleanup with **full** adapter teardown → `discarded` |
+| `failed` / `runtime_crashed` | Auto-cleanup after timeout with **partial** teardown (no adapter teardown audits) → `discarded` |
+| `bridge_disconnected` | **Reserved** — reconnect timeout policy not wired in PLAT-RT-R3b |
+
+See [rt_lifecycle_transitions_v1.md](rt_lifecycle_transitions_v1.md) §3 for teardown helper comparison.
 
 Orphan ROS/Gazebo processes must not survive past `cleanup_pending_max_age`.
 
@@ -150,6 +156,7 @@ Live telemetry must never be written to federation indexes or SA viewer stores.
 
 - [rt_s1_architecture_readiness_review_r1.md](rt_s1_architecture_readiness_review_r1.md)
 
+- [rt_lifecycle_transitions_v1.md](rt_lifecycle_transitions_v1.md) — implementation truth table (PLAT-RT-R3b)
 - [rt_bridge_contract_v1.md](rt_bridge_contract_v1.md)
 - [rt_runtime_governance_v1.md](rt_runtime_governance_v1.md)
 - [rt_sa_export_boundary_v1.md](rt_sa_export_boundary_v1.md)

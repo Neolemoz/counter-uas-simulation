@@ -64,6 +64,10 @@ Templates live in bridge code catalog only. No writes to `fixtures/scenarios/`.
 
 On step failure → `status: failed`, error `WORKFLOW_STEP_FAILED`.
 
+### Adapter resync (PLAT-RT-R2d)
+
+After `apply_template` or `reset_world` workflow steps (and direct `apply_runtime_template`), the bridge runs [rt_template_resync_policy_v1.md](rt_template_resync_policy_v1.md): automatic adapter resync or sim clear when the Gazebo adapter is active. `reset_workflow` / `reload_workflow` do not trigger resync.
+
 ---
 
 ## 4. Audit extensions

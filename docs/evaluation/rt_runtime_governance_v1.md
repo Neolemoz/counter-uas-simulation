@@ -53,7 +53,7 @@ Documented caps for RT-S2+ prototype implementation. Values are **governance con
 | `command_rate_limit_sustained` | **1 command/s** | Bridge-side throttle |
 | `session_cleanup_timeout` | **120 s** after `stop_session`, `discard_session`, or `failed` | Orphan process prevention |
 | `cleanup_pending_max_age` | **300 s** | Forced teardown from `cleanup_pending` |
-| `bridge_disconnected_reconnect_timeout` | **30 s** | Before `failed` + cleanup |
+| `bridge_disconnected_reconnect_timeout` | **30 s** | Before `failed` + cleanup (**governance constant — not yet wired** in PLAT-RT-R3b; see [rt_lifecycle_transitions_v1.md](rt_lifecycle_transitions_v1.md) §4) |
 | `max_capture_bundle_bytes` | **5 MiB** | Per capture bundle (PLAT-RT-S5) |
 | `max_staged_captures` | **32** | Staging dirs under `runs/rt_sandbox/captures/` |
 | `max_runtime_templates_in_catalog` | **16** | Builtin RT template defs (PLAT-RT-S6) |
@@ -126,7 +126,7 @@ RT UX copy must remain **experimental**, **sandbox-oriented**, and **simulation-
 | mission approval | session control |
 | tactical readiness | sandbox status |
 
-Future RT lint may extend `governance_lint_sa.py` patterns — RT-S1 documents list only.
+Runtime subcommand registry lint (PLAT-RT-R3c): `scripts/rt/lint_rt_runtime_subcommands.py --check` enforces `RUNTIME_SUBCOMMANDS` ↔ handler sync — see [rt_runtime_subcommand_registry_v1.md](rt_runtime_subcommand_registry_v1.md). SA fixture lint remains in `governance_lint_sa.py` (`tier0-sa-r0`).
 
 ### 7.3 Capture UI banner (future)
 

@@ -133,8 +133,11 @@ Including but not limited to: `/tracks/state` as live operational truth, engage/
 | Gazebo launch failure | Adapter exit code / timeout | Adapter teardown + bridge `failed` | `cleanup_pending` |
 | ROS node crash | Adapter watchdog | Kill adapter subtree | `runtime_crashed` |
 | Topic timeout | Adapter mirror stall | Unsubscribe + optional `failed` | Degraded or `failed` |
-| Stale entity sync | Pose drift threshold (G3) | `reset_session` or resync | `running` or `INVALID_POSE` |
-| Adapter disconnect | IPC heartbeat loss | Orphan kill after `bridge_disconnected_reconnect_timeout` | `failed` |
+| Stale entity sync | Pose drift threshold (PLAT-RT-G3) | `reset_session` or `adapter_resync` | `SYNC_STALE` or `running` |
+| Adapter feedback lost | IPC poll failure / stale clock (G3) | Clear mirror; optional `failed` | `ADAPTER_FEEDBACK_LOST` |
+| Telemetry mirror stale | Poll age > `telemetry_stale_s` (G4) | Explanatory flag only | `telemetry_stale` audit |
+| Telemetry feedback lost | Telemetry IPC failure (G4) | Clear `TelemetryMirror` | `telemetry_feedback_lost` audit |
+| Adapter disconnect | IPC heartbeat loss | Orphan kill on full teardown paths; partial path on FAILED auto-cleanup | `runtime_crashed` / `failed` (not session `bridge_disconnected`) |
 
 **Replay authority during all failures:** none. Failure blobs in audit log are explanatory only.
 
@@ -157,6 +160,8 @@ For session UUID `{session_id}`:
 | `/rt_sandbox/{session_id}/clock` | Publish (pause observation) |
 
 Implementation: [ros_allowlist.py](../../platform/rt-sandbox-bridge/rt_sandbox/ros_allowlist.py).
+
+**PLAT-RT-G6:** Live mode uses `rt_sandbox_gz` + `entity_pose_cmd`/`entity_state` JSON on `std_msgs/String`. See [rt_adapter_live_sync_v1.md](rt_adapter_live_sync_v1.md).
 
 ---
 

@@ -56,6 +56,8 @@ Every response includes:
 | Command | Preconditions | Effect |
 |---------|---------------|--------|
 | `start_session` | No active session on bridge | `created` → `running` |
+
+**PLAN-RT-M1 (future PLAT-RT-M2):** `start_session` precondition revised — see §11.
 | `pause_session` | `running` | → `paused` |
 | `resume` | `paused` | → `running` |
 | `reset_session` | `running` or `paused` | Reset world; stay in session |
@@ -98,6 +100,8 @@ Types not in this table → `COMMAND_FORBIDDEN` until a new wave extends the cat
 #### Adapter profile (PLAT-RT-G2)
 
 Requires `enable_gazebo_adapter=true` on bridge. Payload: `{"sub_command": "<name>"}`.
+
+**Full allow-list:** [rt_runtime_subcommand_registry_v1.md](rt_runtime_subcommand_registry_v1.md) (PLAT-RT-R3c). §6.1 below lists G3+ poll/resync subcommands; attach/detach/health are in the registry table.
 
 | Sub-command | Active | Notes |
 |-------------|--------|-------|
@@ -214,8 +218,31 @@ Exceeded → `RESOURCE_LIMIT_EXCEEDED`; session may → `failed`.
 | `RESOURCE_LIMIT_EXCEEDED` | Cap exceeded |
 | `WORKFLOW_STEP_FAILED` | Workflow step could not complete (PLAT-RT-S6) |
 | `SESSION_NOT_FOUND` | Unknown `session_id` |
+| `SESSION_CAPACITY_EXCEEDED` | `non_terminal_count ≥ max_concurrent_sessions` (PLAN-RT-M1 / PLAT-RT-M2) |
+| `EDITING_SESSION_MISMATCH` | Entity mutation targeting non-editing session (PLAN-RT-M1 / PLAT-RT-M2) |
 | `RUNTIME_UNAVAILABLE` | Gazebo/ROS child down |
 | `BRIDGE_DISCONNECTED` | Transport loss (client-side) |
+| `SYNC_STALE` | Command pose vs adapter feedback drift exceeds threshold (PLAT-RT-G3) |
+| `SYNC_MISMATCH` | Entity/ref map inconsistency between bridge and adapter (PLAT-RT-G3) |
+| `ADAPTER_FEEDBACK_LOST` | Adapter feedback poll failed or timed out (PLAT-RT-G3) |
+
+### 6.1 PLAT-RT-G3 runtime sub-commands (when `enable_gazebo_adapter=true`)
+
+| `sub_command` | Effect |
+|---------------|--------|
+| `adapter_poll_feedback` | Poll adapter feedback; update mirror; audit `sync_update` or errors |
+| `adapter_poll_telemetry` | Poll adapter telemetry bundle; update `TelemetryMirror`; optional `mock_stale_telemetry` |
+| `adapter_resync` | Re-push all registry poses to adapter (no registry import from sim) |
+| `mock_inject_drift` | Test-only: offset sim feedback pose in mock mode |
+
+### 6.2 PLAT-RT-G4 telemetry audit events (explanatory)
+
+| `command_type` | When |
+|----------------|------|
+| `telemetry_update` | Successful telemetry poll |
+| `telemetry_stale` | Poll timestamp older than `telemetry_stale_s` |
+| `telemetry_feedback_lost` | Telemetry IPC failure or adapter teardown |
+| `telemetry_buffer_trim` | Subscription ring buffer overflow |
 
 ---
 
@@ -286,3 +313,103 @@ Violations of these assumptions require a new governance review — not silent e
 - [rt_sa_export_boundary_v1.md](rt_sa_export_boundary_v1.md)
 - [rt_gazebo_ros_boundary_v1.md](rt_gazebo_ros_boundary_v1.md)
 - [rt_g1_gazebo_ros_integration_plan.md](../platform/rt_g1_gazebo_ros_integration_plan.md)
+- [rt_multi_session_registry_v1.md](rt_multi_session_registry_v1.md) (PLAN-RT-M1 additive)
+
+---
+
+## 11. PLAN-RT-M1 multi-session additive (docs only — PLAT-RT-M2 implementation)
+
+**Phase:** PLAN-RT-M1 — local single-bridge multi-session architecture  
+**Authority:** [rt_multi_session_registry_v1.md](rt_multi_session_registry_v1.md); [rt_m1_multi_session_architecture_plan.md](../platform/rt_m1_multi_session_architecture_plan.md)
+
+This section is **additive**. Frozen §3 single-session semantics remain authoritative until PLAT-RT-M2 implementation and freeze audit.
+
+### 11.1 Revised `start_session` precondition
+
+| Precondition | PLAT-RT-M2 rule |
+|--------------|-----------------|
+| Capacity | `non_terminal_count < max_concurrent_sessions` (default **3**) |
+| Prior sessions | Non-terminal sessions do not block if under capacity |
+
+When capacity exceeded → `SESSION_CAPACITY_EXCEEDED`.
+
+### 11.2 New session registry commands
+
+| Command | Preconditions | Effect |
+|---------|---------------|--------|
+| `list_sessions` | None | Read-only registry snapshot (see [rt_multi_session_registry_v1.md](rt_multi_session_registry_v1.md) §6.1) |
+| `set_editing_session` | Target session exists and is non-terminal | Set bridge `editing_session_id`; audit event |
+
+### 11.3 Revised entity command gate
+
+`spawn_entity`, `move_entity`, `delete_entity`, `apply_runtime_template` additionally require:
+
+`session_id == editing_session_id`
+
+Failure → `EDITING_SESSION_MISMATCH`.
+
+### 11.4 Pull API
+
+Unchanged — already session-scoped via `session_id` + `subscription_id`. See [rt_multi_session_telemetry_routing_v1.md](rt_multi_session_telemetry_routing_v1.md).
+
+### 11.5 Governance constant change
+
+`max_concurrent_sessions`: **1** (frozen default) → **3** (M1 documented default for PLAT-RT-M2). Requires PLAT-RT-M2 implementation + freeze audit to take effect in code.
+
+---
+
+## 12. PLAT-RT-SA2 handoff mirror additive (read-only)
+
+**Phase:** PLAT-RT-SA2 — multi-session handoff workflow UX  
+**Authority:** [rt_sa2_multi_session_handoff_ui_v1.md](rt_sa2_multi_session_handoff_ui_v1.md)
+
+### 12.1 `list_capture_handoff_status`
+
+| Field | Rule |
+|-------|------|
+| Preconditions | None (no active session required) |
+| Payload | `{ "session_id": "<uuid>" }` required |
+| Effect | Read-only mirror of `runs/rt_sandbox/captures/` + `sa_handoff/` scoped to session |
+| Writes | **Forbidden** |
+| SA import | **Forbidden** — not `rt_sa_import` or `capture_session` |
+
+See [rt_sa2_multi_session_handoff_ui_v1.md](rt_sa2_multi_session_handoff_ui_v1.md) for `rt_capture_handoff_row_v1` schema.
+
+---
+
+## 13. PLAT-RT-TAC2/TAC3/TAC4 tactical commands
+
+**Phase:** PLAT-RT-TAC2 manual + PLAT-RT-TAC3 assisted + PLAT-RT-TAC4 autonomous (implemented)  
+**Authority:** [rt_tac1_tactical_governance_v1.md](rt_tac1_tactical_governance_v1.md); [rt_tac4_autonomous_loop_plan.md](../platform/rt_tac4_autonomous_loop_plan.md)
+
+### 13.1 Implemented verbs
+
+| Verb | Mode | Notes |
+|------|------|-------|
+| `set_tactical_mode` | Manual, Assisted, Autonomous | Assisted→Autonomous forbidden; use Manual first |
+| `select_candidate` | Manual + Assisted | Forbidden in autonomous |
+| `assign_candidate` | Manual only | Forbidden in assisted/autonomous |
+| `clear_assignment` | Manual + Assisted | Forbidden in autonomous |
+| `request_recommendation` | Assisted | Ranks pairs; no entity move |
+| `approve_recommendation` | Assisted | User approval gate + move |
+| `reject_recommendation` | Assisted | Clears pending |
+| `pause_autonomous_loop` | Autonomous | Pauses scheduler |
+| `resume_autonomous_loop` | Autonomous | Resumes bounded tick |
+| `get_tactical_state` | Read | Allowed on any session; no editing lock |
+
+Still forbidden: `intercept`, `engage`, `strike`, and undeclared `tactical_*` verbs.
+
+### 13.2 Reserved (TAC5+)
+
+| Verb | Wave |
+|------|------|
+| *(none — tactical capture annex is data plane, TAC5)* | PLAT-RT-TAC5 |
+
+### 13.3 Telemetry
+
+| Channel | Status |
+|---------|--------|
+| `tactical_state` | **Allowed** (max 7 channels per subscription) |
+| `tactical_recommendation` | **Allowed** (Assisted; explanatory authority) |
+
+See [rt_tac1_tactical_telemetry_v1.md](rt_tac1_tactical_telemetry_v1.md).

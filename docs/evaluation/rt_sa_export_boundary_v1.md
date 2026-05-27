@@ -138,17 +138,25 @@ RT interactive capture is a **separate entrypoint** (RT-S5). RT-S1 documents bou
 | Gazebo/ROS live state | **Transient** — not replay authority |
 | Live telemetry | Explanatory mirrors only — not SA compare clocks |
 | `capture_session` | Snapshots bridge-staged artifacts — not automatic SA import |
-| Sim-only state | Omitted from SA bundles unless PLAT-RT-G5 normalization + conversion manifest |
-| Runtime provenance | Explanatory fields only until G5; never `session_id` as lineage parent |
+| Sim-only state | Omitted from SA bundles unless PLAT-RT-G5 `rt_normalized_capture_v1` + conversion manifest |
+| Runtime provenance | `rt_capture_provenance_v1` is explanatory; never `session_id` as lineage parent |
+| Normalized capture | Replay-ready RT staging only — not SA authority until external maintainer import |
 
 **Invariant (unchanged):** `capture_session ≠ SA replay import`.
 
 ---
 
-## 9. Related
+## 9. RT→SA bridge planning (PLAN-RT-R2f)
+
+Manual import workflow and lineage rules: [rt_rt_sa_bridge_handoff_v1.md](rt_rt_sa_bridge_handoff_v1.md), [rt_manual_sa_import_workflow_v1.md](rt_manual_sa_import_workflow_v1.md), [rt_sa_lineage_protection_v1.md](rt_sa_lineage_protection_v1.md). Handoff audit events are specified in [rt_audit_event_vocabulary_v1.md](rt_audit_event_vocabulary_v1.md) §5 — not emitted until a future implementation wave.
+
+---
+
+## 10. Related
 
 - [rt_capture_continuity_v1.md](rt_capture_continuity_v1.md)
 - [rt_session_lifecycle_v1.md](rt_session_lifecycle_v1.md)
 - [rt_s1_governance_review_r1.md](rt_s1_governance_review_r1.md)
 - [rt_gazebo_ros_boundary_v1.md](rt_gazebo_ros_boundary_v1.md)
 - [rt_runtime_synchronization_v1.md](rt_runtime_synchronization_v1.md)
+- [rt_runtime_export_semantics_v1.md](rt_runtime_export_semantics_v1.md)
