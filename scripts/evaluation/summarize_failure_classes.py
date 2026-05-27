@@ -44,6 +44,7 @@ def main() -> int:
     cohorts: set[str] = set()
     evidence_rows: list[dict[str, object]] = []
     missing_logs: list[str] = []
+    n_success_skipped = 0
     for row in rows:
         lp = (row.get('log_path') or '').strip()
         if not lp:
@@ -62,6 +63,10 @@ def main() -> int:
             except (OSError, json.JSONDecodeError):
                 pass
         evidence = classify_run_failure_evidence(log_path, capture_rc=None)
+        if bool(evidence.get('hit_seen')) or not str(evidence.get('failure_class') or ''):
+            n_success_skipped += 1
+            evidence_rows.append(evidence)
+            continue
         hist[str(evidence['failure_class'])] += 1
         evidence_rows.append(evidence)
 
@@ -75,6 +80,7 @@ def main() -> int:
     payload = {
         'csv': str(p.resolve()),
         'n_classified': total,
+        'n_success_skipped': n_success_skipped,
         'failure_hist': dict(sorted(hist.items())),
         'failure_class_ci95': class_ci95,
         'f5_unknown_rate': (f5_count / total) if total else None,
