@@ -1,0 +1,112 @@
+{
+  "schema": "rt_fictional_terrain_v1",
+  "caveat": "Fictional sandbox terrain — not deployed geography or sensor truth",
+  "elevation_bands_m": [10, 20, 30, 40],
+  "grid_enu_m": {
+    "origin": [-500, -500],
+    "spacing_m": 100,
+    "size": 11,
+    "heights_m": [
+      [9.8, 9.4, 8.9, 8.1, 7.4, 7.1, 7.4, 8.1, 8.9, 9.4, 9.8],
+      [9.5, 8.8, 7.5, 5.9, 4.4, 3.8, 4.4, 5.9, 7.5, 8.8, 9.5],
+      [9.2, 7.9, 5.7, 2.8, 0.2, 0, 0.2, 2.8, 5.7, 7.9, 9.2],
+      [9.0, 7.2, 4.0, 0, 0, 0, 0, 0, 4.0, 7.2, 9.0],
+      [10.4, 8.3, 4.7, 0, 0, 0, 0, 0, 4.7, 8.3, 10.4],
+      [18.7, 16.7, 13.3, 8.8, 4.8, 3.1, 4.8, 8.8, 13.3, 16.7, 18.7],
+      [37.3, 35.8, 33.2, 29.7, 26.7, 25.4, 26.7, 29.7, 33.2, 35.8, 37.3],
+      [49.4, 48.5, 46.8, 44.7, 42.8, 42.0, 42.8, 44.7, 46.8, 48.5, 49.4],
+      [38.0, 37.5, 36.7, 35.6, 34.6, 34.2, 34.6, 35.6, 36.7, 37.5, 38.0],
+      [19.8, 19.7, 19.3, 18.9, 18.5, 18.3, 18.5, 18.9, 19.3, 19.7, 19.8],
+      [11.7, 11.7, 11.5, 11.4, 11.3, 11.2, 11.3, 11.4, 11.5, 11.7, 11.7]
+    ]
+  },
+  "ridge_features": [
+    {
+      "ridge_id": "north_ridge",
+      "label": "North ridge",
+      "polyline_enu_m": [
+        [-400, 280, 45],
+        [-200, 320, 48],
+        [0, 350, 50],
+        [200, 330, 47],
+        [400, 290, 42]
+      ]
+    },
+    {
+      "ridge_id": "valley_floor",
+      "label": "Central valley",
+      "polyline_enu_m": [
+        [-350, -120, 2],
+        [-150, -60, 0],
+        [0, 0, 0],
+        [150, -50, 1],
+        [350, -100, 3]
+      ]
+    },
+    {
+      "ridge_id": "east_spur",
+      "label": "East spur",
+      "polyline_enu_m": [
+        [280, 80, 28],
+        [360, 180, 38],
+        [420, 260, 44]
+      ]
+    },
+    {
+      "ridge_id": "saddle_line",
+      "label": "Saddle line",
+      "polyline_enu_m": [
+        [-120, 200, 22],
+        [40, 240, 30],
+        [180, 220, 26]
+      ]
+    }
+  ],
+  "occlusion_markers": [
+    {
+      "marker_id": "oak_cluster_a",
+      "position_enu_m": [-220, 140, 0],
+      "label": "occlusion landmark (explanatory)"
+    },
+    {
+      "marker_id": "oak_cluster_b",
+      "position_enu_m": [180, 260, 0],
+      "label": "occlusion landmark (explanatory)"
+    },
+    {
+      "marker_id": "ridge_scrub",
+      "position_enu_m": [60, 310, 0],
+      "label": "occlusion landmark (explanatory)"
+    },
+    {
+      "marker_id": "crest_block",
+      "position_enu_m": [0, 340, 0],
+      "label": "ridge crest landmark (explanatory)"
+    },
+    {
+      "marker_id": "valley_edge",
+      "position_enu_m": [-80, -40, 0],
+      "label": "valley edge landmark (explanatory)"
+    }
+  ],
+  "vegetation_markers": [
+    {
+      "marker_id": "scrub_patch_w",
+      "position_enu_m": [-300, 60, 0],
+      "kind": "scrub",
+      "label": "fictional vegetation cue (explanatory)"
+    },
+    {
+      "marker_id": "canopy_e",
+      "position_enu_m": [320, 120, 0],
+      "kind": "canopy",
+      "label": "fictional vegetation cue (explanatory)"
+    },
+    {
+      "marker_id": "scrub_valley",
+      "position_enu_m": [50, -80, 0],
+      "kind": "scrub",
+      "label": "fictional vegetation cue (explanatory)"
+    }
+  ]
+}

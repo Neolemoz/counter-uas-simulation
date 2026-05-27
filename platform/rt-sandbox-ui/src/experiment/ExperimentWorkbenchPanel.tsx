@@ -1,0 +1,745 @@
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { PanelShell } from "@/components/GovernanceChrome";
+import type { ChannelSnapshot } from "@/telemetry/channelIndex";
+import type { TelemetryChannel } from "@/telemetry/constants";
+import { shortSessionId } from "@/workstation/sessionVisualIdentity";
+import type { CaptureHandoffRow } from "@/bridge/types";
+import { deriveAdvisoryForRow } from "@/handoff/advisoryAggregate";
+import { AdvisoryRunBadge } from "@/handoff/AdvisoryRunBadge";
+import { ExperimentImportAdvisoryStrip } from "./ExperimentImportAdvisoryStrip";
+import { ExperimentAnalyticsPanel } from "./ExperimentAnalyticsPanel";
+import { ExperimentBatchPanel } from "./ExperimentBatchPanel";
+import { ExperimentComparePanel } from "./ExperimentComparePanel";
+import { ExperimentExtendedComparePanel } from "./ExperimentExtendedComparePanel";
+import { ExperimentFidelityCompareStrip } from "./ExperimentFidelityCompareStrip";
+import { ExperimentFilterBar } from "./ExperimentFilterBar";
+import { ExperimentHandoffEligibilityStrip } from "./ExperimentHandoffEligibilityStrip";
+import { ExperimentMatrixPanel } from "./ExperimentMatrixPanel";
+import { ExperimentRepeatabilityTrendStrip } from "./ExperimentRepeatabilityTrendStrip";
+import { ExperimentRunSummaryCard } from "./ExperimentRunSummaryCard";
+import { ExperimentTrendStrip } from "./ExperimentTrendStrip";
+import { SweepCatalogBrowser } from "./SweepCatalogBrowser";
+import { deriveExperimentAnalytics } from "./analyticsDerive";
+import { ExperimentContinuityReviewPanel } from "./ExperimentContinuityReviewPanel";
+import { clearAnnexForRun, pruneAnnexCacheForManifest } from "./annexReviewStore";
+import {
+  collectFilterOptions,
+  collectMatrixAxisKeys,
+  EMPTY_F5_FILTERS,
+  filterManifestRuns,
+  type F5Filters,
+} from "./experimentF5UiHelpers";
+import {
+  formatImportError,
+  safeParseExperimentSpec,
+  safeParseFidelityMetricsReport,
+  safeParseManifest,
+  safeParseMetricsReport,
+} from "./experimentImportGuards";
+import {
+  compileExperimentSpec,
+  compileSpecToYaml,
+  type CompileResult,
+} from "./experimentSpecCompile";
+import {
+  createEmptyManifest,
+  exportManifestJson,
+  loadManifestFromStorage,
+  pinRunSnapshot,
+  removeRun,
+  saveManifestToStorage,
+} from "./experimentStore";
+import {
+  sideFromLive,
+  sideFromPinnedRun,
+  type CompareSide,
+} from "./experimentCompare";
+import { deriveExperimentMetrics, exportMetricsJson } from "./metricsDerive";
+import {
+  deriveExperimentFidelityMetrics,
+  exportFidelityMetricsJson,
+} from "./fidelityMetricsDerive";
+import type {
+  ExperimentBatchSpec,
+  ExperimentFidelityMetricsReport,
+  ExperimentManifest,
+  ExperimentMetricsReport,
+  ExperimentSpec,
+} from "./experimentSchema";
+
+type SlotRef = {
+  sessionId: string;
+  label: string;
+  snapshots: Partial<Record<TelemetryChannel, ChannelSnapshot>>;
+};
+
+export function ExperimentWorkbenchPanel({
+  connected,
+  slots,
+  activeSessionId,
+  handoffBySession,
+  terrainLayersEnabled,
+  compareModeActive,
+  onCompareModeChange,
+  analyticsActive,
+  onAnalyticsActiveChange,
+  continuityReviewActive,
+  onContinuityReviewActiveChange,
+  f5Active,
+  onF5ActiveChange,
+}: {
+  connected: boolean;
+  slots: SlotRef[];
+  activeSessionId: string | null;
+  handoffBySession: Map<string, CaptureHandoffRow[]>;
+  terrainLayersEnabled: boolean;
+  compareModeActive: boolean;
+  onCompareModeChange: (active: boolean) => void;
+  analyticsActive: boolean;
+  onAnalyticsActiveChange: (active: boolean) => void;
+  continuityReviewActive: boolean;
+  onContinuityReviewActiveChange: (active: boolean) => void;
+  f5Active: boolean;
+  onF5ActiveChange: (active: boolean) => void;
+}) {
+  const [manifest, setManifest] = useState<ExperimentManifest>(() =>
+    loadManifestFromStorage() ?? createEmptyManifest("exp-local"),
+  );
+  const [compareA, setCompareA] = useState<string>("live:active");
+  const [compareB, setCompareB] = useState<string>("pinned:0");
+  const [continuityRunId, setContinuityRunId] = useState("");
+  const [importedSpec, setImportedSpec] = useState<ExperimentSpec | null>(null);
+  const [compiledPreview, setCompiledPreview] = useState<CompileResult | null>(null);
+  const [metricsOverride, setMetricsOverride] = useState<ExperimentMetricsReport | null>(
+    null,
+  );
+  const [fidelityMetricsOverride, setFidelityMetricsOverride] =
+    useState<ExperimentFidelityMetricsReport | null>(null);
+  const [f5Filters, setF5Filters] = useState<F5Filters>(EMPTY_F5_FILTERS);
+  const [extendedCompareRunIds, setExtendedCompareRunIds] = useState<string[]>([]);
+  const [matrixAxisRow, setMatrixAxisRow] = useState("");
+  const [matrixAxisCol, setMatrixAxisCol] = useState("");
+  const [maintainerAckPoseReviewed, setMaintainerAckPoseReviewed] = useState(false);
+  const [batchSpec, setBatchSpec] = useState<ExperimentBatchSpec>({
+    schema: "rt_experiment_batch_v1",
+    experiment_id: manifest.experiment_id,
+    default_dwell_s: 2,
+    runs: [
+      { run_id: "run-a", label: "run A", dwell_s: 2 },
+      { run_id: "run-b", label: "run B", dwell_s: 2 },
+    ],
+  });
+
+  useEffect(() => {
+    saveManifestToStorage(manifest);
+  }, [manifest]);
+
+  useEffect(() => {
+    if (manifest.runs.length === 0) {
+      setContinuityRunId("");
+      return;
+    }
+    if (!manifest.runs.some((r) => r.run_id === continuityRunId)) {
+      setContinuityRunId(manifest.runs[0].run_id);
+    }
+  }, [manifest.runs, continuityRunId]);
+
+  const analyticsReport = useMemo(
+    () => deriveExperimentAnalytics(manifest, batchSpec),
+    [manifest, batchSpec],
+  );
+
+  const metricsReport = useMemo(() => {
+    if (metricsOverride) return metricsOverride;
+    if (manifest.runs.length === 0) return null;
+    return deriveExperimentMetrics(manifest, analyticsReport, {
+      batchSpec,
+      spec: importedSpec ?? undefined,
+      maintainerAckPoseReviewed,
+    });
+  }, [
+    metricsOverride,
+    manifest,
+    analyticsReport,
+    batchSpec,
+    importedSpec,
+    maintainerAckPoseReviewed,
+  ]);
+
+  const fidelityReport = useMemo(() => {
+    if (fidelityMetricsOverride) return fidelityMetricsOverride;
+    if (manifest.runs.length === 0) return null;
+    return deriveExperimentFidelityMetrics(manifest, metricsReport ?? undefined, {
+      spec: importedSpec ?? undefined,
+    });
+  }, [fidelityMetricsOverride, manifest, metricsReport, importedSpec]);
+
+  const fidelityCouplingPresent = useMemo(() => {
+    if (fidelityReport?.coupling_required) return true;
+    return manifest.runs.some((r) => r.fidelity_context?.enable_fidelity_coupling);
+  }, [fidelityReport, manifest.runs]);
+
+  const filterOptions = useMemo(() => {
+    if (!metricsReport) {
+      return {
+        experiment_class: [],
+        tactical_mode: [],
+        terrain_preset: [],
+        visibility_context: [],
+      };
+    }
+    return collectFilterOptions(manifest.runs, metricsReport.per_run_extended);
+  }, [manifest.runs, metricsReport]);
+
+  const filteredRuns = useMemo(() => {
+    if (!metricsReport) return manifest.runs;
+    return filterManifestRuns(
+      manifest.runs,
+      f5Filters,
+      metricsReport.per_run_extended,
+    );
+  }, [manifest.runs, f5Filters, metricsReport]);
+
+  const advisoryByCaptureId = useMemo(() => {
+    const rows = activeSessionId ? (handoffBySession.get(activeSessionId) ?? []) : [];
+    const map = new Map<string, ReturnType<typeof deriveAdvisoryForRow>>();
+    for (const row of rows) {
+      map.set(
+        row.capture_candidate_id,
+        deriveAdvisoryForRow(row, undefined, {
+          poseAttested: maintainerAckPoseReviewed,
+        }),
+      );
+    }
+    return map;
+  }, [activeSessionId, handoffBySession, maintainerAckPoseReviewed]);
+
+  const workbenchAdvisoryStatus = useMemo(() => {
+    const runWithCapture = manifest.runs.find((r) => r.capture_candidate_id);
+    if (!runWithCapture?.capture_candidate_id) return null;
+    return advisoryByCaptureId.get(runWithCapture.capture_candidate_id) ?? null;
+  }, [manifest.runs, advisoryByCaptureId]);
+
+  useEffect(() => {
+    const keys = collectMatrixAxisKeys(manifest.runs);
+    if (keys.length >= 2) {
+      if (!keys.includes(matrixAxisRow)) setMatrixAxisRow(keys[0]);
+      if (!keys.includes(matrixAxisCol)) setMatrixAxisCol(keys[1] ?? keys[0]);
+    }
+  }, [manifest.runs, matrixAxisRow, matrixAxisCol]);
+
+  useEffect(() => {
+    setExtendedCompareRunIds((ids) =>
+      ids.filter((id) => filteredRuns.some((r) => r.run_id === id)),
+    );
+  }, [filteredRuns]);
+
+  const resolveSide = useCallback(
+    (key: string): CompareSide | null => {
+      if (key.startsWith("live:")) {
+        const sid = key.slice(5);
+        const slot =
+          sid === "active"
+            ? slots.find((s) => s.sessionId === activeSessionId)
+            : slots.find((s) => s.sessionId === sid);
+        if (!slot) return null;
+        const tactical = slot.snapshots.tactical_state?.payload ?? {};
+        return sideFromLive(
+          slot.label,
+          slot.sessionId,
+          {
+            tactical_state: tactical,
+            world_summary: slot.snapshots.world_summary?.payload,
+            lifecycle_state: slot.snapshots.lifecycle_state?.payload,
+          },
+          terrainLayersEnabled ? "fictional terrain layers on" : undefined,
+        );
+      }
+      if (key.startsWith("pinned:")) {
+        const idx = Number(key.slice(7));
+        const run = manifest.runs[idx];
+        if (!run) return null;
+        return sideFromPinnedRun(run);
+      }
+      return null;
+    },
+    [slots, activeSessionId, manifest.runs, terrainLayersEnabled],
+  );
+
+  const sideA = useMemo(() => resolveSide(compareA), [compareA, resolveSide]);
+  const sideB = useMemo(() => resolveSide(compareB), [compareB, resolveSide]);
+
+  const pinActive = () => {
+    if (!activeSessionId) return;
+    const slot = slots.find((s) => s.sessionId === activeSessionId);
+    if (!slot) return;
+    const runId = `pin-${Date.now()}`;
+    setManifest((m) =>
+      pinRunSnapshot({
+        manifest: m,
+        runId,
+        label: `pinned ${shortSessionId(activeSessionId)}`,
+        sessionId: activeSessionId,
+        snapshots: slot.snapshots,
+        terrainLayersEnabled,
+      }),
+    );
+  };
+
+  const slotSessionIds = useMemo(
+    () => new Set(slots.map((s) => s.sessionId)),
+    [slots],
+  );
+
+  const normalizeCompareKey = useCallback(
+    (key: string, m: ExperimentManifest): string => {
+      if (key.startsWith("pinned:")) {
+        const idx = Number(key.slice(7));
+        if (!Number.isFinite(idx) || idx < 0 || idx >= m.runs.length) {
+          return m.runs.length > 0 ? "pinned:0" : "pinned:0";
+        }
+        return key;
+      }
+      if (key.startsWith("live:")) {
+        const sid = key.slice(5);
+        if (sid === "active") return key;
+        if (!slotSessionIds.has(sid)) return "live:active";
+        return key;
+      }
+      return "live:active";
+    },
+    [slotSessionIds],
+  );
+
+  useEffect(() => {
+    setCompareA((a) => normalizeCompareKey(a, manifest));
+    setCompareB((b) => normalizeCompareKey(b, manifest));
+  }, [manifest.runs, normalizeCompareKey, manifest]);
+
+  const importManifest = () => {
+    const text = window.prompt("Paste rt_experiment_manifest_v1 JSON");
+    if (!text) return;
+    const parsed = safeParseManifest(text);
+    if (!parsed.ok) {
+      window.alert(`Invalid manifest: ${formatImportError(parsed.error)}`);
+      return;
+    }
+    setManifest(parsed.data);
+    setMetricsOverride(null);
+    pruneAnnexCacheForManifest(parsed.data);
+    setBatchSpec((spec) => ({ ...spec, experiment_id: parsed.data.experiment_id }));
+    setCompareA((a) => normalizeCompareKey(a, parsed.data));
+    setCompareB((b) => normalizeCompareKey(b, parsed.data));
+  };
+
+  const importSpec = () => {
+    const text = window.prompt("Paste rt_experiment_spec_v1 JSON");
+    if (!text) return;
+    const parsed = safeParseExperimentSpec(text);
+    if (!parsed.ok) {
+      window.alert(`Invalid spec: ${formatImportError(parsed.error)}`);
+      return;
+    }
+    try {
+      const compiled = compileExperimentSpec(parsed.data);
+      setImportedSpec(parsed.data);
+      setCompiledPreview(compiled);
+    } catch (err) {
+      window.alert(err instanceof Error ? err.message : String(err));
+    }
+  };
+
+  const applyCompiledBatch = () => {
+    if (!compiledPreview) return;
+    setBatchSpec(compiledPreview.batch);
+    setManifest((m) => ({
+      ...m,
+      experiment_id: compiledPreview.batch.experiment_id,
+    }));
+  };
+
+  const importMetrics = () => {
+    const text = window.prompt("Paste rt_experiment_metrics_report_v1 JSON");
+    if (!text) return;
+    const parsed = safeParseMetricsReport(text);
+    if (!parsed.ok) {
+      window.alert(`Invalid metrics report: ${formatImportError(parsed.error)}`);
+      return;
+    }
+    setMetricsOverride(parsed.data);
+  };
+
+  const importFidelityMetrics = () => {
+    const text = window.prompt("Paste rt_experiment_fidelity_metrics_report_v1 JSON");
+    if (!text) return;
+    const parsed = safeParseFidelityMetricsReport(text);
+    if (!parsed.ok) {
+      window.alert(`Invalid fidelity metrics report: ${formatImportError(parsed.error)}`);
+      return;
+    }
+    setFidelityMetricsOverride(parsed.data);
+  };
+
+  const exportManifest = () => {
+    const blob = new Blob([exportManifestJson(manifest)], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `${manifest.experiment_id}-manifest.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const exportMetrics = () => {
+    if (!metricsReport) return;
+    const blob = new Blob(
+      [exportMetricsJson(metricsReport, { derived_at_utc: new Date().toISOString() })],
+      { type: "application/json" },
+    );
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `${manifest.experiment_id}-metrics_report.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const exportFidelityMetrics = () => {
+    if (!fidelityReport) return;
+    const blob = new Blob([exportFidelityMetricsJson(fidelityReport)], {
+      type: "application/json",
+    });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `${manifest.experiment_id}-fidelity_metrics_report.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const compareOptions = useMemo(() => {
+    const opts: { value: string; label: string }[] = [];
+    for (const slot of slots) {
+      opts.push({
+        value: `live:${slot.sessionId}`,
+        label: `live · ${shortSessionId(slot.sessionId)}`,
+      });
+    }
+    manifest.runs.forEach((r, i) => {
+      opts.push({ value: `pinned:${i}`, label: `pinned · ${r.label}` });
+    });
+    return opts;
+  }, [slots, manifest.runs]);
+
+  const specCompileCliHint = importedSpec
+    ? `python3 scripts/rt/rt_experiment_spec_compile.py --spec fixtures/rt_experiments/f5_spec_examples/<spec>.json --out runs/rt_sandbox/experiments/${importedSpec.experiment_id}/batch.yaml`
+    : null;
+
+  const metricsCliHint = `python3 scripts/rt/rt_experiment_metrics.py --manifest <path> [--batch <path>] [--spec <path>] --out metrics_report.json`;
+
+  const fidelityMetricsCliHint =
+    "python3 scripts/rt/rt_experiment_fidelity_metrics.py --manifest <path> [--metrics <path>] [--spec <path>] --repo-root . --out fidelity_metrics_report.json";
+
+  const compiledYamlPreview =
+    importedSpec && compiledPreview ? compileSpecToYaml(importedSpec) : null;
+
+  return (
+    <div className="space-y-4" data-testid="experiment-workbench">
+      <PanelShell title="Experiment workbench">
+        <div className="mb-3 flex flex-wrap gap-2">
+          <input
+            className="rounded border border-slate-700 bg-slate-950 px-2 py-1 text-xs font-mono"
+            value={manifest.experiment_id}
+            onChange={(e) =>
+              setManifest((m) => ({ ...m, experiment_id: e.target.value }))
+            }
+          />
+          <button
+            type="button"
+            className="rounded border border-slate-600 bg-slate-800 px-2 py-1 text-xs text-slate-200 disabled:opacity-40"
+            disabled={!connected || !activeSessionId}
+            onClick={pinActive}
+          >
+            Pin active session
+          </button>
+          <button
+            type="button"
+            className="rounded border border-slate-600 bg-slate-800 px-2 py-1 text-xs text-slate-200"
+            onClick={importManifest}
+          >
+            Import manifest
+          </button>
+          <button
+            type="button"
+            className="rounded border border-slate-600 bg-slate-800 px-2 py-1 text-xs text-slate-200"
+            onClick={exportManifest}
+          >
+            Export manifest
+          </button>
+          <button
+            type="button"
+            className="rounded border border-slate-600 bg-slate-800 px-2 py-1 text-xs text-slate-200"
+            onClick={importSpec}
+          >
+            Import spec
+          </button>
+          <label className="flex items-center gap-1 text-xs text-slate-400">
+            <input
+              type="checkbox"
+              checked={compareModeActive}
+              onChange={(e) => onCompareModeChange(e.target.checked)}
+            />
+            Compare mode
+          </label>
+          <label className="flex items-center gap-1 text-xs text-slate-400">
+            <input
+              type="checkbox"
+              checked={analyticsActive}
+              onChange={(e) => onAnalyticsActiveChange(e.target.checked)}
+            />
+            Analytics
+          </label>
+          <label className="flex items-center gap-1 text-xs text-slate-400">
+            <input
+              type="checkbox"
+              checked={continuityReviewActive}
+              onChange={(e) => onContinuityReviewActiveChange(e.target.checked)}
+            />
+            Continuity review
+          </label>
+          <label className="flex items-center gap-1 text-xs text-slate-400">
+            <input
+              type="checkbox"
+              checked={f5Active}
+              onChange={(e) => onF5ActiveChange(e.target.checked)}
+            />
+            Advanced metrics (F5)
+          </label>
+        </div>
+
+        {compiledYamlPreview && (
+          <div className="mb-3 space-y-2 rounded border border-slate-800 bg-slate-950/60 p-2">
+            <p className="text-[10px] text-slate-500">Compiled batch preview (read-only)</p>
+            <pre className="max-h-32 overflow-auto text-[10px] text-slate-400">
+              {compiledYamlPreview.slice(0, 1200)}
+              {compiledYamlPreview.length > 1200 ? "\n…" : ""}
+            </pre>
+            {specCompileCliHint && (
+              <p className="font-mono text-[10px] text-slate-500">{specCompileCliHint}</p>
+            )}
+            <button
+              type="button"
+              className="rounded border border-slate-600 bg-slate-800 px-2 py-0.5 text-xs text-slate-200"
+              onClick={applyCompiledBatch}
+            >
+              Apply compiled batch
+            </button>
+          </div>
+        )}
+
+        <div className="mb-3 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+          {filteredRuns.map((run) => (
+            <div key={run.run_id} className="relative">
+              <ExperimentRunSummaryCard run={run} />
+              {f5Active && run.capture_candidate_id && (
+                <AdvisoryRunBadge
+                  status={advisoryByCaptureId.get(run.capture_candidate_id) ?? null}
+                />
+              )}
+              <button
+                type="button"
+                className="absolute right-1 top-1 text-[10px] text-red-400"
+                onClick={() => {
+                  clearAnnexForRun(run.run_id);
+                  setManifest((m) => {
+                    const next = removeRun(m, run.run_id);
+                    pruneAnnexCacheForManifest(next);
+                    return next;
+                  });
+                }}
+              >
+                remove
+              </button>
+            </div>
+          ))}
+        </div>
+        {compareModeActive && (
+          <>
+            <div className="mb-2 flex flex-wrap gap-2">
+              <label className="text-xs text-slate-500">
+                A
+                <select
+                  className="ml-1 rounded border border-slate-700 bg-slate-950 px-1 py-0.5 text-xs"
+                  value={compareA}
+                  onChange={(e) => setCompareA(e.target.value)}
+                >
+                  {compareOptions.map((o) => (
+                    <option key={o.value} value={o.value}>
+                      {o.label}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label className="text-xs text-slate-500">
+                B
+                <select
+                  className="ml-1 rounded border border-slate-700 bg-slate-950 px-1 py-0.5 text-xs"
+                  value={compareB}
+                  onChange={(e) => setCompareB(e.target.value)}
+                >
+                  {compareOptions.map((o) => (
+                    <option key={o.value} value={o.value}>
+                      {o.label}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            </div>
+            <ExperimentComparePanel
+              sideA={sideA}
+              sideB={sideB}
+              experimentId={manifest.experiment_id}
+            />
+          </>
+        )}
+      </PanelShell>
+      <SweepCatalogBrowser
+        experimentId={manifest.experiment_id}
+        onApplyBatchSpec={(spec) => {
+          setBatchSpec(spec);
+          setManifest((m) => ({ ...m, experiment_id: spec.experiment_id }));
+        }}
+      />
+      {analyticsActive && (
+        <>
+          <ExperimentAnalyticsPanel manifest={manifest} batchSpec={batchSpec} />
+          {manifest.runs.length > 0 &&
+            (metricsReport?.experiment_class ??
+              manifest.runs.find((r) => r.experiment_class)?.experiment_class ??
+              importedSpec?.experiment_class) !== "repeatability_sweep" && (
+              <ExperimentTrendStrip perRun={analyticsReport.per_run} />
+            )}
+        </>
+      )}
+      {continuityReviewActive && (
+        <ExperimentContinuityReviewPanel
+          manifest={manifest}
+          batchSpec={batchSpec}
+          selectedRunId={continuityRunId || manifest.runs[0]?.run_id || ""}
+          onSelectRunId={setContinuityRunId}
+        />
+      )}
+      {f5Active && (
+        <PanelShell title="Advanced experiment metrics (F5)">
+          {manifest.runs.length === 0 ? (
+            <p className="text-xs text-slate-500">
+              Pin or import manifest runs to derive advanced metrics.
+            </p>
+          ) : metricsReport ? (
+            <div className="space-y-4">
+              <div className="flex flex-wrap gap-2">
+                <p className="w-full font-mono text-[10px] text-slate-500">{metricsCliHint}</p>
+                <button
+                  type="button"
+                  className="rounded border border-slate-600 bg-slate-800 px-2 py-1 text-xs text-slate-200"
+                  onClick={importMetrics}
+                >
+                  Import metrics report
+                </button>
+                <button
+                  type="button"
+                  className="rounded border border-slate-600 bg-slate-800 px-2 py-1 text-xs text-slate-200"
+                  onClick={() => setMetricsOverride(null)}
+                >
+                  Refresh from manifest
+                </button>
+                <button
+                  type="button"
+                  className="rounded border border-slate-600 bg-slate-800 px-2 py-1 text-xs text-slate-200"
+                  onClick={exportMetrics}
+                >
+                  Export metrics report
+                </button>
+              </div>
+              <ExperimentFilterBar
+                filters={f5Filters}
+                onChange={setF5Filters}
+                options={filterOptions}
+              />
+              {metricsReport.experiment_class === "repeatability_sweep" && (
+                <ExperimentRepeatabilityTrendStrip
+                  manifest={manifest}
+                  metricsReport={metricsReport}
+                  f1PerRun={analyticsReport.per_run}
+                />
+              )}
+              {fidelityCouplingPresent && fidelityReport && (
+                <>
+                  <div className="flex flex-wrap gap-2">
+                    <p className="w-full font-mono text-[10px] text-slate-500">
+                      {fidelityMetricsCliHint}
+                    </p>
+                    <button
+                      type="button"
+                      className="rounded border border-slate-600 bg-slate-800 px-2 py-1 text-xs text-slate-200"
+                      onClick={importFidelityMetrics}
+                    >
+                      Import fidelity metrics report
+                    </button>
+                    <button
+                      type="button"
+                      className="rounded border border-slate-600 bg-slate-800 px-2 py-1 text-xs text-slate-200"
+                      onClick={() => setFidelityMetricsOverride(null)}
+                    >
+                      Refresh fidelity from manifest
+                    </button>
+                    <button
+                      type="button"
+                      className="rounded border border-slate-600 bg-slate-800 px-2 py-1 text-xs text-slate-200"
+                      onClick={exportFidelityMetrics}
+                    >
+                      Export fidelity metrics report
+                    </button>
+                  </div>
+                  <ExperimentFidelityCompareStrip
+                    manifest={manifest}
+                    fidelityReport={fidelityReport}
+                  />
+                </>
+              )}
+              <ExperimentMatrixPanel
+                manifest={manifest}
+                metricsReport={metricsReport}
+                axisRow={matrixAxisRow}
+                axisCol={matrixAxisCol}
+                onAxisRowChange={setMatrixAxisRow}
+                onAxisColChange={setMatrixAxisCol}
+              />
+              <ExperimentExtendedComparePanel
+                filteredRuns={filteredRuns}
+                perRunExtended={metricsReport.per_run_extended}
+                metricsReport={metricsReport}
+                selectedRunIds={extendedCompareRunIds}
+                onSelectedRunIdsChange={setExtendedCompareRunIds}
+              />
+              <ExperimentHandoffEligibilityStrip
+                handoff={metricsReport.handoff_eligibility}
+                maintainerAckPoseReviewed={maintainerAckPoseReviewed}
+                onMaintainerAckPoseReviewedChange={setMaintainerAckPoseReviewed}
+              />
+              <ExperimentImportAdvisoryStrip
+                advisoryStatus={workbenchAdvisoryStatus}
+                handoff={metricsReport.handoff_eligibility}
+              />
+            </div>
+          ) : null}
+        </PanelShell>
+      )}
+      <ExperimentBatchPanel
+        experimentId={manifest.experiment_id}
+        batchSpec={batchSpec}
+        onBatchSpecChange={setBatchSpec}
+      />
+    </div>
+  );
+}

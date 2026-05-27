@@ -1,0 +1,52 @@
+{
+  "schema": "rt_tactical_capture_annex_v1",
+  "origin": "rt_sandbox_tactical_v1",
+  "capture_candidate_id": "demo-rt-capture-0001",
+  "ephemeral_session_ref": "demo-session",
+  "final_tactical_mode": "manual",
+  "selected_id": "interceptor_0",
+  "assigned_target": "threat_uav_0",
+  "selected_timeline": [
+    {
+      "t_utc": "2026-05-26T12:00:00+00:00",
+      "candidate_id": "interceptor_0",
+      "role": "interceptor",
+      "source": "user",
+      "authority_label": "replay_boundary_scoped"
+    }
+  ],
+  "assignment_timeline": [
+    {
+      "t_utc": "2026-05-26T12:00:05+00:00",
+      "assigned_candidate_id": "interceptor_0",
+      "reason": "user_assign",
+      "authority_label": "replay_boundary_scoped"
+    }
+  ],
+  "tti_timeline": [
+    {
+      "t_utc": "2026-05-26T12:00:03+00:00",
+      "candidate_id": "interceptor_0",
+      "tti_s": 12.5,
+      "feasible": true,
+      "reason": "selection_refresh",
+      "authority_label": "replay_boundary_scoped"
+    }
+  ],
+  "recommendation_timeline": [],
+  "mode_switches": [
+    {
+      "t_utc": "2026-05-26T11:59:50+00:00",
+      "from_mode": "manual",
+      "to_mode": "assisted",
+      "initiator": "bridge",
+      "reason": "set_tactical_mode",
+      "authority_label": "replay_boundary_scoped"
+    }
+  ],
+  "pause_resume_transitions": [],
+  "assignment_lock_events": [],
+  "target_switch_events": [],
+  "authority_label": "replay_boundary_scoped",
+  "governance_banner": "TACTICAL CAPTURE ANNEX — explanatory sandbox record; not SA replay authority"
+}
