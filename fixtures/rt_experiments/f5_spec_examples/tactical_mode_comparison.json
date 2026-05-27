@@ -1,0 +1,32 @@
+{
+  "schema": "rt_experiment_spec_v1",
+  "experiment_id": "exp-2026-05-26-tac-modes",
+  "experiment_class": "tactical_mode_comparison",
+  "governance_banner": "RT EXPERIMENT — local maintainer planning only; not operational authority",
+  "hypothesis_label": "Same interceptor template; document intended tactical modes for batch review.",
+  "compile_strategy": "explicit_list",
+  "spec_entries": [
+    {
+      "entry_id": "run-manual",
+      "label": "manual baseline",
+      "template_id": "interceptor_ready_pair_v1",
+      "dwell_s": 1,
+      "tactical_mode_hint": "manual"
+    },
+    {
+      "entry_id": "run-assisted",
+      "label": "assisted variant",
+      "template_id": "interceptor_ready_pair_v1",
+      "dwell_s": 1,
+      "tactical_mode_hint": "assisted"
+    },
+    {
+      "entry_id": "run-autonomous",
+      "label": "autonomous variant",
+      "template_id": "interceptor_ready_pair_v1",
+      "dwell_s": 1,
+      "tactical_mode_hint": "autonomous"
+    }
+  ],
+  "compile_to_batch_path": "runs/rt_sandbox/experiments/exp-2026-05-26-tac-modes/batch.yaml"
+}

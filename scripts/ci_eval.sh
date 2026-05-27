@@ -23,6 +23,7 @@ ci_eval — layered counter-UAS evaluation (see scripts/evaluation/README.md).
 Commands (run from repo root):
   tier0              Fast gate: pytest + validate_heatmap --dry-run (no Gazebo).
   tier0-sa-r0        SA-R0 viewer: npm test + build (requires Node 20+).
+  tier0-rt-ui        RT sandbox UI: npm test + build (requires Node 20+).
   tier1              One Gazebo capture (headless). Needs install/setup.bash.
   tier2              Full scenario matrix from default CSV (slow).
   tier2-smoke        Single-row matrix (smoke_scenario_matrix.csv).
@@ -52,6 +53,8 @@ require_install() {
 }
 
 tier0() {
+  echo "[ci_eval] tier0: RT runtime subcommand governance lint"
+  "$PY" scripts/rt/lint_rt_runtime_subcommands.py --check
   echo "[ci_eval] tier0: pytest"
   "$PY" -m pytest src/counter_uas/test/ -q --tb=short
   echo "[ci_eval] tier0: validate_heatmap_vs_gazebo --dry-run"
@@ -137,6 +140,15 @@ tier0_sa_r0() {
   echo "[ci_eval] tier0-sa-r0: platform/sa-r0-viewer"
   (cd "$ROOT/platform/sa-r0-viewer" && npm ci && npm test && npm run build)
   echo "[ci_eval] tier0-sa-r0: OK"
+}
+
+tier0_rt_ui() {
+  if ! command -v npm >/dev/null 2>&1; then
+    die "tier0-rt-ui requires npm Node 20+"
+  fi
+  echo "[ci_eval] tier0-rt-ui: platform/rt-sandbox-ui"
+  (cd "$ROOT/platform/rt-sandbox-ui" && npm ci && npm test && npm run build)
+  echo "[ci_eval] tier0-rt-ui: OK"
 }
 
 export_libgl_default() {
@@ -394,6 +406,9 @@ case "$cmd" in
     ;;
   tier0-sa-r0)
     tier0_sa_r0
+    ;;
+  tier0-rt-ui)
+    tier0_rt_ui
     ;;
   tier1)
     parse_tier1_args "$@"

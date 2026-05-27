@@ -1,0 +1,28 @@
+schema: rt_experiment_batch_v1
+experiment_id: exp-2026-05-26-template-dwell-matrix
+default_dwell_s: 2
+runs:
+  - run_id: m-radar-north-arc-v1-1
+    label: "dwell_s=1;template_id=radar_north_arc_v1"
+    dwell_s: 1
+    template_id: radar_north_arc_v1
+    experiment_class: parameter_matrix
+    spec_fingerprint: e0a139e037e0a3c9
+  - run_id: m-radar-north-arc-v1-2
+    label: "dwell_s=2;template_id=radar_north_arc_v1"
+    dwell_s: 2
+    template_id: radar_north_arc_v1
+    experiment_class: parameter_matrix
+    spec_fingerprint: e0a139e037e0a3c9
+  - run_id: m-radar-valley-pair-v1-1
+    label: "dwell_s=1;template_id=radar_valley_pair_v1"
+    dwell_s: 1
+    template_id: radar_valley_pair_v1
+    experiment_class: parameter_matrix
+    spec_fingerprint: e0a139e037e0a3c9
+  - run_id: m-radar-valley-pair-v1-2
+    label: "dwell_s=2;template_id=radar_valley_pair_v1"
+    dwell_s: 2
+    template_id: radar_valley_pair_v1
+    experiment_class: parameter_matrix
+    spec_fingerprint: e0a139e037e0a3c9

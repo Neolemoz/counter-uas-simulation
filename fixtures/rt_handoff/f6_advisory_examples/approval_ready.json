@@ -1,0 +1,18 @@
+{
+  "description": "Preconditions pass; not yet capture_approved",
+  "inputs": {
+    "candidate": {
+      "normalization_status": "normalized",
+      "approval_status": "pending"
+    },
+    "normalization_validation": { "valid": true },
+    "export_events": ["handoff_reviewed"],
+    "handoff_preconditions_errors": [],
+    "workflow_phase": "ready"
+  },
+  "expected": {
+    "advisory_state": "approval_ready",
+    "blocked": false,
+    "checklist_highlight": ["pose_cognition"]
+  }
+}

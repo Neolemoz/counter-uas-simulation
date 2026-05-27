@@ -1,0 +1,50 @@
+{
+  "schema": "rt_sa_workflow_advisory_status_v1",
+  "capture_candidate_id": "test-cap",
+  "advisory_state": "capture_ready",
+  "advisory_state_label": "Capture ready (advisory)",
+  "blocked": false,
+  "block_reasons": [],
+  "checklist": [
+    {
+      "id": "normalization",
+      "status": "pass"
+    },
+    {
+      "id": "validation_doc",
+      "status": "pass"
+    },
+    {
+      "id": "pose_cognition",
+      "status": "warn",
+      "detail": "maintainer attestation required"
+    },
+    {
+      "id": "origin",
+      "status": "unknown"
+    },
+    {
+      "id": "session_state",
+      "status": "unknown"
+    },
+    {
+      "id": "scenario_pack",
+      "status": "pass"
+    },
+    {
+      "id": "export_audit",
+      "status": "warn",
+      "detail": "missing: capture_validated, export_pose_normalized"
+    },
+    {
+      "id": "lineage",
+      "status": "pass"
+    }
+  ],
+  "governance_banner": "SA WORKFLOW ADVISORY \u2014 explanatory; maintainer CLIs are authority",
+  "upstream": {
+    "workflow_phase": "review_pending",
+    "last_export_event": "handoff_ready",
+    "approval_status": "pending"
+  }
+}

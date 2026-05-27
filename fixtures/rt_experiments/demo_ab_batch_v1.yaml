@@ -1,0 +1,12 @@
+schema: rt_experiment_batch_v1
+experiment_id: demo-ab-batch-v1
+default_dwell_s: 1
+runs:
+  - run_id: run-manual
+    label: manual baseline
+    dwell_s: 1
+    tactical_mode_hint: manual
+  - run_id: run-assisted
+    label: assisted variant
+    dwell_s: 1
+    tactical_mode_hint: assisted

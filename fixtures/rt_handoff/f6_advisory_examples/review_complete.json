@@ -1,0 +1,20 @@
+{
+  "description": "Maintainer checklist complete — handoff_reviewed",
+  "inputs": {
+    "candidate": {
+      "normalization_status": "normalized",
+      "approval_status": "pending"
+    },
+    "export_events": ["capture_normalized", "handoff_ready", "handoff_reviewed"],
+    "handoff_review": {
+      "decision": "ready_for_approval",
+      "reviewer": "maintainer",
+      "notes": "pose cognition reviewed"
+    },
+    "workflow_phase": "ready"
+  },
+  "expected": {
+    "advisory_state": "review_complete",
+    "blocked": false
+  }
+}

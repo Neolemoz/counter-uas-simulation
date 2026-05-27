@@ -1,0 +1,48 @@
+{
+  "schema": "rt_experiment_manifest_v1",
+  "experiment_id": "exp-2026-05-26-f5b-golden",
+  "created_at_utc": "2026-05-26T16:00:00+00:00",
+  "governance_banner": "RT EXPERIMENT — explanatory compare only; not operational authority",
+  "runs": [
+    {
+      "run_id": "run-clear",
+      "label": "clear LOS",
+      "session_id": "sess-f5b-example-01",
+      "recorded_at_utc": "2026-05-26T16:00:00+00:00",
+      "capture_candidate_id": "cap-f5b-clear",
+      "capture_staging_ref": "fixtures/rt_experiments/f5b_fidelity_examples/staging/run-clear",
+      "spec_fingerprint": "f5b-golden-fp",
+      "visibility_context": {
+        "los_cognition_label": "clear"
+      },
+      "fidelity_context": {
+        "enable_fidelity_coupling": true,
+        "adapter_mode": "live",
+        "truth_snapshot_ref": "fixtures/rt_experiments/f5b_fidelity_examples/staging/run-clear/fidelity_truth.json"
+      },
+      "snapshot": {
+        "world_summary": { "entity_count": 2 }
+      }
+    },
+    {
+      "run_id": "run-divergent",
+      "label": "divergent LOS",
+      "session_id": "sess-f5b-example-02",
+      "recorded_at_utc": "2026-05-26T16:01:00+00:00",
+      "capture_candidate_id": "cap-f5b-divergent",
+      "capture_staging_ref": "fixtures/rt_experiments/f5b_fidelity_examples/staging/run-divergent",
+      "spec_fingerprint": "f5b-golden-fp",
+      "visibility_context": {
+        "los_cognition_label": "partial"
+      },
+      "fidelity_context": {
+        "enable_fidelity_coupling": true,
+        "adapter_mode": "live",
+        "truth_snapshot_ref": "fixtures/rt_experiments/f5b_fidelity_examples/staging/run-divergent/fidelity_truth.json"
+      },
+      "snapshot": {
+        "world_summary": { "entity_count": 2 }
+      }
+    }
+  ]
+}

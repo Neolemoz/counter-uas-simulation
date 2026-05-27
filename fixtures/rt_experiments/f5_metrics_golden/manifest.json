@@ -1,0 +1,86 @@
+{
+  "schema": "rt_experiment_manifest_v1",
+  "experiment_id": "exp-2026-05-26-template-dwell-matrix",
+  "created_at_utc": "2026-05-26T14:00:00+00:00",
+  "governance_banner": "RT EXPERIMENT — explanatory compare only; not operational authority",
+  "runs": [
+    {
+      "run_id": "m-radar-north-arc-v1-1",
+      "label": "dwell=1 north",
+      "session_id": "sess-00000001",
+      "recorded_at_utc": "2026-05-26T14:01:00+00:00",
+      "capture_candidate_id": "cap-m1",
+      "capture_staging_ref": "runs/rt_sandbox/captures/cap-m1",
+      "experiment_class": "parameter_matrix",
+      "spec_fingerprint": "golden-fp-placeholder",
+      "matrix_coords": { "template_id": "radar_north_arc_v1", "dwell_s": "1" },
+      "snapshot": {
+        "tactical_state": { "tactical_mode": "manual", "tti_s": 1.5 },
+        "world_summary": { "entity_count": 4 },
+        "terrain_context": { "nearest_ridge": "north_ridge", "elevation_band": "high" }
+      },
+      "visibility_context": {
+        "f4_layer_preset": "contours_on",
+        "los_cognition_label": "partial",
+        "occlusion_marker_count": 2
+      }
+    },
+    {
+      "run_id": "m-radar-north-arc-v1-2",
+      "label": "dwell=2 north",
+      "session_id": "sess-00000002",
+      "recorded_at_utc": "2026-05-26T14:02:00+00:00",
+      "capture_candidate_id": "cap-m2",
+      "capture_staging_ref": "runs/rt_sandbox/captures/cap-m2",
+      "experiment_class": "parameter_matrix",
+      "spec_fingerprint": "golden-fp-placeholder",
+      "matrix_coords": { "template_id": "radar_north_arc_v1", "dwell_s": "2" },
+      "snapshot": {
+        "tactical_state": { "tactical_mode": "assisted", "tti_s": 2.0 },
+        "world_summary": { "entity_count": 4 },
+        "terrain_context": { "nearest_ridge": "north_ridge", "elevation_band": "mid" }
+      },
+      "visibility_context": {
+        "f4_layer_preset": "default_off",
+        "los_cognition_label": "clear",
+        "occlusion_marker_count": 0
+      }
+    },
+    {
+      "run_id": "m-radar-valley-pair-v1-1",
+      "label": "dwell=1 valley",
+      "session_id": "sess-00000003",
+      "recorded_at_utc": "2026-05-26T14:03:00+00:00",
+      "experiment_class": "parameter_matrix",
+      "spec_fingerprint": "golden-fp-placeholder",
+      "matrix_coords": { "template_id": "radar_valley_pair_v1", "dwell_s": "1" },
+      "snapshot": {
+        "tactical_state": { "tactical_mode": "manual" },
+        "world_summary": { "entity_count": 2 },
+        "terrain_context": { "nearest_ridge": "valley_ridge", "elevation_band": "low" }
+      },
+      "visibility_context": {
+        "los_cognition_label": "occluded",
+        "occlusion_marker_count": 5
+      }
+    },
+    {
+      "run_id": "m-radar-valley-pair-v1-2",
+      "label": "dwell=2 valley",
+      "session_id": "sess-00000004",
+      "recorded_at_utc": "2026-05-26T14:04:00+00:00",
+      "experiment_class": "parameter_matrix",
+      "spec_fingerprint": "golden-fp-placeholder",
+      "matrix_coords": { "template_id": "radar_valley_pair_v1", "dwell_s": "2" },
+      "snapshot": {
+        "tactical_state": { "tactical_mode": "autonomous" },
+        "world_summary": { "entity_count": 2 },
+        "terrain_context": { "nearest_ridge": "valley_ridge", "elevation_band": "low" }
+      },
+      "visibility_context": {
+        "los_cognition_label": "occluded",
+        "occlusion_marker_count": 4
+      }
+    }
+  ]
+}

@@ -1,0 +1,13 @@
+{
+  "description": "Terminal SA authority — not an advisory rung",
+  "inputs": {
+    "export_events": ["handoff_import_committed"],
+    "import_record_present": true,
+    "workflow_phase": "committed"
+  },
+  "expected": {
+    "advisory_state": null,
+    "terminal": "handoff_import_committed",
+    "note": "SA lineage active under fixtures/sa_r0/ — derive returns committed summary not ladder rung"
+  }
+}

@@ -1,0 +1,28 @@
+schema: rt_experiment_batch_v1
+experiment_id: exp-2026-05-26-repeat-ridge
+default_dwell_s: 2
+runs:
+  - run_id: radar_north_arc-r0
+    label: "ridge baseline #0"
+    dwell_s: 2
+    template_id: radar_north_arc_v1
+    experiment_class: repeatability_sweep
+    spec_fingerprint: 47de2cac1096cce6
+    repeat_index: 0
+    repeat_group_id: repeat-ridge-baseline
+  - run_id: radar_north_arc-r1
+    label: "ridge baseline #1"
+    dwell_s: 2
+    template_id: radar_north_arc_v1
+    experiment_class: repeatability_sweep
+    spec_fingerprint: 47de2cac1096cce6
+    repeat_index: 1
+    repeat_group_id: repeat-ridge-baseline
+  - run_id: radar_north_arc-r2
+    label: "ridge baseline #2"
+    dwell_s: 2
+    template_id: radar_north_arc_v1
+    experiment_class: repeatability_sweep
+    spec_fingerprint: 47de2cac1096cce6
+    repeat_index: 2
+    repeat_group_id: repeat-ridge-baseline

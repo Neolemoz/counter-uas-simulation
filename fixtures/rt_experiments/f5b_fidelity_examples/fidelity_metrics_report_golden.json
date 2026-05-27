@@ -1,0 +1,56 @@
+{
+  "schema": "rt_experiment_fidelity_metrics_report_v1",
+  "experiment_id": "exp-2026-05-26-f5b-golden",
+  "governance_banner": "RT EXPERIMENT FIDELITY METRICS — truth-attested summaries are sim-scoped; not SA replay or operational sensor authority",
+  "spec_fingerprint": "f5b-golden-fp",
+  "coupling_required": true,
+  "per_run_fidelity": [
+    {
+      "run_id": "run-clear",
+      "fidelity_attestation_status": "available",
+      "los_truth_label": "clear",
+      "los_cognition_label": "clear",
+      "visibility_truth_ref": "sim_visibility_bundle_v1",
+      "dome_truth_ref": "radar_north",
+      "pose_truth_drift_m": 0.33,
+      "agl_truth_m": 25.3,
+      "cognition_truth_divergence": false
+    },
+    {
+      "run_id": "run-divergent",
+      "fidelity_attestation_status": "available",
+      "los_truth_label": "terrain_blocked",
+      "los_cognition_label": "partial",
+      "visibility_truth_ref": "sim_visibility_bundle_v1",
+      "dome_truth_ref": "radar_north",
+      "pose_truth_drift_m": 0.54,
+      "agl_truth_m": 17.5,
+      "cognition_truth_divergence": true
+    }
+  ],
+  "compare_pairs_fidelity": [
+    {
+      "run_id_a": "run-clear",
+      "run_id_b": "run-divergent",
+      "badges": [
+        { "id": "cognition_truth_divergence", "label": "cognition_truth_divergence" },
+        { "id": "los_truth_label_diff", "label": "los_truth_label_diff" },
+        { "id": "pose_truth_drift_delta", "label": "pose_truth_drift_delta" }
+      ]
+    }
+  ],
+  "rollup_fidelity": {
+    "attestation_rollup": { "status_counts": { "available": 2 } },
+    "divergence_rollup": { "cognition_truth_divergence_count": 1 },
+    "repeatability_truth_rollup": {
+      "truth_fingerprints": [
+        {
+          "spec_fingerprint": "f5b-golden-fp",
+          "truth_fingerprint": "truth-fp-101ec200d89fc243",
+          "run_count": 2,
+          "coupling_flag": true
+        }
+      ]
+    }
+  }
+}

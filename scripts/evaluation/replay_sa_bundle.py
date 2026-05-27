@@ -32,6 +32,10 @@ from replay_viz_figures import _GUIDANCE_POS_RE  # noqa: E402
 from replay_viz_figures import _P_HEATMAP_POS_RE  # noqa: E402
 from replay_viz_figures import _parse_launch_geometry  # noqa: E402
 from replay_viz_figures import _strip_ros_prefix  # noqa: E402
+from rt_tactical_replay_continuity import (  # noqa: E402
+    attach_rt_tactical_replay_continuity,
+    lint_rt_tactical_replay_continuity,
+)
 
 BUNDLE_SCHEMA_VERSION = "replay_sa_bundle_v1"
 _REPO_ROOT = Path(__file__).resolve().parents[2]
@@ -750,6 +754,7 @@ def lint_replay_sa_bundle(payload: dict[str, Any]) -> dict[str, Any]:
                 warnings.append(
                     f"overlays[{idx}] active_t_range [{a},{b}] exceeds log span [{ls},{le}]"
                 )
+    issues.extend(lint_rt_tactical_replay_continuity(payload))
     return {"ok": len(issues) == 0, "issues": issues, "warnings": warnings}
 
 
@@ -760,6 +765,7 @@ def pack_bundle(
     viz_manifest_json: Path | None = None,
     scenario_overlay_json: Path | None = None,
     scenario_pack_dir: Path | None = None,
+    rt_capture_staging_dir: Path | None = None,
     out_dir: Path,
 ) -> dict[str, Any]:
     if scenario_overlay_json and scenario_pack_dir:
@@ -785,6 +791,13 @@ def pack_bundle(
         raise ValueError(f"bundle governance lint failed: {lint['issues']}")
 
     out_dir.mkdir(parents=True, exist_ok=True)
+    if rt_capture_staging_dir is not None:
+        attach_rt_tactical_replay_continuity(
+            bundle,
+            capture_staging_dir=rt_capture_staging_dir,
+            repo_root=_REPO_ROOT,
+            out_dir=out_dir,
+        )
     _write_json(out_dir / "index.json", bundle)
 
     if viz_manifest:
@@ -825,6 +838,7 @@ def _cmd_pack(args: argparse.Namespace) -> None:
         viz_manifest_json=Path(args.viz_manifest_json) if args.viz_manifest_json else None,
         scenario_overlay_json=Path(args.scenario_overlay) if args.scenario_overlay else None,
         scenario_pack_dir=Path(args.scenario_pack) if args.scenario_pack else None,
+        rt_capture_staging_dir=Path(args.rt_capture_staging) if args.rt_capture_staging else None,
         out_dir=Path(args.out_dir),
     )
     print(f"wrote {args.out_dir}/index.json")
@@ -854,6 +868,11 @@ def main() -> None:
     pack.add_argument("--scenario-overlay", default=None, help="Legacy monolithic scenario_overlay.json")
     pack.add_argument("--scenario-pack", default=None, help="scenario_topology_v1 pack directory")
     pack.add_argument("--out-dir", required=True)
+    pack.add_argument(
+        "--rt-capture-staging",
+        default=None,
+        help="RT capture staging dir (candidate.json + tactical_annex) for PLAT-RT-SA3 embed",
+    )
     pack.set_defaults(func=_cmd_pack)
 
     lint = sub.add_parser("lint", help="Lint a bundle index.json.")

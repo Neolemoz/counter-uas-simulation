@@ -1,0 +1,13 @@
+{
+  "description": "Handoff rejected — downstream advisory blocked",
+  "inputs": {
+    "export_events": ["handoff_rejected"],
+    "handoff_review": { "decision": "rejected" },
+    "workflow_phase": "rejected"
+  },
+  "expected": {
+    "advisory_state": "blocked",
+    "blocked": true,
+    "block_reasons": ["handoff_rejected"]
+  }
+}

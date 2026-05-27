@@ -1,0 +1,19 @@
+{
+  "description": "Normalized capture; handoff review not started",
+  "inputs": {
+    "candidate": {
+      "normalization_status": "normalized",
+      "approval_status": "pending",
+      "origin": ["rt_sandbox_capture_v1"]
+    },
+    "normalization_validation": { "valid": true },
+    "export_events": ["capture_validated", "capture_normalized"],
+    "workflow_phase": "normalized"
+  },
+  "expected": {
+    "schema": "rt_sa_workflow_advisory_status_v1",
+    "advisory_state": "capture_ready",
+    "blocked": false,
+    "governance_banner": "SA WORKFLOW ADVISORY — explanatory; maintainer CLIs are authority"
+  }
+}

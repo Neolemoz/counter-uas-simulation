@@ -1,0 +1,18 @@
+{
+  "description": "F5 experiment eligible but capture not import-ready — independent signals",
+  "inputs": {
+    "f5_handoff_eligibility": {
+      "experiment_level": "eligible",
+      "gates": { "all_captures_present": true, "normalization_available": true }
+    },
+    "capture_advisory_inputs": {
+      "export_events": ["capture_normalized"],
+      "workflow_phase": "normalized"
+    }
+  },
+  "expected": {
+    "advisory_state": "capture_ready",
+    "f5_warn": false,
+    "note": "F5 eligible must not imply import_ready or auto-import"
+  }
+}

@@ -1,0 +1,24 @@
+{
+  "schema": "rt_experiment_spec_v1",
+  "experiment_id": "exp-2026-05-26-template-dwell-matrix",
+  "experiment_class": "parameter_matrix",
+  "governance_banner": "RT EXPERIMENT — local maintainer planning only; not operational authority",
+  "hypothesis_label": "2x2 matrix of template_id x dwell_s for staging comparison.",
+  "compile_strategy": "cartesian",
+  "matrix_axes": [
+    {
+      "axis_id": "template_id",
+      "values": ["radar_north_arc_v1", "radar_valley_pair_v1"]
+    },
+    {
+      "axis_id": "dwell_s",
+      "values": ["1", "2"]
+    }
+  ],
+  "default_dwell_s": 2,
+  "manifest_expectation": {
+    "min_run_count": 4,
+    "required_snapshot_channels": ["tactical_state", "world_summary", "lifecycle_state"]
+  },
+  "compile_to_batch_path": "runs/rt_sandbox/experiments/exp-2026-05-26-template-dwell-matrix/batch.yaml"
+}

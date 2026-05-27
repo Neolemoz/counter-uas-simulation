@@ -1,0 +1,26 @@
+{
+  "fidelity_pose_block": {
+    "schema": "rt_fidelity_pose_block_v1",
+    "governance_banner": "RT FIDELITY TRUTH — sim-scoped attestation only; not SA replay or operational sensor authority",
+    "enable_fidelity_coupling": true,
+    "adapter_attached": true,
+    "per_entity": [
+      {
+        "entity_id": "entity-a",
+        "command_pose": { "x": 100, "y": 50, "z": 25, "yaw_deg": 90 },
+        "truth_attested_pose": { "x": 100.15, "y": 50.02, "z": 25.3, "yaw_deg": 90 },
+        "pose_truth_drift_m": 0.33,
+        "sim_agl_m": 25.3,
+        "flags": []
+      },
+      {
+        "entity_id": "entity-b",
+        "command_pose": { "x": 200, "y": -30, "z": 18, "yaw_deg": 0 },
+        "truth_attested_pose": { "x": 199.8, "y": -30.1, "z": 17.5, "yaw_deg": 1 },
+        "pose_truth_drift_m": 0.54,
+        "sim_agl_m": 17.5,
+        "flags": ["cognition_truth_divergence"]
+      }
+    ]
+  }
+}

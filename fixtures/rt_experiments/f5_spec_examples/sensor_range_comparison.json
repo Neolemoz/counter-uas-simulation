@@ -1,0 +1,23 @@
+{
+  "schema": "rt_experiment_spec_v1",
+  "experiment_id": "exp-2026-05-26-sensor-range",
+  "experiment_class": "sensor_range_comparison",
+  "governance_banner": "RT EXPERIMENT — local maintainer planning only; not operational authority",
+  "hypothesis_label": "Template layout contrast for explanatory sensor dome fiction — not parser sensor truth.",
+  "compile_strategy": "explicit_list",
+  "spec_entries": [
+    {
+      "entry_id": "valley-pair",
+      "label": "valley radar pair",
+      "template_id": "radar_valley_pair_v1",
+      "dwell_s": 2
+    },
+    {
+      "entry_id": "north-arc",
+      "label": "north arc radar",
+      "template_id": "radar_north_arc_v1",
+      "dwell_s": 2
+    }
+  ],
+  "compile_to_batch_path": "runs/rt_sandbox/experiments/exp-2026-05-26-sensor-range/batch.yaml"
+}

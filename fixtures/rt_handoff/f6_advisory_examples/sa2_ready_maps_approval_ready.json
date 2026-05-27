@@ -1,0 +1,17 @@
+{
+  "description": "SA2 workflow_phase ready maps to advisory approval_ready not handoff_ready",
+  "inputs": {
+    "workflow_phase": "ready",
+    "candidate": {
+      "normalization_status": "normalized",
+      "approval_status": "pending"
+    },
+    "export_events": ["handoff_reviewed"],
+    "conversion_manifest_present": false
+  },
+  "expected": {
+    "advisory_state": "approval_ready",
+    "blocked": false,
+    "note": "SA2 ready chip is pre-approve; distinct from advisory handoff_ready post-approve"
+  }
+}

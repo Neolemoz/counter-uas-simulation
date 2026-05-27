@@ -1,0 +1,20 @@
+{
+  "description": "SA import prepared; corpus commit remains manual gate",
+  "inputs": {
+    "candidate": { "approval_status": "approved" },
+    "export_events": [
+      "capture_approved",
+      "conversion_manifest_written",
+      "handoff_import_prepared"
+    ],
+    "handoff_manifest_present": true,
+    "conversion_steps_advisory_pass": true,
+    "lineage_lint_errors": [],
+    "workflow_phase": "prepared"
+  },
+  "expected": {
+    "advisory_state": "import_ready",
+    "blocked": false,
+    "note": "import_ready does NOT imply SA lineage — commit still required"
+  }
+}

@@ -1,0 +1,11 @@
+{
+  "schema": "rt_fidelity_truth_snapshot_v1",
+  "session_id": "sess-f5b-example-01",
+  "timestamp_utc": "2026-05-26T16:00:00+00:00",
+  "governance_banner": "RT FIDELITY TRUTH — sim-scoped attestation only; not SA replay or operational sensor authority",
+  "attestation_status": "available",
+  "visibility_truth": { "ref": "sim_visibility_bundle_v1", "label": "clear" },
+  "los_truth": { "label": "clear", "pair_entity_ids": ["entity-a", "entity-b"] },
+  "dome_truth": { "sensor_id": "radar_north", "entities_in_nominal_dome": 2 },
+  "occlusion_truth": { "occluder_ids": [], "optional": true }
+}

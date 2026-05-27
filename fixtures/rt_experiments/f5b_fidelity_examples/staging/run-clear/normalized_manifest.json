@@ -1,0 +1,18 @@
+{
+  "normalization_status": "normalized",
+  "fidelity_pose_block": {
+    "schema": "rt_fidelity_pose_block_v1",
+    "governance_banner": "RT FIDELITY TRUTH — sim-scoped attestation only; not SA replay or operational sensor authority",
+    "enable_fidelity_coupling": true,
+    "adapter_attached": true,
+    "attestation_status": "available",
+    "per_entity": [
+      {
+        "entity_id": "entity-a",
+        "pose_truth_drift_m": 0.33,
+        "sim_agl_m": 25.3,
+        "flags": []
+      }
+    ]
+  }
+}

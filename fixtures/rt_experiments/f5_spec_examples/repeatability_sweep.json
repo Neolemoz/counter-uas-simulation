@@ -1,0 +1,24 @@
+{
+  "schema": "rt_experiment_spec_v1",
+  "experiment_id": "exp-2026-05-26-repeat-ridge",
+  "experiment_class": "repeatability_sweep",
+  "governance_banner": "RT EXPERIMENT — local maintainer planning only; not operational authority",
+  "hypothesis_label": "Three sequential runs with identical template and dwell for stability cognition.",
+  "compile_strategy": "repeat_expand",
+  "repeat_config": {
+    "repeat_group_id": "repeat-ridge-baseline",
+    "count": 3,
+    "jitter_s": 0,
+    "base_entry": {
+      "template_id": "radar_north_arc_v1",
+      "label": "ridge baseline",
+      "dwell_s": 2
+    }
+  },
+  "default_dwell_s": 2,
+  "manifest_expectation": {
+    "min_run_count": 3,
+    "required_snapshot_channels": ["tactical_state", "world_summary", "lifecycle_state"]
+  },
+  "compile_to_batch_path": "runs/rt_sandbox/experiments/exp-2026-05-26-repeat-ridge/batch.yaml"
+}

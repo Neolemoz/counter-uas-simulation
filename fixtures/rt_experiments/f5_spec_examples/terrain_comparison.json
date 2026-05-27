@@ -1,0 +1,32 @@
+{
+  "schema": "rt_experiment_spec_v1",
+  "experiment_id": "exp-2026-05-26-terrain-compare",
+  "experiment_class": "terrain_comparison",
+  "governance_banner": "RT EXPERIMENT — local maintainer planning only; not operational authority",
+  "hypothesis_label": "Compare ridge cognition labels under two F4 layer presets (explanatory only).",
+  "compile_strategy": "explicit_list",
+  "spec_entries": [
+    {
+      "entry_id": "baseline-off",
+      "label": "F4 layers default off",
+      "template_id": "radar_north_arc_v1",
+      "dwell_s": 2,
+      "terrain_profile_ref": "v2_fictional_ridge_north",
+      "f4_layer_preset": "default_off"
+    },
+    {
+      "entry_id": "contours-on",
+      "label": "F4 contours enabled",
+      "template_id": "radar_north_arc_v1",
+      "dwell_s": 2,
+      "terrain_profile_ref": "v2_fictional_ridge_north",
+      "f4_layer_preset": "contours_on"
+    }
+  ],
+  "default_dwell_s": 2,
+  "manifest_expectation": {
+    "min_run_count": 2,
+    "required_snapshot_channels": ["tactical_state", "world_summary", "lifecycle_state"]
+  },
+  "compile_to_batch_path": "runs/rt_sandbox/experiments/exp-2026-05-26-terrain-compare/batch.yaml"
+}

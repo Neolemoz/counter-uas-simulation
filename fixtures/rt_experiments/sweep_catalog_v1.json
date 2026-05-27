@@ -1,0 +1,75 @@
+{
+  "schema": "rt_experiment_sweep_catalog_v1",
+  "catalog_id": "rt_sweep_catalog_v1",
+  "governance_banner": "RT SWEEP CATALOG — local template recipes only; not SA orchestration",
+  "sweep_groups": [
+    {
+      "group_id": "ridge_defense_variants",
+      "label": "Ridge defense variants",
+      "description": "Compare northern arc radar layout vs interceptor ready pair for staging demos.",
+      "compile_strategy": "explicit_list",
+      "default_dwell_s": 2,
+      "sweep_entries": [
+        {
+          "entry_id": "north_arc",
+          "label": "radar north arc",
+          "template_id": "radar_north_arc_v1",
+          "dwell_s": 2
+        },
+        {
+          "entry_id": "interceptor_ready",
+          "label": "interceptor ready pair",
+          "template_id": "interceptor_ready_pair_v1",
+          "dwell_s": 2,
+          "tactical_mode_hint": "manual"
+        }
+      ]
+    },
+    {
+      "group_id": "sensor_range_variants",
+      "label": "Sensor range variants",
+      "description": "Valley pair vs north arc radar — entity count and layout contrast (explanatory).",
+      "compile_strategy": "explicit_list",
+      "default_dwell_s": 2,
+      "sweep_entries": [
+        {
+          "entry_id": "valley_pair",
+          "label": "valley radar pair",
+          "template_id": "radar_valley_pair_v1"
+        },
+        {
+          "entry_id": "north_arc",
+          "label": "north arc radar",
+          "template_id": "radar_north_arc_v1"
+        }
+      ]
+    },
+    {
+      "group_id": "tactical_mode_comparison",
+      "label": "Tactical mode comparison",
+      "description": "Same interceptor template; tactical_mode_hint documents intended mode for batch review (not bridge-enforced).",
+      "compile_strategy": "explicit_list",
+      "default_dwell_s": 1,
+      "sweep_entries": [
+        {
+          "entry_id": "run-manual",
+          "label": "manual baseline",
+          "template_id": "interceptor_ready_pair_v1",
+          "tactical_mode_hint": "manual"
+        },
+        {
+          "entry_id": "run-assisted",
+          "label": "assisted variant",
+          "template_id": "interceptor_ready_pair_v1",
+          "tactical_mode_hint": "assisted"
+        },
+        {
+          "entry_id": "run-autonomous",
+          "label": "autonomous variant",
+          "template_id": "interceptor_ready_pair_v1",
+          "tactical_mode_hint": "autonomous"
+        }
+      ]
+    }
+  ]
+}

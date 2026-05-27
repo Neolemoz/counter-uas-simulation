@@ -1,0 +1,13 @@
+{
+  "description": "Import deferred — import_ready blocked",
+  "inputs": {
+    "export_events": ["handoff_reviewed", "handoff_import_deferred"],
+    "handoff_review": { "decision": "deferred", "notes": "await scenario pack fix" },
+    "workflow_phase": "deferred"
+  },
+  "expected": {
+    "advisory_state": "blocked",
+    "blocked": true,
+    "block_reasons": ["handoff_import_deferred"]
+  }
+}

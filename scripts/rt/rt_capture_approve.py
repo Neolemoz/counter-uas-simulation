@@ -44,6 +44,11 @@ def main() -> int:
         action="store_true",
         help="validate only; do not write approval or conversion files",
     )
+    parser.add_argument(
+        "--skip-normalization-check",
+        action="store_true",
+        help="allow approval without normalization (legacy test fixtures only)",
+    )
     args = parser.parse_args()
 
     repo_root = repo_root_from()
@@ -59,7 +64,9 @@ def main() -> int:
 
     try:
         approval = write_approval_record(
-            staging_dir, approved_by=args.approved_by
+            staging_dir,
+            approved_by=args.approved_by,
+            skip_normalization_check=args.skip_normalization_check,
         )
         manifest = write_conversion_manifest(
             staging_dir,

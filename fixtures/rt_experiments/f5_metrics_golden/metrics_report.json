@@ -1,0 +1,373 @@
+{
+  "compare_pairs_extended": [
+    {
+      "badges": [
+        {
+          "detail": "manual \u2192 assisted",
+          "id": "mode_changed",
+          "label": "mode_changed"
+        },
+        {
+          "detail": "1.5s vs 2.0s",
+          "id": "tti_delta",
+          "label": "tti_delta"
+        },
+        {
+          "id": "terrain_context_diff",
+          "label": "terrain_context_diff"
+        },
+        {
+          "id": "visibility_label_diff",
+          "label": "visibility_label_diff"
+        },
+        {
+          "id": "matrix_axis_diff",
+          "label": "matrix_axis_diff"
+        }
+      ],
+      "run_id_a": "m-radar-north-arc-v1-1",
+      "run_id_b": "m-radar-north-arc-v1-2"
+    },
+    {
+      "badges": [
+        {
+          "detail": "capture presence differs",
+          "id": "capture_asymmetric",
+          "label": "capture_asymmetric"
+        },
+        {
+          "id": "terrain_context_diff",
+          "label": "terrain_context_diff"
+        },
+        {
+          "id": "visibility_label_diff",
+          "label": "visibility_label_diff"
+        },
+        {
+          "id": "matrix_axis_diff",
+          "label": "matrix_axis_diff"
+        }
+      ],
+      "run_id_a": "m-radar-north-arc-v1-1",
+      "run_id_b": "m-radar-valley-pair-v1-1"
+    },
+    {
+      "badges": [
+        {
+          "detail": "manual \u2192 autonomous",
+          "id": "mode_changed",
+          "label": "mode_changed"
+        },
+        {
+          "detail": "capture presence differs",
+          "id": "capture_asymmetric",
+          "label": "capture_asymmetric"
+        },
+        {
+          "id": "terrain_context_diff",
+          "label": "terrain_context_diff"
+        },
+        {
+          "id": "visibility_label_diff",
+          "label": "visibility_label_diff"
+        }
+      ],
+      "run_id_a": "m-radar-north-arc-v1-1",
+      "run_id_b": "m-radar-valley-pair-v1-2"
+    },
+    {
+      "badges": [
+        {
+          "detail": "assisted \u2192 manual",
+          "id": "mode_changed",
+          "label": "mode_changed"
+        },
+        {
+          "detail": "capture presence differs",
+          "id": "capture_asymmetric",
+          "label": "capture_asymmetric"
+        },
+        {
+          "id": "terrain_context_diff",
+          "label": "terrain_context_diff"
+        },
+        {
+          "id": "visibility_label_diff",
+          "label": "visibility_label_diff"
+        }
+      ],
+      "run_id_a": "m-radar-north-arc-v1-2",
+      "run_id_b": "m-radar-valley-pair-v1-1"
+    },
+    {
+      "badges": [
+        {
+          "detail": "assisted \u2192 autonomous",
+          "id": "mode_changed",
+          "label": "mode_changed"
+        },
+        {
+          "detail": "capture presence differs",
+          "id": "capture_asymmetric",
+          "label": "capture_asymmetric"
+        },
+        {
+          "id": "terrain_context_diff",
+          "label": "terrain_context_diff"
+        },
+        {
+          "id": "visibility_label_diff",
+          "label": "visibility_label_diff"
+        },
+        {
+          "id": "matrix_axis_diff",
+          "label": "matrix_axis_diff"
+        }
+      ],
+      "run_id_a": "m-radar-north-arc-v1-2",
+      "run_id_b": "m-radar-valley-pair-v1-2"
+    },
+    {
+      "badges": [
+        {
+          "detail": "manual \u2192 autonomous",
+          "id": "mode_changed",
+          "label": "mode_changed"
+        },
+        {
+          "id": "matrix_axis_diff",
+          "label": "matrix_axis_diff"
+        }
+      ],
+      "run_id_a": "m-radar-valley-pair-v1-1",
+      "run_id_b": "m-radar-valley-pair-v1-2"
+    }
+  ],
+  "experiment_class": "parameter_matrix",
+  "experiment_id": "exp-2026-05-26-template-dwell-matrix",
+  "governance_banner": "RT EXPERIMENT METRICS \u2014 derived summaries only; not operational authority",
+  "handoff_eligibility": {
+    "experiment_level": "partial",
+    "gates": [
+      {
+        "detail": "2/4 runs missing capture",
+        "id": "all_captures_present",
+        "pass": false
+      },
+      {
+        "detail": "normalization not normalized for all captures",
+        "id": "normalization_available",
+        "pass": false
+      },
+      {
+        "detail": "lifecycle not evaluated in P0 derive",
+        "id": "lifecycle_importable",
+        "pass": true
+      },
+      {
+        "detail": "not acknowledged",
+        "id": "pose_cognition_ack",
+        "pass": false
+      },
+      {
+        "detail": "single class",
+        "id": "no_class_mismatch",
+        "pass": true
+      }
+    ],
+    "per_run_gates": [
+      {
+        "eligible": true,
+        "gates": [
+          {
+            "detail": "capture present",
+            "id": "has_capture",
+            "pass": true
+          }
+        ],
+        "run_id": "m-radar-north-arc-v1-1"
+      },
+      {
+        "eligible": true,
+        "gates": [
+          {
+            "detail": "capture present",
+            "id": "has_capture",
+            "pass": true
+          }
+        ],
+        "run_id": "m-radar-north-arc-v1-2"
+      },
+      {
+        "eligible": false,
+        "gates": [
+          {
+            "detail": "no capture",
+            "id": "has_capture",
+            "pass": false
+          }
+        ],
+        "run_id": "m-radar-valley-pair-v1-1"
+      },
+      {
+        "eligible": false,
+        "gates": [
+          {
+            "detail": "no capture",
+            "id": "has_capture",
+            "pass": false
+          }
+        ],
+        "run_id": "m-radar-valley-pair-v1-2"
+      }
+    ]
+  },
+  "per_run_extended": [
+    {
+      "assign_delta_from_prior": false,
+      "autonomous_pause_count": null,
+      "axis_signature": "dwell_s=1;template_id=radar_north_arc_v1",
+      "elevation_band": "high",
+      "experiment_class": "parameter_matrix",
+      "f4_layers_enabled": [
+        "contours_on"
+      ],
+      "handoff_eligibility_hint": "unknown",
+      "los_cognition_label": "partial",
+      "matrix_coords": {
+        "dwell_s": "1",
+        "template_id": "radar_north_arc_v1"
+      },
+      "mode_at_capture": "manual",
+      "nearest_ridge": "north_ridge",
+      "occlusion_marker_count": 2,
+      "repeat_group_id": null,
+      "repeat_index": null,
+      "run_id": "m-radar-north-arc-v1-1",
+      "spec_fingerprint": "e0a139e037e0a3c9",
+      "terrain_profile_ref": null
+    },
+    {
+      "assign_delta_from_prior": false,
+      "autonomous_pause_count": null,
+      "axis_signature": "dwell_s=2;template_id=radar_north_arc_v1",
+      "elevation_band": "mid",
+      "experiment_class": "parameter_matrix",
+      "f4_layers_enabled": [
+        "default_off"
+      ],
+      "handoff_eligibility_hint": "unknown",
+      "los_cognition_label": "clear",
+      "matrix_coords": {
+        "dwell_s": "2",
+        "template_id": "radar_north_arc_v1"
+      },
+      "mode_at_capture": "assisted",
+      "nearest_ridge": "north_ridge",
+      "occlusion_marker_count": 0,
+      "repeat_group_id": null,
+      "repeat_index": null,
+      "run_id": "m-radar-north-arc-v1-2",
+      "spec_fingerprint": "e0a139e037e0a3c9",
+      "terrain_profile_ref": null
+    },
+    {
+      "assign_delta_from_prior": false,
+      "autonomous_pause_count": null,
+      "axis_signature": "dwell_s=1;template_id=radar_valley_pair_v1",
+      "elevation_band": "low",
+      "experiment_class": "parameter_matrix",
+      "f4_layers_enabled": [],
+      "handoff_eligibility_hint": "ineligible",
+      "los_cognition_label": "occluded",
+      "matrix_coords": {
+        "dwell_s": "1",
+        "template_id": "radar_valley_pair_v1"
+      },
+      "mode_at_capture": "manual",
+      "nearest_ridge": "valley_ridge",
+      "occlusion_marker_count": 5,
+      "repeat_group_id": null,
+      "repeat_index": null,
+      "run_id": "m-radar-valley-pair-v1-1",
+      "spec_fingerprint": "e0a139e037e0a3c9",
+      "terrain_profile_ref": null
+    },
+    {
+      "assign_delta_from_prior": false,
+      "autonomous_pause_count": null,
+      "axis_signature": "dwell_s=2;template_id=radar_valley_pair_v1",
+      "elevation_band": "low",
+      "experiment_class": "parameter_matrix",
+      "f4_layers_enabled": [],
+      "handoff_eligibility_hint": "ineligible",
+      "los_cognition_label": "occluded",
+      "matrix_coords": {
+        "dwell_s": "2",
+        "template_id": "radar_valley_pair_v1"
+      },
+      "mode_at_capture": "autonomous",
+      "nearest_ridge": "valley_ridge",
+      "occlusion_marker_count": 4,
+      "repeat_group_id": null,
+      "repeat_index": null,
+      "run_id": "m-radar-valley-pair-v1-2",
+      "spec_fingerprint": "e0a139e037e0a3c9",
+      "terrain_profile_ref": null
+    }
+  ],
+  "rollup_extended": {
+    "class_rollup": {
+      "counts_by_class": {
+        "parameter_matrix": 4
+      }
+    },
+    "matrix_rollup": {
+      "expected_cells": 4,
+      "missing_cells": 0,
+      "populated_cells": 4
+    },
+    "repeatability_rollup": {
+      "fingerprints": [
+        {
+          "capture_count": 2,
+          "normalization_status_counts": {
+            "unavailable": 4
+          },
+          "run_count": 4,
+          "spec_fingerprint": "e0a139e037e0a3c9"
+        }
+      ]
+    },
+    "tactical_rollup": {
+      "annex_event_totals": {},
+      "assign_change_count": 0,
+      "mode_counts": {
+        "assisted": 1,
+        "autonomous": 1,
+        "manual": 2
+      },
+      "tti_present_count": 2
+    },
+    "terrain_rollup": {
+      "band_counts": {
+        "high": 1,
+        "low": 2,
+        "mid": 1
+      },
+      "ridge_counts": {
+        "north_ridge": 2,
+        "valley_ridge": 2
+      }
+    },
+    "visibility_rollup": {
+      "los_label_counts": {
+        "clear": 1,
+        "occluded": 2,
+        "partial": 1
+      }
+    }
+  },
+  "schema": "rt_experiment_metrics_report_v1",
+  "spec_fingerprint": "e0a139e037e0a3c9"
+}

@@ -1,0 +1,21 @@
+{
+  "description": "Post-approve packaging ready — advisory handoff_ready",
+  "inputs": {
+    "candidate": {
+      "normalization_status": "normalized",
+      "approval_status": "approved"
+    },
+    "export_events": [
+      "handoff_reviewed",
+      "capture_approved",
+      "conversion_manifest_written"
+    ],
+    "conversion_manifest_present": true,
+    "workflow_phase": "ready"
+  },
+  "expected": {
+    "advisory_state": "handoff_ready",
+    "advisory_state_label": "Advisory: handoff packaging ready",
+    "blocked": false
+  }
+}

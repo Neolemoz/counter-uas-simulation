@@ -1,0 +1,18 @@
+{
+  "description": "Export event handoff_ready emitted — still pre-approval; NOT advisory handoff_ready",
+  "inputs": {
+    "candidate": {
+      "normalization_status": "normalized",
+      "approval_status": "pending"
+    },
+    "normalization_validation": { "valid": true },
+    "export_events": ["capture_normalized", "handoff_ready"],
+    "workflow_phase": "review_pending",
+    "handoff_review": { "decision": "ready_for_approval" }
+  },
+  "expected": {
+    "advisory_state": "capture_ready",
+    "blocked": false,
+    "note": "Export handoff_ready precedes review_complete; UI must not show packaging-ready"
+  }
+}
