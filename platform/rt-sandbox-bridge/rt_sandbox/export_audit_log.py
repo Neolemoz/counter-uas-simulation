@@ -7,6 +7,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
+from rt_sandbox.audit_vocabulary import EVENT_KIND_EXPORT
 from rt_sandbox.isolation import assert_writable_path, rt_sandbox_runs_dir
 
 
@@ -39,6 +40,7 @@ class ExportAuditLog:
         entry: dict[str, Any] = {
             "schema": "rt_export_boundary_audit_v1",
             "event_type": event_type,
+            "event_kind": EVENT_KIND_EXPORT,
             "timestamp_utc": _utc_now(),
             "result": result,
         }

@@ -26,6 +26,10 @@ class GazeboRuntimeAdapter:
     ipc_timeout_s: float = 5.0
     ready_timeout_s: float = 60.0
     ros_domain_id: int | None = None
+    rt_sandbox_world: str = "rt_sandbox_flat"
+    ground_snap_enabled: bool = True
+    enable_fidelity_coupling: bool = False
+    fidelity_ground_z_m: float = 0.0
 
     kind: str = "adapter"
     pid: int | None = None
@@ -95,6 +99,10 @@ class GazeboRuntimeAdapter:
         payload: dict[str, Any] = {"mode": self.mode}
         if self.ros_domain_id is not None:
             payload["ros_domain_id"] = self.ros_domain_id
+        payload["rt_sandbox_world"] = self.rt_sandbox_world
+        payload["ground_snap_enabled"] = self.ground_snap_enabled
+        payload["enable_fidelity_coupling"] = self.enable_fidelity_coupling
+        payload["fidelity_ground_z_m"] = self.fidelity_ground_z_m
         resp = self._request("attach", payload)
         if not resp.ok:
             raise OSError(resp.error_message or resp.error_code or "attach failed")
@@ -161,15 +169,17 @@ class GazeboRuntimeAdapter:
         entity_id: str,
         entity_type: str,
         pose: dict[str, float],
+        *,
+        bridge_revision: int | None = None,
     ) -> dict[str, Any] | None:
-        resp = self._request(
-            "apply_pose",
-            {
-                "entity_id": entity_id,
-                "entity_type": entity_type,
-                "pose": pose,
-            },
-        )
+        payload: dict[str, Any] = {
+            "entity_id": entity_id,
+            "entity_type": entity_type,
+            "pose": pose,
+        }
+        if bridge_revision is not None:
+            payload["bridge_revision"] = bridge_revision
+        resp = self._request("apply_pose", payload)
         if not resp.ok:
             return {"error_code": resp.error_code, "error_message": resp.error_message}
         self._last_sync = dict(resp.result)
@@ -189,3 +199,58 @@ class GazeboRuntimeAdapter:
 
     def last_sync(self) -> dict[str, Any] | None:
         return self._last_sync
+
+    def poll_feedback(
+        self,
+        *,
+        mock_inject_drift: dict[str, Any] | None = None,
+    ) -> dict[str, Any] | None:
+        payload: dict[str, Any] = {}
+        if mock_inject_drift:
+            payload["mock_inject_drift"] = mock_inject_drift
+        resp = self._request("poll_feedback", payload)
+        if not resp.ok:
+            return {
+                "error_code": resp.error_code or "ADAPTER_FEEDBACK_LOST",
+                "error_message": resp.error_message,
+            }
+        return dict(resp.result)
+
+    def mock_inject_drift(
+        self,
+        entity_id: str,
+        offset: dict[str, float],
+    ) -> dict[str, Any] | None:
+        resp = self._request(
+            "mock_inject_drift",
+            {"entity_id": entity_id, "offset": offset},
+        )
+        if not resp.ok:
+            return {"error_code": resp.error_code, "error_message": resp.error_message}
+        return dict(resp.result)
+
+    def resync_all(self, entities: list[dict[str, Any]]) -> dict[str, Any] | None:
+        resp = self._request("resync_all", {"entities": entities})
+        if not resp.ok:
+            return {"error_code": resp.error_code, "error_message": resp.error_message}
+        return dict(resp.result)
+
+    def poll_telemetry(
+        self,
+        *,
+        mock_stale_telemetry: bool = False,
+        enable_fidelity_coupling: bool = False,
+    ) -> dict[str, Any] | None:
+        payload: dict[str, Any] = {}
+        if mock_stale_telemetry:
+            payload["mock_stale_telemetry"] = True
+        if enable_fidelity_coupling:
+            payload["enable_fidelity_coupling"] = True
+            payload["fidelity_ground_z_m"] = self.fidelity_ground_z_m
+        resp = self._request("poll_telemetry", payload)
+        if not resp.ok:
+            return {
+                "error_code": resp.error_code or "ADAPTER_FEEDBACK_LOST",
+                "error_message": resp.error_message,
+            }
+        return dict(resp.result)

@@ -1,4 +1,8 @@
-"""Session lifecycle states and transition rules (rt_session_lifecycle_v1)."""
+"""Session lifecycle states and transition rules.
+
+Authority: docs/evaluation/rt_session_lifecycle_v1.md (conceptual),
+docs/evaluation/rt_lifecycle_transitions_v1.md (implementation truth table).
+"""
 
 from __future__ import annotations
 
@@ -14,6 +18,8 @@ class SessionState(StrEnum):
     DISCARDED = "discarded"
     FAILED = "failed"
     RUNTIME_CRASHED = "runtime_crashed"
+    # Reserved (PLAT-RT-R3b): enum + can_transition rules exist; no handler sets
+    # this state until a future wave implements reconnect policy.
     BRIDGE_DISCONNECTED = "bridge_disconnected"
     CLEANUP_PENDING = "cleanup_pending"
 
@@ -57,7 +63,22 @@ _TRANSITIONS: dict[str, frozenset[SessionState]] = {
     "reset_workflow": frozenset({SessionState.RUNNING, SessionState.PAUSED}),
     "reload_workflow": frozenset({SessionState.RUNNING, SessionState.PAUSED}),
     "get_workflow_state": frozenset({SessionState.RUNNING, SessionState.PAUSED}),
+    "set_tactical_mode": frozenset({SessionState.RUNNING, SessionState.PAUSED}),
+    "select_candidate": frozenset({SessionState.RUNNING, SessionState.PAUSED}),
+    "assign_candidate": frozenset({SessionState.RUNNING, SessionState.PAUSED}),
+    "clear_assignment": frozenset({SessionState.RUNNING, SessionState.PAUSED}),
+    "get_tactical_state": frozenset({SessionState.RUNNING, SessionState.PAUSED}),
+    "request_recommendation": frozenset({SessionState.RUNNING, SessionState.PAUSED}),
+    "approve_recommendation": frozenset({SessionState.RUNNING, SessionState.PAUSED}),
+    "reject_recommendation": frozenset({SessionState.RUNNING, SessionState.PAUSED}),
+    "pause_autonomous_loop": frozenset({SessionState.RUNNING, SessionState.PAUSED}),
+    "resume_autonomous_loop": frozenset({SessionState.RUNNING, SessionState.PAUSED}),
 }
+
+
+def transition_rules() -> dict[str, frozenset[SessionState]]:
+    """Return command → allowed source states (for tests and maintainer docs)."""
+    return dict(_TRANSITIONS)
 
 
 def can_transition(state: SessionState, command_type: str) -> bool:

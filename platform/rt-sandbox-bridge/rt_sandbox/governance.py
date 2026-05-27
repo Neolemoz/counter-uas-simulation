@@ -1,4 +1,7 @@
-"""Deny-by-default command governance (rt_bridge_contract_v1, rt_runtime_governance_v1)."""
+"""Deny-by-default command governance (rt_bridge_contract_v1, rt_runtime_governance_v1).
+
+Runtime subcommand allow-list: see docs/evaluation/rt_runtime_subcommand_registry_v1.md.
+"""
 
 from __future__ import annotations
 
@@ -18,6 +21,19 @@ SESSION_COMMANDS = frozenset(
         "discard_session",
         "reset_session",
         "capture_session",
+    }
+)
+
+REGISTRY_COMMANDS = frozenset(
+    {
+        "list_sessions",
+        "set_editing_session",
+    }
+)
+
+HANDOFF_READ_COMMANDS = frozenset(
+    {
+        "list_capture_handoff_status",
     }
 )
 
@@ -55,13 +71,31 @@ WORKFLOW_COMMANDS = frozenset(
 
 RUNTIME_COMMANDS = frozenset({"send_runtime_command"})
 
+TACTICAL_COMMANDS = frozenset(
+    {
+        "set_tactical_mode",
+        "select_candidate",
+        "assign_candidate",
+        "clear_assignment",
+        "get_tactical_state",
+        "request_recommendation",
+        "approve_recommendation",
+        "reject_recommendation",
+        "pause_autonomous_loop",
+        "resume_autonomous_loop",
+    }
+)
+
 ALLOWED_COMMANDS = (
     SESSION_COMMANDS
+    | REGISTRY_COMMANDS
+    | HANDOFF_READ_COMMANDS
     | ENTITY_COMMANDS
     | TELEMETRY_COMMANDS
     | TEMPLATE_COMMANDS
     | WORKFLOW_COMMANDS
     | RUNTIME_COMMANDS
+    | TACTICAL_COMMANDS
 )
 
 ENTITY_CATALOG = frozenset({"radar", "interceptor", "drone", "waypoint_marker"})
@@ -86,8 +120,23 @@ RUNTIME_SUBCOMMANDS = frozenset(
         "adapter_attach",
         "adapter_detach",
         "adapter_health",
+        "adapter_poll_feedback",
+        "adapter_poll_telemetry",
+        "adapter_resync",
+        "mock_inject_drift",
     }
 )
+
+RUNTIME_SUBCOMMANDS_RESERVED = frozenset(
+    {
+        "reload_world_config",
+        "set_clock_pause",
+    }
+)
+
+RUNTIME_SUBCOMMAND_AUDIT_EXCEPTIONS: dict[str, str] = {
+    "adapter_resync": "sync_update",
+}
 
 RT_FORBIDDEN_COMMANDS = frozenset(
     {
@@ -122,7 +171,9 @@ FORBIDDEN_SUBSTRINGS = (
 
 @dataclass
 class GovernanceConfig:
-    max_concurrent_sessions: int = 1
+    max_concurrent_sessions: int = 3
+    max_total_entities_across_sessions: int = 64
+    background_telemetry_pull_cap_hz: float = 1.0
     command_rate_burst: int = 5
     command_rate_sustained: float = 1.0
     bridge_ready_timeout_s: float = 60.0
@@ -146,6 +197,19 @@ class GovernanceConfig:
     adapter_ready_timeout_s: float = 60.0
     adapter_ipc_timeout_s: float = 5.0
     ros_domain_id_offset: int = 42
+    pose_sync_enabled: bool = True
+    pose_sync_drift_threshold_m: float = 2.0
+    adapter_feedback_stale_s: float = 30.0
+    telemetry_bridge_enabled: bool = True
+    telemetry_stale_s: float = 30.0
+    capture_normalization_enabled: bool = True
+    rt_sandbox_world: str = "rt_sandbox_flat"
+    pose_sync_yaw_threshold_deg: float = 0.0
+    adapter_live_background_poll_hz: float = 0.0
+    entity_ground_snap_enabled: bool = True
+    enable_fidelity_coupling: bool = False
+    fidelity_truth_stale_s: float = 30.0
+    fidelity_ground_z_m: float = 0.0
 
     def ros_domain_id_for_session(self, session_id: str) -> int:
         """Derive isolated ROS_DOMAIN_ID from session UUID (live mode only)."""

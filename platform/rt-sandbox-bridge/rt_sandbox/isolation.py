@@ -28,6 +28,24 @@ def rt_sandbox_captures_dir(repo_root: Path | None = None) -> Path:
     return path
 
 
+def rt_sandbox_sa_handoff_dir(repo_root: Path | None = None) -> Path:
+    base = rt_sandbox_runs_dir(repo_root)
+    path = base / "sa_handoff"
+    path.mkdir(parents=True, exist_ok=True)
+    return path
+
+
+def assert_sa_handoff_writable(path: Path, repo_root: Path | None = None) -> None:
+    root = repo_root or repo_root_from()
+    allowed = rt_sandbox_sa_handoff_dir(root).resolve()
+    resolved = path.resolve()
+    if not resolved.is_relative_to(allowed):
+        raise PermissionError(
+            f"RT SA handoff writes limited to runs/rt_sandbox/sa_handoff/ (got {resolved})"
+        )
+    assert_writable_path(path, root)
+
+
 def assert_writable_path(path: Path, repo_root: Path | None = None) -> None:
     root = repo_root or repo_root_from()
     allowed_root = (root / "runs" / "rt_sandbox").resolve()

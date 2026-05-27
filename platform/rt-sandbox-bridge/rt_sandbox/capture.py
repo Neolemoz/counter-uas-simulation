@@ -207,6 +207,7 @@ def build_capture_bundle(
         "origin": ORIGIN_RT_SANDBOX_CAPTURE,
         "capture_utc": _utc_now(),
         "approval_status": "pending",
+        "normalization_status": "pending",
         "governance_banner": CAPTURE_GOVERNANCE_BANNER,
         "staging_refs": staging_refs,
     }
@@ -259,12 +260,18 @@ def write_approval_record(
     approved_by: str,
     intent: str = "replay_research_import",
     repo_root: Path | None = None,
+    skip_normalization_check: bool = False,
 ) -> dict[str, Any]:
     candidate_path = staging_dir / "candidate.json"
     errors = validate_capture_candidate(candidate_path)
     if errors:
         raise CaptureBundleError("INVALID_STATE", "; ".join(errors))
     candidate = json.loads(candidate_path.read_text(encoding="utf-8"))
+    if not skip_normalization_check and candidate.get("normalization_status") != "normalized":
+        raise CaptureBundleError(
+            "INVALID_STATE",
+            "normalization required before approval (normalization_status must be normalized)",
+        )
     capture_id = candidate["capture_candidate_id"]
     approval: dict[str, Any] = {
         "schema": "rt_capture_approval_v1",
@@ -296,6 +303,7 @@ def write_conversion_manifest(
     if candidate.get("approval_status") != "approved":
         raise CaptureBundleError("INVALID_STATE", "approval required before conversion manifest")
     capture_id = candidate["capture_candidate_id"]
+    staging_refs = dict(candidate.get("staging_refs", {}))
     manifest: dict[str, Any] = {
         "schema": "runtime_to_replay_conversion_v1",
         "capture_candidate_id": capture_id,
@@ -303,8 +311,13 @@ def write_conversion_manifest(
         "conversion_steps": list(CONVERSION_STEPS),
         "origin": ORIGIN_RT_SANDBOX_CAPTURE,
         "governance_banner": CONVERSION_GOVERNANCE_BANNER,
-        "staging_refs": candidate.get("staging_refs", {}),
+        "staging_refs": staging_refs,
+        "requires_normalization": True,
     }
+    if candidate.get("normalization_utc"):
+        manifest["normalization_utc"] = candidate["normalization_utc"]
+    if candidate.get("conversion_revision") is not None:
+        manifest["conversion_revision"] = candidate["conversion_revision"]
     if scenario_pack_ref or candidate.get("scenario_pack_ref"):
         manifest["scenario_pack_ref"] = scenario_pack_ref or candidate.get("scenario_pack_ref")
     if log_path:

@@ -1,0 +1,15 @@
+<?xml version="1.0"?>
+<model name="rt_radar">
+  <static>true</static>
+  <link name="link">
+    <visual name="visual">
+      <geometry>
+        <cylinder><radius>0.8</radius><length>2.0</length></cylinder>
+      </geometry>
+      <material>
+        <ambient>0.2 0.6 0.95 1</ambient>
+        <diffuse>0.2 0.6 0.95 1</diffuse>
+      </material>
+    </visual>
+  </link>
+</model>

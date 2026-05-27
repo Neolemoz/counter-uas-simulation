@@ -7,6 +7,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
+from rt_sandbox.audit_vocabulary import classify_event_kind
 from rt_sandbox.isolation import assert_writable_path, rt_sandbox_runs_dir
 
 
@@ -45,6 +46,7 @@ class AuditLog:
             "command_id": command_id,
             "session_id": session_id,
             "command_type": command_type,
+            "event_kind": classify_event_kind(command_type),
             "issued_by": issued_by,
             "result": result,
             "timestamp_utc": _utc_now(),

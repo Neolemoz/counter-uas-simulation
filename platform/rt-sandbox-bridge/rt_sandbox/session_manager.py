@@ -1,70 +1,71 @@
-"""Transient session manager for RT sandbox bridge prototype."""
+"""Transient session manager for RT sandbox bridge prototype (PLAT-RT-R3a facade, PLAT-RT-M2 registry)."""
 
 from __future__ import annotations
 
 import time
-import uuid
-from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
 from rt_sandbox.audit_log import AuditLog
-from rt_sandbox.capture import CaptureBundleError, build_capture_bundle
 from rt_sandbox.export_audit_log import ExportAuditLog
-from rt_sandbox.export_boundary import CAPTURE_GOVERNANCE_BANNER
 from rt_sandbox.governance import (
     ENTITY_COMMANDS,
     GOVERNANCE_BANNER,
     GovernanceConfig,
     RateLimiter,
+    TACTICAL_COMMANDS,
     TEMPLATE_COMMANDS,
     TELEMETRY_COMMANDS,
     WORKFLOW_COMMANDS,
     classify_command,
     validate_capture_payload,
-    validate_entity_payload,
-    validate_template_command_payload,
-    validate_runtime_subcommand,
-    validate_telemetry_payload,
-    validate_workflow_command_payload,
 )
-from rt_sandbox.template_catalog import catalog_size as template_catalog_size
-from rt_sandbox.template_catalog import list_templates_metadata
-from rt_sandbox.templates import apply_template
-from rt_sandbox.workflow import (
-    WorkflowState,
-    WorkflowStatus,
-    catalog_size as workflow_catalog_size,
-    execute_workflow_step,
-    list_workflows_metadata,
-    new_workflow_state,
+from rt_sandbox.lifecycle import SessionState
+from rt_sandbox.session_capture_handler import capture_session as handle_capture_session
+from rt_sandbox.session_entity_handlers import handle_entity
+from rt_sandbox.session_lifecycle_handlers import (
+    discard_session,
+    pause_session,
+    reset_session,
+    resume_session,
+    runtime_crashed as lifecycle_runtime_crashed,
+    start_session,
+    stop_session,
+    tick_timeouts,
 )
-from rt_sandbox.adapter_sync import sync_delete, sync_move, sync_reset_world, sync_spawn
-from rt_sandbox.lifecycle import SessionState, can_transition, is_active_state
-from rt_sandbox.runtime_handle import RuntimeHandle, create_runtime, runtime_is_adapter
-from rt_sandbox.runtime_stub import RuntimeStub
+from rt_sandbox.session_record import SessionRecord
+from rt_sandbox.session_registry import SessionRegistry, TERMINAL_STATES
+from rt_sandbox.session_handoff_handlers import (
+    handle_list_capture_handoff_status,
+)
+from rt_sandbox.session_registry_handlers import (
+    list_sessions as handle_list_sessions,
+    pick_editing_session_after_evict,
+    set_editing_session as handle_set_editing_session,
+)
+from rt_sandbox.session_response import fail, ok, response_base
+from rt_sandbox.session_runtime_commands import handle_runtime_command
+from rt_sandbox.session_tactical_handlers import (
+    handle_tactical,
+    tick_tactical_autonomous_for_session,
+)
+from rt_sandbox.tactical_autonomous import monotonic_now
+from rt_sandbox.session_telemetry_coordinator import (
+    handle_telemetry,
+    poll_telemetry_bridge,
+    publish_channels_for_transition,
+    publish_telemetry,
+)
+from rt_sandbox.session_workflow_handlers import (
+    handle_template,
+    handle_workflow,
+    list_runtime_templates,
+)
 from rt_sandbox.telemetry import TelemetryBuffer
-from rt_sandbox.telemetry_subscriptions import (
-    TelemetrySubscriptionStore,
-    build_channel_payload,
-)
-from rt_sandbox.isolation import repo_root_from
-from rt_sandbox.world_state import WorldStateStore
+from rt_sandbox.telemetry_subscriptions import TelemetrySubscriptionStore
 
-
-@dataclass
-class SessionRecord:
-    session_id: str
-    state: SessionState
-    created_monotonic: float
-    bridge_ready_deadline: float
-    cleanup_after: float | None = None
-    runtime: RuntimeHandle = field(default_factory=RuntimeStub)
-    world: WorldStateStore | None = None
-    issued_by: str = "rt_ui_prototype"
-    workflow: WorkflowState | None = None
-    template_apply_count: int = 0
-    templates_applied: list[str] = field(default_factory=list)
+# Re-export for backward compatibility
+__all__ = ["BridgeSessionManager", "GovernanceConfig", "SessionRecord"]
 
 
 class BridgeSessionManager:
@@ -75,8 +76,10 @@ class BridgeSessionManager:
     ) -> None:
         self.config = config or GovernanceConfig()
         self._repo_root = repo_root
-        self._session: SessionRecord | None = None
-        self._rate_limiter = RateLimiter(
+        self._registry = SessionRegistry()
+        self._editing_session_id: str | None = None
+        self._rate_limiters: dict[str, RateLimiter] = {}
+        self._global_rate_limiter = RateLimiter(
             burst=self.config.command_rate_burst,
             sustained_per_s=self.config.command_rate_sustained,
         )
@@ -89,25 +92,19 @@ class BridgeSessionManager:
             ring_size=self.config.telemetry_ring_buffer_size,
         )
 
+    @property
+    def _session(self) -> SessionRecord | None:
+        """Backward-compatible single-session accessor."""
+        non_terminal = self._registry.iter_non_terminal()
+        if non_terminal:
+            return non_terminal[0]
+        all_sessions = list(self._registry.iter_all())
+        if len(all_sessions) == 1:
+            return all_sessions[0]
+        return None
+
     def handle_command(self, body: dict[str, Any]) -> dict[str, Any]:
         now = time.monotonic()
-        if self._session is not None and self._session.state in {
-            SessionState.RUNNING,
-            SessionState.PAUSED,
-        }:
-            if not self._session.runtime.is_alive():
-                base = self._response_base(
-                    str(body.get("command_id", "")),
-                    self._session.session_id,
-                )
-                return self._runtime_crashed(
-                    self._session,
-                    base,
-                    str(body.get("command_id", "")),
-                    str(body.get("issued_by", "rt_ui_prototype")),
-                )
-        self._tick_timeouts(now)
-
         command_type = str(body.get("command_type", ""))
         command_id = str(body.get("command_id", ""))
         issued_by = str(body.get("issued_by", "rt_ui_prototype"))
@@ -115,95 +112,360 @@ class BridgeSessionManager:
         session_id = body.get("session_id")
         payload = body.get("payload")
 
-        base = self._response_base(command_id, session_id)
+        base = response_base(command_id, session_id)
+
+        if isinstance(session_id, str):
+            pre_session = self._registry.get(session_id)
+            if (
+                pre_session is not None
+                and pre_session.state in {SessionState.RUNNING, SessionState.PAUSED}
+                and not pre_session.runtime.is_alive()
+            ):
+                return self._runtime_crashed(
+                    pre_session,
+                    base,
+                    command_id,
+                    issued_by,
+                )
+
+        self._tick_timeouts(now)
+        self._evict_terminal_sessions()
 
         if authority_scope and authority_scope != self.config.authority_scope:
-            return self._fail(base, "COMMAND_FORBIDDEN", "invalid authority_scope")
+            return fail(base, "COMMAND_FORBIDDEN", "invalid authority_scope")
 
         forbidden = classify_command(command_type)
         if forbidden:
-            return self._fail(base, forbidden, f"command not allowed: {command_type}")
+            return fail(base, forbidden, f"command not allowed: {command_type}")
 
         cap_err = validate_capture_payload(command_type, payload)
         if cap_err:
-            return self._fail(base, cap_err, "invalid capture payload")
-
-        if not self._rate_limiter.check(now):
-            return self._fail(base, "RESOURCE_LIMIT_EXCEEDED", "command rate limit")
+            return fail(base, cap_err, "invalid capture payload")
 
         if command_type == "start_session":
-            return self._start_session(base, command_id, issued_by, now)
+            if not self._global_rate_limiter.check(now):
+                return fail(base, "RESOURCE_LIMIT_EXCEEDED", "command rate limit")
+            result = start_session(
+                base,
+                config=self.config,
+                audit=self._audit,
+                telemetry=self._telemetry,
+                publish_transition=self._publish_channels_for_transition,
+                non_terminal_count=self._registry.non_terminal_count,
+                register_session=self._register_session,
+                command_id=command_id,
+                issued_by=issued_by,
+                now=now,
+            )
+            if result.get("ok") and result.get("session_id"):
+                sid = str(result["session_id"])
+                if self._editing_session_id is None:
+                    self._editing_session_id = sid
+            return result
+
+        if command_type == "list_sessions":
+            if not self._global_rate_limiter.check(now):
+                return fail(base, "RESOURCE_LIMIT_EXCEEDED", "command rate limit")
+            return handle_list_sessions(
+                base,
+                registry=self._registry,
+                editing_session_id=self._editing_session_id,
+                config=self.config,
+            )
+
+        if command_type == "set_editing_session":
+            if not self._global_rate_limiter.check(now):
+                return fail(base, "RESOURCE_LIMIT_EXCEEDED", "command rate limit")
+            result = handle_set_editing_session(
+                base,
+                payload,
+                registry=self._registry,
+                audit=self._audit,
+                command_id=command_id,
+                issued_by=issued_by,
+            )
+            if result.get("ok") and result.get("editing_session_id"):
+                self._editing_session_id = str(result["editing_session_id"])
+            return result
+
+        if command_type == "list_capture_handoff_status":
+            if not self._global_rate_limiter.check(now):
+                return fail(base, "RESOURCE_LIMIT_EXCEEDED", "command rate limit")
+            return handle_list_capture_handoff_status(
+                base,
+                payload,
+                repo_root=self._repo_root,
+            )
 
         if command_type == "list_runtime_templates":
-            return self._list_runtime_templates(base)
+            return list_runtime_templates(base, self.config)
 
-        sid = session_id or (self._session.session_id if self._session else None)
-        if not sid or self._session is None or self._session.session_id != sid:
-            return self._fail(base, "SESSION_NOT_FOUND", "unknown session_id")
+        sid = session_id
+        if not sid or not isinstance(sid, str):
+            return fail(base, "SESSION_NOT_FOUND", "unknown session_id")
 
-        session = self._session
+        session = self._registry.get(sid)
+        if session is None:
+            return fail(base, "SESSION_NOT_FOUND", "unknown session_id")
+
         base["session_id"] = session.session_id
 
+        if not self._rate_limiter_for(session.session_id).check(now):
+            return fail(base, "RESOURCE_LIMIT_EXCEEDED", "command rate limit")
+
+        if command_type in ENTITY_COMMANDS or command_type == "apply_runtime_template":
+            if session.session_id != self._editing_session_id:
+                return fail(
+                    base,
+                    "EDITING_SESSION_MISMATCH",
+                    "entity mutations require editing session",
+                )
+        if command_type in TACTICAL_COMMANDS and command_type != "get_tactical_state":
+            if session.session_id != self._editing_session_id:
+                return fail(
+                    base,
+                    "EDITING_SESSION_MISMATCH",
+                    "tactical mutations require editing session",
+                )
+
         if command_type == "pause_session":
-            return self._pause(session, base, command_id, issued_by)
-        if command_type == "resume":
-            return self._resume(session, base, command_id, issued_by)
-        if command_type == "stop_session":
-            return self._stop(session, base, command_id, issued_by, now)
-        if command_type == "discard_session":
-            return self._discard(session, base, command_id, issued_by, now)
-        if command_type == "capture_session":
-            return self._capture_session(
-                session, base, command_id, issued_by, payload, now
+            return pause_session(
+                session,
+                base,
+                audit=self._audit,
+                publish_transition=self._publish_channels_for_transition,
+                runtime_crashed_fn=lambda: self._runtime_crashed(
+                    session, base, command_id, issued_by
+                ),
+                command_id=command_id,
+                issued_by=issued_by,
             )
+        if command_type == "resume":
+            return resume_session(
+                session,
+                base,
+                audit=self._audit,
+                publish_transition=self._publish_channels_for_transition,
+                runtime_crashed_fn=lambda: self._runtime_crashed(
+                    session, base, command_id, issued_by
+                ),
+                command_id=command_id,
+                issued_by=issued_by,
+            )
+        if command_type == "stop_session":
+            return stop_session(
+                session,
+                base,
+                config=self.config,
+                audit=self._audit,
+                publish_transition=self._publish_channels_for_transition,
+                command_id=command_id,
+                issued_by=issued_by,
+                now=now,
+            )
+        if command_type == "discard_session":
+            result = discard_session(
+                session,
+                base,
+                audit=self._audit,
+                export_audit=self._export_audit,
+                telemetry_subs=self._telemetry_subs,
+                command_id=command_id,
+                issued_by=issued_by,
+            )
+            if result.get("ok"):
+                self._unregister_session(session.session_id)
+            return result
+        if command_type == "capture_session":
+            result = handle_capture_session(
+                session,
+                base,
+                config=self.config,
+                audit=self._audit,
+                export_audit=self._export_audit,
+                telemetry_subs=self._telemetry_subs,
+                repo_root=self._repo_root,
+                command_id=command_id,
+                issued_by=issued_by,
+                payload=payload,
+            )
+            if result.get("ok"):
+                self._unregister_session(session.session_id)
+            return result
         if command_type == "reset_session":
-            return self._reset_session(session, base, command_id, issued_by)
+            return reset_session(
+                session,
+                base,
+                config=self.config,
+                audit=self._audit,
+                telemetry=self._telemetry,
+                publish_transition=self._publish_channels_for_transition,
+                command_id=command_id,
+                issued_by=issued_by,
+            )
         if command_type in ENTITY_COMMANDS:
-            return self._handle_entity(
+            return handle_entity(
                 session,
                 command_type,
                 payload,
                 base,
-                command_id,
-                issued_by,
+                config=self.config,
+                audit=self._audit,
+                telemetry=self._telemetry,
+                telemetry_subs=self._telemetry_subs,
+                publish_channel=lambda ch: self._publish_telemetry(session, ch),
+                publish_transition=lambda ct, st, skip: self._publish_channels_for_transition(
+                    session, ct, st, skip_adapter_poll=skip
+                ),
+                runtime_crashed=lambda: self._runtime_crashed(
+                    session, base, command_id, issued_by
+                ),
+                command_id=command_id,
+                issued_by=issued_by,
+                total_entity_count=self._registry.total_entity_count,
             )
         if command_type in TELEMETRY_COMMANDS:
-            return self._handle_telemetry(
+            return handle_telemetry(
                 session,
                 command_type,
                 payload,
                 base,
-                command_id,
-                issued_by,
+                config=self.config,
+                telemetry_subs=self._telemetry_subs,
+                audit=self._audit,
+                publish_channel=lambda ch: self._publish_telemetry(
+                    session,
+                    ch,
+                    command_id=command_id,
+                    issued_by=issued_by,
+                ),
+                poll_bridge=lambda: poll_telemetry_bridge(
+                    session,
+                    self.config,
+                    self._audit,
+                    lambda ch: self._publish_telemetry(
+                        session,
+                        ch,
+                        command_id=command_id,
+                        issued_by=issued_by,
+                    ),
+                    command_id=command_id,
+                    issued_by=issued_by,
+                ),
+                command_id=command_id,
+                issued_by=issued_by,
             )
         if command_type in TEMPLATE_COMMANDS:
-            return self._handle_template(
+            return handle_template(
                 session,
                 command_type,
                 payload,
                 base,
-                command_id,
-                issued_by,
+                config=self.config,
+                audit=self._audit,
+                publish_channel=lambda ch: self._publish_telemetry(
+                    session,
+                    ch,
+                    command_id=command_id,
+                    issued_by=issued_by,
+                ),
+                publish_transition=lambda ct, st, skip: self._publish_channels_for_transition(
+                    session, ct, st, skip_adapter_poll=skip
+                ),
+                runtime_crashed=lambda: self._runtime_crashed(
+                    session, base, command_id, issued_by
+                ),
+                command_id=command_id,
+                issued_by=issued_by,
             )
         if command_type in WORKFLOW_COMMANDS:
-            return self._handle_workflow(
+            return handle_workflow(
                 session,
                 command_type,
                 payload,
                 base,
-                command_id,
-                issued_by,
+                config=self.config,
+                audit=self._audit,
+                publish_channel=lambda ch: self._publish_telemetry(
+                    session,
+                    ch,
+                    command_id=command_id,
+                    issued_by=issued_by,
+                ),
+                publish_transition=lambda ct, st, skip: self._publish_channels_for_transition(
+                    session, ct, st, skip_adapter_poll=skip
+                ),
+                runtime_crashed=lambda: self._runtime_crashed(
+                    session, base, command_id, issued_by
+                ),
+                command_id=command_id,
+                issued_by=issued_by,
             )
         if command_type == "send_runtime_command":
-            return self._handle_runtime_command(
+            return handle_runtime_command(
                 session,
                 payload,
                 base,
-                command_id,
-                issued_by,
+                config=self.config,
+                audit=self._audit,
+                publish_channel=lambda ch: self._publish_telemetry(
+                    session,
+                    ch,
+                    command_id=command_id,
+                    issued_by=issued_by,
+                ),
+                runtime_crashed=lambda: self._runtime_crashed(
+                    session, base, command_id, issued_by
+                ),
+                command_id=command_id,
+                issued_by=issued_by,
+            )
+        if command_type in TACTICAL_COMMANDS:
+            return handle_tactical(
+                session,
+                command_type,
+                payload,
+                base,
+                config=self.config,
+                audit=self._audit,
+                telemetry=self._telemetry,
+                publish_channel=lambda ch: self._publish_telemetry(
+                    session,
+                    ch,
+                    command_id=command_id,
+                    issued_by=issued_by,
+                ),
+                command_id=command_id,
+                issued_by=issued_by,
             )
 
-        return self._fail(base, "COMMAND_FORBIDDEN", command_type)
+        return fail(base, "COMMAND_FORBIDDEN", command_type)
+
+    def _rate_limiter_for(self, session_id: str) -> RateLimiter:
+        if session_id not in self._rate_limiters:
+            self._rate_limiters[session_id] = RateLimiter(
+                burst=self.config.command_rate_burst,
+                sustained_per_s=self.config.command_rate_sustained,
+            )
+        return self._rate_limiters[session_id]
+
+    def _register_session(self, record: SessionRecord) -> None:
+        self._registry.register(record)
+        _ = self._rate_limiter_for(record.session_id)
+
+    def _unregister_session(self, session_id: str) -> None:
+        self._registry.evict(session_id)
+        self._rate_limiters.pop(session_id, None)
+        self._editing_session_id = pick_editing_session_after_evict(
+            self._registry,
+            session_id,
+            self._editing_session_id,
+        )
+
+    def _evict_terminal_sessions(self) -> None:
+        for session in list(self._registry.iter_all()):
+            if session.state in TERMINAL_STATES:
+                self._unregister_session(session.session_id)
 
     def pull_telemetry(
         self,
@@ -239,1105 +501,39 @@ class BridgeSessionManager:
         *,
         command_type: str | None = None,
         previous_state: str | None = None,
+        command_id: str | None = None,
+        issued_by: str = "bridge",
     ) -> None:
-        payload = build_channel_payload(session, channel)
-        if payload is None:
-            return
-        if channel == "lifecycle_state":
-            if command_type is not None:
-                payload["command_type"] = command_type
-            if previous_state is not None:
-                payload["previous_state"] = previous_state
-        self._telemetry_subs.record(session.session_id, channel, payload)
+        publish_telemetry(
+            session,
+            channel,
+            config=self.config,
+            telemetry_subs=self._telemetry_subs,
+            audit=self._audit,
+            command_type=command_type,
+            previous_state=previous_state,
+            command_id=command_id,
+            issued_by=issued_by,
+        )
 
     def _publish_channels_for_transition(
         self,
         session: SessionRecord,
         command_type: str,
         previous_state: SessionState,
+        *,
+        skip_adapter_poll: bool = False,
     ) -> None:
-        prev = previous_state.value
-        self._publish_telemetry(
+        publish_channels_for_transition(
             session,
-            "lifecycle_state",
-            command_type=command_type,
-            previous_state=prev,
+            command_type,
+            previous_state,
+            config=self.config,
+            telemetry_subs=self._telemetry_subs,
+            audit=self._audit,
+            publish_channel=lambda ch: self._publish_telemetry(session, ch),
+            skip_adapter_poll=skip_adapter_poll,
         )
-        self._publish_telemetry(session, "session_health")
-        self._publish_telemetry(session, "clock_mirror")
-        if command_type in {
-            "spawn_entity",
-            "move_entity",
-            "delete_entity",
-            "reset_session",
-            "apply_runtime_template",
-            "advance_workflow",
-        }:
-            self._publish_telemetry(session, "world_summary")
-            self._publish_telemetry(session, "entity_pose_mirror")
-
-    def _clear_telemetry_with_audit(
-        self,
-        session: SessionRecord,
-        *,
-        issued_by: str = "bridge",
-        command_id: str | None = None,
-        extra_detail: dict[str, Any] | None = None,
-    ) -> int:
-        removed = self._telemetry_subs.clear_session(session.session_id)
-        if removed == 0:
-            return 0
-        detail: dict[str, Any] = {
-            "subscriptions_removed": removed,
-            "state": session.state.value,
-        }
-        if extra_detail:
-            detail.update(extra_detail)
-        self._audit.append(
-            session.session_id,
-            command_id=command_id,
-            command_type="telemetry_cleanup",
-            issued_by=issued_by,
-            result="OK",
-            detail=detail,
-        )
-        return removed
-
-    def _handle_telemetry(
-        self,
-        session: SessionRecord,
-        command_type: str,
-        payload: Any,
-        base: dict[str, Any],
-        command_id: str,
-        issued_by: str,
-    ) -> dict[str, Any]:
-        if not can_transition(session.state, command_type):
-            return self._fail(base, "INVALID_STATE", session.state.value)
-        payload_err = validate_telemetry_payload(command_type, payload)
-        if payload_err:
-            return self._fail(base, payload_err, f"invalid payload for {command_type}")
-        assert isinstance(payload, dict)
-
-        if command_type == "subscribe_telemetry":
-            channels = [str(c) for c in payload["channels"]]
-            sub_id, err = self._telemetry_subs.subscribe(session.session_id, channels)
-            if err:
-                return self._fail(base, err, err)
-            initial = self._telemetry_subs.build_initial_events(session)
-            for ev in initial:
-                self._telemetry_subs.record(
-                    session.session_id,
-                    ev["channel"],
-                    ev["payload"],
-                )
-            self._audit.append(
-                session.session_id,
-                command_id=command_id,
-                command_type="subscribe_telemetry",
-                issued_by=issued_by,
-                result="OK",
-                detail={
-                    "subscription_id": sub_id,
-                    "channels": channels,
-                    "state": session.state.value,
-                },
-            )
-            self._audit.append(
-                session.session_id,
-                command_id=command_id,
-                command_type="telemetry_snapshot",
-                issued_by=issued_by,
-                result="OK",
-                detail={"subscription_id": sub_id, "channel_count": len(channels)},
-            )
-            resp = self._ok(base, state=session.state.value)
-            resp["subscription_id"] = sub_id
-            resp["channels"] = channels
-            resp["initial_events"] = initial
-            return resp
-
-        sub_id = str(payload["subscription_id"])
-        if not self._telemetry_subs.unsubscribe(sub_id):
-            return self._fail(base, "SESSION_NOT_FOUND", "unknown subscription_id")
-        self._audit.append(
-            session.session_id,
-            command_id=command_id,
-            command_type="unsubscribe_telemetry",
-            issued_by=issued_by,
-            result="OK",
-            detail={"subscription_id": sub_id, "state": session.state.value},
-        )
-        return self._ok(base, state=session.state.value)
-
-    def _handle_entity(
-        self,
-        session: SessionRecord,
-        command_type: str,
-        payload: Any,
-        base: dict[str, Any],
-        command_id: str,
-        issued_by: str,
-    ) -> dict[str, Any]:
-        if not can_transition(session.state, command_type):
-            return self._fail(base, "INVALID_STATE", session.state.value)
-        if not session.runtime.is_alive():
-            return self._runtime_crashed(session, base, command_id, issued_by)
-        if session.world is None:
-            return self._fail(base, "INVALID_STATE", "world not initialized")
-
-        payload_err = validate_entity_payload(command_type, payload)
-        if payload_err:
-            return self._fail(base, payload_err, f"invalid payload for {command_type}")
-
-        assert isinstance(payload, dict)
-        world = session.world
-        registry = world.registry
-
-        if command_type == "spawn_entity":
-            entity_type = str(payload["entity_type"])
-            pose = {k: float(payload["pose"][k]) for k in ("x", "y", "z")}
-            if "yaw_deg" in payload.get("pose", {}):
-                pose["yaw_deg"] = float(payload["pose"]["yaw_deg"])
-            eid_opt = payload.get("entity_id")
-            entity_id = str(eid_opt) if eid_opt else None
-            record, err = registry.spawn(entity_type, pose, entity_id=entity_id)
-            if err:
-                return self._fail(base, err, err)
-            world.bump_revision()
-            detail = {
-                "entity_id": record.entity_id,
-                "entity_type": record.entity_type,
-                "pose": dict(record.pose),
-                "state": session.state.value,
-            }
-            sync_result = sync_spawn(
-                session.runtime,
-                self.config,
-                record.entity_id,
-                record.entity_type,
-                dict(record.pose),
-            )
-            if sync_result and sync_result.get("error_code"):
-                return self._fail(
-                    base,
-                    str(sync_result["error_code"]),
-                    str(sync_result.get("error_message", "adapter sync failed")),
-                )
-            if sync_result:
-                detail["adapter_sync"] = sync_result
-            self._audit.append(
-                session.session_id,
-                command_id=command_id,
-                command_type="spawn_entity",
-                issued_by=issued_by,
-                result="OK",
-                detail=detail,
-            )
-            self._publish_channels_for_transition(
-                session, "spawn_entity", session.state
-            )
-            return self._entity_ok(session, base, entity_id=record.entity_id, detail=detail)
-
-        if command_type == "move_entity":
-            entity_id = str(payload["entity_id"])
-            pose = {k: float(payload["pose"][k]) for k in ("x", "y", "z")}
-            if "yaw_deg" in payload.get("pose", {}):
-                pose["yaw_deg"] = float(payload["pose"]["yaw_deg"])
-            record, err = registry.move(entity_id, pose)
-            if err:
-                return self._fail(base, err, err)
-            world.bump_revision()
-            detail = {
-                "entity_id": record.entity_id,
-                "entity_type": record.entity_type,
-                "pose": dict(record.pose),
-                "state": session.state.value,
-            }
-            sync_result = sync_move(
-                session.runtime,
-                self.config,
-                record.entity_id,
-                record.entity_type,
-                dict(record.pose),
-            )
-            if sync_result and sync_result.get("error_code"):
-                return self._fail(
-                    base,
-                    str(sync_result["error_code"]),
-                    str(sync_result.get("error_message", "adapter sync failed")),
-                )
-            if sync_result:
-                detail["adapter_sync"] = sync_result
-            self._audit.append(
-                session.session_id,
-                command_id=command_id,
-                command_type="move_entity",
-                issued_by=issued_by,
-                result="OK",
-                detail=detail,
-            )
-            self._publish_channels_for_transition(
-                session, "move_entity", session.state
-            )
-            return self._entity_ok(session, base, detail=detail)
-
-        if command_type == "delete_entity":
-            entity_id = str(payload["entity_id"])
-            record, err = registry.delete(entity_id)
-            if err:
-                return self._fail(base, err, err)
-            world.bump_revision()
-            detail = {
-                "entity_id": record.entity_id,
-                "entity_type": record.entity_type,
-                "state": session.state.value,
-            }
-            sync_result = sync_delete(
-                session.runtime,
-                self.config,
-                record.entity_id,
-            )
-            if sync_result and sync_result.get("error_code"):
-                return self._fail(
-                    base,
-                    str(sync_result["error_code"]),
-                    str(sync_result.get("error_message", "adapter sync failed")),
-                )
-            if sync_result:
-                detail["adapter_sync"] = sync_result
-            self._audit.append(
-                session.session_id,
-                command_id=command_id,
-                command_type="delete_entity",
-                issued_by=issued_by,
-                result="OK",
-                detail=detail,
-            )
-            self._publish_channels_for_transition(
-                session, "delete_entity", session.state
-            )
-            return self._entity_ok(session, base, detail=detail)
-
-        return self._fail(base, "COMMAND_FORBIDDEN", command_type)
-
-    def _handle_runtime_command(
-        self,
-        session: SessionRecord,
-        payload: Any,
-        base: dict[str, Any],
-        command_id: str,
-        issued_by: str,
-    ) -> dict[str, Any]:
-        if not self.config.enable_gazebo_adapter:
-            return self._fail(
-                base,
-                "COMMAND_FORBIDDEN",
-                "gazebo adapter disabled",
-            )
-        err = validate_runtime_subcommand(payload)
-        if err:
-            return self._fail(base, err, "invalid runtime sub_command")
-        assert isinstance(payload, dict)
-        sub = str(payload["sub_command"])
-        if not runtime_is_adapter(session.runtime):
-            return self._fail(base, "INVALID_STATE", "adapter not active")
-        if not session.runtime.is_alive():
-            return self._runtime_crashed(session, base, command_id, issued_by)
-
-        if sub == "adapter_health":
-            health = session.runtime.health_payload()
-            self._audit.append(
-                session.session_id,
-                command_id=command_id,
-                command_type="adapter_health",
-                issued_by=issued_by,
-                result="OK",
-                detail=health,
-            )
-            resp = self._ok(base, state=session.state.value)
-            resp["runtime_health"] = health
-            return resp
-
-        if sub == "adapter_attach":
-            try:
-                pid = session.runtime.start()
-            except OSError as exc:
-                return self._fail(base, "RUNTIME_UNAVAILABLE", str(exc))
-            detail = {"runtime_pid": pid, "adapter_mode": session.runtime.mode}
-            self._audit.append(
-                session.session_id,
-                command_id=command_id,
-                command_type="adapter_attach",
-                issued_by=issued_by,
-                result="OK",
-                detail=detail,
-            )
-            resp = self._ok(base, state=session.state.value)
-            resp["runtime_health"] = session.runtime.health_payload()
-            return resp
-
-        if sub == "adapter_detach":
-            session.runtime.terminate()
-            self._audit.append(
-                session.session_id,
-                command_id=command_id,
-                command_type="adapter_detach",
-                issued_by=issued_by,
-                result="OK",
-                detail={"detached": True},
-            )
-            return self._ok(base, state=session.state.value)
-
-        return self._fail(base, "COMMAND_FORBIDDEN", sub)
-
-    def _entity_ok(
-        self,
-        session: SessionRecord,
-        base: dict[str, Any],
-        *,
-        entity_id: str | None = None,
-        detail: dict[str, Any] | None = None,
-    ) -> dict[str, Any]:
-        world = session.world
-        summary = world.world_summary() if world else {}
-        resp = self._ok(base, state=session.state.value)
-        resp["world_summary"] = summary
-        if entity_id:
-            resp["entity_id"] = entity_id
-        if detail:
-            resp["entities"] = world.registry.poses_for_telemetry() if world else []
-        hb = self._telemetry.emit_entity_pose_heartbeat(
-            session.session_id,
-            world.registry.poses_for_telemetry() if world else [],
-            world_summary=summary,
-        )
-        if hb:
-            resp["telemetry"] = hb
-        return resp
-
-    def _clear_world_with_audit(
-        self,
-        session: SessionRecord,
-        *,
-        command_type: str = "entity_cleanup",
-        issued_by: str = "bridge",
-        command_id: str | None = None,
-        extra_detail: dict[str, Any] | None = None,
-    ) -> int:
-        if session.world is None:
-            return 0
-        pre_count = session.world.registry.count()
-        snapshot = session.world.snapshot().to_dict() if pre_count else None
-        removed = session.world.clear()
-        detail: dict[str, Any] = {
-            "entities_removed": removed,
-            "pre_entity_count": pre_count,
-            "state": session.state.value,
-        }
-        if snapshot:
-            detail["world_snapshot"] = snapshot
-        if extra_detail:
-            detail.update(extra_detail)
-        self._audit.append(
-            session.session_id,
-            command_id=command_id,
-            command_type=command_type,
-            issued_by=issued_by,
-            result="OK",
-            detail=detail,
-        )
-        return removed
-
-    def _clear_workflow_state(
-        self,
-        session: SessionRecord,
-        *,
-        issued_by: str,
-        command_id: str | None,
-        transition: str = "workflow_reset",
-    ) -> None:
-        if session.workflow is None:
-            return
-        wf_id = session.workflow.workflow_id
-        session.workflow = None
-        self._audit.append(
-            session.session_id,
-            command_id=command_id,
-            command_type="reset_workflow",
-            issued_by=issued_by,
-            result="OK",
-            detail={
-                "workflow_id": wf_id,
-                "transition": transition,
-                "state": session.state.value,
-            },
-        )
-
-    def _list_runtime_templates(self, base: dict[str, Any]) -> dict[str, Any]:
-        if template_catalog_size() > self.config.max_runtime_templates_in_catalog:
-            return self._fail(
-                base,
-                "RESOURCE_LIMIT_EXCEEDED",
-                "template catalog exceeds cap",
-            )
-        resp = self._ok(base, state=None)
-        resp["templates"] = list_templates_metadata()
-        resp["catalog_size"] = template_catalog_size()
-        return resp
-
-    def _handle_template(
-        self,
-        session: SessionRecord,
-        command_type: str,
-        payload: Any,
-        base: dict[str, Any],
-        command_id: str,
-        issued_by: str,
-    ) -> dict[str, Any]:
-        if command_type == "list_runtime_templates":
-            if session is not None and can_transition(session.state, command_type):
-                pass
-            return self._list_runtime_templates(base)
-
-        if not can_transition(session.state, command_type):
-            return self._fail(base, "INVALID_STATE", session.state.value)
-        if not session.runtime.is_alive():
-            return self._runtime_crashed(session, base, command_id, issued_by)
-        if session.world is None:
-            return self._fail(base, "INVALID_STATE", "world not initialized")
-
-        payload_err = validate_template_command_payload(command_type, payload)
-        if payload_err:
-            return self._fail(base, payload_err, f"invalid payload for {command_type}")
-
-        assert isinstance(payload, dict)
-        template_id = str(payload["template_id"])
-        if session.template_apply_count >= self.config.max_template_applies_per_session:
-            return self._fail(base, "RESOURCE_LIMIT_EXCEEDED", "max template applies exceeded")
-
-        result, err = apply_template(
-            session.world,
-            template_id,
-            max_entities_per_apply=self.config.max_entities_per_template_apply,
-        )
-        if err:
-            return self._fail(base, err, err)
-        assert result is not None
-        session.template_apply_count += 1
-        session.templates_applied.append(template_id)
-        detail = {
-            "template_id": template_id,
-            "entities_spawned": result.entities_spawned,
-            "entity_ids": result.entity_ids,
-            "revision": result.revision,
-            "state": session.state.value,
-            "transition": "template_applied",
-        }
-        self._audit.append(
-            session.session_id,
-            command_id=command_id,
-            command_type="apply_runtime_template",
-            issued_by=issued_by,
-            result="OK",
-            detail=detail,
-        )
-        self._publish_channels_for_transition(
-            session, "apply_runtime_template", session.state
-        )
-        resp = self._ok(base, state=session.state.value)
-        resp["world_summary"] = session.world.world_summary()
-        resp["template_id"] = template_id
-        resp["entities_spawned"] = result.entities_spawned
-        return resp
-
-    def _handle_workflow(
-        self,
-        session: SessionRecord,
-        command_type: str,
-        payload: Any,
-        base: dict[str, Any],
-        command_id: str,
-        issued_by: str,
-    ) -> dict[str, Any]:
-        if command_type == "get_workflow_state":
-            return self._workflow_state_response(session, base)
-
-        if not can_transition(session.state, command_type):
-            return self._fail(base, "INVALID_STATE", session.state.value)
-        if not session.runtime.is_alive():
-            return self._runtime_crashed(session, base, command_id, issued_by)
-        if session.world is None:
-            return self._fail(base, "INVALID_STATE", "world not initialized")
-
-        payload_err = validate_workflow_command_payload(command_type, payload)
-        if payload_err:
-            return self._fail(base, payload_err, f"invalid payload for {command_type}")
-
-        if workflow_catalog_size() > self.config.max_workflows_in_catalog:
-            return self._fail(base, "RESOURCE_LIMIT_EXCEEDED", "workflow catalog exceeds cap")
-
-        if command_type == "reset_workflow":
-            self._clear_workflow_state(session, issued_by=issued_by, command_id=command_id)
-            return self._workflow_state_response(session, base)
-
-        if command_type == "reload_workflow":
-            if not isinstance(payload, dict):
-                return self._fail(base, "INVALID_STATE", "workflow_id required")
-            workflow_id = str(payload.get("workflow_id", ""))
-            self._clear_workflow_state(
-                session,
-                issued_by=issued_by,
-                command_id=command_id,
-                transition="workflow_reload",
-            )
-            return self._start_workflow_inner(
-                session,
-                workflow_id,
-                base,
-                command_id,
-                issued_by,
-                transition="workflow_reloaded",
-            )
-
-        if command_type == "start_workflow":
-            if session.workflow is not None and session.workflow.status == WorkflowStatus.IN_PROGRESS:
-                return self._fail(base, "INVALID_STATE", "workflow already in progress")
-            if not isinstance(payload, dict):
-                return self._fail(base, "INVALID_STATE", "workflow_id required")
-            workflow_id = str(payload.get("workflow_id", ""))
-            return self._start_workflow_inner(
-                session,
-                workflow_id,
-                base,
-                command_id,
-                issued_by,
-                transition="workflow_started",
-            )
-
-        if command_type == "advance_workflow":
-            if session.workflow is None or session.workflow.status != WorkflowStatus.IN_PROGRESS:
-                return self._fail(base, "INVALID_STATE", "no workflow in progress")
-            if session.workflow.step_count > self.config.max_workflow_steps:
-                return self._fail(base, "RESOURCE_LIMIT_EXCEEDED", "workflow steps exceed cap")
-            step_result = execute_workflow_step(
-                session.workflow,
-                session.world,
-                max_entities_per_apply=self.config.max_entities_per_template_apply,
-            )
-            detail: dict[str, Any] = {
-                "workflow_id": session.workflow.workflow_id,
-                "step_index": step_result.step_index,
-                "transition": step_result.transition,
-                "state": session.state.value,
-                "workflow_status": session.workflow.status.value,
-            }
-            if step_result.staged_setup:
-                detail["staged_setup"] = True
-            if step_result.template_apply:
-                ta = step_result.template_apply
-                session.template_apply_count += 1
-                session.templates_applied.append(ta.template_id)
-                detail["template_id"] = ta.template_id
-                detail["entities_spawned"] = ta.entities_spawned
-            if step_result.world_reset:
-                detail["world_reset"] = True
-
-            if not step_result.ok:
-                self._audit.append(
-                    session.session_id,
-                    command_id=command_id,
-                    command_type="advance_workflow",
-                    issued_by=issued_by,
-                    result="WORKFLOW_STEP_FAILED",
-                    detail=detail,
-                )
-                return self._fail(
-                    base,
-                    step_result.error_code or "WORKFLOW_STEP_FAILED",
-                    "workflow step failed",
-                )
-
-            self._audit.append(
-                session.session_id,
-                command_id=command_id,
-                command_type="advance_workflow",
-                issued_by=issued_by,
-                result="OK",
-                detail=detail,
-            )
-            if step_result.transition in {"apply_template", "reset_world"}:
-                self._publish_channels_for_transition(
-                    session, "advance_workflow", session.state
-                )
-            resp = self._workflow_state_response(session, base)
-            resp["step_completed"] = step_result.step_index
-            resp["workflow_completed"] = step_result.completed
-            if session.world:
-                resp["world_summary"] = session.world.world_summary()
-            return resp
-
-        return self._fail(base, "COMMAND_FORBIDDEN", command_type)
-
-    def _start_workflow_inner(
-        self,
-        session: SessionRecord,
-        workflow_id: str,
-        base: dict[str, Any],
-        command_id: str,
-        issued_by: str,
-        *,
-        transition: str,
-    ) -> dict[str, Any]:
-        wf_state = new_workflow_state(workflow_id)
-        if wf_state is None:
-            return self._fail(base, "INVALID_STATE", "unknown workflow_id")
-        if wf_state.step_count > self.config.max_workflow_steps:
-            return self._fail(base, "RESOURCE_LIMIT_EXCEEDED", "workflow steps exceed cap")
-        session.workflow = wf_state
-        self._audit.append(
-            session.session_id,
-            command_id=command_id,
-            command_type="start_workflow",
-            issued_by=issued_by,
-            result="OK",
-            detail={
-                "workflow_id": workflow_id,
-                "step_count": wf_state.step_count,
-                "current_step": 0,
-                "transition": transition,
-                "state": session.state.value,
-            },
-        )
-        return self._workflow_state_response(session, base)
-
-    def _workflow_state_response(
-        self,
-        session: SessionRecord,
-        base: dict[str, Any],
-    ) -> dict[str, Any]:
-        resp = self._ok(base, state=session.state.value)
-        if session.workflow is None:
-            resp["workflow"] = {
-                "schema": "rt_sandbox_workflow_v1",
-                "status": WorkflowStatus.IDLE.value,
-            }
-        else:
-            resp["workflow"] = session.workflow.to_dict()
-        resp["templates_applied"] = list(session.templates_applied)
-        resp["template_apply_count"] = session.template_apply_count
-        return resp
-
-    def _start_session(
-        self,
-        base: dict[str, Any],
-        command_id: str,
-        issued_by: str,
-        now: float,
-    ) -> dict[str, Any]:
-        if self._session is not None and self._session.state not in {
-            SessionState.DISCARDED,
-            SessionState.CAPTURED,
-        }:
-            if is_active_state(self._session.state) or self._session.state in {
-                SessionState.STOPPED,
-                SessionState.CLEANUP_PENDING,
-                SessionState.FAILED,
-            }:
-                return self._fail(base, "INVALID_STATE", "session already active")
-
-        session_id = str(uuid.uuid4())
-        runtime = create_runtime(self.config, session_id)
-        record = SessionRecord(
-            session_id=session_id,
-            state=SessionState.CREATED,
-            created_monotonic=now,
-            bridge_ready_deadline=now + self.config.bridge_ready_timeout_s,
-            issued_by=issued_by,
-            world=WorldStateStore(session_id=session_id),
-            runtime=runtime,
-        )
-        record.world.registry.max_entity_count = self.config.max_entity_count
-        self._session = record
-        base["session_id"] = session_id
-
-        try:
-            pid = record.runtime.start()
-            record.state = SessionState.RUNNING
-            runtime_detail: dict[str, Any] = {
-                "runtime_pid": pid,
-                "runtime_kind": getattr(record.runtime, "kind", "unknown"),
-                "state": record.state.value,
-            }
-            if runtime_is_adapter(record.runtime):
-                runtime_detail["adapter_mode"] = getattr(
-                    record.runtime, "mode", None
-                )
-            self._audit.append(
-                session_id,
-                command_id=command_id,
-                command_type="start_session",
-                issued_by=issued_by,
-                result="OK",
-                detail=runtime_detail,
-            )
-            if runtime_is_adapter(record.runtime):
-                self._audit.append(
-                    session_id,
-                    command_id=command_id,
-                    command_type="adapter_attach",
-                    issued_by=issued_by,
-                    result="OK",
-                    detail=runtime_detail,
-                )
-            summary = record.world.world_summary() if record.world else {}
-            health = record.runtime.health_payload()
-            hb = self._telemetry.maybe_emit(
-                session_id,
-                record.state.value,
-                health.get("stub_alive") or health.get("adapter_alive", False),
-                world_summary=summary,
-            )
-            self._publish_channels_for_transition(
-                record, "start_session", SessionState.CREATED
-            )
-            resp = self._ok(base, state=record.state.value)
-            resp["world_summary"] = summary
-            if hb:
-                resp["heartbeat"] = hb
-            return resp
-        except OSError as exc:
-            record.state = SessionState.FAILED
-            self._audit.append(
-                session_id,
-                command_id=command_id,
-                command_type="start_session",
-                issued_by=issued_by,
-                result="RUNTIME_UNAVAILABLE",
-                detail={"error": str(exc)},
-            )
-            return self._fail(base, "RUNTIME_UNAVAILABLE", str(exc))
-
-    def _pause(
-        self,
-        session: SessionRecord,
-        base: dict[str, Any],
-        command_id: str,
-        issued_by: str,
-    ) -> dict[str, Any]:
-        if not can_transition(session.state, "pause_session"):
-            return self._fail(base, "INVALID_STATE", session.state.value)
-        if not session.runtime.is_alive():
-            return self._runtime_crashed(session, base, command_id, issued_by)
-        prev = session.state
-        session.runtime.pause()
-        session.state = SessionState.PAUSED
-        self._audit.append(
-            session.session_id,
-            command_id=command_id,
-            command_type="pause_session",
-            issued_by=issued_by,
-            result="OK",
-            detail={"state": session.state.value},
-        )
-        self._publish_channels_for_transition(session, "pause_session", prev)
-        return self._ok(base, state=session.state.value)
-
-    def _resume(
-        self,
-        session: SessionRecord,
-        base: dict[str, Any],
-        command_id: str,
-        issued_by: str,
-    ) -> dict[str, Any]:
-        if not can_transition(session.state, "resume"):
-            return self._fail(base, "INVALID_STATE", session.state.value)
-        if not session.runtime.is_alive():
-            return self._runtime_crashed(session, base, command_id, issued_by)
-        prev = session.state
-        session.runtime.resume()
-        session.state = SessionState.RUNNING
-        self._audit.append(
-            session.session_id,
-            command_id=command_id,
-            command_type="resume",
-            issued_by=issued_by,
-            result="OK",
-            detail={"state": session.state.value},
-        )
-        self._publish_channels_for_transition(session, "resume", prev)
-        return self._ok(base, state=session.state.value)
-
-    def _reset_session(
-        self,
-        session: SessionRecord,
-        base: dict[str, Any],
-        command_id: str,
-        issued_by: str,
-    ) -> dict[str, Any]:
-        if not can_transition(session.state, "reset_session"):
-            return self._fail(base, "INVALID_STATE", session.state.value)
-        if session.world is None:
-            return self._fail(base, "INVALID_STATE", "world not initialized")
-        pre_count = session.world.registry.count()
-        pre_snapshot = session.world.snapshot().to_dict() if pre_count else None
-        removed = session.world.reset()
-        post_snapshot = session.world.snapshot().to_dict()
-        detail = {
-            "pre_entity_count": pre_count,
-            "entities_removed": removed,
-            "world_snapshot": post_snapshot,
-            "state": session.state.value,
-        }
-        if pre_snapshot:
-            detail["pre_reset_snapshot"] = pre_snapshot
-        if session.workflow is not None:
-            self._clear_workflow_state(session, issued_by=issued_by, command_id=command_id)
-            detail["workflow_reset"] = True
-        sync_reset_world(session.runtime, self.config)
-        self._audit.append(
-            session.session_id,
-            command_id=command_id,
-            command_type="reset_session",
-            issued_by=issued_by,
-            result="OK",
-            detail=detail,
-        )
-        self._publish_channels_for_transition(session, "reset_session", session.state)
-        resp = self._ok(base, state=session.state.value)
-        resp["world_summary"] = session.world.world_summary()
-        self._telemetry.emit_world_summary(session.session_id, resp["world_summary"])
-        return resp
-
-    def _stop(
-        self,
-        session: SessionRecord,
-        base: dict[str, Any],
-        command_id: str,
-        issued_by: str,
-        now: float,
-    ) -> dict[str, Any]:
-        if not can_transition(session.state, "stop_session"):
-            return self._fail(base, "INVALID_STATE", session.state.value)
-        prev = session.state
-        session.runtime.stop()
-        session.state = SessionState.STOPPED
-        session.cleanup_after = now + self.config.session_cleanup_timeout_s
-        self._audit.append(
-            session.session_id,
-            command_id=command_id,
-            command_type="stop_session",
-            issued_by=issued_by,
-            result="OK",
-            detail={"state": session.state.value, "cleanup_after_s": self.config.session_cleanup_timeout_s},
-        )
-        self._publish_channels_for_transition(session, "stop_session", prev)
-        return self._ok(base, state=session.state.value)
-
-    def _capture_session(
-        self,
-        session: SessionRecord,
-        base: dict[str, Any],
-        command_id: str,
-        issued_by: str,
-        payload: Any,
-        now: float,
-    ) -> dict[str, Any]:
-        if not can_transition(session.state, "capture_session"):
-            self._export_audit.append(
-                "capture_rejected",
-                session_id=session.session_id,
-                result="INVALID_STATE",
-                detail={"state": session.state.value},
-            )
-            return self._fail(base, "INVALID_STATE", session.state.value)
-
-        self._export_audit.append(
-            "capture_requested",
-            session_id=session.session_id,
-            result="pending",
-            detail={"issued_by": issued_by},
-        )
-
-        repo_root = self._repo_root or repo_root_from()
-        world_snapshot = (
-            session.world.snapshot().to_dict() if session.world else None
-        )
-        audit_path = self._audit.path_for(session.session_id)
-
-        workflow_summary = (
-            session.workflow.to_dict() if session.workflow else None
-        )
-        templates_applied = list(session.templates_applied)
-
-        try:
-            bundle = build_capture_bundle(
-                repo_root=repo_root,
-                session_id=session.session_id,
-                world_snapshot=world_snapshot,
-                audit_path=audit_path,
-                telemetry_store=self._telemetry_subs,
-                payload=payload if isinstance(payload, dict) else None,
-                max_bundle_bytes=self.config.max_capture_bundle_bytes,
-                max_staged=self.config.max_staged_captures,
-                workflow_summary=workflow_summary,
-                templates_applied=templates_applied,
-            )
-        except CaptureBundleError as exc:
-            self._export_audit.append(
-                "capture_rejected",
-                session_id=session.session_id,
-                result=exc.code,
-                detail={"message": exc.message},
-            )
-            self._audit.append(
-                session.session_id,
-                command_id=command_id,
-                command_type="capture_session",
-                issued_by=issued_by,
-                result=exc.code,
-                detail={"message": exc.message},
-            )
-            return self._fail(base, exc.code, exc.message)
-
-        session.cleanup_after = None
-        session.state = SessionState.CAPTURED
-        self._clear_world_with_audit(
-            session,
-            command_type="entity_cleanup",
-            issued_by=issued_by,
-            command_id=command_id,
-            extra_detail={"trigger": "capture_session"},
-        )
-        self._clear_telemetry_with_audit(
-            session,
-            issued_by=issued_by,
-            command_id=command_id,
-            extra_detail={"trigger": "capture_session"},
-        )
-        self._terminate_runtime_with_audit(
-            session,
-            trigger="capture_session",
-            command_id=command_id,
-            issued_by=issued_by,
-        )
-        session.world = None
-        session.workflow = None
-        session.template_apply_count = 0
-        session.templates_applied = []
-
-        detail = {
-            "state": session.state.value,
-            "capture_candidate_id": bundle.capture_candidate_id,
-            "staging_refs": bundle.staging_refs,
-        }
-        if workflow_summary:
-            detail["workflow_summary"] = workflow_summary
-        if templates_applied:
-            detail["templates_applied"] = templates_applied
-        self._audit.append(
-            session.session_id,
-            command_id=command_id,
-            command_type="capture_session",
-            issued_by=issued_by,
-            result="OK",
-            detail=detail,
-        )
-        self._export_audit.append(
-            "capture_validated",
-            capture_candidate_id=bundle.capture_candidate_id,
-            session_id=session.session_id,
-            result="OK",
-            detail={"staging_refs": bundle.staging_refs},
-        )
-
-        resp = self._ok(base, state=session.state.value)
-        resp["governance_banner"] = CAPTURE_GOVERNANCE_BANNER
-        resp["capture_candidate_id"] = bundle.capture_candidate_id
-        resp["staging_refs"] = bundle.staging_refs
-        return resp
-
-    def _discard(
-        self,
-        session: SessionRecord,
-        base: dict[str, Any],
-        command_id: str,
-        issued_by: str,
-        now: float,
-    ) -> dict[str, Any]:
-        if not can_transition(session.state, "discard_session"):
-            return self._fail(base, "INVALID_STATE", session.state.value)
-        if session.state == SessionState.CAPTURED:
-            self._export_audit.append(
-                "capture_discarded",
-                session_id=session.session_id,
-                result="OK",
-                detail={"trigger": "discard_session"},
-            )
-        session.state = SessionState.CLEANUP_PENDING
-        self._clear_world_with_audit(
-            session,
-            command_type="entity_cleanup",
-            issued_by=issued_by,
-            command_id=command_id,
-            extra_detail={"trigger": "discard_session"},
-        )
-        self._clear_telemetry_with_audit(
-            session,
-            issued_by=issued_by,
-            command_id=command_id,
-            extra_detail={"trigger": "discard_session"},
-        )
-        self._terminate_runtime_with_audit(
-            session,
-            trigger="discard_session",
-            command_id=command_id,
-            issued_by=issued_by,
-        )
-        session.state = SessionState.DISCARDED
-        session.cleanup_after = None
-        session.world = None
-        session.workflow = None
-        session.template_apply_count = 0
-        session.templates_applied = []
-        self._audit.append(
-            session.session_id,
-            command_id=command_id,
-            command_type="discard_session",
-            issued_by=issued_by,
-            result="OK",
-            detail={"state": session.state.value, "cleanup": "complete"},
-        )
-        return self._ok(base, state=session.state.value)
-
-    def _terminate_runtime_with_audit(
-        self,
-        session: SessionRecord,
-        *,
-        trigger: str,
-        command_id: str | None = None,
-        issued_by: str = "bridge",
-    ) -> None:
-        was_adapter = runtime_is_adapter(session.runtime)
-        adapter_pid = getattr(session.runtime, "pid", None)
-        session.runtime.terminate()
-        if was_adapter:
-            self._audit.append(
-                session.session_id,
-                command_id=command_id,
-                command_type="adapter_teardown",
-                issued_by=issued_by,
-                result="OK",
-                detail={"trigger": trigger, "adapter_pid": adapter_pid},
-            )
-            self._audit.append(
-                session.session_id,
-                command_id=command_id,
-                command_type="orphan_cleanup",
-                issued_by=issued_by,
-                result="OK",
-                detail={"trigger": trigger},
-            )
 
     def _runtime_crashed(
         self,
@@ -1346,135 +542,39 @@ class BridgeSessionManager:
         command_id: str,
         issued_by: str,
     ) -> dict[str, Any]:
-        session.state = SessionState.RUNTIME_CRASHED
-        session.cleanup_after = time.monotonic() + self.config.cleanup_pending_max_age_s
-        self._audit.append(
-            session.session_id,
+        return lifecycle_runtime_crashed(
+            session,
+            base,
+            self._audit,
+            self.config,
             command_id=command_id,
-            command_type="runtime_crashed",
             issued_by=issued_by,
-            result="RUNTIME_UNAVAILABLE",
-            detail={"state": session.state.value},
         )
-        if runtime_is_adapter(session.runtime):
-            self._audit.append(
-                session.session_id,
-                command_id=command_id,
-                command_type="adapter_teardown",
-                issued_by=issued_by,
-                result="RUNTIME_UNAVAILABLE",
-                detail={"trigger": "runtime_crashed"},
-            )
-        return self._fail(base, "RUNTIME_UNAVAILABLE", "runtime backend exited")
 
     def _tick_timeouts(self, now: float) -> None:
-        session = self._session
-        if session is None:
-            return
-
-        if session.state == SessionState.CREATED and now > session.bridge_ready_deadline:
-            session.state = SessionState.FAILED
-            session.runtime.terminate()
-            self._clear_world_with_audit(session, extra_detail={"trigger": "bridge_ready_timeout"})
-            self._clear_telemetry_with_audit(
-                session, extra_detail={"trigger": "bridge_ready_timeout"}
+        mono = monotonic_now()
+        for session in self._registry.iter_non_terminal():
+            tick_timeouts(
+                session,
+                config=self.config,
+                audit=self._audit,
+                telemetry_subs=self._telemetry_subs,
+                now=now,
             )
-            session.world = None
-            session.cleanup_after = now + self.config.session_cleanup_timeout_s
-            self._audit.append(
-                session.session_id,
-                command_id=None,
-                command_type="bridge_ready_timeout",
-                issued_by="bridge",
-                result="failed",
-                detail={"state": session.state.value},
+            tick_tactical_autonomous_for_session(
+                session,
+                mono,
+                config=self.config,
+                audit=self._audit,
+                publish_channel=lambda ch, s=session: self._publish_telemetry(s, ch),
             )
 
-        if session.state == SessionState.RUNNING and now - session.created_monotonic > self.config.max_session_duration_s:
-            session.runtime.stop()
-            session.state = SessionState.STOPPED
-            session.cleanup_after = now + self.config.session_cleanup_timeout_s
-            self._audit.append(
-                session.session_id,
-                command_id=None,
-                command_type="max_session_duration",
-                issued_by="bridge",
-                result="RESOURCE_LIMIT_EXCEEDED",
-                detail={"state": session.state.value},
-            )
-
-        if session.state in {SessionState.RUNNING, SessionState.PAUSED} and not session.runtime.is_alive():
-            session.state = SessionState.RUNTIME_CRASHED
-            session.cleanup_after = now + self.config.cleanup_pending_max_age_s
-            self._audit.append(
-                session.session_id,
-                command_id=None,
-                command_type="runtime_crashed",
-                issued_by="bridge",
-                result="RUNTIME_UNAVAILABLE",
-                detail={"state": session.state.value},
-            )
-
-        if session.state == SessionState.CAPTURED:
-            return
-
-        if session.cleanup_after is not None and now >= session.cleanup_after:
-            if session.state == SessionState.STOPPED:
-                session.state = SessionState.CLEANUP_PENDING
-                self._clear_world_with_audit(session, extra_detail={"trigger": "auto_cleanup"})
-                self._clear_telemetry_with_audit(
-                    session, extra_detail={"trigger": "auto_cleanup"}
-                )
-                self._terminate_runtime_with_audit(session, trigger="auto_cleanup")
-                session.state = SessionState.DISCARDED
-                session.world = None
-                session.cleanup_after = None
-                self._audit.append(
-                    session.session_id,
-                    command_id=None,
-                    command_type="auto_cleanup",
-                    issued_by="bridge",
-                    result="OK",
-                    detail={"state": session.state.value},
-                )
-            elif session.state in {SessionState.FAILED, SessionState.RUNTIME_CRASHED, SessionState.CLEANUP_PENDING}:
-                self._clear_world_with_audit(session, extra_detail={"trigger": "auto_cleanup"})
-                self._clear_telemetry_with_audit(
-                    session, extra_detail={"trigger": "auto_cleanup"}
-                )
-                session.runtime.terminate()
-                session.state = SessionState.DISCARDED
-                session.world = None
-                session.cleanup_after = None
-                self._audit.append(
-                    session.session_id,
-                    command_id=None,
-                    command_type="auto_cleanup",
-                    issued_by="bridge",
-                    result="OK",
-                    detail={"state": session.state.value},
-                )
-
+    # Backward-compatible private aliases for tests
     def _response_base(self, command_id: str, session_id: Any) -> dict[str, Any]:
-        return {
-            "governance_banner": GOVERNANCE_BANNER,
-            "session_id": session_id,
-            "command_id": command_id,
-            "ok": False,
-            "error_code": None,
-            "message": None,
-        }
+        return response_base(command_id, session_id)
 
     def _ok(self, base: dict[str, Any], *, state: str) -> dict[str, Any]:
-        out = dict(base)
-        out["ok"] = True
-        out["error_code"] = "OK"
-        out["state"] = state
-        return out
+        return ok(base, state=state)
 
     def _fail(self, base: dict[str, Any], error_code: str, message: str) -> dict[str, Any]:
-        out = dict(base)
-        out["ok"] = False
-        out["error_code"] = error_code
-        out["message"] = message
-        return out
+        return fail(base, error_code, message)

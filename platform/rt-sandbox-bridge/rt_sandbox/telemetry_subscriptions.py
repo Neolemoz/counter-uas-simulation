@@ -12,7 +12,7 @@ from typing import Any, TYPE_CHECKING
 from rt_sandbox.governance import GOVERNANCE_BANNER
 
 if TYPE_CHECKING:
-    from rt_sandbox.session_manager import SessionRecord
+    from rt_sandbox.session_record import SessionRecord
 
 TELEMETRY_CHANNELS = frozenset(
     {
@@ -21,10 +21,12 @@ TELEMETRY_CHANNELS = frozenset(
         "world_summary",
         "entity_pose_mirror",
         "clock_mirror",
+        "tactical_state",
+        "tactical_recommendation",
     }
 )
 
-MAX_CHANNELS_PER_SUBSCRIPTION = 5
+MAX_CHANNELS_PER_SUBSCRIPTION = 7
 MAX_SUBSCRIPTIONS_PER_SESSION = 1
 DEFAULT_RING_SIZE = 64
 
@@ -65,14 +67,15 @@ class TelemetrySubscriptionStore:
     ring_size: int = DEFAULT_RING_SIZE
     _by_session: dict[str, TelemetrySubscription] = field(default_factory=dict)
     _by_id: dict[str, TelemetrySubscription] = field(default_factory=dict)
-    _last_emit_monotonic: float = 0.0
+    _last_emit_by_session: dict[str, float] = field(default_factory=dict)
 
-    def _rate_ok(self) -> bool:
+    def _rate_ok(self, session_id: str) -> bool:
         now = time.monotonic()
         min_interval = 1.0 / self.max_hz
-        if now - self._last_emit_monotonic < min_interval:
+        last = self._last_emit_by_session.get(session_id, 0.0)
+        if now - last < min_interval:
             return False
-        self._last_emit_monotonic = now
+        self._last_emit_by_session[session_id] = now
         return True
 
     def subscribe(
@@ -107,6 +110,7 @@ class TelemetrySubscriptionStore:
             return False
         if self._by_session.get(sub.session_id) is sub:
             del self._by_session[sub.session_id]
+        self._last_emit_by_session.pop(sub.session_id, None)
         return True
 
     def get(self, subscription_id: str) -> TelemetrySubscription | None:
@@ -120,16 +124,20 @@ class TelemetrySubscriptionStore:
         if sub is None:
             return 0
         self._by_id.pop(sub.subscription_id, None)
+        self._last_emit_by_session.pop(session_id, None)
         return 1
 
-    def record(self, session_id: str, channel: str, payload: dict[str, Any]) -> None:
+    def record(self, session_id: str, channel: str, payload: dict[str, Any]) -> int:
+        """Record event; return number of events trimmed from ring buffer."""
         if channel not in TELEMETRY_CHANNELS:
-            return
+            return 0
         sub = self._by_session.get(session_id)
         if sub is None or channel not in sub.channels:
-            return
-        if not self._rate_ok():
-            return
+            return 0
+        if channel not in ("tactical_state", "tactical_recommendation") and not self._rate_ok(
+            session_id
+        ):
+            return 0
         event = TelemetryEvent(
             channel=channel,
             session_id=session_id,
@@ -137,8 +145,11 @@ class TelemetrySubscriptionStore:
             payload=payload,
         )
         sub.events.append(event)
+        trimmed = 0
         while len(sub.events) > self.ring_size:
             sub.events.popleft()
+            trimmed += 1
+        return trimmed
 
     def drain(self, subscription_id: str, max_events: int = 10) -> list[dict[str, Any]]:
         sub = self._by_id.get(subscription_id)
@@ -149,14 +160,25 @@ class TelemetrySubscriptionStore:
             out.append(sub.events.popleft().to_dict())
         return out
 
-    def build_initial_events(self, session: SessionRecord) -> list[dict[str, Any]]:
+    def build_initial_events(
+        self,
+        session: SessionRecord,
+        *,
+        config: Any | None = None,
+        pose_sync_summary: dict[str, Any] | None = None,
+    ) -> list[dict[str, Any]]:
         """Snapshot events for all subscribed channels on subscribe."""
         sub = self._by_session.get(session.session_id)
         if sub is None:
             return []
         events: list[dict[str, Any]] = []
         for ch in sorted(sub.channels):
-            payload = build_channel_payload(session, ch)
+            payload = build_channel_payload(
+                session,
+                ch,
+                config=config,
+                pose_sync_summary=pose_sync_summary,
+            )
             if payload is None:
                 continue
             events.append(
@@ -170,34 +192,21 @@ class TelemetrySubscriptionStore:
         return events
 
 
-def build_channel_payload(session: SessionRecord, channel: str) -> dict[str, Any] | None:
-    """Build read-only payload for a channel from current session state."""
-    from rt_sandbox.lifecycle import SessionState
+def build_channel_payload(
+    session: SessionRecord,
+    channel: str,
+    *,
+    config: Any | None = None,
+    pose_sync_summary: dict[str, Any] | None = None,
+) -> dict[str, Any] | None:
+    """Build read-only payload for a telemetry channel."""
+    from rt_sandbox.governance import GovernanceConfig
+    from rt_sandbox.telemetry_bridge import resolve_channel_payload
 
-    if channel == "session_health":
-        health = session.runtime.health_payload()
-        return {
-            "state": session.state.value,
-            "stub_alive": health.get("stub_alive", False),
-            "adapter_alive": health.get("adapter_alive", False),
-            "adapter_mode": health.get("adapter_mode"),
-            "adapter_pid": health.get("adapter_pid"),
-            "governance_banner": GOVERNANCE_BANNER,
-        }
-    if channel == "lifecycle_state":
-        return {
-            "state": session.state.value,
-            "previous_state": None,
-            "command_type": None,
-        }
-    if channel == "clock_mirror":
-        return {"paused": session.state == SessionState.PAUSED}
-    if channel == "world_summary":
-        if session.world is None:
-            return {"entity_count": 0, "revision": 0, "by_type": {}, "bounds": {}}
-        return session.world.world_summary()
-    if channel == "entity_pose_mirror":
-        if session.world is None:
-            return {"entities": []}
-        return {"entities": session.world.registry.poses_for_telemetry()}
-    return None
+    cfg = config if config is not None else GovernanceConfig()
+    return resolve_channel_payload(
+        session,
+        channel,
+        cfg,
+        pose_sync_summary=pose_sync_summary,
+    )

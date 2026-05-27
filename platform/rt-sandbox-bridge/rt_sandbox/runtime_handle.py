@@ -52,6 +52,10 @@ def create_runtime(
             ipc_timeout_s=config.adapter_ipc_timeout_s,
             ready_timeout_s=config.adapter_ready_timeout_s,
             ros_domain_id=config.ros_domain_id_for_session(session_id),
+            rt_sandbox_world=config.rt_sandbox_world,
+            ground_snap_enabled=config.entity_ground_snap_enabled,
+            enable_fidelity_coupling=config.enable_fidelity_coupling,
+            fidelity_ground_z_m=config.fidelity_ground_z_m,
         )
     return RuntimeStub()
 

@@ -1,4 +1,7 @@
-"""Transient session world state store (PLAT-RT-S3)."""
+"""Transient session world state store (PLAT-RT-S3).
+
+world.revision — see docs/evaluation/rt_revision_vocabulary_v1.md
+"""
 
 from __future__ import annotations
 
@@ -68,10 +71,16 @@ class WorldStateStore:
             timestamp_utc=_utc_now(),
         )
 
-    def world_summary(self) -> dict[str, Any]:
+    def world_summary(
+        self,
+        *,
+        pose_sync_summary: dict[str, Any] | None = None,
+    ) -> dict[str, Any]:
         summary = self.registry.summary()
         summary["revision"] = self.revision
         summary["bounds"] = dict(WORLD_BOUNDS)
+        if pose_sync_summary:
+            summary.update(pose_sync_summary)
         return summary
 
     def reset(self) -> int:
