@@ -1,10 +1,10 @@
 # RT - PLAT-RT-V4 Implementation Roadmap v1
 
-**Phase:** PLAN-RT-V4 frozen -> **PLAT-RT-V4 P0-P1 frozen**; P2 future
+**Phase:** PLAN-RT-V4 frozen -> **PLAT-RT-V4 P0-P2 frozen**; **PLAT-RT-V4 complete**
 **Prerequisite:** [rt_v4_freeze_audit.md](rt_v4_freeze_audit.md) (PLAN-RT-V4 docs frozen)
 **Contracts:** [rt_visualization_fidelity_v4.md](rt_visualization_fidelity_v4.md), [rt_visual_density_management_v1.md](rt_visual_density_management_v1.md), [rt_visual_multi_session_cognition_v1.md](rt_visual_multi_session_cognition_v1.md)
 
-This roadmap tracks PLAT-RT-V4 implementation. P0 and P1 are frozen; P2 remains future and is not authorized by P1.
+This roadmap tracks PLAT-RT-V4 implementation. P0, P1, and P2 are frozen; PLAT-RT-V4 is complete.
 
 ## P0 - Density policy foundations
 
@@ -45,13 +45,15 @@ This roadmap tracks PLAT-RT-V4 implementation. P0 and P1 are frozen; P2 remains 
 
 | Item | Future location | Status |
 |------|-----------------|--------|
-| Session comparison strip | Existing workstation session area | Planned |
-| Ghosted comparison geometry | Existing Cesium panel | Planned, default off |
-| Background diagnostic cohesion row | Existing background diagnostics | Planned |
-| Session compare legend | Existing cognition hub/rail | Planned |
-| Isolation tests | RT UI tests + bridge deny-path tests | Required |
+| Session comparison strip | `SessionComparisonCognitionStrip.tsx` | **Delivered** |
+| Ghosted comparison geometry | P1 compare emphasis + P2 chrome summary | **Delivered as visual-only chrome** |
+| Background diagnostic cohesion row | `RuntimeWorkstationShell.tsx`, background diagnostics footer | **Delivered** |
+| Session compare legend | `sessionComparisonCognition.ts`, cognition hub/rail | **Delivered** |
+| Isolation tests | RT UI tests + bridge deny-path tests | **Delivered** |
 
-**Risk:** Med. The phase must not introduce cross-session command affordances or distributed runtime assumptions.
+**Frozen:** [rt_plat_v4_p2_freeze_audit.md](rt_plat_v4_p2_freeze_audit.md) - **PLAT-RT-V4 P2 frozen; PLAT-RT-V4 complete**.
+
+**Risk:** Med. The phase did not introduce cross-session command affordances or distributed runtime assumptions.
 
 ## Explicit out of scope
 
@@ -76,7 +78,7 @@ Each PLAT phase requires its own plan, governance review, visualization realism 
 
 ## Stop line
 
-PLAT-RT-V4 P1 is frozen. Do not start **P2** without a scoped P2 plan, governance review, visualization realism review, validation, and freeze audit.
+PLAT-RT-V4 P2 is frozen and PLAT-RT-V4 is complete. Do not start **PLAN-RT-X3** or checkpoint work without a new scoped plan, governance review, validation, and freeze audit.
 
 ## Related
 

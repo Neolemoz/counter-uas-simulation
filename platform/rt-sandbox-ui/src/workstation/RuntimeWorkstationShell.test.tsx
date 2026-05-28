@@ -20,7 +20,9 @@ describe("RuntimeWorkstationShell", () => {
     );
     expect(markup).toContain('aria-label="Cognition rail"');
     expect(markup).toContain("cognition-rail-content");
+    expect(markup).toContain("xl:sticky");
     expect(markup).toContain('aria-label="Background session summary"');
+    expect(markup).toContain("compact-diag");
   });
 
   it("omits cognition rail when not provided", () => {

@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   deriveSessionComparisonVisualRows,
+  sessionComparisonChromeSummary,
   sessionComparisonSummaryLine,
 } from "./sessionComparisonCognition";
 
@@ -43,5 +44,20 @@ describe("sessionComparisonCognition", () => {
     expect(rows[1].role).toBe("comparison");
     expect(rows[1].displayMode).toBe("dimmed");
     expect(rows[1].commandable).toBe(false);
+  });
+
+  it("summarizes chrome roles as visual only", () => {
+    const rows = deriveSessionComparisonVisualRows({
+      activeSessionId: "session-a",
+      orderedSessionIds: ["session-a", "session-b", "session-c"],
+      comparisonGhostsEnabled: true,
+      sessionContrastEnabled: true,
+      compareEmphasisEnabled: true,
+    });
+    const summary = sessionComparisonChromeSummary(rows);
+    expect(summary.selected).toBe(1);
+    expect(summary.comparison).toBe(2);
+    expect(summary.dimmed).toBe(2);
+    expect(summary.line).toMatch(/visual only/);
   });
 });

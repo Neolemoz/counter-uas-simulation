@@ -38,10 +38,10 @@ export function RuntimeWorkstationShell({
 
       {hasCognition || hasWorld || hasViz ? (
         <section className="space-y-2" aria-label="Globe and editing workspace">
-          <div className="grid gap-4 lg:grid-cols-12">
+          <div className="grid items-start gap-4 lg:grid-cols-12">
             {hasCognition && (
               <div
-                className="flex flex-col gap-4 lg:col-span-3"
+                className="flex flex-col gap-3 lg:col-span-3 xl:sticky xl:top-4"
                 aria-label="Cognition rail"
               >
                 {cognitionColumn}
@@ -49,7 +49,7 @@ export function RuntimeWorkstationShell({
             )}
             {hasViz && (
               <div
-                className={`flex flex-col gap-4 ${hasCognition ? "lg:col-span-6" : "lg:col-span-7"}`}
+                className={`flex flex-col gap-3 ${hasCognition ? "lg:col-span-6" : "lg:col-span-7"}`}
                 aria-label="Globe and layers"
               >
                 {vizColumn}
@@ -57,7 +57,7 @@ export function RuntimeWorkstationShell({
             )}
             {hasWorld && (
               <div
-                className={`flex flex-col gap-4 ${hasCognition ? "lg:col-span-3" : "lg:col-span-5"}`}
+                className={`flex flex-col gap-3 ${hasCognition ? "lg:col-span-3" : "lg:col-span-5"}`}
                 aria-label="World editing"
               >
                 {worldColumn}
@@ -65,7 +65,7 @@ export function RuntimeWorkstationShell({
             )}
           </div>
           {globeFooter ? (
-            <div aria-label="Background session summary">{globeFooter}</div>
+            <div className="rounded border border-slate-800/80 bg-slate-950/30 p-2" aria-label="Background session summary">{globeFooter}</div>
           ) : null}
         </section>
       ) : null}

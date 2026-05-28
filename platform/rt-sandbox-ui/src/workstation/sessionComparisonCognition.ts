@@ -72,3 +72,27 @@ export function sessionComparisonSummaryLine(
   }
   return `Session compare: selected ${selected?.shortId ?? "unknown"}; ${backgrounds.length} background session${backgrounds.length === 1 ? "" : "s"} tab-only.`;
 }
+
+export interface SessionComparisonChromeSummary {
+  selected: number;
+  comparison: number;
+  background: number;
+  dimmed: number;
+  line: string;
+}
+
+export function sessionComparisonChromeSummary(
+  rows: readonly SessionComparisonVisualRow[],
+): SessionComparisonChromeSummary {
+  const selected = rows.filter((r) => r.role === "selected").length;
+  const comparison = rows.filter((r) => r.role === "comparison").length;
+  const background = rows.filter((r) => r.role === "background").length;
+  const dimmed = rows.filter((r) => r.displayMode === "dimmed").length;
+  return {
+    selected,
+    comparison,
+    background,
+    dimmed,
+    line: `Chrome: ${selected} selected · ${comparison} comparison · ${background} background · ${dimmed} dimmed - visual only.`,
+  };
+}

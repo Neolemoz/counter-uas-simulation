@@ -14,10 +14,12 @@ export function VisualLayerToggleRail({
   visibility,
   onToggle,
   disabled = false,
+  memoryLine,
 }: {
   visibility: VisualLayerVisibility;
   onToggle: (layerId: string) => void;
   disabled?: boolean;
+  memoryLine?: string;
 }) {
   const groups = groupLayersForUi(CANONICAL_VISUAL_LAYER_REGISTRY);
 
@@ -28,8 +30,11 @@ export function VisualLayerToggleRail({
     <div className="flex flex-col gap-2">
       {groups.map((group) => (
         <div key={group.groupId} className="flex flex-wrap items-center gap-2">
-          <span className="w-full text-[10px] font-medium uppercase tracking-wide text-slate-500">
-            {group.title}
+          <span className="flex w-full items-center justify-between gap-2 text-[10px] font-medium uppercase tracking-wide text-slate-500">
+            <span>{group.title}</span>
+            <span className="text-slate-600">
+              {group.layers.filter((layer) => isLayerVisible(visibility, layer)).length}/{group.layers.length}
+            </span>
           </span>
           {group.layers.map((layer) => {
             const on = isLayerVisible(visibility, layer);
@@ -48,13 +53,20 @@ export function VisualLayerToggleRail({
           })}
         </div>
       ))}
-      <p
-        className={`text-[10px] ${density.exceeded && density.densityWarningsEnabled ? "text-amber-300" : "text-slate-500"}`}
-        data-testid="registry-budget-summary"
-        title="Warn-only density summary — no layer is enforced or commanded"
-      >
-        {budgetLine}
-      </p>
+      <div className="space-y-1">
+        <p
+          className={`text-[10px] ${density.exceeded && density.densityWarningsEnabled ? "text-amber-300" : "text-slate-500"}`}
+          data-testid="registry-budget-summary"
+          title="Warn-only density summary - no layer is enforced or commanded"
+        >
+          {budgetLine}
+        </p>
+        {memoryLine && (
+          <p className="text-[10px] text-slate-600" data-testid="layer-memory-summary">
+            {memoryLine}
+          </p>
+        )}
+      </div>
     </div>
   );
 }

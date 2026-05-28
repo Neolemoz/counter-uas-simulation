@@ -1,5 +1,6 @@
 import {
   deriveSessionComparisonVisualRows,
+  sessionComparisonChromeSummary,
   sessionComparisonSummaryLine,
 } from "./sessionComparisonCognition";
 import { sessionAccentBgClass } from "./sessionVisualIdentity";
@@ -28,6 +29,7 @@ export function SessionComparisonCognitionStrip({
   });
 
   if (rows.length <= 1) return null;
+  const chrome = sessionComparisonChromeSummary(rows);
 
   return (
     <div
@@ -35,6 +37,19 @@ export function SessionComparisonCognitionStrip({
       data-testid="session-comparison-cognition"
     >
       <p className="mb-2 text-slate-300">{sessionComparisonSummaryLine(rows)}</p>
+      {compact && (
+        <div className="mb-2 flex flex-wrap gap-1" data-testid="session-comparison-compact-chips">
+          {rows.map((row) => (
+            <span
+              key={row.sessionId}
+              className="rounded border border-slate-700/80 bg-slate-900/60 px-1.5 py-0.5 text-[10px] text-slate-400"
+              title={row.explanatoryLabel}
+            >
+              <span className="font-mono text-slate-300">{row.shortId}</span> {row.role}/{row.displayMode}
+            </span>
+          ))}
+        </div>
+      )}
       {!compact && (
         <ul className="flex flex-wrap gap-2">
           {rows.map((row) => (
@@ -55,6 +70,9 @@ export function SessionComparisonCognitionStrip({
           ))}
         </ul>
       )}
+      <p className="mt-2 text-[10px] text-slate-500" data-testid="session-comparison-chrome-summary">
+        {chrome.line}
+      </p>
     </div>
   );
 }

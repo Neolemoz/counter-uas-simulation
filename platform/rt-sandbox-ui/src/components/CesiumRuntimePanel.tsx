@@ -26,6 +26,7 @@ import {
   type VisualLayerVisibility,
 } from "@/cesium/visualLayerRegistry";
 import { VisualLayerToggleRail } from "@/components/VisualLayerToggleRail";
+import { sessionLayerVisibilityMemoryLine } from "@/workstation/sessionLayerVisibilityStore";
 import { SessionComparisonCognitionStrip } from "@/workstation/SessionComparisonCognitionStrip";
 import {
   BANNER_FIDELITY_TRUTH,
@@ -104,6 +105,7 @@ export function CesiumRuntimePanel({
   const fidelityOn = isFidelityCouplingOn(fidelityContext);
   const selectedEntity =
     entities.find((e) => e.entity_id === selectedEntityId) ?? null;
+  const layerMemoryLine = sessionLayerVisibilityMemoryLine(sessionId, true);
 
   const summary = cesiumViewSummary({
     pendingReconcile,
@@ -329,6 +331,7 @@ export function CesiumRuntimePanel({
             orderedSessionIds={orderedSessionIds}
             comparisonGhostsEnabled={layerVisibility.showComparisonGhosts}
             sessionContrastEnabled={layerVisibility.showSessionContrast}
+            compareEmphasisEnabled={layerVisibility.showCompareEmphasisV4}
           />
         </div>
       )}
@@ -336,6 +339,7 @@ export function CesiumRuntimePanel({
       <div className="mb-3 flex flex-wrap gap-2">
         <VisualLayerToggleRail
           visibility={layerVisibility}
+          memoryLine={layerMemoryLine}
           onToggle={(layerId) =>
             onLayerVisibilityChange(
               toggleLayerVisibility(

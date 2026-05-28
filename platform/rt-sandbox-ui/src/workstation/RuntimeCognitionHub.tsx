@@ -26,6 +26,7 @@ import {
 } from "@/fidelity/fidelityCognition";
 import { shortSessionId } from "@/workstation/sessionVisualIdentity";
 import {
+  densityBudgetSummary,
   registryBudgetSummaryLine,
   type VisualLayerVisibility,
 } from "@/cesium/visualLayerRegistry";
@@ -157,6 +158,7 @@ export function RuntimeCognitionHub({
     terrainLayers != null ? sensorContextHubLine(terrainLayers, entities) : null;
 
   const budgetSummary = registryBudgetSummaryLine(layerVisibility);
+  const densitySummary = densityBudgetSummary(layerVisibility);
   const visibilityV4Hints = terrainLayers
     ? deriveVisibilityOverlayV4Hints({
         visibility: layerVisibility,
@@ -213,8 +215,14 @@ export function RuntimeCognitionHub({
           <p className="text-xs text-slate-300" data-testid="hub-density-summary">
             {budgetSummary}
           </p>
+          <div className="mt-2 grid grid-cols-2 gap-2 text-[10px] text-slate-500" data-testid="hub-density-polish">
+            <span>Controls {densitySummary.activeDensityControls}/{densitySummary.densityControlCount}</span>
+            <span className={densitySummary.exceeded ? "text-amber-300" : "text-slate-500"}>
+              Overlays {densitySummary.activeOverlayLayers}/{densitySummary.overlayCap}
+            </span>
+          </div>
           <p className="mt-1 text-[10px] text-slate-500">
-            Warn-only display policy — registry and bridge command truth unchanged.
+            Warn-only display policy - registry and bridge command truth unchanged.
           </p>
         </CognitionBlock>
 
