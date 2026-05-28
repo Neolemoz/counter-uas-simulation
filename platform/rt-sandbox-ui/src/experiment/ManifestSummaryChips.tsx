@@ -17,6 +17,12 @@ export function ManifestSummaryChips({ chips }: { chips: ManifestSummaryChip[] }
             {chip.role === "primary" ? "Primary" : "Secondary"}
           </p>
           <p className="font-mono text-xs text-slate-200">{chip.experiment_id}</p>
+          <p
+            className="truncate font-mono text-[10px] text-slate-500"
+            title={chip.manifest_ref}
+          >
+            {chip.manifest_ref}
+          </p>
           <p className="text-[10px] text-slate-400">
             {chip.runsLabel} · {chip.experiment_class}
           </p>

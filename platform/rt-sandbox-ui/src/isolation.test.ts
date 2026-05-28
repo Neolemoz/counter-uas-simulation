@@ -238,6 +238,15 @@ describe("RT UI isolation", () => {
     ).toBe(true);
   });
 
+  it("includes experiment workbench v3 P2 modules (PLAT-RT-X3 P2)", () => {
+    const expDir = join(RT_UI_ROOT, "src", "experiment");
+    expect(existsSync(join(expDir, "multiManifestDiffColumns.ts"))).toBe(true);
+    expect(existsSync(join(expDir, "MultiManifestMetadataDrillDown.tsx"))).toBe(true);
+    expect(existsSync(join(expDir, "ReviewPacketGroupedSummary.tsx"))).toBe(true);
+    expect(existsSync(join(expDir, "packetSectionGroups.ts"))).toBe(true);
+    expect(existsSync(join(expDir, "useReportDockPacketTab.ts"))).toBe(true);
+  });
+
   it("includes experiment workbench v3 P1 modules (PLAT-RT-X3 P1)", () => {
     const expDir = join(RT_UI_ROOT, "src", "experiment");
     expect(existsSync(join(expDir, "reviewStepCompletion.ts"))).toBe(true);

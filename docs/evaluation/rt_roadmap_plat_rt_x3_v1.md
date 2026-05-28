@@ -47,18 +47,19 @@
 
 ---
 
-## P2 — Compare readability polish (advisory)
+## P2 — Multi-manifest and packet polish (frozen)
 
 **Prerequisite:** P1 frozen
+**Status:** **frozen** — [rt_plat_x3_p2_freeze_audit.md](rt_plat_x3_p2_freeze_audit.md)
+**PLAT-RT-X3:** **complete** (P0–P2)
 
-**Note:** P0 already delivered compare mode coach, `compareStatusVocabulary`, and multi-manifest status column + drill-down. P2 is residual polish only if needed.
+| Item | Location |
+|------|----------|
+| Metadata drill-down table | `MultiManifestMetadataDrillDown.tsx`, `multiManifestDiffColumns.ts` |
+| Packet grouped summary | `ReviewPacketGroupedSummary.tsx`, `packetSectionGroups.ts` |
+| Export unchanged | `reviewPacketExport.ts` |
 
-| Item | Location (proposed) |
-|------|---------------------|
-| Extended compare / matrix readability | compare panels |
-| `tier0-rt-ui` + build | CI |
-
-**Freeze target:** `docs/evaluation/rt_plat_x3_p2_freeze_audit.md` — **PLAT-RT-X3 complete**
+**PLAT plan:** [rt_plat_x3_p2_multi_manifest_packet_plan.md](../platform/rt_plat_x3_p2_multi_manifest_packet_plan.md)
 
 ---
 

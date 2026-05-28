@@ -39,5 +39,9 @@ describe("MultiManifestDiffTable", () => {
     );
     expect(markup).toContain("experiment_id");
     expect(markup).toContain("manifest-summary-chips");
+    expect(markup).toContain("compare-status-chip");
+    expect(markup).toContain("data-status=\"divergent\"");
+    expect(markup).toContain("Primary");
+    expect(markup).toContain("Secondary");
   });
 });

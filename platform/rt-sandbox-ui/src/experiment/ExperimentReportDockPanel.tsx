@@ -12,6 +12,11 @@ import {
 } from "./reviewPacketExport";
 import { buildPacketSectionsPreview } from "./reviewPacketSections";
 import { ReviewPacketSectionCard } from "./ReviewPacketSectionCard";
+import { ReviewPacketGroupedSummary } from "./ReviewPacketGroupedSummary";
+import {
+  groupPacketSections,
+  sectionOrganizationHint,
+} from "./packetSectionGroups";
 import {
   buildStepCompletionMap,
   resolveStepCompletion,
@@ -24,6 +29,10 @@ import {
   type ReportDockGroupId,
 } from "./reportDockGroups";
 import { CompareStatusChip } from "./CompareStatusChip";
+import { buildMultiManifestDiff } from "./multiManifestDiff";
+import { summarizeMultiManifestDiffStatus } from "./multiManifestDiffColumns";
+import { useReportDockPacketTab } from "./useReportDockPacketTab";
+import type { ExperimentCohortIndex } from "./cohortSchema";
 import type { ExperimentManifest } from "./experimentSchema";
 import type { WorkbenchV2State } from "./workbenchV2State";
 
@@ -45,6 +54,7 @@ export function ExperimentReportDockPanel({
   onExportSlot,
   packetTabFocusToken,
   cohortLabel,
+  cohort,
 }: {
   v2State: WorkbenchV2State;
   manifest: ExperimentManifest;
@@ -54,23 +64,24 @@ export function ExperimentReportDockPanel({
   onExportSlot: (slotId: string) => string | null;
   packetTabFocusToken?: number;
   cohortLabel?: string | null;
+  cohort?: ExperimentCohortIndex | null;
 }) {
-  const [activeTab, setActiveTab] = useState<"slots" | "packet">("slots");
   const [importError, setImportError] = useState<string | null>(null);
   const [previewSlot, setPreviewSlot] = useState<string | null>(null);
-  const [copyStatus, setCopyStatus] = useState<string | null>(null);
-  const [packetDownloaded, setPacketDownloaded] = useState(false);
-  const [packetTabEverFocused, setPacketTabEverFocused] = useState(false);
+  const {
+    activeTab,
+    setActiveTab,
+    copyStatus,
+    setCopyStatus,
+    packetDownloaded,
+    setPacketDownloaded,
+    packetTabEverFocused,
+    openPacketTab,
+  } = useReportDockPacketTab(packetTabFocusToken);
+
   const [groupExpanded, setGroupExpanded] = useState<Record<ReportDockGroupId, boolean>>(
     () => defaultGroupExpandedMap(v2State.review_step),
   );
-
-  useEffect(() => {
-    if (packetTabFocusToken != null && packetTabFocusToken > 0) {
-      setActiveTab("packet");
-      setPacketTabEverFocused(true);
-    }
-  }, [packetTabFocusToken]);
 
   useEffect(() => {
     setGroupExpanded(defaultGroupExpandedMap(v2State.review_step));
@@ -97,6 +108,18 @@ export function ExperimentReportDockPanel({
     [v2State, manifest, presence],
   );
 
+  const multiManifestStatusLine = useMemo(() => {
+    if (v2State.compare_mode !== "multi_manifest_diff") return undefined;
+    const rows = buildMultiManifestDiff({
+      cohort: cohort ?? null,
+      primaryManifestRef: v2State.primary_manifest_ref,
+      secondaryManifestRef: v2State.secondary_manifest_ref,
+      loadedManifest: manifest,
+    });
+    if (rows.length === 0) return undefined;
+    return summarizeMultiManifestDiffStatus(rows);
+  }, [v2State, cohort, manifest]);
+
   const packetJson = useMemo(
     () => JSON.stringify(packetPreview, null, 2),
     [packetPreview],
@@ -110,8 +133,14 @@ export function ExperimentReportDockPanel({
         presence,
         cohortLabel,
         stepCompletion,
+        multiManifestStatusLine,
       }),
-    [v2State, manifest, presence, cohortLabel, stepCompletion],
+    [v2State, manifest, presence, cohortLabel, stepCompletion, multiManifestStatusLine],
+  );
+
+  const groupedSections = useMemo(
+    () => groupPacketSections(packetSections),
+    [packetSections],
   );
 
   const slotPresent: Record<string, boolean> = {
@@ -168,10 +197,7 @@ export function ExperimentReportDockPanel({
         <button
           type="button"
           className={`text-xs ${activeTab === "packet" ? "text-cyan-300" : "text-slate-500"}`}
-          onClick={() => {
-            setActiveTab("packet");
-            setPacketTabEverFocused(true);
-          }}
+          onClick={openPacketTab}
           data-testid="report-dock-packet-tab"
         >
           Review packet
@@ -270,16 +296,32 @@ export function ExperimentReportDockPanel({
       {activeTab === "packet" && (
         <div className="space-y-2">
           <p className="text-[10px] text-amber-200/80">{REVIEW_PACKET_GOVERNANCE_BANNER}</p>
+          <ReviewPacketGroupedSummary packet={packetPreview} />
           <div className="space-y-2" data-testid="review-packet-sections-preview">
             <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-500">
               Packet sections (UI preview — not in export JSON)
             </p>
-            {packetSections.map((section) => (
-              <ReviewPacketSectionCard
-                key={section.section_id}
-                section={section}
-                completionHint={section.completion_hint}
-              />
+            {groupedSections.map(({ group, sections }) => (
+              <details
+                key={group.id}
+                open
+                className="rounded border border-slate-800 bg-slate-950/30"
+                data-testid={`packet-section-group-${group.id}`}
+              >
+                <summary className="cursor-pointer px-2 py-1 text-[10px] font-medium text-slate-400">
+                  {group.label}
+                </summary>
+                <div className="space-y-2 border-t border-slate-800/80 p-2">
+                  {sections.map((section) => (
+                    <ReviewPacketSectionCard
+                      key={section.section_id}
+                      section={section}
+                      completionHint={section.completion_hint}
+                      organizationHint={sectionOrganizationHint(section.section_id)}
+                    />
+                  ))}
+                </div>
+              </details>
             ))}
           </div>
           <pre
@@ -293,6 +335,7 @@ export function ExperimentReportDockPanel({
               type="button"
               className="rounded border border-slate-600 bg-slate-800 px-2 py-1 text-xs text-slate-200"
               onClick={() => void handleCopyPacket()}
+              title="Advisory export only — same JSON shape as download; no sections array"
             >
               Copy packet JSON (advisory only)
             </button>
@@ -301,6 +344,7 @@ export function ExperimentReportDockPanel({
               className="rounded border border-slate-600 bg-slate-800 px-2 py-1 text-xs text-slate-200"
               onClick={handleDownloadPacket}
               data-testid="review-packet-download"
+              title="Advisory export only — same JSON shape as copy; no sections array"
             >
               Download packet JSON (advisory only)
             </button>

@@ -46,8 +46,17 @@ export function buildPacketSectionsPreview(options: {
   cohortLabel?: string | null;
   coachLine?: string;
   stepCompletion?: Partial<Record<UnifiedReviewStepId, ReviewStepCompletionState>>;
+  multiManifestStatusLine?: string;
 }): ReviewPacketSectionEntry[] {
-  const { v2State, manifest, presence, cohortLabel, coachLine, stepCompletion } = options;
+  const {
+    v2State,
+    manifest,
+    presence,
+    cohortLabel,
+    coachLine,
+    stepCompletion,
+    multiManifestStatusLine,
+  } = options;
   const cohortPart = cohortLabel ?? v2State.active_cohort_id ?? "single manifest";
   const primaryRef = v2State.primary_manifest_ref ?? manifest.experiment_id;
   const secondaryRef = v2State.secondary_manifest_ref;
@@ -79,11 +88,19 @@ export function buildPacketSectionsPreview(options: {
   const runIds = [v2State.compare_run_a, v2State.compare_run_b].filter(
     (id): id is string => typeof id === "string" && id.length > 0,
   );
-  const compareBody = [
+  const compareParts = [
     `Mode: ${mode}.`,
     runIds.length > 0 ? `Runs: ${runIds.join(", ")}.` : "Runs: none pinned.",
     coach,
-  ].join(" ");
+  ];
+  if (mode === "multi_manifest_diff") {
+    if (primaryRef) compareParts.push(`Primary manifest: ${primaryRef}.`);
+    if (secondaryRef) compareParts.push(`Secondary manifest: ${secondaryRef}.`);
+    if (multiManifestStatusLine) {
+      compareParts.push(`Metadata status: ${multiManifestStatusLine}.`);
+    }
+  }
+  const compareBody = compareParts.join(" ");
 
   const cliBody = `python3 scripts/rt/rt_experiment_metrics.py --manifest runs/rt_sandbox/experiments/${manifest.experiment_id}/manifest.json`;
 

@@ -102,6 +102,7 @@ export function ExperimentWorkbenchV2Shell({
                 onExportSlot={onExportDockSlot}
                 packetTabFocusToken={dockPacketTabFocus}
                 cohortLabel={activeCohort?.label ?? null}
+                cohort={activeCohort}
               />
             </div>
             <div className="mt-3 space-y-3 border-t border-slate-800/80 pt-3">

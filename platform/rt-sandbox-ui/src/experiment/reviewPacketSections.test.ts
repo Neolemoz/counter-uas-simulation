@@ -46,6 +46,36 @@ describe("reviewPacketSections", () => {
     expect(packet).not.toHaveProperty("sections");
   });
 
+  it("enriches compare_summary for multi_manifest_diff when status line provided", () => {
+    const manifest: ExperimentManifest = {
+      schema: "rt_experiment_manifest_v1",
+      experiment_id: "exp-test",
+      created_at_utc: "2026-05-28T12:00:00Z",
+      governance_banner: "RT EXPERIMENT — explanatory compare only; not operational authority",
+      runs: [],
+    };
+    const v2State = {
+      ...defaultWorkbenchV2State(),
+      compare_mode: "multi_manifest_diff" as const,
+      primary_manifest_ref: "runs/a/manifest.json",
+      secondary_manifest_ref: "runs/b/manifest.json",
+    };
+    const sections = buildPacketSectionsPreview({
+      v2State,
+      manifest,
+      presence: {
+        f1_analytics: false,
+        f3_annex: false,
+        f5_metrics: false,
+        f5b_fidelity: false,
+      },
+      multiManifestStatusLine: "2 aligned, 1 divergent",
+    });
+    const compare = sections.find((s) => s.section_id === "compare_summary");
+    expect(compare?.body_markdown).toContain("multi_manifest_diff");
+    expect(compare?.body_markdown).toContain("Metadata status: 2 aligned, 1 divergent");
+  });
+
   it("parses x3 fixture with optional sections", () => {
     const raw = JSON.parse(
       readFileSync(
