@@ -9,12 +9,14 @@ export function SessionComparisonCognitionStrip({
   orderedSessionIds,
   comparisonGhostsEnabled,
   sessionContrastEnabled,
+  compareEmphasisEnabled = false,
   compact = false,
 }: {
   activeSessionId?: string | null;
   orderedSessionIds: readonly string[];
   comparisonGhostsEnabled: boolean;
   sessionContrastEnabled: boolean;
+  compareEmphasisEnabled?: boolean;
   compact?: boolean;
 }) {
   const rows = deriveSessionComparisonVisualRows({
@@ -22,6 +24,7 @@ export function SessionComparisonCognitionStrip({
     orderedSessionIds,
     comparisonGhostsEnabled,
     sessionContrastEnabled,
+    compareEmphasisEnabled,
   });
 
   if (rows.length <= 1) return null;

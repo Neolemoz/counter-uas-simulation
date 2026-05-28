@@ -34,7 +34,7 @@ export type VisualComparisonRole =
   | "comparison"
   | "background";
 
-export type PlatPhase = "p0" | "p1" | "v4_p0";
+export type PlatPhase = "p0" | "p1" | "v4_p0" | "v4_p1";
 
 export type LayerVisibilityKey =
   | "showTerrainMesh"
@@ -52,7 +52,11 @@ export type LayerVisibilityKey =
   | "showDensityWarnings"
   | "showLayerBudgetSummary"
   | "showSessionContrast"
-  | "showComparisonGhosts";
+  | "showComparisonGhosts"
+  | "showVisibilityCorridorV4"
+  | "showOcclusionBandsV4"
+  | "showTerrainRelationLabelsV4"
+  | "showCompareEmphasisV4";
 
 export interface VisualLayerPerformanceBudget {
   max_active_overlay_layers: number;
@@ -107,6 +111,10 @@ export interface VisualLayerVisibility {
   showLayerBudgetSummary: boolean;
   showSessionContrast: boolean;
   showComparisonGhosts: boolean;
+  showVisibilityCorridorV4: boolean;
+  showOcclusionBandsV4: boolean;
+  showTerrainRelationLabelsV4: boolean;
+  showCompareEmphasisV4: boolean;
 }
 
 export const COGNITION_GROUP_TITLES: Record<CognitionGroupId, string> = {
@@ -145,6 +153,10 @@ const LAYER_ID_TO_VISIBILITY_KEY: Partial<Record<string, LayerVisibilityKey>> = 
   layer_budget_summary_v4: "showLayerBudgetSummary",
   session_contrast_v4: "showSessionContrast",
   comparison_ghosts_v4: "showComparisonGhosts",
+  visibility_corridor_v4: "showVisibilityCorridorV4",
+  occlusion_bands_v4: "showOcclusionBandsV4",
+  terrain_relation_labels_v4: "showTerrainRelationLabelsV4",
+  compare_emphasis_v4: "showCompareEmphasisV4",
 };
 
 const V4_P0_LAYERS: VisualLayerDescriptor[] = [
@@ -212,6 +224,70 @@ const V4_P0_LAYERS: VisualLayerDescriptor[] = [
   },
 ];
 
+const V4_P1_LAYERS: VisualLayerDescriptor[] = [
+  {
+    layer_id: "visibility_corridor_v4",
+    label: "Visibility corridor",
+    z_order: 84,
+    default_on: false,
+    plat_phase: "v4_p1",
+    toggleable: true,
+    visibility_key: "showVisibilityCorridorV4",
+    cognition_group: "visibility_context",
+    module_anchor: "visibilityOverlayV4",
+    cognition_kind: "visibility",
+    density_group: "visibility_context",
+    display_only: true,
+    disclaimer: "Visibility corridor is a heuristic display cue - not coverage authority",
+  },
+  {
+    layer_id: "occlusion_bands_v4",
+    label: "Occlusion bands",
+    z_order: 85,
+    default_on: false,
+    plat_phase: "v4_p1",
+    toggleable: true,
+    visibility_key: "showOcclusionBandsV4",
+    cognition_group: "visibility_context",
+    module_anchor: "visibilityOverlayV4",
+    cognition_kind: "visibility",
+    density_group: "visibility_context",
+    display_only: true,
+    disclaimer: "Occlusion bands are fictional-terrain hints - no simulation state changes",
+  },
+  {
+    layer_id: "terrain_relation_labels_v4",
+    label: "Terrain labels",
+    z_order: 86,
+    default_on: false,
+    plat_phase: "v4_p1",
+    toggleable: true,
+    visibility_key: "showTerrainRelationLabelsV4",
+    cognition_group: "visibility_context",
+    module_anchor: "visibilityOverlayV4",
+    cognition_kind: "visibility",
+    density_group: "visibility_context",
+    display_only: true,
+    disclaimer: "Terrain relation labels are explanatory only",
+  },
+  {
+    layer_id: "compare_emphasis_v4",
+    label: "Compare emphasis",
+    z_order: 87,
+    default_on: false,
+    plat_phase: "v4_p1",
+    toggleable: true,
+    visibility_key: "showCompareEmphasisV4",
+    cognition_group: "comparison_context",
+    module_anchor: "SessionComparisonCognitionStrip",
+    cognition_kind: "comparison",
+    density_group: "entity_context",
+    comparison_role: "background",
+    display_only: true,
+    disclaimer: "Compare emphasis dims background sessions visually only - selected session remains commandable",
+  },
+];
+
 export const CANONICAL_VISUAL_LAYER_REGISTRY: VisualLayerRegistryV4 = {
   ...(registryJson as VisualLayerRegistryV3),
   schema: SCHEMA_RT_VISUAL_LAYER_REGISTRY_V4,
@@ -220,7 +296,11 @@ export const CANONICAL_VISUAL_LAYER_REGISTRY: VisualLayerRegistryV4 = {
     max_density_warning_groups: 5,
     max_session_comparison_rows: 2,
   },
-  layers: [...(registryJson as VisualLayerRegistryV3).layers, ...V4_P0_LAYERS],
+  layers: [
+    ...(registryJson as VisualLayerRegistryV3).layers,
+    ...V4_P0_LAYERS,
+    ...V4_P1_LAYERS,
+  ],
 };
 
 export class VisualLayerRegistryValidationError extends Error {
@@ -307,6 +387,10 @@ export function defaultVisibilityFromRegistry(
     showLayerBudgetSummary: false,
     showSessionContrast: false,
     showComparisonGhosts: false,
+    showVisibilityCorridorV4: false,
+    showOcclusionBandsV4: false,
+    showTerrainRelationLabelsV4: false,
+    showCompareEmphasisV4: false,
   };
 
   for (const layer of reg.layers) {
@@ -387,6 +471,10 @@ const OVERLAY_COUNT_KEYS: LayerVisibilityKey[] = [
   "showEnvironmentMarkers",
   "showSensorDomes",
   "showVisibilityWedge",
+  "showVisibilityCorridorV4",
+  "showOcclusionBandsV4",
+  "showTerrainRelationLabelsV4",
+  "showCompareEmphasisV4",
 ];
 
 const DENSITY_CONTROL_KEYS: LayerVisibilityKey[] = [
@@ -394,6 +482,7 @@ const DENSITY_CONTROL_KEYS: LayerVisibilityKey[] = [
   "showLayerBudgetSummary",
   "showSessionContrast",
   "showComparisonGhosts",
+  "showCompareEmphasisV4",
 ];
 
 export function countActiveOverlayLayers(
@@ -414,7 +503,10 @@ export function anyVisibilityOverlayEnabled(visibility: VisualLayerVisibility): 
   return (
     visibility.showVisibilityWedge ||
     visibility.showHorizonHint ||
-    visibility.showStackedLos
+    visibility.showStackedLos ||
+    visibility.showVisibilityCorridorV4 ||
+    visibility.showOcclusionBandsV4 ||
+    visibility.showTerrainRelationLabelsV4
   );
 }
 

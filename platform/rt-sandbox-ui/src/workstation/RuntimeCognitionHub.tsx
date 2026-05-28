@@ -12,6 +12,10 @@ import type { MirrorEntity } from "@/cesium/entityMarkers";
 import type { TerrainLayerVisibility } from "@/cesium/terrainLayers";
 import { terrainHubSummary } from "@/cesium/terrainCognition";
 import {
+  deriveVisibilityOverlayV4Hints,
+  visibilityOverlayV4SummaryLine,
+} from "@/cesium/visibilityOverlayV4";
+import {
   sensorBlockVisible,
   sensorContextHubLine,
 } from "@/cesium/visibilityCognition";
@@ -153,6 +157,14 @@ export function RuntimeCognitionHub({
     terrainLayers != null ? sensorContextHubLine(terrainLayers, entities) : null;
 
   const budgetSummary = registryBudgetSummaryLine(layerVisibility);
+  const visibilityV4Hints = terrainLayers
+    ? deriveVisibilityOverlayV4Hints({
+        visibility: layerVisibility,
+        selected: selectedEntity,
+        entities,
+        terrainLayers,
+      })
+    : [];
 
   return (
     <PanelShell title="Runtime cognition">
@@ -215,6 +227,7 @@ export function RuntimeCognitionHub({
             orderedSessionIds={orderedSessionIds}
             comparisonGhostsEnabled={layerVisibility.showComparisonGhosts}
             sessionContrastEnabled={layerVisibility.showSessionContrast}
+            compareEmphasisEnabled={layerVisibility.showCompareEmphasisV4}
             compact
           />
           <p className="mt-1 text-[10px] text-slate-500">
@@ -230,7 +243,11 @@ export function RuntimeCognitionHub({
             layerVisibility={layerVisibility}
             selectedEntity={selectedEntity}
             entities={entities}
+            terrainLayers={terrainLayers}
           />
+          <p className="mt-2 text-[10px] text-slate-500" data-testid="hub-v4-visibility-summary">
+            {visibilityOverlayV4SummaryLine(visibilityV4Hints)}
+          </p>
         </CognitionBlock>
 
         <CognitionBlock title="Fidelity (F5b)" defaultOpen={fidelityOn}>

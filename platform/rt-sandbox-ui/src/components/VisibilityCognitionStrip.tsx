@@ -7,20 +7,23 @@ import {
   visibilityStripSummary,
   type VisibilityHubContext,
 } from "@/cesium/visibilityCognition";
+import type { TerrainLayerVisibility } from "@/cesium/terrainLayers";
 import type { VisualLayerVisibility } from "@/cesium/visualLayerRegistry";
 
 export function VisibilityCognitionStrip({
   layerVisibility,
   selectedEntity,
   entities,
+  terrainLayers,
 }: {
   layerVisibility: VisualLayerVisibility;
   selectedEntity: MirrorEntity | null;
   entities: MirrorEntity[];
+  terrainLayers?: TerrainLayerVisibility;
 }) {
   const active = visibilityActiveLabels(layerVisibility);
   const hubCtx: VisibilityHubContext = { selectedEntity, entities };
-  const summary = visibilityStripSummary(layerVisibility, hubCtx);
+  const summary = visibilityStripSummary(layerVisibility, hubCtx, terrainLayers);
   const losLine = visibilityLosLine(
     selectedEntity,
     entities,
@@ -31,7 +34,7 @@ export function VisibilityCognitionStrip({
   if (!anyVisibilityCognitionActive(layerVisibility)) {
     return (
       <p className="text-xs text-slate-500">
-        Visibility overlays off — enable wedge, horizon, or stacked LOS for heuristic context.
+        Visibility overlays off - enable wedge, horizon, stacked LOS, or V4 visibility cues for heuristic context.
       </p>
     );
   }

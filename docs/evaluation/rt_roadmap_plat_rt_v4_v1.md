@@ -1,10 +1,10 @@
 # RT - PLAT-RT-V4 Implementation Roadmap v1
 
-**Phase:** PLAN-RT-V4 frozen -> **PLAT-RT-V4 P0 frozen**; P1/P2 future
+**Phase:** PLAN-RT-V4 frozen -> **PLAT-RT-V4 P0-P1 frozen**; P2 future
 **Prerequisite:** [rt_v4_freeze_audit.md](rt_v4_freeze_audit.md) (PLAN-RT-V4 docs frozen)
 **Contracts:** [rt_visualization_fidelity_v4.md](rt_visualization_fidelity_v4.md), [rt_visual_density_management_v1.md](rt_visual_density_management_v1.md), [rt_visual_multi_session_cognition_v1.md](rt_visual_multi_session_cognition_v1.md)
 
-This roadmap tracks PLAT-RT-V4 implementation. P0 is frozen; P1/P2 remain future and are not authorized by P0.
+This roadmap tracks PLAT-RT-V4 implementation. P0 and P1 are frozen; P2 remains future and is not authorized by P1.
 
 ## P0 - Density policy foundations
 
@@ -29,13 +29,15 @@ This roadmap tracks PLAT-RT-V4 implementation. P0 is frozen; P1/P2 remain future
 
 | Item | Future location | Status |
 |------|-----------------|--------|
-| Visibility corridor visual | Existing Cesium visualization modules | Planned |
-| Occlusion confidence bands | Existing terrain/visibility cognition | Planned |
-| Terrain relation labels | Existing terrain overlays | Planned |
-| Default-off toggle wiring | Existing V3 layer registry surface | Planned |
-| Realism review | `rt_plat_v4_p1_visualization_realism_review_r1.md` | Required |
+| Visibility corridor visual | `visibilityOverlayV4.ts`, `CesiumRuntimeView.tsx` | **Delivered** |
+| Occlusion confidence bands | `visibilityOverlayV4.ts`, `visibilityCognition.ts` | **Delivered** |
+| Terrain relation labels | `visibilityOverlayV4.ts`, `RuntimeCognitionHub.tsx` | **Delivered** |
+| Default-off toggle wiring | `visualLayerRegistry.ts`, `VisualLayerToggleRail.tsx` | **Delivered** |
+| Realism review | `rt_plat_v4_p1_visualization_realism_review_r1.md` | **Delivered** |
 
-**Risk:** Med. Misread risk is the main cost; every new visual must remain explanatory.
+**Frozen:** [rt_plat_v4_p1_freeze_audit.md](rt_plat_v4_p1_freeze_audit.md) - **PLAT-RT-V4 P1 frozen**.
+
+**Risk:** Med. Misread risk is the main cost; every new visual remains explanatory.
 
 ## P2 - Multi-session comparison visuals
 
@@ -74,7 +76,7 @@ Each PLAT phase requires its own plan, governance review, visualization realism 
 
 ## Stop line
 
-PLAT-RT-V4 P0 is frozen. Do not start **P1** without a scoped P1 plan, governance review, visualization realism review, validation, and freeze audit.
+PLAT-RT-V4 P1 is frozen. Do not start **P2** without a scoped P2 plan, governance review, visualization realism review, validation, and freeze audit.
 
 ## Related
 

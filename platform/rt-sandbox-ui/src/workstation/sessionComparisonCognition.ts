@@ -1,7 +1,7 @@
 import { shortSessionId } from "./sessionVisualIdentity";
 
 export type SessionVisualRole = "selected" | "comparison" | "background";
-export type SessionDisplayMode = "full" | "muted" | "tab-only";
+export type SessionDisplayMode = "full" | "muted" | "dimmed" | "tab-only";
 
 export interface SessionComparisonVisualRow {
   sessionId: string;
@@ -17,11 +17,13 @@ export function deriveSessionComparisonVisualRows({
   orderedSessionIds,
   comparisonGhostsEnabled,
   sessionContrastEnabled,
+  compareEmphasisEnabled = false,
 }: {
   activeSessionId: string | null | undefined;
   orderedSessionIds: readonly string[];
   comparisonGhostsEnabled: boolean;
   sessionContrastEnabled: boolean;
+  compareEmphasisEnabled?: boolean;
 }): SessionComparisonVisualRow[] {
   if (!activeSessionId) return [];
 
@@ -35,8 +37,12 @@ export function deriveSessionComparisonVisualRows({
     const displayMode: SessionDisplayMode = selected
       ? "full"
       : comparisonGhostsEnabled && sessionContrastEnabled
-        ? "muted"
-        : "tab-only";
+        ? compareEmphasisEnabled
+          ? "dimmed"
+          : "muted"
+        : compareEmphasisEnabled && sessionContrastEnabled
+          ? "dimmed"
+          : "tab-only";
     return {
       sessionId,
       shortId: shortSessionId(sessionId),
@@ -47,7 +53,9 @@ export function deriveSessionComparisonVisualRows({
         ? "selected session - command target follows existing lock"
         : role === "comparison"
           ? "comparison visual only - no cross-session command"
-          : "background session - tab and diagnostics only",
+          : compareEmphasisEnabled
+            ? "background session dimmed visually - no cross-session command"
+            : "background session - tab and diagnostics only",
     };
   });
 }

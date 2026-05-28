@@ -21,7 +21,7 @@ import {
   type MarkerEmphasis,
   type MirrorEntity,
 } from "./entityMarkers";
-import { syncHorizonHintLayer } from "./horizonHintLayer";
+import { clearHorizonHintLayer, syncHorizonHintLayer } from "./horizonHintLayer";
 import { clearLosSegmentLayer, syncLosSegmentLayer } from "./losSegmentLayer";
 import {
   shouldUseLegacyLosPath,
@@ -33,6 +33,7 @@ import {
   type TerrainLayerVisibility,
 } from "./terrainLayers";
 import type { VisualLayerVisibility } from "./visualLayerRegistry";
+import { clearVisibilityOverlayV4, syncVisibilityOverlayV4 } from "./visibilityOverlayV4";
 
 export interface CesiumRuntimeViewProps {
   sessionId: string | null;
@@ -151,6 +152,8 @@ export function CesiumRuntimeView({
       if (isViewerUsable(viewer)) {
         clearEntityMarkers(viewer);
         clearAllTerrainLayers(viewer);
+        clearHorizonHintLayer(viewer);
+        clearVisibilityOverlayV4(viewer);
         viewer.trackedEntity = undefined;
       }
       if (!viewer.isDestroyed()) {
@@ -217,6 +220,7 @@ export function CesiumRuntimeView({
       entities.find((e) => e.entity_id === selectedEntityId) ?? null;
     syncHorizonHintLayer(viewer, layerVisibility.showHorizonHint);
     syncStackedLosPresentation(viewer, selected, entities, layerVisibility, terrainLayers);
+    syncVisibilityOverlayV4(viewer, selected, entities, layerVisibility, terrainLayers);
     if (shouldUseLegacyLosPath(layerVisibility, terrainLayers, selected)) {
       syncLosSegmentLayer(
         viewer,

@@ -119,7 +119,15 @@ describe("visualLayerRegistry", () => {
     const terrain = groups.find((g) => g.groupId === "terrain_context");
     expect(terrain?.layers.some((l) => l.layer_id === "terrain_mesh")).toBe(true);
     const visibility = groups.find((g) => g.groupId === "visibility_context");
-    expect(visibility?.layers.length).toBe(3);
+    expect(visibility?.layers.length).toBe(6);
+    expect(visibility?.layers.map((l) => l.layer_id)).toEqual([
+      "visibility_wedge_v3",
+      "horizon_hint_v3",
+      "stacked_los_v3",
+      "visibility_corridor_v4",
+      "occlusion_bands_v4",
+      "terrain_relation_labels_v4",
+    ]);
     const density = groups.find((g) => g.groupId === "density_context");
     expect(density?.layers.map((l) => l.layer_id)).toEqual([
       "density_warnings_v4",
@@ -129,6 +137,7 @@ describe("visualLayerRegistry", () => {
     expect(comparison?.layers.map((l) => l.layer_id)).toEqual([
       "session_contrast_v4",
       "comparison_ghosts_v4",
+      "compare_emphasis_v4",
     ]);
   });
 
@@ -172,6 +181,27 @@ describe("visualLayerRegistry", () => {
     );
     expect(compareGhosts?.display_only).toBe(true);
     expect(compareGhosts?.default_on).toBe(false);
+  });
+
+  it("adds V4 P1 visibility and compare emphasis controls with safe defaults", () => {
+    const defaults = defaultVisibilityFromRegistry();
+    expect(defaults.showVisibilityCorridorV4).toBe(false);
+    expect(defaults.showOcclusionBandsV4).toBe(false);
+    expect(defaults.showTerrainRelationLabelsV4).toBe(false);
+    expect(defaults.showCompareEmphasisV4).toBe(false);
+
+    for (const id of [
+      "visibility_corridor_v4",
+      "occlusion_bands_v4",
+      "terrain_relation_labels_v4",
+      "compare_emphasis_v4",
+    ]) {
+      const layer = CANONICAL_VISUAL_LAYER_REGISTRY.layers.find((l) => l.layer_id === id);
+      expect(layer?.plat_phase).toBe("v4_p1");
+      expect(layer?.display_only).toBe(true);
+      expect(layer?.default_on).toBe(false);
+      expect(layer?.disclaimer).toMatch(/only|heuristic|authority|state/);
+    }
   });
 
   it("summarizes density budget as warn-only", () => {

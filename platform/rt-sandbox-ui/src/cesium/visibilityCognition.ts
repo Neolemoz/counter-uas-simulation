@@ -2,6 +2,10 @@ import type { MirrorEntity } from "./entityMarkers";
 import { listOcclusionMarkers } from "./rtFictionalTerrain";
 import type { TerrainLayerVisibility } from "./terrainLayers";
 import { losCueSummary, nearestOcclusionTarget } from "./terrainCognition";
+import {
+  deriveVisibilityOverlayV4Hints,
+  visibilityOverlayV4SummaryLine,
+} from "./visibilityOverlayV4";
 import type { VisualLayerVisibility } from "./visualLayerRegistry";
 import {
   anyVisibilityOverlayEnabled,
@@ -26,6 +30,15 @@ export function visibilityHubSummary(
   }
   if (visibility.showStackedLos) {
     parts.push("Stacked LOS: on");
+  }
+  if (visibility.showVisibilityCorridorV4) {
+    parts.push("V4 corridor: heuristic");
+  }
+  if (visibility.showOcclusionBandsV4) {
+    parts.push("V4 occlusion bands: warn-only");
+  }
+  if (visibility.showTerrainRelationLabelsV4) {
+    parts.push("V4 terrain labels: explanatory");
   }
   if (parts.length === 0) {
     return "Visibility overlays off — heuristic wedge/horizon/LOS available via toggles";
@@ -57,8 +70,18 @@ export function sensorContextHubLine(
 export function visibilityStripSummary(
   visibility: VisualLayerVisibility,
   ctx: VisibilityHubContext,
+  terrainLayers?: TerrainLayerVisibility,
 ): string {
-  return visibilityHubSummary(visibility, ctx);
+  const base = visibilityHubSummary(visibility, ctx);
+  if (!terrainLayers) return base;
+  const v4 = deriveVisibilityOverlayV4Hints({
+    visibility,
+    selected: ctx.selectedEntity,
+    entities: ctx.entities,
+    terrainLayers,
+  });
+  if (v4.length === 0) return base;
+  return `${base} · ${visibilityOverlayV4SummaryLine(v4)}`;
 }
 
 export function visibilityLosLine(
@@ -85,6 +108,9 @@ export function visibilityActiveLabels(visibility: VisualLayerVisibility): strin
   if (visibility.showVisibilityWedge) labels.push("wedge");
   if (visibility.showHorizonHint) labels.push("horizon");
   if (visibility.showStackedLos) labels.push("stacked LOS");
+  if (visibility.showVisibilityCorridorV4) labels.push("V4 corridor");
+  if (visibility.showOcclusionBandsV4) labels.push("V4 occlusion bands");
+  if (visibility.showTerrainRelationLabelsV4) labels.push("V4 terrain labels");
   return labels;
 }
 

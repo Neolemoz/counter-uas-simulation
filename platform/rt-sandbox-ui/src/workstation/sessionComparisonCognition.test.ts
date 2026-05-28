@@ -30,4 +30,18 @@ describe("sessionComparisonCognition", () => {
     expect(rows[1].displayMode).toBe("tab-only");
     expect(sessionComparisonSummaryLine(rows)).toMatch(/tab-only/);
   });
+
+  it("dims secondary rows when compare emphasis is enabled", () => {
+    const rows = deriveSessionComparisonVisualRows({
+      activeSessionId: "session-a",
+      orderedSessionIds: ["session-a", "session-b"],
+      comparisonGhostsEnabled: true,
+      sessionContrastEnabled: true,
+      compareEmphasisEnabled: true,
+    });
+
+    expect(rows[1].role).toBe("comparison");
+    expect(rows[1].displayMode).toBe("dimmed");
+    expect(rows[1].commandable).toBe(false);
+  });
 });
