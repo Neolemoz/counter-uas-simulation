@@ -62,6 +62,20 @@ def test_paired_report_uses_matched_seed_rows() -> None:
     assert [r['seed'] for r in rows] == [1, 2]
 
 
+def test_paired_report_rejects_duplicate_seeds() -> None:
+    layer_c = _load_layer_c()
+    baseline = [
+        {'success': 'true', 'miss_distance_m': '3.0', 'intercept_time_s': '9.0', 'seed': '1'},
+        {'success': 'false', 'miss_distance_m': '6.0', 'intercept_time_s': '12.0', 'seed': '1'},
+    ]
+    candidate = [
+        {'success': 'true', 'miss_distance_m': '2.0', 'intercept_time_s': '8.0', 'seed': '1'},
+    ]
+
+    with pytest.raises(ValueError, match='baseline duplicate seeds'):
+        layer_c.paired_report(baseline, candidate)
+
+
 def test_validate_manifest_detects_mixed_cohorts(tmp_path: Path) -> None:
     layer_c = _load_layer_c()
     log_path = tmp_path / 'run.log'
