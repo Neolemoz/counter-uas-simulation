@@ -155,6 +155,8 @@ describe("RT UI isolation", () => {
     expect(existsSync(join(expDir, "ExperimentWorkbenchPanel.tsx"))).toBe(true);
     expect(existsSync(join(expDir, "useJsonPromptImport.ts"))).toBe(true);
     expect(existsSync(join(expDir, "ExperimentManifestToolbar.tsx"))).toBe(true);
+    expect(existsSync(join(expDir, "ExperimentCompareSection.tsx"))).toBe(true);
+    expect(existsSync(join(expDir, "ExperimentF5MetricsSection.tsx"))).toBe(true);
     expect(existsSync(join(expDir, "ExperimentBatchPanel.tsx"))).toBe(true);
     expect(existsSync(join(expDir, "analyticsDerive.ts"))).toBe(true);
     expect(existsSync(join(expDir, "sweepCompile.ts"))).toBe(true);

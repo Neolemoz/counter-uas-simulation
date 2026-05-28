@@ -11,16 +11,10 @@ import {
   warnCaptureIdsFromHandoffAndMetrics,
 } from "@/handoff/advisoryTriageGrouping";
 import { AdvisoryRunBadge } from "@/handoff/AdvisoryRunBadge";
-import { ExperimentImportAdvisoryStrip } from "./ExperimentImportAdvisoryStrip";
 import { ExperimentAnalyticsPanel } from "./ExperimentAnalyticsPanel";
 import { ExperimentBatchPanel } from "./ExperimentBatchPanel";
-import { ExperimentComparePanel } from "./ExperimentComparePanel";
-import { ExperimentExtendedComparePanel } from "./ExperimentExtendedComparePanel";
-import { ExperimentFidelityCompareStrip } from "./ExperimentFidelityCompareStrip";
-import { ExperimentFilterBar } from "./ExperimentFilterBar";
-import { ExperimentHandoffEligibilityStrip } from "./ExperimentHandoffEligibilityStrip";
-import { ExperimentMatrixPanel } from "./ExperimentMatrixPanel";
-import { ExperimentRepeatabilityTrendStrip } from "./ExperimentRepeatabilityTrendStrip";
+import { ExperimentCompareSection } from "./ExperimentCompareSection";
+import { ExperimentF5MetricsSection } from "./ExperimentF5MetricsSection";
 import { ExperimentRunSummaryCard } from "./ExperimentRunSummaryCard";
 import { ExperimentTrendStrip } from "./ExperimentTrendStrip";
 import { SweepCatalogBrowser } from "./SweepCatalogBrowser";
@@ -599,43 +593,16 @@ export function ExperimentWorkbenchPanel({
           ))}
         </div>
         {compareModeActive && (
-          <>
-            <div className="mb-2 flex flex-wrap gap-2">
-              <label className="text-xs text-slate-500">
-                A
-                <select
-                  className="ml-1 rounded border border-slate-700 bg-slate-950 px-1 py-0.5 text-xs"
-                  value={compareA}
-                  onChange={(e) => setCompareA(e.target.value)}
-                >
-                  {compareOptions.map((o) => (
-                    <option key={o.value} value={o.value}>
-                      {o.label}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              <label className="text-xs text-slate-500">
-                B
-                <select
-                  className="ml-1 rounded border border-slate-700 bg-slate-950 px-1 py-0.5 text-xs"
-                  value={compareB}
-                  onChange={(e) => setCompareB(e.target.value)}
-                >
-                  {compareOptions.map((o) => (
-                    <option key={o.value} value={o.value}>
-                      {o.label}
-                    </option>
-                  ))}
-                </select>
-              </label>
-            </div>
-            <ExperimentComparePanel
-              sideA={sideA}
-              sideB={sideB}
-              experimentId={manifest.experiment_id}
-            />
-          </>
+          <ExperimentCompareSection
+            compareA={compareA}
+            compareB={compareB}
+            onCompareAChange={setCompareA}
+            onCompareBChange={setCompareB}
+            compareOptions={compareOptions}
+            sideA={sideA}
+            sideB={sideB}
+            experimentId={manifest.experiment_id}
+          />
         )}
       </PanelShell>
       <SweepCatalogBrowser
@@ -665,110 +632,34 @@ export function ExperimentWorkbenchPanel({
         />
       )}
       {f5Active && (
-        <PanelShell title="Advanced experiment metrics (F5)">
-          {manifest.runs.length === 0 ? (
-            <p className="text-xs text-slate-500">
-              Pin or import manifest runs to derive advanced metrics.
-            </p>
-          ) : metricsReport ? (
-            <div className="space-y-4">
-              <div className="flex flex-wrap gap-2">
-                <p className="w-full font-mono text-[10px] text-slate-500">{metricsCliHint}</p>
-                <button
-                  type="button"
-                  className="rounded border border-slate-600 bg-slate-800 px-2 py-1 text-xs text-slate-200"
-                  onClick={importMetrics}
-                >
-                  Import metrics report
-                </button>
-                <button
-                  type="button"
-                  className="rounded border border-slate-600 bg-slate-800 px-2 py-1 text-xs text-slate-200"
-                  onClick={() => setMetricsOverride(null)}
-                >
-                  Refresh from manifest
-                </button>
-                <button
-                  type="button"
-                  className="rounded border border-slate-600 bg-slate-800 px-2 py-1 text-xs text-slate-200"
-                  onClick={exportMetrics}
-                >
-                  Export metrics report
-                </button>
-              </div>
-              <ExperimentFilterBar
-                filters={f5Filters}
-                onChange={setF5Filters}
-                options={filterOptions}
-              />
-              {metricsReport.experiment_class === "repeatability_sweep" && (
-                <ExperimentRepeatabilityTrendStrip
-                  manifest={manifest}
-                  metricsReport={metricsReport}
-                  f1PerRun={analyticsReport.per_run}
-                />
-              )}
-              {fidelityCouplingPresent && fidelityReport && (
-                <>
-                  <div className="flex flex-wrap gap-2">
-                    <p className="w-full font-mono text-[10px] text-slate-500">
-                      {fidelityMetricsCliHint}
-                    </p>
-                    <button
-                      type="button"
-                      className="rounded border border-slate-600 bg-slate-800 px-2 py-1 text-xs text-slate-200"
-                      onClick={importFidelityMetrics}
-                    >
-                      Import fidelity metrics report
-                    </button>
-                    <button
-                      type="button"
-                      className="rounded border border-slate-600 bg-slate-800 px-2 py-1 text-xs text-slate-200"
-                      onClick={() => setFidelityMetricsOverride(null)}
-                    >
-                      Refresh fidelity from manifest
-                    </button>
-                    <button
-                      type="button"
-                      className="rounded border border-slate-600 bg-slate-800 px-2 py-1 text-xs text-slate-200"
-                      onClick={exportFidelityMetrics}
-                    >
-                      Export fidelity metrics report
-                    </button>
-                  </div>
-                  <ExperimentFidelityCompareStrip
-                    manifest={manifest}
-                    fidelityReport={fidelityReport}
-                  />
-                </>
-              )}
-              <ExperimentMatrixPanel
-                manifest={manifest}
-                metricsReport={metricsReport}
-                axisRow={matrixAxisRow}
-                axisCol={matrixAxisCol}
-                onAxisRowChange={setMatrixAxisRow}
-                onAxisColChange={setMatrixAxisCol}
-              />
-              <ExperimentExtendedComparePanel
-                filteredRuns={filteredRuns}
-                perRunExtended={metricsReport.per_run_extended}
-                metricsReport={metricsReport}
-                selectedRunIds={extendedCompareRunIds}
-                onSelectedRunIdsChange={setExtendedCompareRunIds}
-              />
-              <ExperimentHandoffEligibilityStrip
-                handoff={metricsReport.handoff_eligibility}
-                maintainerAckPoseReviewed={maintainerAckPoseReviewed}
-                onMaintainerAckPoseReviewedChange={setMaintainerAckPoseReviewed}
-              />
-              <ExperimentImportAdvisoryStrip
-                advisoryStatus={workbenchAdvisoryStatus}
-                handoff={metricsReport.handoff_eligibility}
-              />
-            </div>
-          ) : null}
-        </PanelShell>
+        <ExperimentF5MetricsSection
+          manifest={manifest}
+          metricsReport={metricsReport}
+          fidelityReport={fidelityReport}
+          analyticsReport={analyticsReport}
+          filteredRuns={filteredRuns}
+          f5Filters={f5Filters}
+          onF5FiltersChange={setF5Filters}
+          filterOptions={filterOptions}
+          fidelityCouplingPresent={fidelityCouplingPresent}
+          matrixAxisRow={matrixAxisRow}
+          matrixAxisCol={matrixAxisCol}
+          onMatrixAxisRowChange={setMatrixAxisRow}
+          onMatrixAxisColChange={setMatrixAxisCol}
+          extendedCompareRunIds={extendedCompareRunIds}
+          onExtendedCompareRunIdsChange={setExtendedCompareRunIds}
+          maintainerAckPoseReviewed={maintainerAckPoseReviewed}
+          onMaintainerAckPoseReviewedChange={setMaintainerAckPoseReviewed}
+          workbenchAdvisoryStatus={workbenchAdvisoryStatus}
+          metricsCliHint={metricsCliHint}
+          fidelityMetricsCliHint={fidelityMetricsCliHint}
+          onImportMetrics={importMetrics}
+          onExportMetrics={exportMetrics}
+          onImportFidelityMetrics={importFidelityMetrics}
+          onExportFidelityMetrics={exportFidelityMetrics}
+          onRefreshMetrics={() => setMetricsOverride(null)}
+          onRefreshFidelityMetrics={() => setFidelityMetricsOverride(null)}
+        />
       )}
       <ExperimentBatchPanel
         experimentId={manifest.experiment_id}
