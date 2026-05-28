@@ -229,6 +229,15 @@ describe("RT UI isolation", () => {
     ).toBe(true);
   });
 
+  it("includes App cleanup modules (PLAT-RT-C4 P2)", () => {
+    expect(
+      existsSync(join(RT_UI_ROOT, "src", "hooks", "useSessionEntityEditing.ts")),
+    ).toBe(true);
+    expect(
+      existsSync(join(RT_UI_ROOT, "src", "workstation", "AppWorkstationSlots.tsx")),
+    ).toBe(true);
+  });
+
   it("includes experiment workbench v2 modules (PLAT-RT-X2 P0)", () => {
     const expDir = join(RT_UI_ROOT, "src", "experiment");
     expect(existsSync(join(expDir, "cohortSchema.ts"))).toBe(true);
