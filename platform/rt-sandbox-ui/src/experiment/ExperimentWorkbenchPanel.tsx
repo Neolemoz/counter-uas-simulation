@@ -40,12 +40,13 @@ import {
   type F5Filters,
 } from "./experimentF5UiHelpers";
 import {
-  formatImportError,
   safeParseExperimentSpec,
   safeParseFidelityMetricsReport,
   safeParseManifest,
   safeParseMetricsReport,
 } from "./experimentImportGuards";
+import { ExperimentManifestToolbar } from "./ExperimentManifestToolbar";
+import { useJsonPromptImport } from "./useJsonPromptImport";
 import {
   compileExperimentSpec,
   compileSpecToYaml,
@@ -341,6 +342,8 @@ export function ExperimentWorkbenchPanel({
   const sideA = useMemo(() => resolveSide(compareA), [compareA, resolveSide]);
   const sideB = useMemo(() => resolveSide(compareB), [compareB, resolveSide]);
 
+  const promptJsonImport = useJsonPromptImport();
+
   const pinActive = () => {
     if (!activeSessionId) return;
     const slot = slots.find((s) => s.sessionId === activeSessionId);
@@ -389,36 +392,36 @@ export function ExperimentWorkbenchPanel({
   }, [manifest.runs, normalizeCompareKey, manifest]);
 
   const importManifest = () => {
-    const text = window.prompt("Paste rt_experiment_manifest_v1 JSON");
-    if (!text) return;
-    const parsed = safeParseManifest(text);
-    if (!parsed.ok) {
-      window.alert(`Invalid manifest: ${formatImportError(parsed.error)}`);
-      return;
-    }
-    setManifest(parsed.data);
-    setMetricsOverride(null);
-    pruneAnnexCacheForManifest(parsed.data);
-    setBatchSpec((spec) => ({ ...spec, experiment_id: parsed.data.experiment_id }));
-    setCompareA((a) => normalizeCompareKey(a, parsed.data));
-    setCompareB((b) => normalizeCompareKey(b, parsed.data));
+    promptJsonImport({
+      promptMessage: "Paste rt_experiment_manifest_v1 JSON",
+      invalidLabel: "manifest",
+      parse: safeParseManifest,
+      onSuccess: (data) => {
+        setManifest(data);
+        setMetricsOverride(null);
+        pruneAnnexCacheForManifest(data);
+        setBatchSpec((spec) => ({ ...spec, experiment_id: data.experiment_id }));
+        setCompareA((a) => normalizeCompareKey(a, data));
+        setCompareB((b) => normalizeCompareKey(b, data));
+      },
+    });
   };
 
   const importSpec = () => {
-    const text = window.prompt("Paste rt_experiment_spec_v1 JSON");
-    if (!text) return;
-    const parsed = safeParseExperimentSpec(text);
-    if (!parsed.ok) {
-      window.alert(`Invalid spec: ${formatImportError(parsed.error)}`);
-      return;
-    }
-    try {
-      const compiled = compileExperimentSpec(parsed.data);
-      setImportedSpec(parsed.data);
-      setCompiledPreview(compiled);
-    } catch (err) {
-      window.alert(err instanceof Error ? err.message : String(err));
-    }
+    promptJsonImport({
+      promptMessage: "Paste rt_experiment_spec_v1 JSON",
+      invalidLabel: "spec",
+      parse: safeParseExperimentSpec,
+      onSuccess: (data) => {
+        try {
+          const compiled = compileExperimentSpec(data);
+          setImportedSpec(data);
+          setCompiledPreview(compiled);
+        } catch (err) {
+          window.alert(err instanceof Error ? err.message : String(err));
+        }
+      },
+    });
   };
 
   const applyCompiledBatch = () => {
@@ -431,25 +434,21 @@ export function ExperimentWorkbenchPanel({
   };
 
   const importMetrics = () => {
-    const text = window.prompt("Paste rt_experiment_metrics_report_v1 JSON");
-    if (!text) return;
-    const parsed = safeParseMetricsReport(text);
-    if (!parsed.ok) {
-      window.alert(`Invalid metrics report: ${formatImportError(parsed.error)}`);
-      return;
-    }
-    setMetricsOverride(parsed.data);
+    promptJsonImport({
+      promptMessage: "Paste rt_experiment_metrics_report_v1 JSON",
+      invalidLabel: "metrics report",
+      parse: safeParseMetricsReport,
+      onSuccess: (data) => setMetricsOverride(data),
+    });
   };
 
   const importFidelityMetrics = () => {
-    const text = window.prompt("Paste rt_experiment_fidelity_metrics_report_v1 JSON");
-    if (!text) return;
-    const parsed = safeParseFidelityMetricsReport(text);
-    if (!parsed.ok) {
-      window.alert(`Invalid fidelity metrics report: ${formatImportError(parsed.error)}`);
-      return;
-    }
-    setFidelityMetricsOverride(parsed.data);
+    promptJsonImport({
+      promptMessage: "Paste rt_experiment_fidelity_metrics_report_v1 JSON",
+      invalidLabel: "fidelity metrics report",
+      parse: safeParseFidelityMetricsReport,
+      onSuccess: (data) => setFidelityMetricsOverride(data),
+    });
   };
 
   const exportManifest = () => {
@@ -532,76 +531,26 @@ export function ExperimentWorkbenchPanel({
         dockPacketTabFocus={dockPacketTabFocus}
       />
       <PanelShell title="Experiment workbench">
-        <div className="mb-3 flex flex-wrap gap-2">
-          <input
-            className="rounded border border-slate-700 bg-slate-950 px-2 py-1 text-xs font-mono"
-            value={manifest.experiment_id}
-            onChange={(e) =>
-              setManifest((m) => ({ ...m, experiment_id: e.target.value }))
-            }
-          />
-          <button
-            type="button"
-            className="rounded border border-slate-600 bg-slate-800 px-2 py-1 text-xs text-slate-200 disabled:opacity-40"
-            disabled={!connected || !activeSessionId}
-            onClick={pinActive}
-          >
-            Pin active session
-          </button>
-          <button
-            type="button"
-            className="rounded border border-slate-600 bg-slate-800 px-2 py-1 text-xs text-slate-200"
-            onClick={importManifest}
-          >
-            Import manifest
-          </button>
-          <button
-            type="button"
-            className="rounded border border-slate-600 bg-slate-800 px-2 py-1 text-xs text-slate-200"
-            onClick={exportManifest}
-          >
-            Export manifest
-          </button>
-          <button
-            type="button"
-            className="rounded border border-slate-600 bg-slate-800 px-2 py-1 text-xs text-slate-200"
-            onClick={importSpec}
-          >
-            Import spec
-          </button>
-          <label className="flex items-center gap-1 text-xs text-slate-400">
-            <input
-              type="checkbox"
-              checked={compareModeActive}
-              onChange={(e) => onCompareModeChange(e.target.checked)}
-            />
-            Compare mode
-          </label>
-          <label className="flex items-center gap-1 text-xs text-slate-400">
-            <input
-              type="checkbox"
-              checked={analyticsActive}
-              onChange={(e) => onAnalyticsActiveChange(e.target.checked)}
-            />
-            Analytics
-          </label>
-          <label className="flex items-center gap-1 text-xs text-slate-400">
-            <input
-              type="checkbox"
-              checked={continuityReviewActive}
-              onChange={(e) => onContinuityReviewActiveChange(e.target.checked)}
-            />
-            Continuity review
-          </label>
-          <label className="flex items-center gap-1 text-xs text-slate-400">
-            <input
-              type="checkbox"
-              checked={f5Active}
-              onChange={(e) => onF5ActiveChange(e.target.checked)}
-            />
-            Advanced metrics (F5)
-          </label>
-        </div>
+        <ExperimentManifestToolbar
+          experimentId={manifest.experiment_id}
+          onExperimentIdChange={(value) =>
+            setManifest((m) => ({ ...m, experiment_id: value }))
+          }
+          connected={connected}
+          activeSessionId={activeSessionId}
+          onPinActive={pinActive}
+          onImportManifest={importManifest}
+          onExportManifest={exportManifest}
+          onImportSpec={importSpec}
+          compareModeActive={compareModeActive}
+          onCompareModeChange={onCompareModeChange}
+          analyticsActive={analyticsActive}
+          onAnalyticsActiveChange={onAnalyticsActiveChange}
+          continuityReviewActive={continuityReviewActive}
+          onContinuityReviewActiveChange={onContinuityReviewActiveChange}
+          f5Active={f5Active}
+          onF5ActiveChange={onF5ActiveChange}
+        />
 
         {compiledYamlPreview && (
           <div className="mb-3 space-y-2 rounded border border-slate-800 bg-slate-950/60 p-2">
