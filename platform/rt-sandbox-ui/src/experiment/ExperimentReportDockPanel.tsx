@@ -10,6 +10,7 @@ import {
   copyReviewPacketJson,
   downloadReviewPacket,
 } from "./reviewPacketExport";
+import { buildPacketSectionsPreview } from "./reviewPacketSections";
 import type { ExperimentManifest } from "./experimentSchema";
 import type { WorkbenchV2State } from "./workbenchV2State";
 
@@ -30,6 +31,7 @@ export function ExperimentReportDockPanel({
   onImportSlot,
   onExportSlot,
   packetTabFocusToken,
+  cohortLabel,
 }: {
   v2State: WorkbenchV2State;
   manifest: ExperimentManifest;
@@ -38,6 +40,7 @@ export function ExperimentReportDockPanel({
   onImportSlot: (slotId: string, text: string) => string | null;
   onExportSlot: (slotId: string) => string | null;
   packetTabFocusToken?: number;
+  cohortLabel?: string | null;
 }) {
   const [activeTab, setActiveTab] = useState<"slots" | "packet">("slots");
   const [importError, setImportError] = useState<string | null>(null);
@@ -58,6 +61,17 @@ export function ExperimentReportDockPanel({
   const packetJson = useMemo(
     () => JSON.stringify(packetPreview, null, 2),
     [packetPreview],
+  );
+
+  const packetSections = useMemo(
+    () =>
+      buildPacketSectionsPreview({
+        v2State,
+        manifest,
+        presence,
+        cohortLabel,
+      }),
+    [v2State, manifest, presence, cohortLabel],
   );
 
   const importSlot = (slotId: string) => {
@@ -170,6 +184,22 @@ export function ExperimentReportDockPanel({
       {activeTab === "packet" && (
         <div className="space-y-2">
           <p className="text-[10px] text-amber-200/80">{REVIEW_PACKET_GOVERNANCE_BANNER}</p>
+          <div className="space-y-2" data-testid="review-packet-sections-preview">
+            <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-500">
+              Packet sections (UI preview — not in export JSON)
+            </p>
+            {packetSections.map((section) => (
+              <div
+                key={section.section_id}
+                className="rounded border border-slate-800 bg-slate-950/60 p-2"
+              >
+                <p className="text-[10px] font-medium text-slate-300">{section.title}</p>
+                <p className="mt-1 whitespace-pre-wrap text-[10px] text-slate-500">
+                  {section.body_markdown}
+                </p>
+              </div>
+            ))}
+          </div>
           <pre
             className="max-h-40 overflow-auto rounded border border-slate-800 bg-slate-950 p-2 text-[9px] text-slate-400"
             data-testid="review-packet-preview"

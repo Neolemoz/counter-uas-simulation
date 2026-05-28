@@ -2,6 +2,8 @@ import type { CompareModeId, UnifiedReviewStepId } from "./experimentUnifiedRevi
 
 export const WORKBENCH_V2_STATE_KEY = "rt_experiment_workbench_v2_state_v1";
 
+export type BreadcrumbFocus = "cohort" | "manifest" | "run";
+
 export type WorkbenchV2State = {
   active_cohort_id: string | null;
   primary_manifest_ref: string | null;
@@ -12,7 +14,17 @@ export type WorkbenchV2State = {
   compare_run_a: string | null;
   compare_run_b: string | null;
   steps_completed: UnifiedReviewStepId[];
+  cohort_tag_filter: string | null;
+  breadcrumb_focus: BreadcrumbFocus;
+  review_session_id: string;
 };
+
+function newReviewSessionId(): string {
+  if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
+    return crypto.randomUUID();
+  }
+  return `review-session-${Date.now()}`;
+}
 
 export function defaultWorkbenchV2State(): WorkbenchV2State {
   return {
@@ -25,6 +37,9 @@ export function defaultWorkbenchV2State(): WorkbenchV2State {
     compare_run_a: null,
     compare_run_b: null,
     steps_completed: [],
+    cohort_tag_filter: null,
+    breadcrumb_focus: "cohort",
+    review_session_id: newReviewSessionId(),
   };
 }
 
@@ -34,13 +49,29 @@ export function loadWorkbenchV2State(): WorkbenchV2State {
   if (!raw) return defaultWorkbenchV2State();
   try {
     const parsed = JSON.parse(raw) as Partial<WorkbenchV2State>;
-    return {
-      ...defaultWorkbenchV2State(),
+    const defaults = defaultWorkbenchV2State();
+    const merged: WorkbenchV2State = {
+      ...defaults,
       ...parsed,
       steps_completed: Array.isArray(parsed.steps_completed)
         ? parsed.steps_completed
         : [],
+      cohort_tag_filter:
+        parsed.cohort_tag_filter === undefined
+          ? defaults.cohort_tag_filter
+          : parsed.cohort_tag_filter,
+      breadcrumb_focus:
+        parsed.breadcrumb_focus === "cohort" ||
+        parsed.breadcrumb_focus === "manifest" ||
+        parsed.breadcrumb_focus === "run"
+          ? parsed.breadcrumb_focus
+          : defaults.breadcrumb_focus,
+      review_session_id:
+        typeof parsed.review_session_id === "string" && parsed.review_session_id.length > 0
+          ? parsed.review_session_id
+          : defaults.review_session_id,
     };
+    return merged;
   } catch {
     return defaultWorkbenchV2State();
   }
@@ -138,4 +169,23 @@ export function retreatReviewStep(state: WorkbenchV2State): WorkbenchV2State {
   const idx = ids.indexOf(state.review_step);
   if (idx <= 0) return state;
   return { ...state, review_step: ids[idx - 1] };
+}
+
+export function setCohortTagFilter(
+  state: WorkbenchV2State,
+  tag: string | null,
+): WorkbenchV2State {
+  return { ...state, cohort_tag_filter: tag };
+}
+
+export function setBreadcrumbFocus(
+  state: WorkbenchV2State,
+  focus: BreadcrumbFocus,
+): WorkbenchV2State {
+  return { ...state, breadcrumb_focus: focus };
+}
+
+export function ensureReviewSessionId(state: WorkbenchV2State): WorkbenchV2State {
+  if (state.review_session_id.length > 0) return state;
+  return { ...state, review_session_id: newReviewSessionId() };
 }

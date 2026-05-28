@@ -15,6 +15,19 @@ const artifactRefSchema = z.object({
   sha256: z.string().optional(),
 });
 
+const packetSectionSchema = z.object({
+  section_id: z.enum([
+    "scope",
+    "reports",
+    "compare_summary",
+    "advisory_refs",
+    "cli_hints",
+  ]),
+  title: z.string(),
+  body_markdown: z.string(),
+  refs: z.array(z.string()),
+});
+
 export const reviewPacketSchema = z
   .object({
     schema: z.literal("rt_experiment_review_packet_v1"),
@@ -30,6 +43,7 @@ export const reviewPacketSchema = z
     compare_mode: z.string().optional(),
     compare_run_ids: z.array(z.string()).optional(),
     review_steps_completed: z.array(z.string()).optional(),
+    sections: z.array(packetSectionSchema).optional(),
   })
   .strict();
 

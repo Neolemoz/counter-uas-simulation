@@ -1,3 +1,5 @@
+import type { CompareStatusId } from "./compareStatusVocabulary";
+import { deriveRowCompareStatus } from "./compareStatusVocabulary";
 import type { CohortManifestRef, ExperimentCohortIndex } from "./cohortSchema";
 import type { ExperimentManifest } from "./experimentSchema";
 
@@ -12,6 +14,7 @@ export type MultiManifestDiffRow = {
   secondary: string;
   source: MultiManifestDiffSource;
   note?: string;
+  compare_status: CompareStatusId;
 };
 
 export type ManifestSummaryChip = {
@@ -189,53 +192,67 @@ export function buildMultiManifestDiff(options: {
   const secondaryCapture =
     secondaryLoaded != null ? String(captureCount(secondaryLoaded)) : "—";
 
+  const row = (
+    field: string,
+    primary: string,
+    secondary: string,
+    source: MultiManifestDiffSource,
+    note?: string,
+    explanatory = false,
+  ): MultiManifestDiffRow => ({
+    field,
+    primary,
+    secondary,
+    source,
+    note,
+    compare_status: deriveRowCompareStatus(primary, secondary, { explanatory }),
+  });
+
   const rows: MultiManifestDiffRow[] = [
-    {
-      field: "experiment_id",
-      primary: primaryRef.experiment_id,
-      secondary: secondaryRef.experiment_id,
-      source: "cohort_index",
-    },
-    {
-      field: "runs.length",
-      primary: primaryRuns.primary,
-      secondary: secondaryRuns.primary,
-      source:
-        primaryLoaded || secondaryLoaded ? "loaded_manifest" : "cohort_index",
-      note: [primaryRuns.note, secondaryRuns.note].filter(Boolean).join("; ") || undefined,
-    },
-    {
-      field: "experiment_class",
-      primary: supplementClass(primaryRef, primaryLoaded),
-      secondary: supplementClass(secondaryRef, secondaryLoaded),
-      source: "cohort_index",
-    },
-    {
-      field: "spec_fingerprint",
-      primary: primaryFp.value,
-      secondary: secondaryFp.value,
-      source:
-        primaryFp.source === "loaded_manifest" || secondaryFp.source === "loaded_manifest"
-          ? "loaded_manifest"
-          : "cohort_index",
-    },
-    {
-      field: "capture_count",
-      primary: primaryCapture,
-      secondary: secondaryCapture,
-      source: primaryLoaded || secondaryLoaded ? "loaded_manifest" : "cohort_index",
-      note:
-        !primaryLoaded && !secondaryLoaded
-          ? "load manifest in workbench to enrich"
-          : undefined,
-    },
-    {
-      field: "tag_overlap",
-      primary: tagOverlapLabel(cohort, primaryRef, secondaryRef),
-      secondary: "—",
-      source: "overlap",
-      note: "cohort tags vs ref experiment_class (explanatory)",
-    },
+    row(
+      "experiment_id",
+      primaryRef.experiment_id,
+      secondaryRef.experiment_id,
+      "cohort_index",
+    ),
+    row(
+      "runs.length",
+      primaryRuns.primary,
+      secondaryRuns.primary,
+      primaryLoaded || secondaryLoaded ? "loaded_manifest" : "cohort_index",
+      [primaryRuns.note, secondaryRuns.note].filter(Boolean).join("; ") || undefined,
+    ),
+    row(
+      "experiment_class",
+      supplementClass(primaryRef, primaryLoaded),
+      supplementClass(secondaryRef, secondaryLoaded),
+      "cohort_index",
+    ),
+    row(
+      "spec_fingerprint",
+      primaryFp.value,
+      secondaryFp.value,
+      primaryFp.source === "loaded_manifest" || secondaryFp.source === "loaded_manifest"
+        ? "loaded_manifest"
+        : "cohort_index",
+    ),
+    row(
+      "capture_count",
+      primaryCapture,
+      secondaryCapture,
+      primaryLoaded || secondaryLoaded ? "loaded_manifest" : "cohort_index",
+      !primaryLoaded && !secondaryLoaded
+        ? "load manifest in workbench to enrich"
+        : undefined,
+    ),
+    row(
+      "tag_overlap",
+      tagOverlapLabel(cohort, primaryRef, secondaryRef),
+      "—",
+      "overlap",
+      "cohort tags vs ref experiment_class (explanatory)",
+      true,
+    ),
   ];
 
   return rows;

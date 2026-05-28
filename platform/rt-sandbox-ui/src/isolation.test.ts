@@ -238,6 +238,22 @@ describe("RT UI isolation", () => {
     ).toBe(true);
   });
 
+  it("includes experiment workbench v3 P0 modules (PLAT-RT-X3 P0)", () => {
+    const expDir = join(RT_UI_ROOT, "src", "experiment");
+    expect(existsSync(join(expDir, "ExperimentWorkbenchV3Shell.tsx"))).toBe(true);
+    expect(existsSync(join(expDir, "ExperimentProgramContextStrip.tsx"))).toBe(true);
+    expect(existsSync(join(expDir, "ExperimentManifestRoster.tsx"))).toBe(true);
+    expect(existsSync(join(expDir, "ExperimentSecondaryManifestPicker.tsx"))).toBe(true);
+    expect(existsSync(join(expDir, "compareStatusVocabulary.ts"))).toBe(true);
+    expect(existsSync(join(expDir, "compareModeCoach.ts"))).toBe(true);
+    expect(existsSync(join(expDir, "reviewPacketSections.ts"))).toBe(true);
+    expect(
+      existsSync(
+        join(REPO_ROOT, "fixtures", "rt_experiments", "x3_review_packet_sections_example.json"),
+      ),
+    ).toBe(true);
+  });
+
   it("includes experiment workbench v2 modules (PLAT-RT-X2 P0)", () => {
     const expDir = join(RT_UI_ROOT, "src", "experiment");
     expect(existsSync(join(expDir, "cohortSchema.ts"))).toBe(true);

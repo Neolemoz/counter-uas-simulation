@@ -4,6 +4,7 @@ import {
   MULTI_MANIFEST_DIFF_BANNER,
 } from "./multiManifestDiff";
 import type { ExperimentCohortIndex } from "./cohortSchema";
+import { ExperimentCompareModeCoach } from "./ExperimentCompareModeCoach";
 import { ManifestSummaryChips } from "./ManifestSummaryChips";
 import { setCompareMode, type WorkbenchV2State } from "./workbenchV2State";
 
@@ -33,6 +34,7 @@ export function ExperimentCompareStagePanel({
       className="space-y-2 rounded border border-slate-800 bg-slate-950/40 p-2"
       data-testid="compare-stage-panel"
     >
+      <ExperimentCompareModeCoach mode={v2State.compare_mode} />
       <label className="flex flex-col gap-1 text-xs text-slate-400">
         Compare mode
         <select

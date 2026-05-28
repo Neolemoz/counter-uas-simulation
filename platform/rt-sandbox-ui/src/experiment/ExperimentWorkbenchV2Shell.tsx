@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useCallback, useMemo } from "react";
 import { PanelShell } from "@/components/GovernanceChrome";
 import { BANNER_EXPERIMENT_V2 } from "@/governance/banners";
 import { getCohort } from "./cohortIndexStore";
@@ -9,10 +9,16 @@ import {
   type ReportDockPresence,
 } from "./ExperimentReportDockPanel";
 import { ExperimentUnifiedReviewPanel } from "./ExperimentUnifiedReviewPanel";
+import { ExperimentWorkbenchV3Shell } from "./ExperimentWorkbenchV3Shell";
 import { MultiManifestDiffTable } from "./MultiManifestDiffTable";
 import type { CompareModeId, UnifiedReviewStepId } from "./experimentUnifiedReview";
 import type { ExperimentManifest } from "./experimentSchema";
-import type { WorkbenchV2State } from "./workbenchV2State";
+import {
+  saveWorkbenchV2State,
+  selectPrimaryManifestRef,
+  selectSecondaryManifestRef,
+  type WorkbenchV2State,
+} from "./workbenchV2State";
 
 export function ExperimentWorkbenchV2Shell({
   v2State,
@@ -48,6 +54,18 @@ export function ExperimentWorkbenchV2Shell({
 
   const showMultiManifestDiff = v2State.compare_mode === "multi_manifest_diff";
 
+  const openManifestRef = useCallback(
+    (manifestRef: string, role: "primary" | "secondary") => {
+      const next =
+        role === "primary"
+          ? selectPrimaryManifestRef(v2State, manifestRef)
+          : selectSecondaryManifestRef(v2State, manifestRef);
+      saveWorkbenchV2State(next);
+      onV2StateChange(next);
+    },
+    [v2State, onV2StateChange],
+  );
+
   return (
     <details className="mb-4" data-testid="experiment-workbench-v2">
       <summary className="cursor-pointer text-sm font-medium text-slate-300">
@@ -55,46 +73,55 @@ export function ExperimentWorkbenchV2Shell({
       </summary>
       <div className="mt-2 space-y-3">
         <PanelShell title="Experiment workbench v2">
-          <p className="mb-2 text-[10px] text-amber-200/90">{BANNER_EXPERIMENT_V2}</p>
-          <div className="grid gap-3 lg:grid-cols-3">
-            <ExperimentCohortNavigator v2State={v2State} onV2StateChange={onV2StateChange} />
-            <ExperimentUnifiedReviewPanel
-              v2State={v2State}
-              onV2StateChange={onV2StateChange}
-              runs={manifest.runs}
-              onActivateStep={onActivateStep}
-              onContinuityRunId={onContinuityRunId}
-              onSyncComparePinned={onSyncComparePinned}
-            />
-            <ExperimentReportDockPanel
-              v2State={v2State}
-              manifest={manifest}
-              presence={reportPresence}
-              previews={dockPreviews}
-              onImportSlot={onImportDockSlot}
-              onExportSlot={onExportDockSlot}
-              packetTabFocusToken={dockPacketTabFocus}
-            />
-          </div>
-          <div className="mt-3 space-y-3 border-t border-slate-800/80 pt-3">
-            <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-500">
-              Compare stage
-            </p>
-            <ExperimentCompareStagePanel
-              v2State={v2State}
-              onV2StateChange={onV2StateChange}
-              onApplyCompareMode={onApplyCompareMode}
-              cohort={activeCohort}
-            />
-            {showMultiManifestDiff && (
-              <MultiManifestDiffTable
-                cohort={activeCohort}
-                primaryManifestRef={v2State.primary_manifest_ref}
-                secondaryManifestRef={v2State.secondary_manifest_ref}
-                loadedManifest={manifest}
+          <ExperimentWorkbenchV3Shell
+            v2State={v2State}
+            cohort={activeCohort}
+            loadedManifest={manifest}
+            onV2StateChange={onV2StateChange}
+          >
+            <p className="mb-2 text-[10px] text-amber-200/90">{BANNER_EXPERIMENT_V2}</p>
+            <div className="grid gap-3 lg:grid-cols-3">
+              <ExperimentCohortNavigator v2State={v2State} onV2StateChange={onV2StateChange} />
+              <ExperimentUnifiedReviewPanel
+                v2State={v2State}
+                onV2StateChange={onV2StateChange}
+                runs={manifest.runs}
+                onActivateStep={onActivateStep}
+                onContinuityRunId={onContinuityRunId}
+                onSyncComparePinned={onSyncComparePinned}
               />
-            )}
-          </div>
+              <ExperimentReportDockPanel
+                v2State={v2State}
+                manifest={manifest}
+                presence={reportPresence}
+                previews={dockPreviews}
+                onImportSlot={onImportDockSlot}
+                onExportSlot={onExportDockSlot}
+                packetTabFocusToken={dockPacketTabFocus}
+                cohortLabel={activeCohort?.label ?? null}
+              />
+            </div>
+            <div className="mt-3 space-y-3 border-t border-slate-800/80 pt-3">
+              <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-500">
+                Compare stage
+              </p>
+              <ExperimentCompareStagePanel
+                v2State={v2State}
+                onV2StateChange={onV2StateChange}
+                onApplyCompareMode={onApplyCompareMode}
+                cohort={activeCohort}
+              />
+              {showMultiManifestDiff && (
+                <MultiManifestDiffTable
+                  cohort={activeCohort}
+                  primaryManifestRef={v2State.primary_manifest_ref}
+                  secondaryManifestRef={v2State.secondary_manifest_ref}
+                  loadedManifest={manifest}
+                  onOpenManifestRef={openManifestRef}
+                />
+              )}
+            </div>
+          </ExperimentWorkbenchV3Shell>
         </PanelShell>
       </div>
     </details>

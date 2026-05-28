@@ -8,23 +8,23 @@
 
 ---
 
-## P0 — Cohort navigation ergonomics
+## P0 — Workbench v3 shell (frozen)
 
 **Prerequisite:** PLAN-RT-X3 frozen
+**Status:** **frozen** — [rt_plat_x3_p0_freeze_audit.md](rt_plat_x3_p0_freeze_audit.md)
 
-| Item | Location (proposed) |
-|------|---------------------|
-| Program context strip | `ExperimentCohortNavigator.tsx` or `ExperimentProgramContextStrip.tsx` |
+| Item | Location |
+|------|----------|
+| Program context strip | `ExperimentProgramContextStrip.tsx` |
 | Manifest roster table | `ExperimentManifestRoster.tsx` |
 | Breadcrumb + tag filter | `workbenchV2State.ts` additive keys |
-| Explicit secondary picker | `ExperimentCohortNavigator.tsx` |
-| Fixture parity | `x3_review_packet_sections_example.json` (reference only) |
-| Governance: no SA path refs | Vitest |
-| `tier0-rt-ui` | CI |
+| Explicit secondary picker | `ExperimentSecondaryManifestPicker.tsx` |
+| V3 shell wrapper | `ExperimentWorkbenchV3Shell.tsx` |
+| Packet sections (UI preview) | `reviewPacketSections.ts` |
+| Compare coach + status vocabulary | `compareModeCoach.ts`, `compareStatusVocabulary.ts` |
+| Fixture parity | `x3_review_packet_sections_example.json` |
 
-**PLAT plan:** `docs/platform/rt_plat_x3_p0_cohort_navigation_plan.md` (create at P0 start)
-
-**Freeze target:** `docs/evaluation/rt_plat_x3_p0_freeze_audit.md`
+**PLAT plan:** [rt_plat_x3_p0_workbench_v3_shell_plan.md](../platform/rt_plat_x3_p0_workbench_v3_shell_plan.md)
 
 ---
 

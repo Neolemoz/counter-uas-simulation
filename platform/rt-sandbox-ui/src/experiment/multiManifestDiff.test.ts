@@ -27,6 +27,7 @@ describe("multiManifestDiff", () => {
     const expRow = rows.find((r) => r.field === "experiment_id");
     expect(expRow?.primary).toBe(cohort.manifest_refs[0]!.experiment_id);
     expect(expRow?.secondary).toBe(cohort.manifest_refs[1]!.experiment_id);
+    expect(expRow?.compare_status).toBe("divergent");
     const runsRow = rows.find((r) => r.field === "runs.length");
     expect(runsRow?.primary).toBe("4");
     expect(runsRow?.secondary).toBe("2");

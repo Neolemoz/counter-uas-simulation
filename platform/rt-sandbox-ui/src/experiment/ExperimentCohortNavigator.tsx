@@ -8,7 +8,6 @@ import {
 } from "./cohortIndexStore";
 import { safeParseCohortIndex } from "./cohortImportGuards";
 import { formatImportError } from "./experimentImportGuards";
-import type { ExperimentCohortIndex } from "./cohortSchema";
 import {
   loadWorkbenchV2State,
   saveWorkbenchV2State,
@@ -26,9 +25,6 @@ export function ExperimentCohortNavigator({
   onV2StateChange: (state: WorkbenchV2State) => void;
 }) {
   const [cohortIds, setCohortIds] = useState<string[]>(() => listCohortIds());
-  const [activeCohort, setActiveCohort] = useState<ExperimentCohortIndex | null>(() =>
-    v2State.active_cohort_id ? getCohort(v2State.active_cohort_id) : null,
-  );
   const [importError, setImportError] = useState<string | null>(null);
 
   const refreshCohorts = useCallback(() => {
@@ -36,12 +32,8 @@ export function ExperimentCohortNavigator({
   }, []);
 
   useEffect(() => {
-    if (!v2State.active_cohort_id) {
-      setActiveCohort(null);
-      return;
-    }
-    setActiveCohort(getCohort(v2State.active_cohort_id));
-  }, [v2State.active_cohort_id]);
+    refreshCohorts();
+  }, [refreshCohorts, v2State.active_cohort_id]);
 
   const selectCohort = (cohortId: string) => {
     const cohort = getCohort(cohortId);
@@ -54,7 +46,6 @@ export function ExperimentCohortNavigator({
     }
     saveWorkbenchV2State(next);
     onV2StateChange(next);
-    setActiveCohort(cohort);
   };
 
   const importCohort = () => {
@@ -83,18 +74,6 @@ export function ExperimentCohortNavigator({
     } catch {
       setImportError("export failed");
     }
-  };
-
-  const setPrimary = (manifestRef: string) => {
-    const next = selectPrimaryManifestRef(v2State, manifestRef);
-    saveWorkbenchV2State(next);
-    onV2StateChange(next);
-  };
-
-  const setSecondary = (manifestRef: string | null) => {
-    const next = selectSecondaryManifestRef(v2State, manifestRef);
-    saveWorkbenchV2State(next);
-    onV2StateChange(next);
   };
 
   return (
@@ -140,48 +119,11 @@ export function ExperimentCohortNavigator({
           </select>
         </label>
       )}
-      {activeCohort && (
-        <div className="space-y-2">
-          <p className="text-xs font-medium text-slate-300">{activeCohort.label}</p>
-          <ul className="space-y-1">
-            {activeCohort.manifest_refs.map((ref) => (
-              <li
-                key={ref.manifest_ref}
-                className="rounded border border-slate-800 px-2 py-1 text-[11px] text-slate-400"
-              >
-                <span className="font-mono text-slate-300">{ref.label}</span>
-                {ref.run_count_hint != null && (
-                  <span className="ml-2 text-slate-500">~{ref.run_count_hint} runs</span>
-                )}
-                <div className="truncate font-mono text-[10px]">{ref.manifest_ref}</div>
-                <div className="mt-1 flex gap-2">
-                  <button
-                    type="button"
-                    className="text-[10px] text-cyan-400 underline"
-                    onClick={() => setPrimary(ref.manifest_ref)}
-                  >
-                    Set primary
-                  </button>
-                  <button
-                    type="button"
-                    className="text-[10px] text-slate-500 underline"
-                    onClick={() =>
-                      setSecondary(
-                        v2State.secondary_manifest_ref === ref.manifest_ref
-                          ? null
-                          : ref.manifest_ref,
-                      )
-                    }
-                  >
-                    {v2State.secondary_manifest_ref === ref.manifest_ref
-                      ? "Clear secondary"
-                      : "Set secondary"}
-                  </button>
-                </div>
-              </li>
-            ))}
-          </ul>
-        </div>
+      {v2State.active_cohort_id && (
+        <p className="text-[10px] text-slate-500">
+          Active cohort: <span className="font-mono text-slate-400">{v2State.active_cohort_id}</span>
+          {" — use manifest roster for primary/secondary."}
+        </p>
       )}
     </div>
   );

@@ -26,7 +26,7 @@ describe("MultiManifestDiffTable", () => {
       />,
     );
     expect(markup).toContain(MULTI_MANIFEST_DIFF_BANNER);
-    expect(markup).toContain("Set primary and secondary");
+    expect(markup).toContain("manifest roster");
   });
 
   it("renders diff table for cohort manifests", () => {

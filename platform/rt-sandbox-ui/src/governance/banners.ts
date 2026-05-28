@@ -35,6 +35,10 @@ export const BANNER_EXPERIMENT =
 export const BANNER_EXPERIMENT_V2 =
   "RT EXPERIMENT v2 — cohort review is explanatory; maintainer CLIs remain authority";
 
+/** Additive panel banner (PLAT-RT-X3 P0). */
+export const BANNER_EXPERIMENT_V3 =
+  "RT EXPERIMENT v3 — navigation and packets are explanatory; maintainer CLIs remain authority";
+
 /** Additive panel banner (PLAT-RT-F1). */
 export const BANNER_ANALYTICS =
   "RT ANALYTICS — derived summaries only; not operational authority";
