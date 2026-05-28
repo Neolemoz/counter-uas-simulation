@@ -171,6 +171,11 @@ def _by_seed(rows: list[dict[str, str]]) -> tuple[dict[int, dict[str, str]], lis
     return out, missing
 
 
+def _duplicate_seeds(rows: list[dict[str, str]]) -> list[int]:
+    seeds = [s for s in (seed_for_row(r) for r in rows) if s is not None]
+    return sorted(k for k, v in Counter(seeds).items() if v > 1)
+
+
 def _failure_class(row: dict[str, str]) -> str:
     log_path = (row.get("log_path") or "").strip()
     if not log_path or not Path(log_path).is_file():
@@ -184,6 +189,16 @@ def paired_report(
     *,
     bootstrap_seed: int = 1,
 ) -> tuple[dict[str, object], list[dict[str, object]]]:
+    base_duplicates = _duplicate_seeds(baseline_rows)
+    cand_duplicates = _duplicate_seeds(candidate_rows)
+    if base_duplicates or cand_duplicates:
+        parts: list[str] = []
+        if base_duplicates:
+            parts.append(f"baseline duplicate seeds: {base_duplicates}")
+        if cand_duplicates:
+            parts.append(f"candidate duplicate seeds: {cand_duplicates}")
+        raise ValueError("paired validation requires unique seeds; " + "; ".join(parts))
+
     base_by_seed, base_missing = _by_seed(baseline_rows)
     cand_by_seed, cand_missing = _by_seed(candidate_rows)
     seeds = sorted(set(base_by_seed) & set(cand_by_seed))
@@ -385,11 +400,15 @@ def main() -> int:
         print(f"Wrote {args.out_json.resolve()}")
         return 0
     if args.cmd == "paired":
-        payload, rows_out = paired_report(
-            _read_csv(args.baseline),
-            _read_csv(args.candidate),
-            bootstrap_seed=int(args.bootstrap_seed),
-        )
+        try:
+            payload, rows_out = paired_report(
+                _read_csv(args.baseline),
+                _read_csv(args.candidate),
+                bootstrap_seed=int(args.bootstrap_seed),
+            )
+        except ValueError as exc:
+            print(str(exc), file=sys.stderr)
+            return 1
         _write_json(args.out_json, payload)
         if args.out_csv:
             _write_csv(args.out_csv, rows_out)

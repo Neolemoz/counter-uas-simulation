@@ -18,7 +18,7 @@ Two operating modes
    tests / CI where Gazebo is not available.
 
 2. ``--mode run`` — drive ``scripts/run_capture.py`` for ``--n`` runs. Each injected
-   Monte Carlo RNG uses ``noise_seed:=<seed_base+i>`` (unless overridden) and records
+   Monte Carlo RNG uses ``noise_seed:=<seed_base+i>`` and records
    ``noise_seed_mc`` + optional static ``geometry_id`` for reproducible pairing with
    spatial scenario matrices.
 
@@ -303,6 +303,20 @@ def _enrich_result_with_meta(result: dict, log_path: Path) -> dict:
     return result
 
 
+def _launch_args_without_key(raw: str | None, key: str) -> tuple[str, bool]:
+    """Return launch args with one ``name:=value`` key removed."""
+    kept: list[str] = []
+    removed = False
+    for tok in str(raw or "").split():
+        if ':=' in tok:
+            k, _ = tok.split(':=', 1)
+            if k.strip() == key:
+                removed = True
+                continue
+        kept.append(tok)
+    return " ".join(kept), removed
+
+
 def _log_matches_aggregate_filters(
     log_path: Path,
     *,
@@ -369,6 +383,14 @@ def cmd_run(args: argparse.Namespace) -> int:
 
     rows: list[dict] = []
     base_args = args.launch_args or ""
+    seedless_base_args, stripped_noise_seed = _launch_args_without_key(base_args, "noise_seed")
+    if stripped_noise_seed:
+        print(
+            "[monte_carlo] ignoring noise_seed in --launch-args; "
+            "--mode run controls noise_seed from --seed-base for every trial",
+            file=sys.stderr,
+        )
+    skipped_runs: list[dict[str, object]] = []
     gid = getattr(args, "geometry_id", "").strip()
 
     geometry_note = ""
@@ -377,10 +399,7 @@ def cmd_run(args: argparse.Namespace) -> int:
 
     for i in range(args.n):
         seed = args.seed_base + i
-        # Compose seed-aware launch args without overwriting whatever the caller already set.
-        per_run_args = base_args
-        if "noise_seed" not in base_args:
-            per_run_args = f"{per_run_args} noise_seed:={seed}".strip()
+        per_run_args = f"{seedless_base_args} noise_seed:={seed}".strip()
         cmd = [
             sys.executable,
             str(rc_script),
@@ -402,14 +421,25 @@ def cmd_run(args: argparse.Namespace) -> int:
         if r.returncode not in (0, 124):
             print(r.stderr, file=sys.stderr)
             print(f"[monte_carlo] run failed (rc={r.returncode}); skipping", file=sys.stderr)
+            skipped_runs.append({"index": i + 1, "seed": seed, "reason": "run_capture_failed", "returncode": r.returncode})
             continue
         out_lines = (r.stdout or "").strip().splitlines()
         if not out_lines:
             print("[monte_carlo] run produced no output; skipping", file=sys.stderr)
+            skipped_runs.append({"index": i + 1, "seed": seed, "reason": "missing_run_capture_stdout", "returncode": r.returncode})
             continue
         log_path = Path(out_lines[0].strip())
         if not log_path.is_file():
             print(f"[monte_carlo] log path missing: {log_path}", file=sys.stderr)
+            skipped_runs.append(
+                {
+                    "index": i + 1,
+                    "seed": seed,
+                    "reason": "missing_log_path",
+                    "returncode": r.returncode,
+                    "log_path": str(log_path),
+                },
+            )
             continue
         result = analyze.parse_run_to_result(str(log_path))
         result["run_id"] = log_path.stem
@@ -425,8 +455,19 @@ def cmd_run(args: argparse.Namespace) -> int:
         print("no successful runs collected", file=sys.stderr)
         return 1
     summary = _summarise(rows, args.label)
+    summary["n_requested"] = int(args.n)
+    summary["n_collected"] = len(rows)
+    summary["n_skipped"] = len(skipped_runs)
+    summary["skipped_runs"] = skipped_runs
     _print_summary(summary)
     _write_outputs(Path(args.out_dir), args.label, summary, rows)
+    if len(rows) != int(args.n):
+        print(
+            f"[monte_carlo] incomplete cohort: collected {len(rows)}/{args.n} runs; "
+            "not treating truncated validation as successful",
+            file=sys.stderr,
+        )
+        return 1
     return 0
 
 
