@@ -552,6 +552,7 @@ export default function App() {
           connected && sessionId ? (
             <RuntimeCognitionHub
               sessionId={sessionId}
+              orderedSessionIds={workspaceSessionIds}
               layerVisibility={layerVisibility}
               terrainLayers={terrainLayers}
               terrainLayersEnabled={terrainLayersOn}

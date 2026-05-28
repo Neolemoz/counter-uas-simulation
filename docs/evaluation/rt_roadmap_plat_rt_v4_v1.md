@@ -1,10 +1,10 @@
 # RT - PLAT-RT-V4 Implementation Roadmap v1
 
-**Phase:** PLAN-RT-V4 frozen -> future **PLAT-RT-V4** (not authorized)  
-**Prerequisite:** [rt_v4_freeze_audit.md](rt_v4_freeze_audit.md) (PLAN-RT-V4 docs frozen)  
+**Phase:** PLAN-RT-V4 frozen -> **PLAT-RT-V4 P0 frozen**; P1/P2 future
+**Prerequisite:** [rt_v4_freeze_audit.md](rt_v4_freeze_audit.md) (PLAN-RT-V4 docs frozen)
 **Contracts:** [rt_visualization_fidelity_v4.md](rt_visualization_fidelity_v4.md), [rt_visual_density_management_v1.md](rt_visual_density_management_v1.md), [rt_visual_multi_session_cognition_v1.md](rt_visual_multi_session_cognition_v1.md)
 
-This roadmap is advisory. It ranks a conservative implementation path for V4 but does not authorize any runtime/UI work.
+This roadmap tracks PLAT-RT-V4 implementation. P0 is frozen; P1/P2 remain future and are not authorized by P0.
 
 ## P0 - Density policy foundations
 
@@ -12,13 +12,16 @@ This roadmap is advisory. It ranks a conservative implementation path for V4 but
 
 | Item | Future location | Status |
 |------|-----------------|--------|
-| Density policy helper | `platform/rt-sandbox-ui/src/cesium/` | Planned |
-| Layer budget summary | Existing V3 toggle/cognition surfaces | Planned |
-| Legend grouping for density | Existing visualization rail | Planned |
-| Vitest policy checks | RT UI tests | Planned |
-| Governance check | `rt_plat_v4_p0_*` docs | Required |
+| Density policy helper | `platform/rt-sandbox-ui/src/cesium/visualLayerRegistry.ts` | **Delivered** |
+| Layer budget summary | `VisualLayerToggleRail.tsx`, `RuntimeCognitionHub.tsx` | **Delivered** |
+| Legend grouping for density | Existing visualization rail | **Delivered** |
+| Session compare primitives | `sessionComparisonCognition.ts`, `SessionComparisonCognitionStrip.tsx` | **Delivered** |
+| Vitest policy checks | RT UI tests | **Delivered** |
+| Governance check | `rt_plat_v4_p0_*` docs | **Delivered** |
 
-**Risk:** Low-Med. The phase should be policy-first and avoid new visual geometry.
+**Frozen:** [rt_plat_v4_p0_freeze_audit.md](rt_plat_v4_p0_freeze_audit.md) - **PLAT-RT-V4 P0 frozen**.
+
+**Risk:** Low-Med. The phase stayed policy-first and avoided new visual geometry.
 
 ## P1 - Advanced visibility and terrain cognition
 
@@ -71,7 +74,7 @@ Each PLAT phase requires its own plan, governance review, visualization realism 
 
 ## Stop line
 
-This roadmap does not start PLAT-RT-V4. Implementation remains blocked until an explicit PLAT phase is opened.
+PLAT-RT-V4 P0 is frozen. Do not start **P1** without a scoped P1 plan, governance review, visualization realism review, validation, and freeze audit.
 
 ## Related
 

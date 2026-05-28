@@ -2,16 +2,39 @@ import registryJson from "./fixtures/v3_layer_registry_v3.json";
 import type { TerrainLayerVisibility } from "./terrainLayers";
 
 export const SCHEMA_RT_VISUAL_LAYER_REGISTRY_V3 = "rt_visual_layer_registry_v3";
+export const SCHEMA_RT_VISUAL_LAYER_REGISTRY_V4 = "rt_visual_layer_registry_v4";
 
-export type CognitionKind = "terrain" | "visibility" | "sensor" | "marker" | "none";
+export type CognitionKind =
+  | "terrain"
+  | "visibility"
+  | "sensor"
+  | "marker"
+  | "density"
+  | "comparison"
+  | "none";
 
 export type CognitionGroupId =
   | "terrain_context"
   | "visibility_context"
   | "sensor_context"
-  | "marker_context";
+  | "marker_context"
+  | "density_context"
+  | "comparison_context";
 
-export type PlatPhase = "p0" | "p1";
+export type DensityGroupId =
+  | "authority_context"
+  | "entity_context"
+  | "terrain_context"
+  | "visibility_context"
+  | "diagnostic_context"
+  | "decorative_context";
+
+export type VisualComparisonRole =
+  | "selected"
+  | "comparison"
+  | "background";
+
+export type PlatPhase = "p0" | "p1" | "v4_p0";
 
 export type LayerVisibilityKey =
   | "showTerrainMesh"
@@ -25,12 +48,18 @@ export type LayerVisibilityKey =
   | "showLabels"
   | "showVisibilityWedge"
   | "showHorizonHint"
-  | "showStackedLos";
+  | "showStackedLos"
+  | "showDensityWarnings"
+  | "showLayerBudgetSummary"
+  | "showSessionContrast"
+  | "showComparisonGhosts";
 
 export interface VisualLayerPerformanceBudget {
   max_active_overlay_layers: number;
   max_cesium_decor_entities: number;
   max_wedge_polylines_per_session: number;
+  max_density_warning_groups?: number;
+  max_session_comparison_rows?: number;
 }
 
 export interface VisualLayerDescriptor {
@@ -46,13 +75,20 @@ export interface VisualLayerDescriptor {
   cognition_kind: CognitionKind;
   disclaimer: string;
   mutual_exclusion_group?: string;
+  density_group?: DensityGroupId;
+  comparison_role?: VisualComparisonRole;
+  display_only?: boolean;
 }
 
-export interface VisualLayerRegistryV3 {
-  schema: typeof SCHEMA_RT_VISUAL_LAYER_REGISTRY_V3;
+export interface VisualLayerRegistryV4 {
+  schema:
+    | typeof SCHEMA_RT_VISUAL_LAYER_REGISTRY_V3
+    | typeof SCHEMA_RT_VISUAL_LAYER_REGISTRY_V4;
   performance_budget: VisualLayerPerformanceBudget;
   layers: VisualLayerDescriptor[];
 }
+
+export type VisualLayerRegistryV3 = VisualLayerRegistryV4;
 
 export interface VisualLayerVisibility {
   showTerrainMesh: boolean;
@@ -67,6 +103,10 @@ export interface VisualLayerVisibility {
   showVisibilityWedge: boolean;
   showHorizonHint: boolean;
   showStackedLos: boolean;
+  showDensityWarnings: boolean;
+  showLayerBudgetSummary: boolean;
+  showSessionContrast: boolean;
+  showComparisonGhosts: boolean;
 }
 
 export const COGNITION_GROUP_TITLES: Record<CognitionGroupId, string> = {
@@ -74,6 +114,8 @@ export const COGNITION_GROUP_TITLES: Record<CognitionGroupId, string> = {
   visibility_context: "Visibility (heuristic)",
   sensor_context: "Sensor context (nominal)",
   marker_context: "Markers & bounds",
+  density_context: "Density controls",
+  comparison_context: "Session compare (visual only)",
 };
 
 const COGNITION_KINDS: readonly CognitionKind[] = [
@@ -81,6 +123,8 @@ const COGNITION_KINDS: readonly CognitionKind[] = [
   "visibility",
   "sensor",
   "marker",
+  "density",
+  "comparison",
   "none",
 ];
 
@@ -97,10 +141,87 @@ const LAYER_ID_TO_VISIBILITY_KEY: Partial<Record<string, LayerVisibilityKey>> = 
   visibility_wedge_v3: "showVisibilityWedge",
   horizon_hint_v3: "showHorizonHint",
   stacked_los_v3: "showStackedLos",
+  density_warnings_v4: "showDensityWarnings",
+  layer_budget_summary_v4: "showLayerBudgetSummary",
+  session_contrast_v4: "showSessionContrast",
+  comparison_ghosts_v4: "showComparisonGhosts",
 };
 
-export const CANONICAL_VISUAL_LAYER_REGISTRY =
-  registryJson as VisualLayerRegistryV3;
+const V4_P0_LAYERS: VisualLayerDescriptor[] = [
+  {
+    layer_id: "density_warnings_v4",
+    label: "Density warnings",
+    z_order: 80,
+    default_on: true,
+    plat_phase: "v4_p0",
+    toggleable: true,
+    visibility_key: "showDensityWarnings",
+    cognition_group: "density_context",
+    module_anchor: "visualDensityPolicy",
+    cognition_kind: "density",
+    density_group: "diagnostic_context",
+    display_only: true,
+    disclaimer: "Warn-only density indicator — does not enforce or command",
+  },
+  {
+    layer_id: "layer_budget_summary_v4",
+    label: "Budget summary",
+    z_order: 81,
+    default_on: true,
+    plat_phase: "v4_p0",
+    toggleable: true,
+    visibility_key: "showLayerBudgetSummary",
+    cognition_group: "density_context",
+    module_anchor: "LayerDensitySummary",
+    cognition_kind: "density",
+    density_group: "diagnostic_context",
+    display_only: true,
+    disclaimer: "Layer budget summary — explanatory display only",
+  },
+  {
+    layer_id: "session_contrast_v4",
+    label: "Session contrast",
+    z_order: 82,
+    default_on: true,
+    plat_phase: "v4_p0",
+    toggleable: true,
+    visibility_key: "showSessionContrast",
+    cognition_group: "comparison_context",
+    module_anchor: "SessionComparisonCognitionStrip",
+    cognition_kind: "comparison",
+    density_group: "entity_context",
+    comparison_role: "selected",
+    display_only: true,
+    disclaimer: "Session contrast is visual only — command target remains selected session",
+  },
+  {
+    layer_id: "comparison_ghosts_v4",
+    label: "Compare ghosts",
+    z_order: 83,
+    default_on: false,
+    plat_phase: "v4_p0",
+    toggleable: true,
+    visibility_key: "showComparisonGhosts",
+    cognition_group: "comparison_context",
+    module_anchor: "SessionComparisonCognitionStrip",
+    cognition_kind: "comparison",
+    density_group: "entity_context",
+    comparison_role: "comparison",
+    display_only: true,
+    disclaimer: "Comparison ghosts are explanatory only — no cross-session commands",
+  },
+];
+
+export const CANONICAL_VISUAL_LAYER_REGISTRY: VisualLayerRegistryV4 = {
+  ...(registryJson as VisualLayerRegistryV3),
+  schema: SCHEMA_RT_VISUAL_LAYER_REGISTRY_V4,
+  performance_budget: {
+    ...(registryJson as VisualLayerRegistryV3).performance_budget,
+    max_density_warning_groups: 5,
+    max_session_comparison_rows: 2,
+  },
+  layers: [...(registryJson as VisualLayerRegistryV3).layers, ...V4_P0_LAYERS],
+};
 
 export class VisualLayerRegistryValidationError extends Error {
   constructor(message: string) {
@@ -110,9 +231,12 @@ export class VisualLayerRegistryValidationError extends Error {
 }
 
 export function validateVisualLayerRegistry(reg: VisualLayerRegistryV3): void {
-  if (reg.schema !== SCHEMA_RT_VISUAL_LAYER_REGISTRY_V3) {
+  if (
+    reg.schema !== SCHEMA_RT_VISUAL_LAYER_REGISTRY_V3 &&
+    reg.schema !== SCHEMA_RT_VISUAL_LAYER_REGISTRY_V4
+  ) {
     throw new VisualLayerRegistryValidationError(
-      `schema must be ${SCHEMA_RT_VISUAL_LAYER_REGISTRY_V3}`,
+      `schema must be ${SCHEMA_RT_VISUAL_LAYER_REGISTRY_V3} or ${SCHEMA_RT_VISUAL_LAYER_REGISTRY_V4}`,
     );
   }
 
@@ -179,6 +303,10 @@ export function defaultVisibilityFromRegistry(
     showVisibilityWedge: false,
     showHorizonHint: false,
     showStackedLos: false,
+    showDensityWarnings: false,
+    showLayerBudgetSummary: false,
+    showSessionContrast: false,
+    showComparisonGhosts: false,
   };
 
   for (const layer of reg.layers) {
@@ -215,6 +343,8 @@ export function groupLayersForUi(reg: VisualLayerRegistryV3): UiLayerGroup[] {
   const order: CognitionGroupId[] = [
     "terrain_context",
     "visibility_context",
+    "density_context",
+    "comparison_context",
     "sensor_context",
     "marker_context",
   ];
@@ -259,6 +389,13 @@ const OVERLAY_COUNT_KEYS: LayerVisibilityKey[] = [
   "showVisibilityWedge",
 ];
 
+const DENSITY_CONTROL_KEYS: LayerVisibilityKey[] = [
+  "showDensityWarnings",
+  "showLayerBudgetSummary",
+  "showSessionContrast",
+  "showComparisonGhosts",
+];
+
 export function countActiveOverlayLayers(
   visibility: VisualLayerVisibility,
   _reg: VisualLayerRegistryV3 = CANONICAL_VISUAL_LAYER_REGISTRY,
@@ -291,6 +428,51 @@ export function performanceBudgetAdvisory(
   return `Overlay budget: ${active}/${cap} active layers (advisory — not enforced)`;
 }
 
+export interface DensityBudgetSummary {
+  activeOverlayLayers: number;
+  overlayCap: number;
+  activeDensityControls: number;
+  densityControlCount: number;
+  densityWarningsEnabled: boolean;
+  layerBudgetSummaryEnabled: boolean;
+  exceeded: boolean;
+  line: string;
+}
+
+export function densityControlLayers(
+  reg: VisualLayerRegistryV3 = CANONICAL_VISUAL_LAYER_REGISTRY,
+): VisualLayerDescriptor[] {
+  return reg.layers.filter((l) => l.cognition_group === "density_context");
+}
+
+export function countActiveDensityControls(
+  visibility: VisualLayerVisibility,
+): number {
+  return DENSITY_CONTROL_KEYS.filter((k) => visibility[k]).length;
+}
+
+export function densityBudgetSummary(
+  visibility: VisualLayerVisibility,
+  reg: VisualLayerRegistryV3 = CANONICAL_VISUAL_LAYER_REGISTRY,
+): DensityBudgetSummary {
+  const activeOverlayLayers = countActiveOverlayLayers(visibility, reg);
+  const overlayCap = reg.performance_budget.max_active_overlay_layers;
+  const activeDensityControls = countActiveDensityControls(visibility);
+  const densityControlCount = densityControlLayers(reg).length;
+  const exceeded = activeOverlayLayers > overlayCap;
+  const status = exceeded && visibility.showDensityWarnings ? "warn-only" : "advisory";
+  return {
+    activeOverlayLayers,
+    overlayCap,
+    activeDensityControls,
+    densityControlCount,
+    densityWarningsEnabled: visibility.showDensityWarnings,
+    layerBudgetSummaryEnabled: visibility.showLayerBudgetSummary,
+    exceeded,
+    line: `Density ${activeDensityControls}/${densityControlCount} controls · overlays ${activeOverlayLayers}/${overlayCap} (${status})`,
+  };
+}
+
 export function countVisibleLayers(
   visibility: VisualLayerVisibility,
   reg: VisualLayerRegistryV3 = CANONICAL_VISUAL_LAYER_REGISTRY,
@@ -308,8 +490,12 @@ export function registryBudgetSummaryLine(
   const overlays = countActiveOverlayLayers(visibility, reg);
   const cap = reg.performance_budget.max_active_overlay_layers;
   const advisory = performanceBudgetAdvisory(visibility, reg);
+  const density = densityBudgetSummary(visibility, reg);
   const base = `Layers ${on}/${total} on · overlays ${overlays}/${cap}`;
-  return advisory ? `${base} · ${advisory}` : `${base} (advisory)`;
+  if (!visibility.showLayerBudgetSummary) {
+    return `${base} · budget summary off (advisory)`;
+  }
+  return advisory ? `${base} · ${advisory}` : `${base} · ${density.line}`;
 }
 
 validateVisualLayerRegistry(CANONICAL_VISUAL_LAYER_REGISTRY);

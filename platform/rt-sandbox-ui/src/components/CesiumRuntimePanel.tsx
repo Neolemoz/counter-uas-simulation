@@ -26,6 +26,7 @@ import {
   type VisualLayerVisibility,
 } from "@/cesium/visualLayerRegistry";
 import { VisualLayerToggleRail } from "@/components/VisualLayerToggleRail";
+import { SessionComparisonCognitionStrip } from "@/workstation/SessionComparisonCognitionStrip";
 import {
   BANNER_FIDELITY_TRUTH,
   BANNER_REALISM_F4,
@@ -316,8 +317,19 @@ export function CesiumRuntimePanel({
             </span>
           )}
           {orderedSessionIds.length > 1 && (
-            <span className="text-slate-500">active globe — background sessions in tabs only</span>
+            <span className="text-slate-500">active globe — comparison surfaces are explanatory only</span>
           )}
+        </div>
+      )}
+
+      {orderedSessionIds.length > 1 && (
+        <div className="mb-3">
+          <SessionComparisonCognitionStrip
+            activeSessionId={sessionId}
+            orderedSessionIds={orderedSessionIds}
+            comparisonGhostsEnabled={layerVisibility.showComparisonGhosts}
+            sessionContrastEnabled={layerVisibility.showSessionContrast}
+          />
         </div>
       )}
 

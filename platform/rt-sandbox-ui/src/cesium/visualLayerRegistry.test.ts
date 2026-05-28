@@ -12,8 +12,11 @@ import {
   layersSortedByZOrder,
   performanceBudgetAdvisory,
   countVisibleLayers,
+  densityBudgetSummary,
+  densityControlLayers,
   registryBudgetSummaryLine,
   SCHEMA_RT_VISUAL_LAYER_REGISTRY_V3,
+  SCHEMA_RT_VISUAL_LAYER_REGISTRY_V4,
   toggleableLayers,
   toTerrainLayerVisibility,
   validateVisualLayerRegistry,
@@ -37,13 +40,12 @@ describe("visualLayerRegistry", () => {
     expect(() => validateVisualLayerRegistry(CANONICAL_VISUAL_LAYER_REGISTRY)).not.toThrow();
   });
 
-  it("validates repo fixture and matches canonical layer ids", () => {
+  it("validates legacy repo fixture and canonical V4 schema", () => {
     const fixture = loadRepoFixture();
     validateVisualLayerRegistry(fixture);
-    const canonicalIds = CANONICAL_VISUAL_LAYER_REGISTRY.layers.map((l) => l.layer_id).sort();
-    const fixtureIds = fixture.layers.map((l) => l.layer_id).sort();
-    expect(fixtureIds).toEqual(canonicalIds);
     expect(fixture.schema).toBe(SCHEMA_RT_VISUAL_LAYER_REGISTRY_V3);
+    expect(CANONICAL_VISUAL_LAYER_REGISTRY.schema).toBe(SCHEMA_RT_VISUAL_LAYER_REGISTRY_V4);
+    expect(CANONICAL_VISUAL_LAYER_REGISTRY.layers.length).toBeGreaterThan(fixture.layers.length);
   });
 
   it("layers have non-decreasing z_order when sorted", () => {
@@ -118,6 +120,16 @@ describe("visualLayerRegistry", () => {
     expect(terrain?.layers.some((l) => l.layer_id === "terrain_mesh")).toBe(true);
     const visibility = groups.find((g) => g.groupId === "visibility_context");
     expect(visibility?.layers.length).toBe(3);
+    const density = groups.find((g) => g.groupId === "density_context");
+    expect(density?.layers.map((l) => l.layer_id)).toEqual([
+      "density_warnings_v4",
+      "layer_budget_summary_v4",
+    ]);
+    const comparison = groups.find((g) => g.groupId === "comparison_context");
+    expect(comparison?.layers.map((l) => l.layer_id)).toEqual([
+      "session_contrast_v4",
+      "comparison_ghosts_v4",
+    ]);
   });
 
   it("counts active overlay layers for budget advisory", () => {
@@ -143,6 +155,38 @@ describe("visualLayerRegistry", () => {
     const { on, total } = countVisibleLayers(defaults);
     expect(on).toBeGreaterThan(0);
     expect(total).toBeGreaterThan(on);
+  });
+
+  it("adds V4 P0 density and comparison controls with safe defaults", () => {
+    const defaults = defaultVisibilityFromRegistry();
+    expect(defaults.showDensityWarnings).toBe(true);
+    expect(defaults.showLayerBudgetSummary).toBe(true);
+    expect(defaults.showSessionContrast).toBe(true);
+    expect(defaults.showComparisonGhosts).toBe(false);
+    expect(densityControlLayers().map((l) => l.layer_id)).toEqual([
+      "density_warnings_v4",
+      "layer_budget_summary_v4",
+    ]);
+    const compareGhosts = CANONICAL_VISUAL_LAYER_REGISTRY.layers.find(
+      (l) => l.layer_id === "comparison_ghosts_v4",
+    );
+    expect(compareGhosts?.display_only).toBe(true);
+    expect(compareGhosts?.default_on).toBe(false);
+  });
+
+  it("summarizes density budget as warn-only", () => {
+    const heavy = {
+      ...defaultVisibilityFromRegistry(),
+      showContourOverlays: true,
+      showVegetationMarkers: true,
+      showEnvironmentMarkers: true,
+      showSensorDomes: true,
+      showVisibilityWedge: true,
+    };
+    const summary = densityBudgetSummary(heavy);
+    expect(summary.exceeded).toBe(true);
+    expect(summary.densityWarningsEnabled).toBe(true);
+    expect(summary.line).toMatch(/warn-only/);
   });
 
   it("registry budget summary line is advisory", () => {

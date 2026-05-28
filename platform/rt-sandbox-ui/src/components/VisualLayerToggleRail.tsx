@@ -1,5 +1,6 @@
 import {
   CANONICAL_VISUAL_LAYER_REGISTRY,
+  densityBudgetSummary,
   groupLayersForUi,
   isLayerVisible,
   registryBudgetSummaryLine,
@@ -21,6 +22,7 @@ export function VisualLayerToggleRail({
   const groups = groupLayersForUi(CANONICAL_VISUAL_LAYER_REGISTRY);
 
   const budgetLine = registryBudgetSummaryLine(visibility);
+  const density = densityBudgetSummary(visibility);
 
   return (
     <div className="flex flex-col gap-2">
@@ -47,8 +49,9 @@ export function VisualLayerToggleRail({
         </div>
       ))}
       <p
-        className="text-[10px] text-slate-500"
+        className={`text-[10px] ${density.exceeded && density.densityWarningsEnabled ? "text-amber-300" : "text-slate-500"}`}
         data-testid="registry-budget-summary"
+        title="Warn-only density summary — no layer is enforced or commanded"
       >
         {budgetLine}
       </p>

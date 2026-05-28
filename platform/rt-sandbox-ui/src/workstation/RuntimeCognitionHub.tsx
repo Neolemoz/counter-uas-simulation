@@ -25,6 +25,7 @@ import {
   registryBudgetSummaryLine,
   type VisualLayerVisibility,
 } from "@/cesium/visualLayerRegistry";
+import { SessionComparisonCognitionStrip } from "./SessionComparisonCognitionStrip";
 import { StatusBadge } from "./StatusBadge";
 
 const HUB_CHANNELS: { key: string; label: string }[] = [
@@ -103,6 +104,7 @@ function CognitionBlock({
 export function RuntimeCognitionHub({
   snapshots,
   sessionId,
+  orderedSessionIds = [],
   layerVisibility,
   terrainLayers,
   terrainLayersEnabled = false,
@@ -119,6 +121,7 @@ export function RuntimeCognitionHub({
     entity_pose_mirror?: ChannelSnapshot;
   };
   sessionId?: string | null;
+  orderedSessionIds?: readonly string[];
   layerVisibility: VisualLayerVisibility;
   terrainLayers?: TerrainLayerVisibility;
   terrainLayersEnabled?: boolean;
@@ -192,6 +195,31 @@ export function RuntimeCognitionHub({
           ) : (
             <p className="text-xs text-slate-500">Terrain layers off.</p>
           )}
+        </CognitionBlock>
+
+        <CognitionBlock title="Density controls" defaultOpen={layerVisibility.showDensityWarnings}>
+          <p className="text-xs text-slate-300" data-testid="hub-density-summary">
+            {budgetSummary}
+          </p>
+          <p className="mt-1 text-[10px] text-slate-500">
+            Warn-only display policy — registry and bridge command truth unchanged.
+          </p>
+        </CognitionBlock>
+
+        <CognitionBlock
+          title="Session compare (visual only)"
+          defaultOpen={layerVisibility.showSessionContrast}
+        >
+          <SessionComparisonCognitionStrip
+            activeSessionId={sessionId}
+            orderedSessionIds={orderedSessionIds}
+            comparisonGhostsEnabled={layerVisibility.showComparisonGhosts}
+            sessionContrastEnabled={layerVisibility.showSessionContrast}
+            compact
+          />
+          <p className="mt-1 text-[10px] text-slate-500">
+            Compare surfaces are explanatory; only the selected session is commandable.
+          </p>
         </CognitionBlock>
 
         <CognitionBlock title="Visibility (heuristic)" defaultOpen={false}>
