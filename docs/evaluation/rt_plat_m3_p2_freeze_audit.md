@@ -45,10 +45,10 @@ No bridge or SA viewer changes.
 
 ## Recommended next (advisory)
 
-1. **PLAN-RT-F7** — post-F6 advisory expansion (maintainer ergonomics, contamination gates) per [rt_roadmap_next_frontiers_v2.md](rt_roadmap_next_frontiers_v2.md)
-2. **Platform checkpoint review** — optional post-M3 consolidation doc if F7 scope needs re-baselining
+1. **PLAT-RT-F7 P0** — post-F6 advisory expansion implementation per [rt_roadmap_plat_rt_f7_v1.md](rt_roadmap_plat_rt_f7_v1.md) ([PLAN-RT-F7](rt_f7_freeze_audit.md) frozen)
+2. **Platform checkpoint review** — optional if PLAT P0 scope needs re-baselining
 
-Default: start **PLAN-RT-F7** planning before further PLAT implementation.
+Default: start **PLAT-RT-F7 P0** before further PLAT waves ([rt_roadmap_next_frontiers_v3.md](rt_roadmap_next_frontiers_v3.md)).
 
 ---
 

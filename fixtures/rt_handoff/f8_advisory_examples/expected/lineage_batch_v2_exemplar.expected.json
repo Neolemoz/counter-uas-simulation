@@ -1,0 +1,13 @@
+{
+  "schema": "rt_advisory_batch_summary_v2",
+  "governance_banner": "SA WORKFLOW ADVISORY — explanatory; maintainer CLIs are authority",
+  "summary": {
+    "blocker_groups": {
+      "lineage": {
+        "count": 2,
+        "exemplar_capture_ids": ["cap-lin-a", "cap-lin-b"]
+      }
+    }
+  },
+  "lineage_exemplar_not_commit_checklist": true
+}

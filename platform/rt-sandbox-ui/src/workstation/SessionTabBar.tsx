@@ -56,6 +56,7 @@ export function SessionTabBar({
 
   if (slots.length === 0) return null;
 
+  const multiSession = slots.length > 1;
   const sortedSlots = sortSlotsBySessionOrder(slots, orderedSessionIds);
 
   return (
@@ -113,7 +114,9 @@ export function SessionTabBar({
             className={`flex items-center gap-2 rounded-md border border-l-4 px-3 py-1.5 text-sm ${sessionAccentClass(slot.sessionId, orderedSessionIds)} ${
               selected
                 ? "border-amber-500/60 bg-amber-950/40 text-amber-100"
-                : "border-slate-600 bg-slate-800/80 text-slate-300 hover:border-slate-500"
+                : multiSession
+                  ? "border-slate-700/80 bg-slate-900/50 text-slate-400 opacity-55 hover:border-slate-500 hover:opacity-80"
+                  : "border-slate-600 bg-slate-800/80 text-slate-300 hover:border-slate-500"
             } ${isDragOver ? "ring-1 ring-sky-500/60" : ""}`}
             title={`${slot.sessionId}\nDrag to reorder (RT UI only)`}
           >

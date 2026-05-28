@@ -30,6 +30,12 @@ export const SELECTION_RING_COLOR = "rgba(251, 191, 36, 0.35)";
 export const BOUNDS_LABEL_GROUND = "±500m";
 export const BOUNDS_LABEL_Z = "z 0–200m";
 
+/** PLAT-RT-V3 P1 — visibility overlay tokens */
+export const VISIBILITY_WEDGE_COLOR = "rgba(167, 139, 250, 0.55)";
+export const VISIBILITY_HORIZON_COLOR = "rgba(148, 163, 184, 0.45)";
+export const VISIBILITY_STACKED_LOS_COLOR = "rgba(129, 140, 248, 0.7)";
+export const DEFAULT_VISIBILITY_WEDGE_AZIMUTH_DEG = 30;
+
 export function shortEntityId(entityId: string): string {
   if (entityId.length <= 8) return entityId;
   return entityId.slice(0, 8);

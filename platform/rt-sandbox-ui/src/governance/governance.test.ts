@@ -14,6 +14,7 @@ import {
   BANNER_MULTI_SESSION,
   BANNER_SA_WORKFLOW_ADVISORY,
   BANNER_TERRAIN,
+  BANNER_VISIBILITY_V3,
   BANNER_WORLD_EDITING,
   bannersForSession,
   ADVISORY_FORBIDDEN_LEXICON,
@@ -86,6 +87,20 @@ describe("governance banners", () => {
   it("fidelity truth banner is defined and avoids forbidden lexicon (PLAT-RT-F5b P1)", () => {
     expect(BANNER_FIDELITY_TRUTH).toContain("sim-scoped attestation");
     expect(containsForbiddenLexicon(BANNER_FIDELITY_TRUTH)).toBe(false);
+  });
+
+  it("visibility v3 banner is defined and avoids forbidden lexicon (PLAT-RT-V3 P1)", () => {
+    expect(BANNER_VISIBILITY_V3).toContain("heuristic");
+    expect(containsForbiddenLexicon(BANNER_VISIBILITY_V3)).toBe(false);
+  });
+
+  it("registry budget summary is advisory only (PLAT-RT-V3 P2)", async () => {
+    const { registryBudgetSummaryLine, defaultVisibilityFromRegistry } = await import(
+      "@/cesium/visualLayerRegistry"
+    );
+    const line = registryBudgetSummaryLine(defaultVisibilityFromRegistry());
+    expect(line.toLowerCase()).toContain("advisory");
+    expect(containsForbiddenLexicon(line)).toBe(false);
   });
 
   it("SA workflow advisory banner is defined (PLAT-RT-F6 P1)", () => {

@@ -24,10 +24,12 @@ import {
   SessionLifecyclePanel,
   WorldSummaryPanel,
 } from "@/components/TelemetryPanels";
+import { anyTerrainLayerEnabled } from "@/cesium/terrainLayers";
 import {
-  anyTerrainLayerEnabled,
-  DEFAULT_TERRAIN_LAYERS,
-} from "@/cesium/terrainLayers";
+  defaultVisibilityFromRegistry,
+  toTerrainLayerVisibility,
+  type VisualLayerVisibility,
+} from "@/cesium/visualLayerRegistry";
 import { CesiumRuntimePanel } from "@/components/CesiumRuntimePanel";
 import { WorldEditingGrid } from "@/components/WorldEditingGrid";
 import {
@@ -45,6 +47,7 @@ import {
   type EditHistoryEntry,
 } from "@/editing/editHistory";
 import { hasUnsyncedLocalMirror } from "@/editing/sessionMirrorDirty";
+import type { AdvisoryExperimentRollup } from "@/handoff/advisoryTypes";
 import { useCaptureHandoffMirror } from "@/hooks/useCaptureHandoffMirror";
 import { useRtSessionWorkspace } from "@/hooks/useRtSessionWorkspace";
 import { useSessionDisplayNames } from "@/hooks/useSessionDisplayNames";
@@ -64,6 +67,12 @@ import {
 import { defaultPose, type EntityType } from "@/world/entityCatalog";
 import { shouldClearPendingReconcile } from "@/sync/cognition";
 import { BackgroundDiagnostics } from "@/workstation/BackgroundDiagnostics";
+import { BackgroundDiagnosticsCompact } from "@/workstation/BackgroundDiagnosticsCompact";
+import {
+  clearSessionLayerVisibility,
+  readSessionLayerVisibility,
+  writeSessionLayerVisibility,
+} from "@/workstation/sessionLayerVisibilityStore";
 import { ConnectPlaceholder } from "@/workstation/ConnectPlaceholder";
 import { MirrorsIdleCard } from "@/workstation/MirrorsIdleCard";
 import { RuntimeCognitionHub } from "@/workstation/RuntimeCognitionHub";
@@ -130,15 +139,33 @@ export default function App() {
   }>();
   const [pendingReconcile, setPendingReconcile] = useState(false);
   const [commandBusy, setCommandBusy] = useState(false);
-  const [terrainLayers, setTerrainLayers] = useState(() => ({
-    ...DEFAULT_TERRAIN_LAYERS,
-  }));
+  const [layerVisibility, setLayerVisibility] = useState<VisualLayerVisibility>(() =>
+    defaultVisibilityFromRegistry(),
+  );
+
+  const handleLayerVisibilityChange = useCallback(
+    (next: VisualLayerVisibility) => {
+      setLayerVisibility(next);
+      if (sessionId) writeSessionLayerVisibility(sessionId, next);
+    },
+    [sessionId],
+  );
+
+  useEffect(() => {
+    if (!sessionId) return;
+    const saved = readSessionLayerVisibility(sessionId);
+    setLayerVisibility(saved ?? defaultVisibilityFromRegistry());
+  }, [sessionId]);
+  const terrainLayers = toTerrainLayerVisibility(layerVisibility);
   const terrainLayersOn = anyTerrainLayerEnabled(terrainLayers);
   const [experimentCompareActive, setExperimentCompareActive] = useState(false);
   const [experimentAnalyticsActive, setExperimentAnalyticsActive] = useState(false);
   const [experimentContinuityReviewActive, setExperimentContinuityReviewActive] =
     useState(false);
   const [experimentF5Active, setExperimentF5Active] = useState(false);
+  const [experimentRollup, setExperimentRollup] = useState<AdvisoryExperimentRollup | null>(
+    null,
+  );
   const lastCommandMs = useRef(0);
 
   const sessionEdit = sessionId
@@ -394,6 +421,7 @@ export default function App() {
 
   const handleDisconnectSession = useCallback(
     (targetId: string) => {
+      clearSessionLayerVisibility(targetId);
       pruneSession(targetId);
       void disconnectSession(targetId);
     },
@@ -438,6 +466,12 @@ export default function App() {
           if (!ok) return;
         }
       }
+      if (fromId) {
+        writeSessionLayerVisibility(fromId, layerVisibility);
+      }
+      const restored =
+        readSessionLayerVisibility(targetId) ?? defaultVisibilityFromRegistry();
+      setLayerVisibility(restored);
       void selectTab(targetId);
     },
     [
@@ -447,6 +481,7 @@ export default function App() {
       pendingReconcile,
       labelFor,
       selectTab,
+      layerVisibility,
     ],
   );
 
@@ -500,18 +535,6 @@ export default function App() {
                 onRefresh={() => void doPull()}
               />
             )}
-            {backgroundSlots.length > 0 && (
-              <BackgroundDiagnostics
-                slots={backgroundSlots}
-                handoffBySession={handoffBySession}
-                orderedSessionIds={workspaceSessionIds}
-                editingSessionId={editingSessionId}
-                terrainLayersOn={terrainLayersOn}
-                pollPaused={!backgroundDiagOpen}
-                onOpenChange={setBackgroundDiagOpen}
-                labelFor={labelFor}
-              />
-            )}
           </>
         }
         workflowStrip={
@@ -524,6 +547,51 @@ export default function App() {
             connectedCount={connectedCount}
             editingSessionId={editingSessionId}
           />
+        }
+        cognitionColumn={
+          connected && sessionId ? (
+            <RuntimeCognitionHub
+              sessionId={sessionId}
+              layerVisibility={layerVisibility}
+              terrainLayers={terrainLayers}
+              terrainLayersEnabled={terrainLayersOn}
+              entities={entities}
+              selectedEntityId={selectedEntityId}
+              experimentCompareActive={experimentCompareActive}
+              experimentAnalyticsActive={experimentAnalyticsActive}
+              experimentContinuityReviewActive={experimentContinuityReviewActive}
+              experimentF5Active={experimentF5Active}
+              snapshots={{
+                world_summary: snapshots.world_summary,
+                session_health: snapshots.session_health,
+                entity_pose_mirror: snapshots.entity_pose_mirror,
+              }}
+            />
+          ) : undefined
+        }
+        globeFooter={
+          backgroundSlots.length > 0 ? (
+            <div className="space-y-2">
+              <BackgroundDiagnosticsCompact
+                slots={backgroundSlots}
+                orderedSessionIds={workspaceSessionIds}
+                pollPaused={!backgroundDiagOpen}
+                onExpandDetails={() => setBackgroundDiagOpen(true)}
+                labelFor={labelFor}
+              />
+              <BackgroundDiagnostics
+                slots={backgroundSlots}
+                handoffBySession={handoffBySession}
+                orderedSessionIds={workspaceSessionIds}
+                editingSessionId={editingSessionId}
+                terrainLayersOn={terrainLayersOn}
+                open={backgroundDiagOpen}
+                pollPaused={!backgroundDiagOpen}
+                onOpenChange={setBackgroundDiagOpen}
+                labelFor={labelFor}
+              />
+            </div>
+          ) : undefined
         }
         worldColumn={
           connected && sessionId ? (
@@ -561,6 +629,7 @@ export default function App() {
             <CesiumRuntimePanel
               sessionId={sessionId}
               orderedSessionIds={workspaceSessionIds}
+              connectedCount={connectedCount}
               editingSessionId={editingSessionId}
               entities={entities}
               selectedEntityId={selectedEntityId}
@@ -574,7 +643,8 @@ export default function App() {
               onSpawn={handleSpawn}
               onMove={handleMove}
               onDelete={handleDelete}
-              onTerrainLayersChange={setTerrainLayers}
+              layerVisibility={layerVisibility}
+              onLayerVisibilityChange={handleLayerVisibilityChange}
             />
           ) : (
             <ConnectPlaceholder />
@@ -632,20 +702,6 @@ export default function App() {
                   onReturnToManual={() => void tactical.returnToManual()}
                 />
               )}
-              <RuntimeCognitionHub
-                sessionId={sessionId}
-                terrainLayers={terrainLayers}
-                terrainLayersEnabled={terrainLayersOn}
-                experimentCompareActive={experimentCompareActive}
-                experimentAnalyticsActive={experimentAnalyticsActive}
-                experimentContinuityReviewActive={experimentContinuityReviewActive}
-                experimentF5Active={experimentF5Active}
-                snapshots={{
-                  world_summary: snapshots.world_summary,
-                  session_health: snapshots.session_health,
-                  entity_pose_mirror: snapshots.entity_pose_mirror,
-                }}
-              />
               <div className="grid gap-4 lg:grid-cols-2">
                 <SessionLifecyclePanel
                   snapshot={snapshots.lifecycle_state}
@@ -681,12 +737,14 @@ export default function App() {
               sessionId={sessionId}
               handoffBySession={handoffBySession}
               workspaceSessionIds={workspaceSessionIds}
+              experimentRollup={experimentRollup}
             />
             <ExperimentWorkbenchPanel
               connected={connected}
               slots={experimentSlots}
               activeSessionId={sessionId}
               handoffBySession={handoffBySession}
+              onHandoffEligibilityRollupChange={setExperimentRollup}
               terrainLayersEnabled={terrainLayersOn}
               compareModeActive={experimentCompareActive}
               onCompareModeChange={setExperimentCompareActive}

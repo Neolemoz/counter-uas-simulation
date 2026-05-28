@@ -1,0 +1,16 @@
+{
+  "schema": "rt_advisory_batch_summary_v2",
+  "governance_banner": "SA WORKFLOW ADVISORY — explanatory; maintainer CLIs are authority",
+  "summary": {
+    "readiness_cohorts_v2": {
+      "stale_review": 1,
+      "multi_blocker": 1
+    }
+  },
+  "captures": [
+    {
+      "capture_candidate_id": "cap-stale",
+      "readiness_cohort_v2": "multi_blocker"
+    }
+  ]
+}

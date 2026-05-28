@@ -1,0 +1,16 @@
+{
+  "description": "LIN-01 lineage warning on normalized manifest parent_ref",
+  "inputs": {
+    "capture_candidate_id": "cap-lineage-warn",
+    "candidate": {
+      "parent_ref": "session-abc-123",
+      "normalization_status": "normalized"
+    }
+  },
+  "expected": {
+    "lineage_warnings": ["LIN-01: parent_ref resembles session_id — not SA lineage authority"],
+    "blocker_groups": ["lineage"],
+    "blocked": false,
+    "must_not_auto_commit": true
+  }
+}

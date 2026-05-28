@@ -1,0 +1,20 @@
+{
+  "schema": "rt_experiment_review_packet_v1",
+  "packet_id": "review-2026-05-28-x2-p1-example",
+  "created_at_utc": "2026-05-28T14:30:00.000Z",
+  "governance_banner": "RT EXPERIMENT REVIEW PACKET — advisory export only; not SA import authority",
+  "scope": {
+    "cohort_id": "cohort-2026-05-28-x2-example",
+    "primary_manifest_ref": "fixtures/rt_experiments/f5_metrics_golden/manifest.json",
+    "secondary_manifest_ref": null
+  },
+  "artifact_refs": [
+    {
+      "kind": "f1_analytics",
+      "path": "runs/rt_sandbox/experiments/exp-2026-05-26-template-dwell-matrix/reports/analytics.json"
+    }
+  ],
+  "compare_mode": "pairwise_pinned",
+  "compare_run_ids": ["run-a", "run-b"],
+  "review_steps_completed": ["select_scope", "f1_analytics", "compare"]
+}

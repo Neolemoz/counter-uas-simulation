@@ -1,0 +1,6 @@
+{
+  "experiment_rollup": {
+    "handoff_eligibility": "partial",
+    "note": "experiment eligibility is warn-only; per-capture advisory is authority"
+  }
+}

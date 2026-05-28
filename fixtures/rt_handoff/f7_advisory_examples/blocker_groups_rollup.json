@@ -1,0 +1,28 @@
+{
+  "description": "Two captures share normalization group; one has review_attestation",
+  "inputs": {
+    "captures": [
+      {
+        "capture_candidate_id": "cap-norm-a",
+        "block_reasons": ["normalization_invalid"],
+        "checklist": [{ "id": "normalization", "status": "fail" }]
+      },
+      {
+        "capture_candidate_id": "cap-norm-b",
+        "block_reasons": ["normalization_invalid"],
+        "checklist": [{ "id": "normalization", "status": "fail" }]
+      },
+      {
+        "capture_candidate_id": "cap-review",
+        "block_reasons": [],
+        "checklist": [{ "id": "pose_cognition", "status": "warn" }]
+      }
+    ]
+  },
+  "expected_summary": {
+    "blocker_groups": {
+      "normalization": { "count": 2, "exemplar_capture_ids": ["cap-norm-a", "cap-norm-b"] },
+      "review_attestation": { "count": 1, "exemplar_capture_ids": ["cap-review"] }
+    }
+  }
+}

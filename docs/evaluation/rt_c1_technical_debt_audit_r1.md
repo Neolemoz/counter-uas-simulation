@@ -121,7 +121,7 @@ Approximate collect: **153** tests in `test_rt_sandbox_bridge.py` (May 2026).
 | Background session poll optimization | **PLAN-RT-M3** | Named in [rt_roadmap_m1_m2_v1.md](rt_roadmap_m1_m2_v1.md) |
 | `rt_session_inspect.py` maintainer CLI | **PLAN-RT-M3** | Multi-session ops ergonomics |
 | Experiment manifest field consolidation note | Docs-only annex | Low priority |
-| Advisory batch helper hardening | **PLAN-RT-F7** | If advisory expansion proceeds |
+| Advisory batch helper hardening | **PLAN-RT-F7** → **PLAT-RT-F7 P2** | Addressed in PLAN contracts; implementation in PLAT P2 |
 
 **None are blocking** consolidation freeze.
 

@@ -1,0 +1,31 @@
+{
+  "description": "Preset blocked_today and defer_queue — filter/sort only; no CLI invocation",
+  "preset_ids": ["blocked_today", "defer_queue"],
+  "inputs": {
+    "captures": [
+      {
+        "capture_candidate_id": "cap-reject",
+        "advisory_state": "review_complete",
+        "blocked": true,
+        "block_reasons": ["handoff_rejected"],
+        "generated_at": "2026-05-27T10:00:00+00:00"
+      },
+      {
+        "capture_candidate_id": "cap-defer",
+        "advisory_state": "import_ready",
+        "blocked": true,
+        "block_reasons": ["handoff_import_deferred"],
+        "generated_at": "2026-05-26T10:00:00+00:00"
+      },
+      {
+        "capture_candidate_id": "cap-clean",
+        "advisory_state": "approval_ready",
+        "blocked": false,
+        "generated_at": "2026-05-28T10:00:00+00:00"
+      }
+    ]
+  },
+  "expected_preset_blocked_today_ids": ["cap-reject", "cap-defer"],
+  "expected_preset_defer_queue_ids": ["cap-defer"],
+  "must_not_invoke_cli": true
+}

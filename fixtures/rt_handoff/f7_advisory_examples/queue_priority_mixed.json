@@ -1,0 +1,27 @@
+{
+  "description": "Three captures across P3/P4/P6 bands; sort by queue_priority.rank ascending",
+  "inputs": {
+    "captures": [
+      {
+        "capture_candidate_id": "cap-old-review",
+        "advisory_state": "capture_ready",
+        "blocked": false,
+        "generated_at": "2026-05-01T10:00:00+00:00"
+      },
+      {
+        "capture_candidate_id": "cap-import",
+        "advisory_state": "import_ready",
+        "blocked": false,
+        "generated_at": "2026-05-20T10:00:00+00:00"
+      },
+      {
+        "capture_candidate_id": "cap-approve",
+        "advisory_state": "approval_ready",
+        "blocked": false,
+        "generated_at": "2026-05-15T10:00:00+00:00"
+      }
+    ]
+  },
+  "expected_sort_order": ["cap-old-review", "cap-approve", "cap-import"],
+  "expected_bands": ["P3_review", "P4_approve", "P6_import"]
+}

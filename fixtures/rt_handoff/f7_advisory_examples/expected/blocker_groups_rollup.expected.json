@@ -1,0 +1,9 @@
+{
+  "schema": "rt_advisory_batch_summary_v1",
+  "summary": {
+    "blocker_groups": {
+      "normalization": { "count": 2 },
+      "review_attestation": { "count": 1 }
+    }
+  }
+}

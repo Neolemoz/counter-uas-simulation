@@ -1,0 +1,11 @@
+{
+  "schema": "rt_advisory_batch_summary_v1",
+  "summary": {
+    "readiness_cohorts": {
+      "needs_review": 1,
+      "needs_approve": 1,
+      "ready_for_commit_advisory": 1,
+      "terminal": 1
+    }
+  }
+}

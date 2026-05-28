@@ -1,0 +1,7 @@
+{
+  "schema": "rt_advisory_batch_summary_v2",
+  "preset_applied": "blocked_today",
+  "governance_banner": "SA WORKFLOW ADVISORY — explanatory; maintainer CLIs are authority",
+  "dry_run": true,
+  "filtered_capture_ids": ["cap-reject", "cap-defer"]
+}

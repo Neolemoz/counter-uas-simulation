@@ -1,0 +1,13 @@
+{
+  "schema": "rt_advisory_batch_review_v2",
+  "dry_run": true,
+  "required_sections": ["summary", "captures", "grouped", "standup"],
+  "grouped_keys": ["by_queue_band", "by_blocker_group", "by_readiness_cohort"],
+  "standup_keys": [
+    "priority_capture_ids",
+    "top_blocker_groups",
+    "cohort_counts",
+    "warn_only_notes"
+  ],
+  "note": "Structural contract for PLAT-RT-F7 P2 — full docs built by pytest"
+}

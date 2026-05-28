@@ -1,0 +1,57 @@
+import {
+  CANONICAL_VISUAL_LAYER_REGISTRY,
+  groupLayersForUi,
+  isLayerVisible,
+  registryBudgetSummaryLine,
+  type VisualLayerVisibility,
+} from "@/cesium/visualLayerRegistry";
+
+const TOGGLE_BUTTON_CLASS =
+  "rounded border border-slate-600 bg-slate-800 px-2 py-1 text-xs text-slate-200 hover:bg-slate-700 disabled:opacity-40";
+
+export function VisualLayerToggleRail({
+  visibility,
+  onToggle,
+  disabled = false,
+}: {
+  visibility: VisualLayerVisibility;
+  onToggle: (layerId: string) => void;
+  disabled?: boolean;
+}) {
+  const groups = groupLayersForUi(CANONICAL_VISUAL_LAYER_REGISTRY);
+
+  const budgetLine = registryBudgetSummaryLine(visibility);
+
+  return (
+    <div className="flex flex-col gap-2">
+      {groups.map((group) => (
+        <div key={group.groupId} className="flex flex-wrap items-center gap-2">
+          <span className="w-full text-[10px] font-medium uppercase tracking-wide text-slate-500">
+            {group.title}
+          </span>
+          {group.layers.map((layer) => {
+            const on = isLayerVisible(visibility, layer);
+            return (
+              <button
+                key={layer.layer_id}
+                type="button"
+                className={TOGGLE_BUTTON_CLASS}
+                disabled={disabled}
+                title={layer.disclaimer || layer.label}
+                onClick={() => onToggle(layer.layer_id)}
+              >
+                {layer.label}: {on ? "on" : "off"}
+              </button>
+            );
+          })}
+        </div>
+      ))}
+      <p
+        className="text-[10px] text-slate-500"
+        data-testid="registry-budget-summary"
+      >
+        {budgetLine}
+      </p>
+    </div>
+  );
+}

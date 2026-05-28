@@ -24,6 +24,7 @@ export function BackgroundDiagnostics({
   editingSessionId,
   terrainLayersOn = false,
   pollPaused = false,
+  open: openControlled,
   onOpenChange,
   labelFor,
 }: {
@@ -33,11 +34,13 @@ export function BackgroundDiagnostics({
   editingSessionId: string | null;
   terrainLayersOn?: boolean;
   pollPaused?: boolean;
+  open?: boolean;
   onOpenChange?: (open: boolean) => void;
   labelFor: (sessionId: string) => string;
 }) {
   const [nowMs, setNowMs] = useState(() => Date.now());
-  const [open, setOpen] = useState(false);
+  const [openInternal, setOpenInternal] = useState(false);
+  const open = openControlled ?? openInternal;
 
   useEffect(() => {
     const id = window.setInterval(() => setNowMs(Date.now()), 1000);
@@ -54,7 +57,7 @@ export function BackgroundDiagnostics({
       open={open}
       onToggle={(e) => {
         const next = e.currentTarget.open;
-        setOpen(next);
+        if (openControlled === undefined) setOpenInternal(next);
         onOpenChange?.(next);
       }}
     >

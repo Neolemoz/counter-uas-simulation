@@ -1,0 +1,28 @@
+{
+  "description": "experiment_handoff_rollup with X2 cohort adjacency — warn-only; capture not import_ready",
+  "manifest_ref": "fixtures/rt_experiment/example_manifest.json",
+  "cohort_index_ref": "fixtures/rt_experiments/x2_cohort_index_example.json",
+  "inputs": {
+    "captures": [
+      {
+        "capture_candidate_id": "cap-run-1",
+        "advisory_state": "approval_ready",
+        "handoff_eligibility": "eligible",
+        "blocked": false
+      },
+      {
+        "capture_candidate_id": "cap-run-2",
+        "advisory_state": "capture_ready",
+        "handoff_eligibility": "ineligible",
+        "blocked": false
+      }
+    ]
+  },
+  "expected_experiment_handoff_rollup": {
+    "handoff_eligibility": "partial",
+    "warn_capture_ids": ["cap-run-2"],
+    "cohort_status": "indexed",
+    "note": "X2 cohort and packet paths are read-only adjacency; not commit authority"
+  },
+  "must_not_set_import_ready": true
+}

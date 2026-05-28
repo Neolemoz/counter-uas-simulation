@@ -1,0 +1,5 @@
+{
+  "schema": "rt_advisory_batch_summary_v1",
+  "governance_banner": "SA WORKFLOW ADVISORY — explanatory; maintainer CLIs are authority",
+  "captures_sorted_by_rank": ["cap-old-review", "cap-approve", "cap-import"]
+}

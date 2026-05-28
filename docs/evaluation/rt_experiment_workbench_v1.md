@@ -70,6 +70,10 @@ Per run: `start_session` → optional template → dwell → `stop_session` → 
 
 ## Related
 
+- [rt_experiment_workbench_v2_v1.md](rt_experiment_workbench_v2_v1.md) (PLAN-RT-X2 workspace — planning only)
+- [rt_experiment_cohort_v1.md](rt_experiment_cohort_v1.md) (PLAN-RT-X2 cohort index)
+- [rt_experiment_unified_review_v1.md](rt_experiment_unified_review_v1.md) (PLAN-RT-X2 review lane)
+- [rt_experiment_compare_workflow_v2_v1.md](rt_experiment_compare_workflow_v2_v1.md) (PLAN-RT-X2 compare modes)
 - [rt_experiment_model_v1.md](rt_experiment_model_v1.md) (PLAN-RT-F5 manifest supplements)
 - [rt_experiment_workflow_v1.md](rt_experiment_workflow_v1.md) (PLAN-RT-F5 maintainer pipeline)
 - [rt_experiment_analytics_v1.md](rt_experiment_analytics_v1.md) (PLAT-RT-F1 derive)

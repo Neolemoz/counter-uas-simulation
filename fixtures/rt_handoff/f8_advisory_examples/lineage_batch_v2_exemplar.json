@@ -1,0 +1,20 @@
+{
+  "description": "LIN-06+ — batch v2 exemplar IDs are cognition only; not commit checklist",
+  "inputs": {
+    "captures": [
+      {
+        "capture_candidate_id": "cap-lin-a",
+        "lineage_warnings": ["LIN-01: parent_ref resembles session_id — not SA lineage authority"],
+        "blocked": false
+      },
+      {
+        "capture_candidate_id": "cap-lin-b",
+        "lineage_warnings": ["LIN-02: conversion missing rt_sandbox_capture_v1 origin"],
+        "blocked": false
+      }
+    ]
+  },
+  "expected_blocker_groups_exemplar_max": 5,
+  "forbidden_use_as_commit_checklist": true,
+  "expected_lineage_group_count": 2
+}

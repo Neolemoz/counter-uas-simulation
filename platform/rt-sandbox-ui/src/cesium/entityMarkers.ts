@@ -27,6 +27,15 @@ import {
 
 const GHOST_ENTITY_SUFFIX = "-cmd-ghost";
 const GROUND_TICK_SUFFIX = "-ground-tick";
+const MUTED_MARKER_ALPHA_SCALE = 0.55;
+
+export type MarkerEmphasis = "full" | "muted";
+
+function applyAlphaScale(color: Color, scale: number): Color {
+  const c = color.clone();
+  c.alpha *= scale;
+  return c;
+}
 
 export interface MirrorEntity {
   entity_id: string;
@@ -105,8 +114,11 @@ export function syncEntityMarkers(
     dragOverride?: { entityId: string; pose: { x: number; y: number; z: number } } | null;
     sessionAccentCss?: string;
     applyTerrainDisplay?: boolean;
+    markerEmphasis?: MarkerEmphasis;
   },
 ): void {
+  const mutedUnselected =
+    options.markerEmphasis === "muted";
   if (!isViewerUsable(viewer)) return;
   const keep = new Set<string>();
   const distScale = distanceScaleFromHeight(cameraHeightM(viewer));
@@ -137,18 +149,22 @@ export function syncEntityMarkers(
       options.telemetryHealth,
       drift,
     );
-    const color = colorForType(
+    let color = colorForType(
       ent.entity_type,
       selected,
       healthStyle,
       options.sessionAccentCss,
     );
-    const pixelSize = markerPixelSize(selected, distScale);
-    const outline = outlineColorForMarker(
+    let outline = outlineColorForMarker(
       selected,
       healthStyle,
       options.sessionAccentCss,
     );
+    if (mutedUnselected && !selected) {
+      color = applyAlphaScale(color, MUTED_MARKER_ALPHA_SCALE);
+      outline = applyAlphaScale(outline, MUTED_MARKER_ALPHA_SCALE);
+    }
+    const pixelSize = markerPixelSize(selected, distScale);
 
     const existing = viewer.entities.getById(id);
     if (existing) viewer.entities.remove(existing);
@@ -211,14 +227,23 @@ export function syncEntityMarkers(
                   )
                 : labelText(ent.entity_type, ent.entity_id),
               font: LABEL_FONT,
-              fillColor: Color.WHITE,
+              fillColor:
+                mutedUnselected && !selected
+                  ? applyAlphaScale(Color.WHITE, MUTED_MARKER_ALPHA_SCALE)
+                  : Color.WHITE,
               outlineColor: Color.BLACK,
               outlineWidth: 3,
               style: LabelStyle.FILL_AND_OUTLINE,
               verticalOrigin: VerticalOrigin.BOTTOM,
               pixelOffset: new Cartesian2(0, LABEL_OFFSET_Y),
               showBackground: true,
-              backgroundColor: Color.fromCssColorString(LABEL_BACKGROUND),
+              backgroundColor:
+                mutedUnselected && !selected
+                  ? applyAlphaScale(
+                      Color.fromCssColorString(LABEL_BACKGROUND),
+                      MUTED_MARKER_ALPHA_SCALE,
+                    )
+                  : Color.fromCssColorString(LABEL_BACKGROUND),
             }
           : undefined,
       }),

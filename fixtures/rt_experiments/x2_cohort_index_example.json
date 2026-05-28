@@ -1,0 +1,26 @@
+{
+  "schema": "rt_experiment_cohort_index_v1",
+  "cohort_id": "cohort-2026-05-28-x2-example",
+  "label": "X2 example — dwell matrix + repeatability (planning fixture)",
+  "created_at_utc": "2026-05-28T12:00:00.000Z",
+  "governance_banner": "RT EXPERIMENT COHORT — index references only; per-manifest authority unchanged",
+  "tags": ["parameter_matrix", "repeatability", "planning_fixture"],
+  "manifest_refs": [
+    {
+      "manifest_ref": "fixtures/rt_experiments/f5_metrics_golden/manifest.json",
+      "experiment_id": "exp-2026-05-26-template-dwell-matrix",
+      "label": "Dwell matrix (4 runs)",
+      "run_count_hint": 4,
+      "experiment_class": "parameter_matrix",
+      "spec_fingerprint": "golden-fp-placeholder"
+    },
+    {
+      "manifest_ref": "fixtures/rt_experiments/f5b_fidelity_examples/manifest_fidelity_golden.json",
+      "experiment_id": "exp-2026-05-26-fidelity-golden",
+      "label": "Fidelity golden (2 runs)",
+      "run_count_hint": 2,
+      "experiment_class": "repeatability_sweep"
+    }
+  ],
+  "notes": "PLAN-RT-X2 reference only — six runs total across two manifests; not used in CI derive."
+}

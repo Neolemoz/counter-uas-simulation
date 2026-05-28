@@ -1,6 +1,6 @@
 {
   "archive_name": "sa_r0_corpus_release_archive.zip",
-  "archive_sha256": "acc1c2733a342cfb30b01fcb70477964b921ad6bf1b9da851862ef3b625b6d72",
+  "archive_sha256": "720eff091f3e7f2940d44d8f2a4647250890f2a48d15bac4a613c6cdbf2750a3",
   "members": [
     {
       "arcname": "MANIFEST.sha256",
@@ -10,7 +10,7 @@
     },
     {
       "arcname": "archive/archive_manifest.json",
-      "sha256": "1a6e68c6e378435fa062b7f54bee05ee6222537590198ff21b70fcb142fb4b7a",
+      "sha256": "ec4e4274e796edce4162ed42549f4646cafe1ed1610fbd9dd217afbf2db61393",
       "size_bytes": 2674,
       "source_path": "fixtures/sa_r0/corpus_releases/sa_r0_corpus_r1_r1/archive/archive_manifest.json"
     },

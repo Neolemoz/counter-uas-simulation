@@ -1,0 +1,29 @@
+{
+  "description": "readiness_cohorts_v2 stale_review and multi_blocker — not readiness_score",
+  "stale_threshold_hours": 24,
+  "inputs": {
+    "captures": [
+      {
+        "capture_candidate_id": "cap-stale",
+        "advisory_state": "capture_ready",
+        "readiness_cohort": "needs_review",
+        "generated_at": "2026-05-01T10:00:00+00:00",
+        "blocker_groups": ["review_attestation", "experiment_warn"],
+        "blocked": false
+      },
+      {
+        "capture_candidate_id": "cap-fresh",
+        "advisory_state": "approval_ready",
+        "readiness_cohort": "needs_approve",
+        "generated_at": "2026-05-28T10:00:00+00:00",
+        "blocker_groups": ["approval_gate"],
+        "blocked": false
+      }
+    ]
+  },
+  "expected_readiness_cohorts_v2": {
+    "stale_review": 1,
+    "multi_blocker": 1
+  },
+  "forbidden_fields": ["readiness_score", "operational_ready"]
+}

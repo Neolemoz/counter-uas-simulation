@@ -1,0 +1,11 @@
+{
+  "schema": "rt_advisory_batch_summary_v2",
+  "governance_banner": "SA WORKFLOW ADVISORY — explanatory; maintainer CLIs are authority",
+  "summary": {
+    "experiment_handoff_rollup": {
+      "handoff_eligibility": "partial",
+      "warn_capture_ids": ["cap-run-2"],
+      "note": "X2 cohort and packet paths are read-only adjacency; not commit authority"
+    }
+  }
+}

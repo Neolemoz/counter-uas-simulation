@@ -15,14 +15,14 @@ export interface TerrainLayerVisibility {
   showSensorDomes: boolean;
 }
 
-export const DEFAULT_TERRAIN_LAYERS: TerrainLayerVisibility = {
-  showTerrainMesh: true,
-  showRidgeOverlays: true,
-  showContourOverlays: false,
-  showVegetationMarkers: false,
-  showEnvironmentMarkers: false,
-  showSensorDomes: false,
-};
+import {
+  defaultVisibilityFromRegistry,
+  toTerrainLayerVisibility,
+} from "./visualLayerRegistry";
+
+export const DEFAULT_TERRAIN_LAYERS: TerrainLayerVisibility = toTerrainLayerVisibility(
+  defaultVisibilityFromRegistry(),
+);
 
 export function syncTerrainLayers(
   viewer: Viewer | null | undefined,

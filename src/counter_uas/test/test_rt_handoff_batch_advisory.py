@@ -14,16 +14,28 @@ _BRIDGE = _REPO / "platform" / "rt-sandbox-bridge"
 if str(_BRIDGE) not in sys.path:
     sys.path.insert(0, str(_BRIDGE))
 
+from rt_sandbox.advisory_queue import (  # noqa: E402
+    ADVISORY_BATCH_SUMMARY_SCHEMA,
+    ADVISORY_BATCH_SUMMARY_V2_SCHEMA,
+)
 from rt_sandbox.batch_advisory import (  # noqa: E402
+    ADVISORY_BATCH_REVIEW_V2_SCHEMA,
+    ADVISORY_DRY_RUN_REVIEW_SCHEMA,
     BATCH_REVIEW_SCHEMA,
     BatchFilters,
     aggregate_report,
+    build_advisory_batch_review_v2_document,
+    build_advisory_batch_summary_document,
+    build_dry_run_review_document,
     build_batch_review_document,
+    build_grouped_export_indexes,
     corpus_preview_for_capture,
     derive_capture_row,
     filter_rows,
+    filter_rows_by_group,
     next_maintainer_cli_hint,
     scan_staged,
+    validate_advisory_batch_review_v2,
 )
 from rt_sandbox.isolation import rt_sandbox_captures_dir  # noqa: E402
 
@@ -92,6 +104,17 @@ def test_batch_review_schema(tmp_path: Path) -> None:
     assert len(doc["captures"]) == 1
 
 
+def test_dry_run_review_includes_status_buckets(tmp_path: Path) -> None:
+    _stage_capture(tmp_path, "dry-cap-a")
+    rows = scan_staged(tmp_path)
+    doc = build_dry_run_review_document(tmp_path, rows, max_captures=5)
+    assert doc["schema"] == ADVISORY_DRY_RUN_REVIEW_SCHEMA
+    assert doc["dry_run"] is True
+    assert doc["captures"]
+    cap = doc["captures"][0]
+    assert cap.get("status") in ("ran", "skipped", "error")
+
+
 def test_corpus_preview_read_only(tmp_path: Path) -> None:
     _stage_capture(tmp_path, "preview-cap")
     sa = tmp_path / "fixtures" / "sa_r0" / "synthesis"
@@ -107,6 +130,20 @@ def test_corpus_preview_read_only(tmp_path: Path) -> None:
     )
     assert preview["schema"] == "rt_handoff_corpus_preview_v1"
     assert preview["would_add"] or preview["missing_staging_ref"]
+
+
+def test_corpus_preview_rejects_outside_fixtures_sa_r0(tmp_path: Path) -> None:
+    _stage_capture(tmp_path, "preview-cap2")
+    preview = corpus_preview_for_capture(
+        tmp_path,
+        "preview-cap2",
+        corpus_dest=tmp_path / "somewhere_else" / "demo_preview_cap2",
+    )
+    assert preview["dest_policy"] == "fixtures_sa_r0_only"
+    assert preview["dest_valid"] is False
+    assert "outside_fixtures_sa_r0" in (preview.get("dest_errors") or [])
+    assert preview.get("would_add") == []
+    assert preview.get("would_conflict") == []
 
 
 def test_cli_report_no_audit_mutation(tmp_path: Path) -> None:
@@ -132,8 +169,51 @@ def test_cli_report_no_audit_mutation(tmp_path: Path) -> None:
     )
     assert proc.returncode == 0
     data = json.loads(proc.stdout)
-    assert data["schema"] == BATCH_REVIEW_SCHEMA
+    assert data["schema"] == ADVISORY_BATCH_SUMMARY_SCHEMA
+    assert "readiness_cohorts" in data["summary"]
     assert audit.read_text(encoding="utf-8") == before
+
+
+def test_f7_summary_document(tmp_path: Path) -> None:
+    _stage_capture(tmp_path, "f7-export-cap")
+    rows = scan_staged(tmp_path)
+    doc = build_advisory_batch_summary_document(tmp_path, rows, dry_run=True)
+    assert doc["schema"] == ADVISORY_BATCH_SUMMARY_SCHEMA
+    cap = doc["captures"][0]
+    assert "queue_priority" in cap
+    assert "readiness_cohort" in cap
+
+
+def test_filter_rows_by_group(tmp_path: Path) -> None:
+    _stage_capture(tmp_path, "ok-cap")
+    _stage_capture(tmp_path, "rej-cap", rejected=True)
+    rows = scan_staged(tmp_path)
+    blocked = filter_rows_by_group(rows, "terminal_block", repo_root=tmp_path)
+    assert len(blocked) == 1
+    assert blocked[0].capture_candidate_id == "rej-cap"
+
+
+def test_cli_schema_f6_flag(tmp_path: Path) -> None:
+    _stage_capture(tmp_path, "schema-cap")
+    script = _REPO / "scripts" / "rt" / "rt_handoff_batch_advisory.py"
+    proc = subprocess.run(
+        [
+            sys.executable,
+            str(script),
+            "report",
+            "--repo-root",
+            str(tmp_path),
+            "--schema",
+            "f6",
+            "--json",
+        ],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    assert proc.returncode == 0
+    data = json.loads(proc.stdout)
+    assert data["schema"] == BATCH_REVIEW_SCHEMA
 
 
 def test_cli_forbidden_commit_all_flag_absent() -> None:
@@ -183,3 +263,150 @@ def test_dry_run_import_never_writes_corpus(tmp_path: Path) -> None:
 def test_derive_capture_row_missing(tmp_path: Path) -> None:
     row = derive_capture_row(tmp_path, "missing-id")
     assert row.error == "staging_not_found"
+
+
+def test_v2_document_and_validation(tmp_path: Path) -> None:
+    _stage_capture(tmp_path, "v2-cap")
+    rows = scan_staged(tmp_path)
+    doc = build_advisory_batch_review_v2_document(tmp_path, rows, dry_run=True)
+    assert doc["schema"] == ADVISORY_BATCH_REVIEW_V2_SCHEMA
+    assert doc["dry_run"] is True
+    assert "grouped" in doc
+    assert "standup" in doc
+    assert doc["grouped"]["by_readiness_cohort"]
+    assert validate_advisory_batch_review_v2(doc) == []
+
+
+def test_grouped_export_indexes(tmp_path: Path) -> None:
+    _stage_capture(tmp_path, "g1")
+    _stage_capture(tmp_path, "g2")
+    rows = scan_staged(tmp_path)
+    dicts = [r.to_dict(repo_root=tmp_path) for r in rows]
+    grouped = build_grouped_export_indexes(dicts)
+    assert "by_queue_band" in grouped
+    assert "by_blocker_group" in grouped
+    assert "by_readiness_cohort" in grouped
+
+
+def test_cli_standup_export(tmp_path: Path) -> None:
+    _stage_capture(tmp_path, "standup-cap")
+    script = _REPO / "scripts" / "rt" / "rt_handoff_batch_advisory.py"
+    proc = subprocess.run(
+        [
+            sys.executable,
+            str(script),
+            "standup-export",
+            "--repo-root",
+            str(tmp_path),
+            "--json",
+        ],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    assert proc.returncode == 0
+    data = json.loads(proc.stdout)
+    assert data["schema"] == ADVISORY_BATCH_REVIEW_V2_SCHEMA
+    assert validate_advisory_batch_review_v2(data) == []
+
+
+def test_cli_export_schema_v2(tmp_path: Path) -> None:
+    _stage_capture(tmp_path, "v2-cli-cap")
+    script = _REPO / "scripts" / "rt" / "rt_handoff_batch_advisory.py"
+    proc = subprocess.run(
+        [
+            sys.executable,
+            str(script),
+            "export",
+            "--repo-root",
+            str(tmp_path),
+            "--schema",
+            "v2",
+            "--json",
+        ],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    assert proc.returncode == 0
+    assert json.loads(proc.stdout)["schema"] == ADVISORY_BATCH_REVIEW_V2_SCHEMA
+
+
+def test_cli_dry_run_review_json(tmp_path: Path) -> None:
+    _stage_capture(tmp_path, "dry-review-cap")
+    script = _REPO / "scripts" / "rt" / "rt_handoff_batch_advisory.py"
+    proc = subprocess.run(
+        [
+            sys.executable,
+            str(script),
+            "dry-run-review",
+            "--repo-root",
+            str(tmp_path),
+            "--json",
+            "--max-captures",
+            "1",
+        ],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    assert proc.returncode == 0
+    data = json.loads(proc.stdout)
+    assert data["schema"] == ADVISORY_DRY_RUN_REVIEW_SCHEMA
+    assert data["dry_run"] is True
+
+
+def test_sa_import_dry_run_rejects_no_dry_run(tmp_path: Path) -> None:
+    cid = "no-dry-cap"
+    staging = rt_sandbox_captures_dir(tmp_path) / cid
+    staging.mkdir(parents=True)
+    (staging / "candidate.json").write_text(
+        json.dumps(
+            {
+                "capture_candidate_id": cid,
+                "session_id": "s1",
+                "normalization_status": "normalized",
+                "approval_status": "approved",
+                "origin": "rt_sandbox_capture_v1",
+            }
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+    script = _REPO / "scripts" / "rt" / "rt_sa_import_dry_run.py"
+    proc = subprocess.run(
+        [sys.executable, str(script), "--no-dry-run", cid, "--repo-root", str(tmp_path)],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    assert proc.returncode == 2
+
+
+def test_cli_export_f8_schema(tmp_path: Path) -> None:
+    _stage_capture(tmp_path, "f8-cli-cap")
+    script = _REPO / "scripts" / "rt" / "rt_handoff_batch_advisory.py"
+    proc = subprocess.run(
+        [
+            sys.executable,
+            str(script),
+            "export",
+            "--repo-root",
+            str(tmp_path),
+            "--schema",
+            "f8",
+            "--preset",
+            "all_staged",
+            "--template-pack",
+            "standup_md_minimal",
+        ],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    assert proc.returncode == 0, proc.stderr
+    data = json.loads(proc.stdout)
+    assert data["schema"] == ADVISORY_BATCH_SUMMARY_V2_SCHEMA
+    assert data["dry_run"] is True
+    assert "template_render" in data
+    assert "readiness_score" not in proc.stdout

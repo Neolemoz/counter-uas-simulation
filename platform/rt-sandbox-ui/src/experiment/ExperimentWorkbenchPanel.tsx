@@ -5,6 +5,11 @@ import type { TelemetryChannel } from "@/telemetry/constants";
 import { shortSessionId } from "@/workstation/sessionVisualIdentity";
 import type { CaptureHandoffRow } from "@/bridge/types";
 import { deriveAdvisoryForRow } from "@/handoff/advisoryAggregate";
+import type { AdvisoryExperimentRollup } from "@/handoff/advisoryTypes";
+import {
+  buildExperimentRollupFromWorkbench,
+  warnCaptureIdsFromHandoffAndMetrics,
+} from "@/handoff/advisoryTriageGrouping";
 import { AdvisoryRunBadge } from "@/handoff/AdvisoryRunBadge";
 import { ExperimentImportAdvisoryStrip } from "./ExperimentImportAdvisoryStrip";
 import { ExperimentAnalyticsPanel } from "./ExperimentAnalyticsPanel";
@@ -21,7 +26,12 @@ import { ExperimentTrendStrip } from "./ExperimentTrendStrip";
 import { SweepCatalogBrowser } from "./SweepCatalogBrowser";
 import { deriveExperimentAnalytics } from "./analyticsDerive";
 import { ExperimentContinuityReviewPanel } from "./ExperimentContinuityReviewPanel";
-import { clearAnnexForRun, pruneAnnexCacheForManifest } from "./annexReviewStore";
+import {
+  clearAnnexForRun,
+  pruneAnnexCacheForManifest,
+} from "./annexReviewStore";
+import { ExperimentWorkbenchV2Shell } from "./ExperimentWorkbenchV2Shell";
+import { useExperimentWorkbenchV2 } from "./useExperimentWorkbenchV2";
 import {
   collectFilterOptions,
   collectMatrixAxisKeys,
@@ -60,6 +70,7 @@ import {
   exportFidelityMetricsJson,
 } from "./fidelityMetricsDerive";
 import type {
+  ExperimentAnalyticsReport,
   ExperimentBatchSpec,
   ExperimentFidelityMetricsReport,
   ExperimentManifest,
@@ -87,6 +98,7 @@ export function ExperimentWorkbenchPanel({
   onContinuityReviewActiveChange,
   f5Active,
   onF5ActiveChange,
+  onHandoffEligibilityRollupChange,
 }: {
   connected: boolean;
   slots: SlotRef[];
@@ -101,6 +113,7 @@ export function ExperimentWorkbenchPanel({
   onContinuityReviewActiveChange: (active: boolean) => void;
   f5Active: boolean;
   onF5ActiveChange: (active: boolean) => void;
+  onHandoffEligibilityRollupChange?: (rollup: AdvisoryExperimentRollup | null) => void;
 }) {
   const [manifest, setManifest] = useState<ExperimentManifest>(() =>
     loadManifestFromStorage() ?? createEmptyManifest("exp-local"),
@@ -110,6 +123,9 @@ export function ExperimentWorkbenchPanel({
   const [continuityRunId, setContinuityRunId] = useState("");
   const [importedSpec, setImportedSpec] = useState<ExperimentSpec | null>(null);
   const [compiledPreview, setCompiledPreview] = useState<CompileResult | null>(null);
+  const [analyticsOverride, setAnalyticsOverride] = useState<ExperimentAnalyticsReport | null>(
+    null,
+  );
   const [metricsOverride, setMetricsOverride] = useState<ExperimentMetricsReport | null>(
     null,
   );
@@ -144,10 +160,10 @@ export function ExperimentWorkbenchPanel({
     }
   }, [manifest.runs, continuityRunId]);
 
-  const analyticsReport = useMemo(
-    () => deriveExperimentAnalytics(manifest, batchSpec),
-    [manifest, batchSpec],
-  );
+  const analyticsReport = useMemo(() => {
+    if (analyticsOverride) return analyticsOverride;
+    return deriveExperimentAnalytics(manifest, batchSpec);
+  }, [analyticsOverride, manifest, batchSpec]);
 
   const metricsReport = useMemo(() => {
     if (metricsOverride) return metricsOverride;
@@ -173,6 +189,62 @@ export function ExperimentWorkbenchPanel({
       spec: importedSpec ?? undefined,
     });
   }, [fidelityMetricsOverride, manifest, metricsReport, importedSpec]);
+
+  const {
+    v2State,
+    setV2State,
+    v2ReportPresence,
+    dockPreviews,
+    onImportDockSlot,
+    onExportDockSlot,
+    activateReviewStep,
+    applyCompareMode,
+    syncComparePinned,
+    dockPacketTabFocus,
+  } = useExperimentWorkbenchV2({
+    manifest,
+    analyticsReport,
+    metricsReport,
+    fidelityReport,
+    onAnalyticsActiveChange,
+    onContinuityReviewActiveChange,
+    onCompareModeChange,
+    onF5ActiveChange,
+    setContinuityRunId,
+    setAnalyticsOverride,
+    setMetricsOverride,
+    setFidelityMetricsOverride,
+    setCompareA,
+    setCompareB,
+    setExtendedCompareRunIds,
+  });
+
+  useEffect(() => {
+    if (!onHandoffEligibilityRollupChange) return;
+    if (!metricsReport || !activeSessionId) {
+      onHandoffEligibilityRollupChange(null);
+      return;
+    }
+    const rows = handoffBySession.get(activeSessionId) ?? [];
+    const hints = new Map<string, string | undefined>();
+    for (const run of manifest.runs) {
+      const cid = run.capture_candidate_id;
+      if (!cid) continue;
+      const ext = metricsReport.per_run_extended.find((e) => e.run_id === run.run_id);
+      hints.set(cid, ext?.handoff_eligibility_hint);
+    }
+    const level = metricsReport.handoff_eligibility.experiment_level;
+    const warnIds = warnCaptureIdsFromHandoffAndMetrics(rows, null, level, hints);
+    onHandoffEligibilityRollupChange(
+      buildExperimentRollupFromWorkbench(level, warnIds),
+    );
+  }, [
+    metricsReport,
+    activeSessionId,
+    handoffBySession,
+    manifest.runs,
+    onHandoffEligibilityRollupChange,
+  ]);
 
   const fidelityCouplingPresent = useMemo(() => {
     if (fidelityReport?.coupling_required) return true;
@@ -445,6 +517,20 @@ export function ExperimentWorkbenchPanel({
 
   return (
     <div className="space-y-4" data-testid="experiment-workbench">
+      <ExperimentWorkbenchV2Shell
+        v2State={v2State}
+        onV2StateChange={setV2State}
+        manifest={manifest}
+        reportPresence={v2ReportPresence}
+        dockPreviews={dockPreviews}
+        onImportDockSlot={onImportDockSlot}
+        onExportDockSlot={onExportDockSlot}
+        onActivateStep={activateReviewStep}
+        onContinuityRunId={setContinuityRunId}
+        onSyncComparePinned={syncComparePinned}
+        onApplyCompareMode={applyCompareMode}
+        dockPacketTabFocus={dockPacketTabFocus}
+      />
       <PanelShell title="Experiment workbench">
         <div className="mb-3 flex flex-wrap gap-2">
           <input

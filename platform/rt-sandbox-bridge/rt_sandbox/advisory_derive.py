@@ -6,6 +6,7 @@ import json
 from pathlib import Path
 from typing import Any
 
+from rt_sandbox.advisory_queue import detect_lineage_warnings
 from rt_sandbox.capture_handoff_mirror import derive_workflow_phase
 from rt_sandbox.sa_handoff import (
     capture_staging_dir,
@@ -280,7 +281,7 @@ def derive_advisory_status(inp: dict[str, Any]) -> dict[str, Any]:
         base["advisory_state"] = None
         base["advisory_state_label"] = "Committed — SA lineage active"
         base["terminal"] = "handoff_import_committed"
-        return base
+        return _attach_lineage_warnings(base, inp)
 
     block_reasons = _block_reasons(inp, events)
     if block_reasons:
@@ -288,36 +289,47 @@ def derive_advisory_status(inp: dict[str, Any]) -> dict[str, Any]:
         base["advisory_state_label"] = STATE_LABELS["blocked"]
         base["blocked"] = True
         base["block_reasons"] = block_reasons
-        return base
+        return _attach_lineage_warnings(base, inp)
 
     if _is_import_ready(inp, events):
         base["advisory_state"] = "import_ready"
         base["advisory_state_label"] = STATE_LABELS["import_ready"]
-        return base
+        return _attach_lineage_warnings(base, inp)
 
     if _is_handoff_ready(inp, events):
         base["advisory_state"] = "handoff_ready"
         base["advisory_state_label"] = STATE_LABELS["handoff_ready"]
-        return base
+        return _attach_lineage_warnings(base, inp)
 
     if _is_approval_ready(inp, events):
         base["advisory_state"] = "approval_ready"
         base["advisory_state_label"] = STATE_LABELS["approval_ready"]
-        return base
+        return _attach_lineage_warnings(base, inp)
 
     if _is_review_complete(events, inp):
         base["advisory_state"] = "review_complete"
         base["advisory_state_label"] = STATE_LABELS["review_complete"]
-        return base
+        return _attach_lineage_warnings(base, inp)
 
     if _is_capture_ready(inp, events):
         base["advisory_state"] = "capture_ready"
         base["advisory_state_label"] = STATE_LABELS["capture_ready"]
-        return base
+        return _attach_lineage_warnings(base, inp)
 
     base["advisory_state"] = None
     base["advisory_state_label"] = "Not ready (advisory)"
-    return base
+    return _attach_lineage_warnings(base, inp)
+
+
+def _attach_lineage_warnings(status: dict[str, Any], inp: dict[str, Any]) -> dict[str, Any]:
+    candidate = inp.get("candidate") if isinstance(inp.get("candidate"), dict) else None
+    conversion = inp.get("conversion_manifest")
+    normalized = inp.get("normalized_manifest")
+    warnings = detect_lineage_warnings(candidate, conversion, normalized=normalized)
+    if warnings:
+        status = dict(status)
+        status["lineage_warnings"] = warnings
+    return status
 
 
 def build_advisory_input(repo_root: Path, capture_id: str) -> dict[str, Any]:
@@ -336,6 +348,15 @@ def build_advisory_input(repo_root: Path, capture_id: str) -> dict[str, Any]:
 
     handoff_path = repo_root / "runs" / "rt_sandbox" / "sa_handoff" / capture_id
     conversion_present = (staging_dir / "conversion.json").is_file()
+    conversion_manifest: dict[str, Any] | None = None
+    if conversion_present:
+        conversion_manifest = json.loads(
+            (staging_dir / "conversion.json").read_text(encoding="utf-8")
+        )
+    normalized_manifest: dict[str, Any] | None = None
+    norm_manifest_path = staging_dir / "normalized_manifest.json"
+    if norm_manifest_path.is_file():
+        normalized_manifest = json.loads(norm_manifest_path.read_text(encoding="utf-8"))
     manifest_present = (handoff_path / "handoff_manifest.json").is_file()
 
     pre_errors: list[str] | None = None
@@ -375,6 +396,8 @@ def build_advisory_input(repo_root: Path, capture_id: str) -> dict[str, Any]:
         "handoff_preconditions_errors": pre_errors,
         "handoff_blocked": is_handoff_blocked(staging_dir) if staging_dir.is_dir() else False,
         "conversion_manifest_present": conversion_present,
+        "conversion_manifest": conversion_manifest,
+        "normalized_manifest": normalized_manifest,
         "handoff_manifest_present": manifest_present,
         "import_record_present": summary.get("import_record") is not None,
         "conversion_steps_advisory_pass": steps_pass,

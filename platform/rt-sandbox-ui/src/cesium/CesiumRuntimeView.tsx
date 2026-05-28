@@ -18,24 +18,29 @@ import { flyOnSessionSwitch } from "./cameraHelpers";
 import {
   clearEntityMarkers,
   syncEntityMarkers,
+  type MarkerEmphasis,
   type MirrorEntity,
 } from "./entityMarkers";
-import { syncLosSegmentLayer } from "./losSegmentLayer";
+import { syncHorizonHintLayer } from "./horizonHintLayer";
+import { clearLosSegmentLayer, syncLosSegmentLayer } from "./losSegmentLayer";
 import {
-  anyTerrainLayerEnabled,
+  shouldUseLegacyLosPath,
+  syncStackedLosPresentation,
+} from "./stackedLosPresentation";
+import {
   clearAllTerrainLayers,
   syncTerrainLayers,
   type TerrainLayerVisibility,
 } from "./terrainLayers";
+import type { VisualLayerVisibility } from "./visualLayerRegistry";
 
 export interface CesiumRuntimeViewProps {
   sessionId: string | null;
   sessionAccentCss?: string;
+  markerEmphasis?: MarkerEmphasis;
   entities: MirrorEntity[];
   selectedEntityId: string | null;
-  showBounds: boolean;
-  showVerticalBounds: boolean;
-  showLabels: boolean;
+  layerVisibility: VisualLayerVisibility;
   terrainLayers: TerrainLayerVisibility;
   syncHealth?: string;
   telemetryHealth?: string;
@@ -76,11 +81,10 @@ function createViewer(container: HTMLDivElement): Viewer {
 export function CesiumRuntimeView({
   sessionId,
   sessionAccentCss,
+  markerEmphasis = "full",
   entities,
   selectedEntityId,
-  showBounds,
-  showVerticalBounds,
-  showLabels,
+  layerVisibility,
   terrainLayers,
   syncHealth,
   telemetryHealth,
@@ -199,11 +203,11 @@ export function CesiumRuntimeView({
   useEffect(() => {
     const viewer = viewerRef.current;
     if (!viewer || !sessionId) return;
-    syncBoundsLayer(viewer, showBounds, {
-      showVertical: showVerticalBounds,
-      showCornerLabels: showBounds,
+    syncBoundsLayer(viewer, layerVisibility.showBounds, {
+      showVertical: layerVisibility.showVerticalBounds,
+      showCornerLabels: layerVisibility.showBounds,
     });
-  }, [sessionId, showBounds, showVerticalBounds]);
+  }, [sessionId, layerVisibility.showBounds, layerVisibility.showVerticalBounds]);
 
   useEffect(() => {
     const viewer = viewerRef.current;
@@ -211,16 +215,23 @@ export function CesiumRuntimeView({
     syncTerrainLayers(viewer, entities, terrainLayers);
     const selected =
       entities.find((e) => e.entity_id === selectedEntityId) ?? null;
-    syncLosSegmentLayer(
-      viewer,
-      selected,
-      entities,
-      anyTerrainLayerEnabled(terrainLayers) && selected != null,
-      terrainLayers.showTerrainMesh,
-    );
+    syncHorizonHintLayer(viewer, layerVisibility.showHorizonHint);
+    syncStackedLosPresentation(viewer, selected, entities, layerVisibility, terrainLayers);
+    if (shouldUseLegacyLosPath(layerVisibility, terrainLayers, selected)) {
+      syncLosSegmentLayer(
+        viewer,
+        selected,
+        entities,
+        true,
+        terrainLayers.showTerrainMesh,
+        false,
+      );
+    } else if (!layerVisibility.showStackedLos) {
+      clearLosSegmentLayer(viewer);
+    }
     syncEntityMarkers(viewer, entities, {
       selectedEntityId,
-      showLabels,
+      showLabels: layerVisibility.showLabels,
       syncHealth,
       telemetryHealth,
       perEntityDriftM,
@@ -228,12 +239,13 @@ export function CesiumRuntimeView({
       dragOverride,
       sessionAccentCss,
       applyTerrainDisplay: terrainLayers.showTerrainMesh,
+      markerEmphasis,
     });
   }, [
     sessionId,
     entities,
     selectedEntityId,
-    showLabels,
+    layerVisibility,
     terrainLayers,
     syncHealth,
     telemetryHealth,
@@ -241,6 +253,7 @@ export function CesiumRuntimeView({
     commandGhost,
     dragOverride,
     sessionAccentCss,
+    markerEmphasis,
   ]);
 
   if (!sessionId) {

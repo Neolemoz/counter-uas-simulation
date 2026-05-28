@@ -1,4 +1,5 @@
 import { buildAdvisoryChecklist } from "./advisoryChecklist";
+import { detectLineageWarnings } from "./advisoryQueue";
 import {
   ADVISORY_GOVERNANCE_BANNER,
   type AdvisoryDeriveInput,
@@ -6,6 +7,15 @@ import {
   type AdvisoryStatus,
 } from "./advisoryTypes";
 import { advisoryStateLabel } from "./advisoryLabels";
+
+function attachLineageWarnings(
+  status: AdvisoryStatus,
+  inp: AdvisoryDeriveInput,
+): AdvisoryStatus {
+  const warnings = detectLineageWarnings(inp.candidate);
+  if (!warnings.length) return status;
+  return { ...status, lineage_warnings: warnings };
+}
 
 function eventTypes(exportEvents: AdvisoryDeriveInput["export_events"]): string[] {
   if (!exportEvents) return [];
@@ -150,7 +160,7 @@ export function deriveAdvisoryState(inp: AdvisoryDeriveInput): AdvisoryStatus {
   ) {
     base.advisory_state_label = "Committed — SA lineage active";
     base.terminal = "handoff_import_committed";
-    return base;
+    return attachLineageWarnings(base, inp);
   }
 
   const reasons = blockReasons(inp, events);
@@ -159,7 +169,7 @@ export function deriveAdvisoryState(inp: AdvisoryDeriveInput): AdvisoryStatus {
     base.advisory_state_label = advisoryStateLabel("blocked");
     base.blocked = true;
     base.block_reasons = reasons;
-    return base;
+    return attachLineageWarnings(base, inp);
   }
 
   let state: AdvisoryState | null = null;
@@ -171,5 +181,5 @@ export function deriveAdvisoryState(inp: AdvisoryDeriveInput): AdvisoryStatus {
 
   base.advisory_state = state;
   base.advisory_state_label = advisoryStateLabel(state);
-  return base;
+  return attachLineageWarnings(base, inp);
 }

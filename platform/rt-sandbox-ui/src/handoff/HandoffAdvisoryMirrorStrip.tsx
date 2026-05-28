@@ -63,6 +63,14 @@ export function HandoffAdvisoryMirrorStrip({
         </ul>
       )}
 
+      {status.lineage_warnings && status.lineage_warnings.length > 0 && (
+        <ul className="mb-2 list-inside list-disc text-xs text-amber-300/90">
+          {status.lineage_warnings.map((w) => (
+            <li key={w}>{w}</li>
+          ))}
+        </ul>
+      )}
+
       {hint && (
         <p className="mb-2 font-mono text-[10px] text-slate-400">
           Next maintainer step: {hint.replace("<capture_id>", status.capture_candidate_id)}

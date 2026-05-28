@@ -31,6 +31,10 @@ export const BANNER_REALISM_F4 =
 export const BANNER_EXPERIMENT =
   "RT EXPERIMENT — explanatory compare only; not operational authority";
 
+/** Additive panel banner (PLAT-RT-X2 P0). */
+export const BANNER_EXPERIMENT_V2 =
+  "RT EXPERIMENT v2 — cohort review is explanatory; maintainer CLIs remain authority";
+
 /** Additive panel banner (PLAT-RT-F1). */
 export const BANNER_ANALYTICS =
   "RT ANALYTICS — derived summaries only; not operational authority";
@@ -50,6 +54,10 @@ export const BANNER_FIDELITY_TRUTH =
 /** Additive panel banner (PLAT-RT-F6 P1). */
 export const BANNER_SA_WORKFLOW_ADVISORY =
   "SA WORKFLOW ADVISORY — explanatory only; maintainer CLIs are authority";
+
+/** Additive panel banner (PLAT-RT-V3 P1) — visibility overlays. */
+export const BANNER_VISIBILITY_V3 =
+  "VISIBILITY OVERLAYS — heuristic wedge/horizon/LOS; not sensor coverage or operational picture";
 
 export const BASE_BANNERS = [
   BANNER_PRIMARY,

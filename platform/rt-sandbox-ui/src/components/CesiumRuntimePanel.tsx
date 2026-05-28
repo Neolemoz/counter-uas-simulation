@@ -17,12 +17,21 @@ import {
   flyToValleyFloor,
   setFollowEntity,
 } from "@/cesium/cameraHelpers";
+import { anyTerrainLayerEnabled } from "@/cesium/terrainLayers";
 import {
-  anyTerrainLayerEnabled,
-  DEFAULT_TERRAIN_LAYERS,
-  type TerrainLayerVisibility,
-} from "@/cesium/terrainLayers";
-import { BANNER_FIDELITY_TRUTH, BANNER_REALISM_F4, BANNER_TERRAIN } from "@/governance/banners";
+  anyVisibilityOverlayEnabled,
+  CANONICAL_VISUAL_LAYER_REGISTRY,
+  toggleLayerVisibility,
+  toTerrainLayerVisibility,
+  type VisualLayerVisibility,
+} from "@/cesium/visualLayerRegistry";
+import { VisualLayerToggleRail } from "@/components/VisualLayerToggleRail";
+import {
+  BANNER_FIDELITY_TRUTH,
+  BANNER_REALISM_F4,
+  BANNER_TERRAIN,
+  BANNER_VISIBILITY_V3,
+} from "@/governance/banners";
 import { TerrainCognitionStrip } from "@/components/TerrainCognitionStrip";
 import {
   extractFidelityContext,
@@ -43,6 +52,7 @@ import type { Viewer } from "cesium";
 export function CesiumRuntimePanel({
   sessionId,
   orderedSessionIds,
+  connectedCount = 1,
   editingSessionId,
   entities,
   selectedEntityId,
@@ -56,10 +66,12 @@ export function CesiumRuntimePanel({
   onSpawn,
   onMove,
   onDelete,
-  onTerrainLayersChange,
+  layerVisibility,
+  onLayerVisibilityChange,
 }: {
   sessionId: string | null;
   orderedSessionIds: readonly string[];
+  connectedCount?: number;
   editingSessionId?: string | null;
   entities: MirrorEntity[];
   selectedEntityId: string | null;
@@ -78,14 +90,10 @@ export function CesiumRuntimePanel({
   onSpawn: (pose: Pose) => void;
   onMove: (entityId: string, pose: Pose) => void;
   onDelete: (entityId: string) => void;
-  onTerrainLayersChange?: (layers: TerrainLayerVisibility) => void;
+  layerVisibility: VisualLayerVisibility;
+  onLayerVisibilityChange: (layers: VisualLayerVisibility) => void;
 }) {
-  const [showBounds, setShowBounds] = useState(true);
-  const [showVerticalBounds, setShowVerticalBounds] = useState(true);
-  const [showLabels, setShowLabels] = useState(true);
-  const [terrainLayers, setTerrainLayers] = useState<TerrainLayerVisibility>(
-    () => ({ ...DEFAULT_TERRAIN_LAYERS }),
-  );
+  const terrainLayers = toTerrainLayerVisibility(layerVisibility);
   const [followSelected, setFollowSelected] = useState(false);
   const [viewer, setViewer] = useState<Viewer | null>(null);
   const viewerRef = useRef<Viewer | null>(null);
@@ -95,10 +103,6 @@ export function CesiumRuntimePanel({
   const fidelityOn = isFidelityCouplingOn(fidelityContext);
   const selectedEntity =
     entities.find((e) => e.entity_id === selectedEntityId) ?? null;
-
-  useEffect(() => {
-    onTerrainLayersChange?.(terrainLayers);
-  }, [terrainLayers, onTerrainLayersChange]);
 
   const summary = cesiumViewSummary({
     pendingReconcile,
@@ -284,10 +288,19 @@ export function CesiumRuntimePanel({
       {fidelityOn && (
         <p className="mb-2 text-[10px] text-amber-100/80">{BANNER_FIDELITY_TRUTH}</p>
       )}
+      {anyVisibilityOverlayEnabled(layerVisibility) && (
+        <p className="mb-2 text-[10px] text-amber-100/80">{BANNER_VISIBILITY_V3}</p>
+      )}
 
       {sessionId && (
         <div
-          className="mb-3 flex flex-wrap items-center gap-2 rounded border border-slate-700 bg-slate-950/60 px-3 py-2 text-xs"
+          data-testid="cesium-session-chrome"
+          className="mb-3 flex flex-wrap items-center gap-2 rounded border border-l-4 bg-slate-950/60 px-3 py-2 text-xs"
+          style={
+            sessionAccent
+              ? { borderLeftColor: sessionAccent, borderColor: "rgb(51 65 85)" }
+              : { borderColor: "rgb(51 65 85)" }
+          }
           title={sessionId}
         >
           <span
@@ -309,87 +322,18 @@ export function CesiumRuntimePanel({
       )}
 
       <div className="mb-3 flex flex-wrap gap-2">
-        <button
-          type="button"
-          className="rounded border border-slate-600 bg-slate-800 px-2 py-1 text-xs text-slate-200 hover:bg-slate-700"
-          onClick={() => setShowBounds((v) => !v)}
-        >
-          Bounds overlay: {showBounds ? "on" : "off"}
-        </button>
-        <button
-          type="button"
-          className="rounded border border-slate-600 bg-slate-800 px-2 py-1 text-xs text-slate-200 hover:bg-slate-700"
-          onClick={() => setShowLabels((v) => !v)}
-        >
-          Labels: {showLabels ? "on" : "off"}
-        </button>
-        <button
-          type="button"
-          className="rounded border border-slate-600 bg-slate-800 px-2 py-1 text-xs text-slate-200 hover:bg-slate-700"
-          onClick={() => setShowVerticalBounds((v) => !v)}
-        >
-          Vertical bounds: {showVerticalBounds ? "on" : "off"}
-        </button>
-        <button
-          type="button"
-          className="rounded border border-slate-600 bg-slate-800 px-2 py-1 text-xs text-slate-200 hover:bg-slate-700"
-          onClick={() =>
-            setTerrainLayers((l) => ({ ...l, showTerrainMesh: !l.showTerrainMesh }))
+        <VisualLayerToggleRail
+          visibility={layerVisibility}
+          onToggle={(layerId) =>
+            onLayerVisibilityChange(
+              toggleLayerVisibility(
+                layerVisibility,
+                layerId,
+                CANONICAL_VISUAL_LAYER_REGISTRY,
+              ),
+            )
           }
-        >
-          Terrain mesh: {terrainLayers.showTerrainMesh ? "on" : "off"}
-        </button>
-        <button
-          type="button"
-          className="rounded border border-slate-600 bg-slate-800 px-2 py-1 text-xs text-slate-200 hover:bg-slate-700"
-          onClick={() =>
-            setTerrainLayers((l) => ({ ...l, showRidgeOverlays: !l.showRidgeOverlays }))
-          }
-        >
-          Ridge overlays: {terrainLayers.showRidgeOverlays ? "on" : "off"}
-        </button>
-        <button
-          type="button"
-          className="rounded border border-slate-600 bg-slate-800 px-2 py-1 text-xs text-slate-200 hover:bg-slate-700"
-          onClick={() =>
-            setTerrainLayers((l) => ({ ...l, showContourOverlays: !l.showContourOverlays }))
-          }
-        >
-          Contour overlays: {terrainLayers.showContourOverlays ? "on" : "off"}
-        </button>
-        <button
-          type="button"
-          className="rounded border border-slate-600 bg-slate-800 px-2 py-1 text-xs text-slate-200 hover:bg-slate-700"
-          onClick={() =>
-            setTerrainLayers((l) => ({
-              ...l,
-              showVegetationMarkers: !l.showVegetationMarkers,
-            }))
-          }
-        >
-          Vegetation markers: {terrainLayers.showVegetationMarkers ? "on" : "off"}
-        </button>
-        <button
-          type="button"
-          className="rounded border border-slate-600 bg-slate-800 px-2 py-1 text-xs text-slate-200 hover:bg-slate-700"
-          onClick={() =>
-            setTerrainLayers((l) => ({
-              ...l,
-              showEnvironmentMarkers: !l.showEnvironmentMarkers,
-            }))
-          }
-        >
-          Occlusion markers: {terrainLayers.showEnvironmentMarkers ? "on" : "off"}
-        </button>
-        <button
-          type="button"
-          className="rounded border border-slate-600 bg-slate-800 px-2 py-1 text-xs text-slate-200 hover:bg-slate-700"
-          onClick={() =>
-            setTerrainLayers((l) => ({ ...l, showSensorDomes: !l.showSensorDomes }))
-          }
-        >
-          Sensor domes: {terrainLayers.showSensorDomes ? "on" : "off"}
-        </button>
+        />
         <button
           type="button"
           className="rounded border border-slate-600 bg-slate-800 px-2 py-1 text-xs text-slate-200 hover:bg-slate-700 disabled:opacity-40"
@@ -487,11 +431,10 @@ export function CesiumRuntimePanel({
       <CesiumRuntimeView
         sessionId={sessionId}
         sessionAccentCss={sessionAccent}
+        markerEmphasis={connectedCount >= 2 ? "muted" : "full"}
         entities={entities}
         selectedEntityId={selectedEntityId}
-        showBounds={showBounds}
-        showVerticalBounds={showVerticalBounds}
-        showLabels={showLabels}
+        layerVisibility={layerVisibility}
         terrainLayers={terrainLayers}
         syncHealth={syncHealth}
         telemetryHealth={telemetryHealth}

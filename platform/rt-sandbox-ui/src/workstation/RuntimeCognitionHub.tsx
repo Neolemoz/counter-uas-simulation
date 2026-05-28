@@ -1,18 +1,30 @@
+import type { ReactNode } from "react";
 import { PanelShell } from "@/components/GovernanceChrome";
 import { FidelityTruthCognitionStrip } from "@/components/FidelityTruthCognitionStrip";
+import { VisibilityCognitionStrip } from "@/components/VisibilityCognitionStrip";
 import type { ChannelSnapshot } from "@/telemetry/channelIndex";
 import {
   cognitionSummary,
   formatAuthorityChip,
   sessionContextLine,
 } from "@/telemetry/cognition";
+import type { MirrorEntity } from "@/cesium/entityMarkers";
 import type { TerrainLayerVisibility } from "@/cesium/terrainLayers";
 import { terrainHubSummary } from "@/cesium/terrainCognition";
 import {
+  sensorBlockVisible,
+  sensorContextHubLine,
+} from "@/cesium/visibilityCognition";
+import {
+  isFidelityCouplingOn,
   fidelityHubLine,
   mergeFidelityContextFromPayloads,
 } from "@/fidelity/fidelityCognition";
 import { shortSessionId } from "@/workstation/sessionVisualIdentity";
+import {
+  registryBudgetSummaryLine,
+  type VisualLayerVisibility,
+} from "@/cesium/visualLayerRegistry";
 import { StatusBadge } from "./StatusBadge";
 
 const HUB_CHANNELS: { key: string; label: string }[] = [
@@ -66,11 +78,36 @@ function ChannelCognitionRow({
   );
 }
 
+function CognitionBlock({
+  title,
+  defaultOpen,
+  children,
+}: {
+  title: string;
+  defaultOpen: boolean;
+  children: ReactNode;
+}) {
+  return (
+    <details
+      className="rounded border border-slate-700 bg-slate-950/30"
+      open={defaultOpen}
+    >
+      <summary className="cursor-pointer px-3 py-2 text-xs font-semibold text-slate-300">
+        {title}
+      </summary>
+      <div className="border-t border-slate-800 px-3 py-2">{children}</div>
+    </details>
+  );
+}
+
 export function RuntimeCognitionHub({
   snapshots,
   sessionId,
+  layerVisibility,
   terrainLayers,
   terrainLayersEnabled = false,
+  entities = [],
+  selectedEntityId = null,
   experimentCompareActive = false,
   experimentAnalyticsActive = false,
   experimentContinuityReviewActive = false,
@@ -82,8 +119,11 @@ export function RuntimeCognitionHub({
     entity_pose_mirror?: ChannelSnapshot;
   };
   sessionId?: string | null;
+  layerVisibility: VisualLayerVisibility;
   terrainLayers?: TerrainLayerVisibility;
   terrainLayersEnabled?: boolean;
+  entities?: MirrorEntity[];
+  selectedEntityId?: string | null;
   experimentCompareActive?: boolean;
   experimentAnalyticsActive?: boolean;
   experimentContinuityReviewActive?: boolean;
@@ -100,58 +140,103 @@ export function RuntimeCognitionHub({
     snapshots.session_health?.payload as Record<string, unknown> | undefined,
   );
   const fidelityLine = fidelityHubLine(fidelityContext);
+  const fidelityOn = isFidelityCouplingOn(fidelityContext);
   const worldSummaryPayload = snapshots.world_summary?.payload as
     | Record<string, unknown>
     | undefined;
+  const selectedEntity =
+    entities.find((e) => e.entity_id === selectedEntityId) ?? null;
+  const sensorLine =
+    terrainLayers != null ? sensorContextHubLine(terrainLayers, entities) : null;
+
+  const budgetSummary = registryBudgetSummaryLine(layerVisibility);
 
   return (
-    <PanelShell title="Runtime cognition hub">
-      {sessionId && (
-        <p className="mb-2 font-mono text-xs text-amber-200/80">
-          {sessionContextLine(sessionId, "active") ?? `session ${shortSessionId(sessionId)}`}
+    <PanelShell title="Runtime cognition">
+      <CognitionBlock title="Session" defaultOpen>
+        {sessionId && (
+          <p className="mb-2 font-mono text-xs text-amber-200/80">
+            {sessionContextLine(sessionId, "active") ??
+              `session ${shortSessionId(sessionId)}`}
+          </p>
+        )}
+        <p className="text-xs text-slate-500">
+          Consolidated authority, source, and health from pull mirrors — explanatory only.
         </p>
-      )}
-      <p className="mb-3 text-xs text-slate-500">
-        Consolidated authority, source, and health from pull mirrors — explanatory only.
-      </p>
-      {terrainLine && (
-        <p className="mb-3 text-xs text-emerald-400/90">{terrainLine}</p>
-      )}
-      {experimentCompareActive && (
-        <p className="mb-3 text-xs text-sky-300/90">
-          Experiment compare active — telemetry mirrors only; not operational A/B proof
-        </p>
-      )}
-      {experimentAnalyticsActive && (
-        <p className="mb-3 text-xs text-violet-300/90">
-          Experiment analytics — derived summaries only
-        </p>
-      )}
-      {experimentContinuityReviewActive && (
-        <p className="mb-3 text-xs text-fuchsia-300/90">
-          Tactical annex review — replay-boundary timelines only
-        </p>
-      )}
-      {experimentF5Active && (
-        <p className="mb-3 text-xs text-amber-300/90">
-          Advanced experiment metrics — derived summaries only
-        </p>
-      )}
-      <p className="mb-3 text-xs text-violet-300/90">{fidelityLine}</p>
-      <FidelityTruthCognitionStrip
-        fidelityContext={fidelityContext}
-        worldSummary={worldSummaryPayload}
-        showLosDivergence={terrainLayersEnabled}
-        compact
-      />
-      <div className="space-y-2">
-        {HUB_CHANNELS.map(({ key, label }) => (
-          <ChannelCognitionRow
-            key={key}
-            label={label}
-            snapshot={channelMap[key]}
+        {experimentCompareActive && (
+          <p className="mt-2 text-xs text-sky-300/90">
+            Experiment compare active — telemetry mirrors only; not operational A/B proof
+          </p>
+        )}
+        {experimentAnalyticsActive && (
+          <p className="mt-2 text-xs text-violet-300/90">
+            Experiment analytics — derived summaries only
+          </p>
+        )}
+        {experimentContinuityReviewActive && (
+          <p className="mt-2 text-xs text-fuchsia-300/90">
+            Tactical annex review — replay-boundary timelines only
+          </p>
+        )}
+        {experimentF5Active && (
+          <p className="mt-2 text-xs text-amber-300/90">
+            Advanced experiment metrics — derived summaries only
+          </p>
+        )}
+      </CognitionBlock>
+
+      <div className="mt-2 space-y-2">
+        <CognitionBlock title="Terrain (explanatory)" defaultOpen={terrainLayersEnabled}>
+          {terrainLine ? (
+            <p className="text-xs text-emerald-400/90">{terrainLine}</p>
+          ) : (
+            <p className="text-xs text-slate-500">Terrain layers off.</p>
+          )}
+        </CognitionBlock>
+
+        <CognitionBlock title="Visibility (heuristic)" defaultOpen={false}>
+          <p className="mb-2 text-[10px] text-slate-500" data-testid="hub-registry-budget">
+            {budgetSummary}
+          </p>
+          <VisibilityCognitionStrip
+            layerVisibility={layerVisibility}
+            selectedEntity={selectedEntity}
+            entities={entities}
           />
-        ))}
+        </CognitionBlock>
+
+        <CognitionBlock title="Fidelity (F5b)" defaultOpen={fidelityOn}>
+          <p className="mb-2 text-xs text-violet-300/90">{fidelityLine}</p>
+          <FidelityTruthCognitionStrip
+            fidelityContext={fidelityContext}
+            worldSummary={worldSummaryPayload}
+            showLosDivergence={terrainLayersEnabled}
+            compact
+          />
+        </CognitionBlock>
+
+        <CognitionBlock
+          title="Sensor context (nominal)"
+          defaultOpen={terrainLayers != null && sensorBlockVisible(terrainLayers)}
+        >
+          {sensorLine ? (
+            <p className="text-xs text-slate-300">{sensorLine}</p>
+          ) : (
+            <p className="text-xs text-slate-500">Sensor context layers off.</p>
+          )}
+        </CognitionBlock>
+
+        <CognitionBlock title="Authority + channels" defaultOpen>
+          <div className="space-y-2">
+            {HUB_CHANNELS.map(({ key, label }) => (
+              <ChannelCognitionRow
+                key={key}
+                label={label}
+                snapshot={channelMap[key]}
+              />
+            ))}
+          </div>
+        </CognitionBlock>
       </div>
     </PanelShell>
   );

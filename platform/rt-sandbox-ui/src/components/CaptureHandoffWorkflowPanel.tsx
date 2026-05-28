@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { PanelShell } from "@/components/GovernanceChrome";
 import type { CaptureHandoffRow } from "@/bridge/types";
 import {
@@ -7,9 +7,36 @@ import {
   phaseLabel,
   phaseTone,
 } from "@/handoff/deriveHandoffPhase";
-import { advisoryCountsSummary, deriveAdvisoryForRow } from "@/handoff/advisoryAggregate";
+import {
+  advisoryCountsSummary,
+  deriveAdvisoryForRow,
+  enrichAdvisoryRow,
+  enrichRowsForTriage,
+} from "@/handoff/advisoryAggregate";
+import { AdvisoryBatchMirrorStrip } from "@/handoff/AdvisoryBatchMirrorStrip";
+import { AdvisoryExperimentHandoffStrip } from "@/handoff/AdvisoryExperimentHandoffStrip";
+import { AdvisoryGroupedBlockerStrip } from "@/handoff/AdvisoryGroupedBlockerStrip";
+import { AdvisoryTriageQueuePanel } from "@/handoff/AdvisoryTriageQueuePanel";
+import {
+  applyFilterPreset,
+  applyFocusSet,
+  buildSessionAdvisorySummaryV2,
+  countRowsForStandupPass,
+  STANDUP_PASSES,
+} from "@/handoff/advisoryAggregationV2";
+import { shortCaptureId } from "@/handoff/captureIdDisplay";
+import type {
+  AdvisoryExperimentRollup,
+  ExperimentHandoffRollup,
+  FilterPresetId,
+} from "@/handoff/advisoryTypes";
+import { ReadinessCohortV2Chip } from "@/handoff/ReadinessCohortV2Chip";
+import { enrichAdvisoryRowV2 } from "@/handoff/advisoryAggregationV2";
+import { AdvisoryBlockerGroupChips } from "@/handoff/AdvisoryBlockerGroupChips";
+import { AdvisoryQueueBandChip } from "@/handoff/AdvisoryQueueBandChip";
 import { AdvisoryStateBadge } from "@/handoff/AdvisoryStateBadge";
 import { HandoffAdvisoryMirrorStrip } from "@/handoff/HandoffAdvisoryMirrorStrip";
+import { ReadinessCohortChip } from "@/handoff/ReadinessCohortChip";
 import { SaWorkflowAdvisoryPanel } from "@/handoff/SaWorkflowAdvisoryPanel";
 import {
   HANDOFF_AUTHORITY_STATIC,
@@ -21,10 +48,6 @@ import {
   CAPTURE_PIPELINE_STEPS,
   HANDOFF_DOC_CHIPS,
 } from "@/workflow/captureHandoffCognition";
-
-function shortCaptureId(id: string): string {
-  return id.length > 12 ? `${id.slice(0, 8)}…` : id;
-}
 
 function MultiSessionHandoffOverview({
   slots,
@@ -100,14 +123,18 @@ function SessionCaptureTable({
             <th className="py-1 pr-2">Approval</th>
             <th className="py-1 pr-2">Review</th>
             <th className="py-1 pr-2">Phase</th>
+            <th className="py-1 pr-2">Queue</th>
+            <th className="py-1 pr-2">Cohort</th>
             <th className="py-1 pr-2">Advisory</th>
+            <th className="py-1 pr-2">Blockers</th>
             <th className="py-1">Valid</th>
           </tr>
         </thead>
         <tbody>
           {rows.map((row) => {
             const selected = row.capture_candidate_id === selectedCaptureId;
-            const advisory = deriveAdvisoryForRow(row, sessionLifecycleState);
+            const enriched = enrichAdvisoryRow(row, sessionLifecycleState);
+            const advisory = enriched.status;
             return (
               <tr
                 key={row.capture_candidate_id}
@@ -133,6 +160,12 @@ function SessionCaptureTable({
                   />
                 </td>
                 <td className="py-1.5 pr-2">
+                  <AdvisoryQueueBandChip priority={enriched.queue_priority} />
+                </td>
+                <td className="py-1.5 pr-2">
+                  <ReadinessCohortChip cohort={enriched.readiness_cohort} />
+                </td>
+                <td className="py-1.5 pr-2">
                   {advisory.terminal ? (
                     <StatusBadge label="committed" tone="ok" title={advisory.advisory_state_label} />
                   ) : advisory.advisory_state ? (
@@ -144,6 +177,9 @@ function SessionCaptureTable({
                   ) : (
                     <span className="text-slate-500">—</span>
                   )}
+                </td>
+                <td className="py-1.5 pr-2">
+                  <AdvisoryBlockerGroupChips groups={enriched.blocker_groups} />
                 </td>
                 <td className="py-1.5">{row.validation_ok ? "ok" : "fail"}</td>
               </tr>
@@ -189,16 +225,21 @@ export function CaptureHandoffWorkflowPanel({
   sessionId,
   handoffBySession,
   workspaceSessionIds,
+  experimentRollup,
 }: {
   connected: boolean;
   sessionState: string;
   sessionId: string | null;
   handoffBySession: Map<string, CaptureHandoffRow[]>;
   workspaceSessionIds: readonly string[];
+  experimentRollup?: AdvisoryExperimentRollup | null;
 }) {
   const readiness = captureReadinessFromLifecycle(sessionState, connected);
   const activeRows = sessionId ? (handoffBySession.get(sessionId) ?? []) : [];
   const [selectedCaptureId, setSelectedCaptureId] = useState<string | null>(null);
+  const [filterPreset, setFilterPreset] = useState<FilterPresetId>("all_staged");
+  const [cohortHintFilter, setCohortHintFilter] = useState<string | null>(null);
+  const [focusSet, setFocusSet] = useState<Set<string>>(() => new Set());
   const selectedRow =
     activeRows.find((r) => r.capture_candidate_id === selectedCaptureId) ?? null;
 
@@ -208,6 +249,58 @@ export function CaptureHandoffWorkflowPanel({
   }));
 
   const highlightPhase = selectedRow?.workflow_phase ?? highestWorkflowPhase(activeRows);
+  const experimentHandoffRollup: ExperimentHandoffRollup | null = experimentRollup
+    ? {
+        ...experimentRollup,
+        note:
+          "X2 cohort and packet paths are read-only adjacency; not commit authority",
+      }
+    : null;
+
+  const sessionAdvisorySummary = sessionId
+    ? buildSessionAdvisorySummaryV2(activeRows, sessionState, {
+        experimentRollup: experimentHandoffRollup,
+      })
+    : null;
+
+  const warnIdSet = experimentRollup?.warn_capture_ids?.length
+    ? new Set(experimentRollup.warn_capture_ids)
+    : undefined;
+
+  const allTriageRows = sessionId
+    ? enrichRowsForTriage(activeRows, sessionState, {
+        experimentWarnCaptureIds: warnIdSet,
+        focusIds: focusSet.size > 0 ? focusSet : undefined,
+      })
+    : [];
+
+  const triageRows = useMemo(() => {
+    let rows = applyFilterPreset(allTriageRows, filterPreset);
+    if (cohortHintFilter) {
+      rows = rows.filter((r) => r.readiness_cohort === cohortHintFilter);
+    }
+    if (focusSet.size > 0) {
+      rows = applyFocusSet(rows, focusSet);
+    }
+    return rows;
+  }, [allTriageRows, filterPreset, cohortHintFilter, focusSet]);
+
+  const rowCountsByPass = useMemo(() => {
+    const counts: Partial<Record<string, number>> = {};
+    for (const pass of STANDUP_PASSES) {
+      counts[pass.pass_id] = countRowsForStandupPass(allTriageRows, pass);
+    }
+    return counts;
+  }, [allTriageRows]);
+
+  const selectedEnriched = selectedRow
+    ? enrichAdvisoryRowV2(selectedRow, sessionState, {
+        experimentWarnIds: warnIdSet,
+        inFocusSet: focusSet.has(selectedRow.capture_candidate_id),
+      })
+    : null;
+
+  const captureIdsForFocus = activeRows.map((r) => r.capture_candidate_id);
 
   return (
     <PanelShell title="Capture & handoff pipeline (read-only mirror)">
@@ -246,7 +339,60 @@ export function CaptureHandoffWorkflowPanel({
         />
       )}
 
+      <AdvisoryBatchMirrorStrip summary={sessionAdvisorySummary} />
+      <AdvisoryExperimentHandoffStrip
+        rollup={sessionAdvisorySummary?.experiment_handoff_rollup}
+      />
+
+      {sessionId && allTriageRows.length > 0 && (
+        <>
+          {triageRows.length > 0 && (
+            <AdvisoryGroupedBlockerStrip
+              rows={triageRows}
+              experimentRollup={experimentRollup}
+            />
+          )}
+          <AdvisoryTriageQueuePanel
+            rows={triageRows}
+            selectedCaptureId={selectedCaptureId}
+            onSelectCapture={setSelectedCaptureId}
+            experimentRollup={experimentRollup}
+            filterPreset={filterPreset}
+            onFilterPresetChange={(id) => {
+              setFilterPreset(id);
+              setCohortHintFilter(null);
+            }}
+            focusSet={focusSet}
+            captureIdsForFocus={captureIdsForFocus}
+            onFocusToggle={(id) => {
+              setFocusSet((prev) => {
+                const next = new Set(prev);
+                if (next.has(id)) next.delete(id);
+                else next.add(id);
+                return next;
+              });
+            }}
+            onFocusClear={() => setFocusSet(new Set())}
+            sessionSummary={sessionAdvisorySummary}
+            cohortHintFilter={cohortHintFilter}
+            onCohortHintFilterChange={setCohortHintFilter}
+            rowCountsByPass={rowCountsByPass}
+          />
+        </>
+      )}
+
       <HandoffAuthorityStrip row={selectedRow ?? activeRows[0] ?? null} />
+
+      {selectedEnriched && (
+        <div className="mb-3 flex flex-wrap items-center gap-2">
+          <AdvisoryQueueBandChip priority={selectedEnriched.queue_priority} />
+          <ReadinessCohortChip cohort={selectedEnriched.readiness_cohort} />
+          {selectedEnriched.readiness_cohort_v2 && (
+            <ReadinessCohortV2Chip cohort={selectedEnriched.readiness_cohort_v2} />
+          )}
+          <AdvisoryBlockerGroupChips groups={selectedEnriched.blocker_groups} />
+        </div>
+      )}
 
       <HandoffAdvisoryMirrorStrip
         status={

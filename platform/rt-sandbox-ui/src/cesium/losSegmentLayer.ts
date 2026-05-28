@@ -4,6 +4,7 @@ import { isViewerUsable } from "./cesiumEditing";
 import { worldToCartesian } from "./coordinates";
 import { nearestOcclusionTarget } from "./terrainCognition";
 import { applyTerrainDisplayOffset } from "./rtFictionalTerrain";
+import { VISIBILITY_STACKED_LOS_COLOR } from "./visualStyle";
 
 const LOS_PREFIX = "rt-terrain-los-";
 
@@ -21,6 +22,7 @@ export function syncLosSegmentLayer(
   entities: MirrorEntity[],
   show: boolean,
   applyTerrainDisplay: boolean,
+  stackedMode = false,
 ): void {
   if (!isViewerUsable(viewer)) return;
   removeLosEntities(viewer);
@@ -38,8 +40,9 @@ export function syncLosSegmentLayer(
   const zA = applyTerrainDisplay ? applyTerrainDisplayOffset(ax, ay, az) : az;
   const zB = applyTerrainDisplay ? applyTerrainDisplayOffset(bx, by, bz) : bz;
 
-  const color =
-    occ.status === "clear"
+  const color = stackedMode
+    ? VISIBILITY_STACKED_LOS_COLOR
+    : occ.status === "clear"
       ? "rgba(148, 163, 184, 0.5)"
       : occ.status === "terrain_blocked"
         ? "rgba(251, 146, 60, 0.65)"

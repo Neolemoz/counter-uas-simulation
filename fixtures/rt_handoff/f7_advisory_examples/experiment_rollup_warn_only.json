@@ -1,0 +1,23 @@
+{
+  "description": "Experiment handoff_eligibility eligible but capture import_ready false",
+  "inputs": {
+    "manifest_ref": "fixtures/rt_experiment/demo_manifest.json",
+    "experiment_handoff_eligibility": "eligible",
+    "captures": [
+      {
+        "capture_candidate_id": "cap-run-1",
+        "advisory_state": "approval_ready",
+        "handoff_eligibility_run": "eligible"
+      }
+    ]
+  },
+  "expected": {
+    "experiment_rollup": {
+      "handoff_eligibility": "partial",
+      "warn_capture_ids": ["cap-run-1"],
+      "note": "experiment eligibility is warn-only; per-capture advisory is authority"
+    },
+    "per_capture_advisory_state": "approval_ready",
+    "must_not_set": "import_ready"
+  }
+}

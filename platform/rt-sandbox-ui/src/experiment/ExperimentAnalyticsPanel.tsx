@@ -64,6 +64,7 @@ export function ExperimentAnalyticsPanel({
   };
 
   return (
+    <div data-testid="experiment-analytics">
     <PanelShell title="Experiment analytics">
       <p className="mb-2 text-[10px] text-amber-100/80">{BANNER_ANALYTICS}</p>
       <div className="mb-3 flex flex-wrap gap-2">
@@ -152,5 +153,6 @@ export function ExperimentAnalyticsPanel({
         </div>
       )}
     </PanelShell>
+    </div>
   );
 }

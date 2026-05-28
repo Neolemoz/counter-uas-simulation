@@ -1,0 +1,19 @@
+{
+  "description": "Stand-up cohort bucket counts",
+  "inputs": {
+    "captures": [
+      { "capture_candidate_id": "c1", "advisory_state": "capture_ready", "readiness_cohort": "needs_review" },
+      { "capture_candidate_id": "c2", "advisory_state": "approval_ready", "readiness_cohort": "needs_approve" },
+      { "capture_candidate_id": "c3", "advisory_state": "import_ready", "readiness_cohort": "ready_for_commit_advisory" },
+      { "capture_candidate_id": "c4", "terminal": "handoff_import_committed", "readiness_cohort": "terminal" }
+    ]
+  },
+  "expected_summary": {
+    "readiness_cohorts": {
+      "needs_review": 1,
+      "needs_approve": 1,
+      "ready_for_commit_advisory": 1,
+      "terminal": 1
+    }
+  }
+}

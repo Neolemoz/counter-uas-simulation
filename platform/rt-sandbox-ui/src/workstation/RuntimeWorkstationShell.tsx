@@ -4,8 +4,10 @@ export function RuntimeWorkstationShell({
   header,
   sessionRail,
   workflowStrip,
+  cognitionColumn,
   worldColumn,
   vizColumn,
+  globeFooter,
   mirrorsColumn,
   pipelineFooter,
   diagnostics,
@@ -13,12 +15,15 @@ export function RuntimeWorkstationShell({
   header: ReactNode;
   sessionRail: ReactNode;
   workflowStrip: ReactNode;
+  cognitionColumn?: ReactNode;
   worldColumn?: ReactNode;
   vizColumn?: ReactNode;
+  globeFooter?: ReactNode;
   mirrorsColumn: ReactNode;
   pipelineFooter: ReactNode;
   diagnostics: ReactNode;
 }) {
+  const hasCognition = Boolean(cognitionColumn);
   const hasWorld = Boolean(worldColumn);
   const hasViz = Boolean(vizColumn);
 
@@ -31,15 +36,38 @@ export function RuntimeWorkstationShell({
         {workflowStrip}
       </section>
 
-      {hasWorld || hasViz ? (
-        <div className="grid gap-4 lg:grid-cols-12">
-          {hasWorld && (
-            <div className="flex flex-col gap-4 lg:col-span-5">{worldColumn}</div>
-          )}
-          {hasViz && (
-            <div className="flex flex-col gap-4 lg:col-span-7">{vizColumn}</div>
-          )}
-        </div>
+      {hasCognition || hasWorld || hasViz ? (
+        <section className="space-y-2" aria-label="Globe and editing workspace">
+          <div className="grid gap-4 lg:grid-cols-12">
+            {hasCognition && (
+              <div
+                className="flex flex-col gap-4 lg:col-span-3"
+                aria-label="Cognition rail"
+              >
+                {cognitionColumn}
+              </div>
+            )}
+            {hasViz && (
+              <div
+                className={`flex flex-col gap-4 ${hasCognition ? "lg:col-span-6" : "lg:col-span-7"}`}
+                aria-label="Globe and layers"
+              >
+                {vizColumn}
+              </div>
+            )}
+            {hasWorld && (
+              <div
+                className={`flex flex-col gap-4 ${hasCognition ? "lg:col-span-3" : "lg:col-span-5"}`}
+                aria-label="World editing"
+              >
+                {worldColumn}
+              </div>
+            )}
+          </div>
+          {globeFooter ? (
+            <div aria-label="Background session summary">{globeFooter}</div>
+          ) : null}
+        </section>
       ) : null}
 
       <section aria-label="Telemetry mirrors">{mirrorsColumn}</section>

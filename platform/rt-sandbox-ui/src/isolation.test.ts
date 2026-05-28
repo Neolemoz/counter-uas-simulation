@@ -27,7 +27,9 @@ describe("RT UI isolation", () => {
     const srcDir = join(RT_UI_ROOT, "src");
     const files = collectFiles(srcDir);
     for (const file of files) {
-      if (file.endsWith("templateGuards.ts")) continue;
+      if (file.endsWith("templateGuards.ts") || file.endsWith("cohortImportGuards.ts")) {
+        continue;
+      }
       const content = readFileSync(file, "utf-8");
       expect(content).not.toContain(SA_VIEWER);
       for (const pattern of FORBIDDEN_IMPORT_PATTERNS) {
@@ -83,6 +85,51 @@ describe("RT UI isolation", () => {
     expect(banners).toContain("BANNER_REALISM_F4");
   });
 
+  it("includes visual layer registry modules (PLAT-RT-V3 P0)", () => {
+    expect(existsSync(join(RT_UI_ROOT, "src", "cesium", "visualLayerRegistry.ts"))).toBe(true);
+    expect(
+      existsSync(join(RT_UI_ROOT, "src", "cesium", "fixtures", "v3_layer_registry_v3.json")),
+    ).toBe(true);
+    expect(
+      existsSync(join(RT_UI_ROOT, "src", "components", "VisualLayerToggleRail.tsx")),
+    ).toBe(true);
+    expect(
+      existsSync(
+        join(REPO_ROOT, "fixtures", "rt_visualization", "v3_layer_registry_example.json"),
+      ),
+    ).toBe(true);
+  });
+
+  it("includes workstation layout annex modules (PLAT-RT-V3 P2)", () => {
+    expect(
+      existsSync(join(RT_UI_ROOT, "src", "workstation", "BackgroundDiagnosticsCompact.tsx")),
+    ).toBe(true);
+    expect(
+      existsSync(join(RT_UI_ROOT, "src", "workstation", "sessionLayerVisibilityStore.ts")),
+    ).toBe(true);
+    const shell = readFileSync(
+      join(RT_UI_ROOT, "src", "workstation", "RuntimeWorkstationShell.tsx"),
+      "utf-8",
+    );
+    expect(shell).toContain("cognitionColumn");
+    expect(shell).toContain("globeFooter");
+  });
+
+  it("includes visibility overlay modules (PLAT-RT-V3 P1)", () => {
+    expect(existsSync(join(RT_UI_ROOT, "src", "cesium", "visibilityWedgeLayer.ts"))).toBe(
+      true,
+    );
+    expect(existsSync(join(RT_UI_ROOT, "src", "cesium", "horizonHintLayer.ts"))).toBe(true);
+    expect(existsSync(join(RT_UI_ROOT, "src", "cesium", "stackedLosPresentation.ts"))).toBe(
+      true,
+    );
+    expect(
+      existsSync(join(RT_UI_ROOT, "src", "components", "VisibilityCognitionStrip.tsx")),
+    ).toBe(true);
+    const banners = readFileSync(join(RT_UI_ROOT, "src", "governance", "banners.ts"), "utf-8");
+    expect(banners).toContain("BANNER_VISIBILITY_V3");
+  });
+
   it("includes fidelity truth cognition modules (PLAT-RT-F5b P1)", () => {
     expect(existsSync(join(RT_UI_ROOT, "src", "fidelity", "fidelityCognition.ts"))).toBe(
       true,
@@ -135,6 +182,7 @@ describe("RT UI isolation", () => {
     expect(existsSync(join(expDir, "templateGuards.ts"))).toBe(true);
     const banners = readFileSync(join(RT_UI_ROOT, "src", "governance", "banners.ts"), "utf-8");
     expect(banners).toContain("BANNER_EXPERIMENT_F5");
+    expect(banners).toContain("BANNER_EXPERIMENT_V2");
     const saViewerImport = /from\s+["'].*sa-r0-viewer/;
     for (const file of collectFiles(expDir)) {
       if (!file.endsWith(".ts") && !file.endsWith(".tsx")) continue;
@@ -154,6 +202,44 @@ describe("RT UI isolation", () => {
         expect(content).not.toMatch(pattern);
       }
     }
+  });
+
+  it("includes experiment workbench v2 P2 modules (PLAT-RT-X2 P2)", () => {
+    const expDir = join(RT_UI_ROOT, "src", "experiment");
+    expect(existsSync(join(expDir, "multiManifestDiff.ts"))).toBe(true);
+    expect(existsSync(join(expDir, "MultiManifestDiffTable.tsx"))).toBe(true);
+    expect(existsSync(join(expDir, "ManifestSummaryChips.tsx"))).toBe(true);
+    expect(existsSync(join(expDir, "reviewPacketExport.ts"))).toBe(true);
+    expect(existsSync(join(expDir, "useExperimentWorkbenchV2.ts"))).toBe(true);
+  });
+
+  it("includes experiment workbench v2 P1 modules (PLAT-RT-X2 P1)", () => {
+    const expDir = join(RT_UI_ROOT, "src", "experiment");
+    expect(existsSync(join(expDir, "ExperimentUnifiedReviewPanel.tsx"))).toBe(true);
+    expect(existsSync(join(expDir, "ExperimentReportDockPanel.tsx"))).toBe(true);
+    expect(existsSync(join(expDir, "ExperimentCompareStagePanel.tsx"))).toBe(true);
+    expect(existsSync(join(expDir, "reviewLaneOrchestration.ts"))).toBe(true);
+    expect(existsSync(join(expDir, "reviewPacketPreview.ts"))).toBe(true);
+    expect(
+      existsSync(join(REPO_ROOT, "fixtures", "rt_experiments", "x2_review_packet_preview_example.json")),
+    ).toBe(true);
+  });
+
+  it("includes experiment workbench v2 modules (PLAT-RT-X2 P0)", () => {
+    const expDir = join(RT_UI_ROOT, "src", "experiment");
+    expect(existsSync(join(expDir, "cohortSchema.ts"))).toBe(true);
+    expect(existsSync(join(expDir, "cohortIndexStore.ts"))).toBe(true);
+    expect(existsSync(join(expDir, "cohortImportGuards.ts"))).toBe(true);
+    expect(existsSync(join(expDir, "workbenchV2State.ts"))).toBe(true);
+    expect(existsSync(join(expDir, "experimentUnifiedReview.ts"))).toBe(true);
+    expect(existsSync(join(expDir, "ExperimentWorkbenchV2Shell.tsx"))).toBe(true);
+    expect(existsSync(join(expDir, "ExperimentCohortNavigator.tsx"))).toBe(true);
+    expect(existsSync(join(expDir, "ExperimentReviewLaneShell.tsx"))).toBe(true);
+    expect(existsSync(join(expDir, "ExperimentReportDockShell.tsx"))).toBe(true);
+    expect(existsSync(join(expDir, "ExperimentCompareStageShell.tsx"))).toBe(true);
+    expect(
+      existsSync(join(REPO_ROOT, "fixtures", "rt_experiments", "x2_cohort_index_example.json")),
+    ).toBe(true);
   });
 });
 

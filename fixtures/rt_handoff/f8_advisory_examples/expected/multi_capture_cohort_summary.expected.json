@@ -1,0 +1,21 @@
+{
+  "schema": "rt_advisory_batch_summary_v2",
+  "governance_banner": "SA WORKFLOW ADVISORY — explanatory; maintainer CLIs are authority",
+  "summary": {
+    "multi_capture_cohorts": {
+      "by_primary_lane": {
+        "review": 1,
+        "approve": 1,
+        "import_advisory": 1
+      },
+      "note": "lane counts are advisory cognition only"
+    },
+    "handoff_rollup": {
+      "by_stage": {
+        "review": 1,
+        "approve": 1,
+        "import_advisory": 1
+      }
+    }
+  }
+}

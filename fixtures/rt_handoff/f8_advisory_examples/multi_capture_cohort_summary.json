@@ -1,0 +1,39 @@
+{
+  "description": "multi_capture_cohorts.by_primary_lane and handoff_rollup.by_stage",
+  "inputs": {
+    "captures": [
+      {
+        "capture_candidate_id": "cap-review",
+        "advisory_state": "capture_ready",
+        "readiness_cohort": "needs_review",
+        "blocked": false
+      },
+      {
+        "capture_candidate_id": "cap-approve-a",
+        "advisory_state": "approval_ready",
+        "readiness_cohort": "needs_approve",
+        "blocked": false
+      },
+      {
+        "capture_candidate_id": "cap-import",
+        "advisory_state": "import_ready",
+        "readiness_cohort": "ready_for_commit_advisory",
+        "blocked": false
+      }
+    ]
+  },
+  "expected_multi_capture_cohorts": {
+    "by_primary_lane": {
+      "review": 1,
+      "approve": 1,
+      "import_advisory": 1
+    }
+  },
+  "expected_handoff_rollup": {
+    "by_stage": {
+      "review": 1,
+      "approve": 1,
+      "import_advisory": 1
+    }
+  }
+}
