@@ -602,6 +602,7 @@ export function ExperimentWorkbenchPanel({
             sideA={sideA}
             sideB={sideB}
             experimentId={manifest.experiment_id}
+            compareMode={v2State.compare_mode}
           />
         )}
       </PanelShell>

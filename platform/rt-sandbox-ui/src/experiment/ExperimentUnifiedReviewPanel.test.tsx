@@ -1,6 +1,7 @@
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 import { ExperimentUnifiedReviewPanel } from "./ExperimentUnifiedReviewPanel";
+import { createEmptyManifest } from "./experimentStore";
 import { defaultWorkbenchV2State } from "./workbenchV2State";
 import type { ExperimentRun } from "./experimentSchema";
 
@@ -20,6 +21,13 @@ describe("ExperimentUnifiedReviewPanel", () => {
       <ExperimentUnifiedReviewPanel
         v2State={defaultWorkbenchV2State()}
         onV2StateChange={() => {}}
+        manifest={createEmptyManifest("exp-review")}
+        presence={{
+          f1_analytics: false,
+          f3_annex: false,
+          f5_metrics: false,
+          f5b_fidelity: false,
+        }}
         runs={runs}
         onActivateStep={() => {}}
         onContinuityRunId={() => {}}
@@ -28,5 +36,6 @@ describe("ExperimentUnifiedReviewPanel", () => {
     );
     expect(markup).toContain("Unified review lane");
     expect(markup).toContain("F1 analytics");
+    expect(markup).toContain('data-completion="missing"');
   });
 });

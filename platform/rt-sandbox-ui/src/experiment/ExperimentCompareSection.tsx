@@ -10,6 +10,7 @@ export function ExperimentCompareSection({
   sideA,
   sideB,
   experimentId,
+  compareMode,
 }: {
   compareA: string;
   compareB: string;
@@ -19,9 +20,16 @@ export function ExperimentCompareSection({
   sideA: CompareSide | null;
   sideB: CompareSide | null;
   experimentId: string;
+  compareMode?: string;
 }) {
   return (
     <>
+      {compareMode === "multi_manifest_diff" && (
+        <p className="mb-2 text-[10px] text-slate-500" data-testid="compare-metadata-drilldown-note">
+          Metadata-only across manifests — use multi-manifest diff table above to open each
+          manifest; run-level compare stays within one manifest.
+        </p>
+      )}
       <div className="mb-2 flex flex-wrap gap-2">
         <label className="text-xs text-slate-500">
           A

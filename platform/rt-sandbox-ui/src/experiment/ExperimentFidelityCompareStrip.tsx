@@ -5,6 +5,8 @@ import {
   type ExperimentFidelityMetricsReport,
   type ExperimentManifest,
 } from "./experimentSchema";
+import { CompareStatusChip } from "./CompareStatusChip";
+import { cellCompareStatus } from "./compareBadgeStatus";
 import {
   attestationFreshnessBadge,
   driftSummary,
@@ -72,9 +74,7 @@ export function ExperimentFidelityCompareStrip({
                 >
                   {freshness.label}
                 </span>
-                <span className="rounded border border-slate-700 bg-slate-900 px-1 text-[9px] text-sky-200/70">
-                  explanatory
-                </span>
+                <CompareStatusChip status={cellCompareStatus(true, true)} />
                 {row.cognition_truth_divergence && (
                   <span className="rounded border border-amber-800/60 bg-amber-950/40 px-1 text-[9px] text-amber-200/90">
                     cognition_truth_divergence

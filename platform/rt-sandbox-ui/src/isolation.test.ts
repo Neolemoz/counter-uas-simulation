@@ -238,6 +238,16 @@ describe("RT UI isolation", () => {
     ).toBe(true);
   });
 
+  it("includes experiment workbench v3 P1 modules (PLAT-RT-X3 P1)", () => {
+    const expDir = join(RT_UI_ROOT, "src", "experiment");
+    expect(existsSync(join(expDir, "reviewStepCompletion.ts"))).toBe(true);
+    expect(existsSync(join(expDir, "ReviewStepCompletionBadge.tsx"))).toBe(true);
+    expect(existsSync(join(expDir, "reportDockGroups.ts"))).toBe(true);
+    expect(existsSync(join(expDir, "ReviewPacketSectionCard.tsx"))).toBe(true);
+    expect(existsSync(join(expDir, "compareBadgeStatus.ts"))).toBe(true);
+    expect(existsSync(join(expDir, "CompareStatusChip.tsx"))).toBe(true);
+  });
+
   it("includes experiment workbench v3 P0 modules (PLAT-RT-X3 P0)", () => {
     const expDir = join(RT_UI_ROOT, "src", "experiment");
     expect(existsSync(join(expDir, "ExperimentWorkbenchV3Shell.tsx"))).toBe(true);

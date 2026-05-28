@@ -85,10 +85,13 @@ export function ExperimentWorkbenchV2Shell({
               <ExperimentUnifiedReviewPanel
                 v2State={v2State}
                 onV2StateChange={onV2StateChange}
+                manifest={manifest}
+                presence={reportPresence}
                 runs={manifest.runs}
                 onActivateStep={onActivateStep}
                 onContinuityRunId={onContinuityRunId}
                 onSyncComparePinned={onSyncComparePinned}
+                packetTabEverFocused={dockPacketTabFocus != null && dockPacketTabFocus > 0}
               />
               <ExperimentReportDockPanel
                 v2State={v2State}

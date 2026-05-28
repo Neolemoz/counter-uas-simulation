@@ -1,4 +1,6 @@
 import { BANNER_EXPERIMENT } from "@/governance/banners";
+import { pairwiseCompareStatus } from "./compareBadgeStatus";
+import { CompareStatusChip } from "./CompareStatusChip";
 import { compareBadges, type CompareSide } from "./experimentCompare";
 import { TacticalAbCompareTable } from "./TacticalAbCompareTable";
 import { TelemetryCompareStrip } from "./TelemetryCompareStrip";
@@ -23,6 +25,7 @@ export function ExperimentComparePanel({
   }
 
   const badges = compareBadges(sideA, sideB);
+  const pairwiseStatus = pairwiseCompareStatus(badges);
 
   return (
     <section className="space-y-3" data-testid="experiment-compare-panel">
@@ -31,19 +34,16 @@ export function ExperimentComparePanel({
         experiment <span className="font-mono text-slate-400">{experimentId}</span> — mirrors
         only; not operational comparison
       </p>
-      {badges.length > 0 && (
-        <div className="flex flex-wrap gap-1">
-          {badges.map((b) => (
-            <span
-              key={b.id}
-              className="rounded border border-slate-700 bg-slate-900 px-1.5 py-0.5 text-[10px] text-sky-200/90"
-              title={b.detail}
-            >
-              {b.label}
-            </span>
-          ))}
-        </div>
-      )}
+      <div className="flex flex-wrap items-center gap-2">
+        <CompareStatusChip status={pairwiseStatus} title="Pairwise compare summary" />
+        {badges.map((b) => (
+          <CompareStatusChip
+            key={b.id}
+            status="divergent"
+            title={b.detail ?? b.label}
+          />
+        ))}
+      </div>
       <TacticalAbCompareTable sideA={sideA} sideB={sideB} />
       <TelemetryCompareStrip sideA={sideA} sideB={sideB} />
       <TerrainCompareNote sideA={sideA} sideB={sideB} />

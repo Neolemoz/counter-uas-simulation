@@ -1,4 +1,6 @@
 import { BANNER_EXPERIMENT_F5 } from "@/governance/banners";
+import { CompareStatusChip } from "./CompareStatusChip";
+import { cellCompareStatus } from "./compareBadgeStatus";
 import type {
   ExperimentMetricsReport,
   ExperimentRun,
@@ -63,7 +65,10 @@ export function ExperimentExtendedComparePanel({
       </div>
 
       {selectedRunIds.length < 2 && (
-        <p className="text-xs text-slate-500">Select at least two runs to compare.</p>
+        <p className="flex flex-wrap items-center gap-2 text-xs text-slate-500">
+          <CompareStatusChip status={cellCompareStatus(false)} />
+          Select at least two runs to compare.
+        </p>
       )}
 
       {pairs.length > 0 && (
@@ -77,14 +82,15 @@ export function ExperimentExtendedComparePanel({
                 {pair.run_id_a} ↔ {pair.run_id_b}
               </p>
               <div className="flex flex-wrap gap-1">
+                <CompareStatusChip
+                  status={pair.badges.length === 0 ? "aligned" : "divergent"}
+                />
                 {pair.badges.map((b) => (
-                  <span
+                  <CompareStatusChip
                     key={b.id}
-                    className="rounded border border-slate-700 bg-slate-900 px-1.5 py-0.5 text-[10px] text-sky-200/90"
-                    title={b.detail}
-                  >
-                    {b.label}
-                  </span>
+                    status="divergent"
+                    title={b.detail ?? b.label}
+                  />
                 ))}
               </div>
             </div>

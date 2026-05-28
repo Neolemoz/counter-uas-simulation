@@ -22,6 +22,8 @@ describe("ExperimentReportDockPanel", () => {
       />,
     );
     expect(markup).toContain("Report dock");
+    expect(markup).toContain("Analytics");
+    expect(markup).toContain("Continuity");
     expect(markup).toContain("Review packet");
     expect(markup).toContain("Import JSON");
     expect(markup).toContain("report-dock-packet-tab");

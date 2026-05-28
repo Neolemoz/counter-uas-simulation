@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
   copyReviewPacketJson,
   downloadReviewPacket,
+  exportReviewPacketJson,
   suggestedReviewPacketFilename,
 } from "./reviewPacketExport";
 import type { ExperimentReviewPacket } from "./reviewPacketSchema";
@@ -27,6 +28,12 @@ describe("reviewPacketExport", () => {
 
   afterEach(() => {
     vi.unstubAllGlobals();
+  });
+
+  it("export json omits sections array", () => {
+    const json = exportReviewPacketJson(samplePacket);
+    const parsed = JSON.parse(json) as Record<string, unknown>;
+    expect(parsed).not.toHaveProperty("sections");
   });
 
   it("suggests safe filename from packet_id", () => {

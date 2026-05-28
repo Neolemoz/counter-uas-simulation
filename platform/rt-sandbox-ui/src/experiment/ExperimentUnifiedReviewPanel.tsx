@@ -3,7 +3,10 @@ import {
   UNIFIED_REVIEW_STEPS,
   type UnifiedReviewStepId,
 } from "./experimentUnifiedReview";
-import type { ExperimentRun } from "./experimentSchema";
+import type { ExperimentManifest, ExperimentRun } from "./experimentSchema";
+import { ReviewStepCompletionBadge } from "./ReviewStepCompletionBadge";
+import { buildStepCompletionMap } from "./reviewStepCompletion";
+import type { ReportDockPresence } from "./reviewPacketPreview";
 import {
   advanceReviewStep,
   markStepCompleted,
@@ -17,19 +20,31 @@ import {
 export function ExperimentUnifiedReviewPanel({
   v2State,
   onV2StateChange,
+  manifest,
+  presence,
   runs,
   onActivateStep,
   onContinuityRunId,
   onSyncComparePinned,
+  packetTabEverFocused,
 }: {
   v2State: WorkbenchV2State;
   onV2StateChange: (state: WorkbenchV2State) => void;
+  manifest: ExperimentManifest;
+  presence: ReportDockPresence;
   runs: ExperimentRun[];
   onActivateStep: (step: UnifiedReviewStepId) => void;
   onContinuityRunId: (runId: string) => void;
   onSyncComparePinned: (runA: string | null, runB: string | null) => void;
+  packetTabEverFocused?: boolean;
 }) {
   const stepIndex = REVIEW_STEP_IDS.indexOf(v2State.review_step);
+  const completionMap = buildStepCompletionMap({
+    v2State,
+    manifest,
+    presence,
+    packetTabEverFocused,
+  });
 
   const selectStep = (step: UnifiedReviewStepId) => {
     const next = setReviewStep(v2State, step);
@@ -94,7 +109,7 @@ export function ExperimentUnifiedReviewPanel({
       <ol className="space-y-1">
         {UNIFIED_REVIEW_STEPS.map((step) => {
           const active = step.id === v2State.review_step;
-          const done = v2State.steps_completed.includes(step.id);
+          const completion = completionMap[step.id];
           return (
             <li key={step.id}>
               <button
@@ -106,9 +121,9 @@ export function ExperimentUnifiedReviewPanel({
                 }
                 onClick={() => selectStep(step.id)}
               >
-                <span className="text-xs font-medium text-slate-300">
-                  {done ? "✓ " : ""}
-                  {step.label}
+                <span className="flex flex-wrap items-center gap-2">
+                  <span className="text-xs font-medium text-slate-300">{step.label}</span>
+                  <ReviewStepCompletionBadge state={completion} />
                 </span>
                 <p className="text-[10px] text-slate-500">{step.panelHint}</p>
               </button>

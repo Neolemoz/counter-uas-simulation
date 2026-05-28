@@ -1,7 +1,8 @@
 import { compareModeCoachLine } from "./compareModeCoach";
-import type { CompareModeId } from "./experimentUnifiedReview";
+import type { CompareModeId, UnifiedReviewStepId } from "./experimentUnifiedReview";
 import type { ExperimentManifest } from "./experimentSchema";
 import type { ReportDockPresence } from "./reviewPacketPreview";
+import type { ReviewStepCompletionState } from "./reviewStepCompletion";
 import type { WorkbenchV2State } from "./workbenchV2State";
 
 export type ReviewPacketSectionId =
@@ -27,6 +28,15 @@ export type ReviewPacketSectionEntry = {
   title: string;
   body_markdown: string;
   refs: string[];
+  completion_hint?: ReviewStepCompletionState;
+};
+
+const SECTION_STEP: Record<ReviewPacketSectionId, UnifiedReviewStepId> = {
+  scope: "select_scope",
+  reports: "f1_analytics",
+  compare_summary: "compare",
+  advisory_refs: "export_packet",
+  cli_hints: "export_packet",
 };
 
 export function buildPacketSectionsPreview(options: {
@@ -35,8 +45,9 @@ export function buildPacketSectionsPreview(options: {
   presence: ReportDockPresence;
   cohortLabel?: string | null;
   coachLine?: string;
+  stepCompletion?: Partial<Record<UnifiedReviewStepId, ReviewStepCompletionState>>;
 }): ReviewPacketSectionEntry[] {
-  const { v2State, manifest, presence, cohortLabel, coachLine } = options;
+  const { v2State, manifest, presence, cohortLabel, coachLine, stepCompletion } = options;
   const cohortPart = cohortLabel ?? v2State.active_cohort_id ?? "single manifest";
   const primaryRef = v2State.primary_manifest_ref ?? manifest.experiment_id;
   const secondaryRef = v2State.secondary_manifest_ref;
@@ -76,42 +87,41 @@ export function buildPacketSectionsPreview(options: {
 
   const cliBody = `python3 scripts/rt/rt_experiment_metrics.py --manifest runs/rt_sandbox/experiments/${manifest.experiment_id}/manifest.json`;
 
+  const withHint = (
+    section_id: ReviewPacketSectionId,
+    title: string,
+    body_markdown: string,
+    refs: string[],
+  ): ReviewPacketSectionEntry => ({
+    section_id,
+    title,
+    body_markdown,
+    refs,
+    completion_hint: stepCompletion?.[SECTION_STEP[section_id]],
+  });
+
   return [
-    {
-      section_id: "scope",
-      title: "Review scope",
-      body_markdown: scopeBody,
-      refs: v2State.active_cohort_id
-        ? [`cohort://${v2State.active_cohort_id}`]
+    withHint(
+      "scope",
+      "Review scope",
+      scopeBody,
+      v2State.active_cohort_id ? [`cohort://${v2State.active_cohort_id}`] : [],
+    ),
+    withHint(
+      "reports",
+      "Imported reports",
+      reportsBody,
+      reportKinds.length
+        ? [`runs/rt_sandbox/experiments/${manifest.experiment_id}/reports/analytics.json`]
         : [],
-    },
-    {
-      section_id: "reports",
-      title: "Imported reports",
-      body_markdown: reportsBody,
-      refs: reportKinds.length
-        ? [
-            `runs/rt_sandbox/experiments/${manifest.experiment_id}/reports/analytics.json`,
-          ]
-        : [],
-    },
-    {
-      section_id: "compare_summary",
-      title: "Compare snapshot",
-      body_markdown: compareBody,
-      refs: [],
-    },
-    {
-      section_id: "advisory_refs",
-      title: "Handoff advisory",
-      body_markdown: "Display refs only — no readiness verdict or SA import authority.",
-      refs: [],
-    },
-    {
-      section_id: "cli_hints",
-      title: "Maintainer CLIs",
-      body_markdown: cliBody,
-      refs: [],
-    },
+    ),
+    withHint("compare_summary", "Compare snapshot", compareBody, []),
+    withHint(
+      "advisory_refs",
+      "Handoff advisory",
+      "Display refs only — no readiness verdict or SA import authority.",
+      [],
+    ),
+    withHint("cli_hints", "Maintainer CLIs", cliBody, []),
   ];
 }

@@ -28,30 +28,34 @@
 
 ---
 
-## P1 — Review lane + grouped dock + packet sections
+## P1 — Review lane + grouped dock + packet sections (frozen)
 
 **Prerequisite:** P0 frozen
+**Status:** **frozen** — [rt_plat_x3_p1_freeze_audit.md](rt_plat_x3_p1_freeze_audit.md)
 
-| Item | Location (proposed) |
-|------|---------------------|
-| Step completion badges | `ExperimentUnifiedReviewPanel.tsx` or lane subcomponent |
-| Grouped report dock | `ExperimentReportDockPanel.tsx` |
-| Optional `sections[]` on packet export | `reviewPacketSchema.ts`, `reviewPacketExport.ts` |
-| Contamination review (F6/F7 adjacency) | Docs |
+| Item | Location |
+|------|----------|
+| Step completion badges | `reviewStepCompletion.ts`, `ExperimentUnifiedReviewPanel.tsx` |
+| Grouped report dock | `reportDockGroups.ts`, `ExperimentReportDockPanel.tsx` |
+| Packet section cards (preview only) | `ReviewPacketSectionCard.tsx`, `reviewPacketSections.ts` |
+| Compare status chips | `CompareStatusChip.tsx`, compare panels |
+| Contamination review (F6/F7) | [rt_plat_x3_p1_governance_review_r1.md](rt_plat_x3_p1_governance_review_r1.md) |
 
-**Freeze target:** `docs/evaluation/rt_plat_x3_p1_freeze_audit.md`
+**Note:** Export/copy JSON intentionally omits `sections[]` (UI preview only).
+
+**PLAT plan:** [rt_plat_x3_p1_review_workflow_plan.md](../platform/rt_plat_x3_p1_review_workflow_plan.md)
 
 ---
 
-## P2 — Compare coach + multi-manifest readability
+## P2 — Compare readability polish (advisory)
 
 **Prerequisite:** P1 frozen
 
+**Note:** P0 already delivered compare mode coach, `compareStatusVocabulary`, and multi-manifest status column + drill-down. P2 is residual polish only if needed.
+
 | Item | Location (proposed) |
 |------|---------------------|
-| Mode coach strip | `ExperimentCompareStagePanel.tsx` |
-| `formatCompareStatus` helper | `experiment/compareStatusVocabulary.ts` |
-| Multi-manifest column order + drill-down | `MultiManifestDiffTable.tsx` |
+| Extended compare / matrix readability | compare panels |
 | `tier0-rt-ui` + build | CI |
 
 **Freeze target:** `docs/evaluation/rt_plat_x3_p2_freeze_audit.md` — **PLAT-RT-X3 complete**
