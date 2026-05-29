@@ -95,7 +95,11 @@ def main() -> int:
     base_map = load_by_seed(args.baseline_csv)
     cand_map = load_by_seed(args.candidate_csv)
     seeds = sorted(set(base_map) & set(cand_map))
-    stats_payload, stats_rows = paired_report(_load_rows(args.baseline_csv), _load_rows(args.candidate_csv))
+    try:
+        stats_payload, stats_rows = paired_report(_load_rows(args.baseline_csv), _load_rows(args.candidate_csv))
+    except ValueError as exc:
+        print(str(exc), file=sys.stderr)
+        return 1
     stats_by_seed = {int(r['seed']): r for r in stats_rows}
 
     buckets: defaultdict[str, list[int]] = defaultdict(list)

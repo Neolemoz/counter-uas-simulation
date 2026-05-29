@@ -307,10 +307,14 @@ def paired_report(
 def validate_manifest(manifest: dict, rows: list[dict[str, str]]) -> dict[str, object]:
     expected_n = int(manifest.get("n") or 0)
     expected_cohort = str(manifest.get("cohort") or "").strip()
-    require_clean = bool(manifest.get("require_clean_git", False))
+    require_clean = _boolish(manifest.get("require_clean_git", False))
     seeds = [s for s in (seed_for_row(r) for r in rows) if s is not None]
-    cohorts = sorted({str(r.get("cohort") or "").strip() for r in rows if str(r.get("cohort") or "").strip()})
-    dirty_values = {str(r.get("git_dirty") or "").strip().lower() for r in rows if str(r.get("git_dirty") or "").strip()}
+    cohort_values = [str(r.get("cohort") or "").strip() for r in rows]
+    cohorts = sorted({c for c in cohort_values if c})
+    missing_cohort_count = sum(1 for c in cohort_values if not c)
+    dirty_row_values = [str(r.get("git_dirty") or "").strip().lower() for r in rows]
+    dirty_values = {v for v in dirty_row_values if v}
+    missing_git_dirty_count = sum(1 for v in dirty_row_values if not v)
     missing_logs = [
         r.get("log_path", "")
         for r in rows
@@ -324,15 +328,21 @@ def validate_manifest(manifest: dict, rows: list[dict[str, str]]) -> dict[str, o
     problems: list[str] = []
     if expected_n and len(rows) != expected_n:
         problems.append(f"row count {len(rows)} != manifest n {expected_n}")
-    if expected_cohort and cohorts != [expected_cohort]:
-        problems.append(f"cohorts seen {cohorts} do not match manifest cohort {expected_cohort!r}")
+    if expected_cohort and any(c != expected_cohort for c in cohort_values):
+        problems.append(
+            f"cohorts seen {cohorts} with {missing_cohort_count} missing "
+            f"do not match manifest cohort {expected_cohort!r}",
+        )
     duplicates = sorted(k for k, v in Counter(seeds).items() if v > 1)
     if duplicates:
         problems.append(f"duplicate seeds: {duplicates}")
     if len(seeds) != len(rows):
         problems.append(f"{len(rows) - len(seeds)} rows are missing seed metadata")
-    if require_clean and dirty_values - {"false", "0"}:
-        problems.append(f"dirty git rows present: {sorted(dirty_values)}")
+    if require_clean:
+        if missing_git_dirty_count:
+            problems.append(f"{missing_git_dirty_count} rows are missing git_dirty provenance")
+        if dirty_values - {"false", "0"}:
+            problems.append(f"dirty git rows present: {sorted(dirty_values - {'false', '0'})}")
     if missing_logs:
         problems.append(f"{len(missing_logs)} missing log paths")
     if missing_meta:
@@ -342,8 +352,10 @@ def validate_manifest(manifest: dict, rows: list[dict[str, str]]) -> dict[str, o
         "problems": problems,
         "n_rows": len(rows),
         "cohorts_seen": cohorts,
+        "missing_cohort_count": missing_cohort_count,
         "seed_count": len(seeds),
         "duplicate_seeds": duplicates,
+        "missing_git_dirty_count": missing_git_dirty_count,
         "missing_logs": missing_logs,
         "missing_meta": missing_meta,
     }
