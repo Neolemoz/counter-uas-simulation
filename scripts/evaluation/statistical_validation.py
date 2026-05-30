@@ -162,12 +162,18 @@ def aggregate_report(
 def _by_seed(rows: list[dict[str, str]]) -> tuple[dict[int, dict[str, str]], list[dict[str, str]]]:
     out: dict[int, dict[str, str]] = {}
     missing: list[dict[str, str]] = []
+    duplicates: list[int] = []
     for row in rows:
         seed = seed_for_row(row)
         if seed is None:
             missing.append(row)
             continue
+        if seed in out:
+            duplicates.append(seed)
+            continue
         out[seed] = row
+    if duplicates:
+        raise ValueError(f"duplicate seeds in paired input: {sorted(set(duplicates))}")
     return out, missing
 
 
@@ -296,6 +302,11 @@ def validate_manifest(manifest: dict, rows: list[dict[str, str]]) -> dict[str, o
     seeds = [s for s in (seed_for_row(r) for r in rows) if s is not None]
     cohorts = sorted({str(r.get("cohort") or "").strip() for r in rows if str(r.get("cohort") or "").strip()})
     dirty_values = {str(r.get("git_dirty") or "").strip().lower() for r in rows if str(r.get("git_dirty") or "").strip()}
+    missing_git_dirty = [
+        r.get("log_path", "")
+        for r in rows
+        if not str(r.get("git_dirty") or "").strip()
+    ]
     missing_logs = [
         r.get("log_path", "")
         for r in rows
@@ -316,6 +327,8 @@ def validate_manifest(manifest: dict, rows: list[dict[str, str]]) -> dict[str, o
         problems.append(f"duplicate seeds: {duplicates}")
     if len(seeds) != len(rows):
         problems.append(f"{len(rows) - len(seeds)} rows are missing seed metadata")
+    if require_clean and missing_git_dirty:
+        problems.append(f"{len(missing_git_dirty)} rows are missing git_dirty provenance")
     if require_clean and dirty_values - {"false", "0"}:
         problems.append(f"dirty git rows present: {sorted(dirty_values)}")
     if missing_logs:
@@ -329,6 +342,7 @@ def validate_manifest(manifest: dict, rows: list[dict[str, str]]) -> dict[str, o
         "cohorts_seen": cohorts,
         "seed_count": len(seeds),
         "duplicate_seeds": duplicates,
+        "missing_git_dirty": missing_git_dirty,
         "missing_logs": missing_logs,
         "missing_meta": missing_meta,
     }

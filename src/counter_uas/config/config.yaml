@@ -41,6 +41,15 @@ tracking_node:
   ros__parameters:
     scenario: single
     mahalanobis_gate_threshold: 16.27
+    # Default bringup uses /tracks/state at km scale. These gates match the
+    # fused-detection cadence so fast LOS targets can confirm before guidance.
+    candidate_match_gate_m: 20.0
+    candidate_predictive_gate: true
+    association_gate_m: 25.0
+    confirmation_hits: 2
+    candidate_max_missed_frames: 5
+    max_track_speed_mps: 80.0
+    max_update_jump_m: 25.0
 
 viz_node:
   ros__parameters:

@@ -456,8 +456,12 @@ def _gz_multi_setup(context, *args, **kwargs):
                 'selected_id_topic': '/interceptor/selected_id',
                 'lock_selected_after_first': True,
                 'hit_threshold_m': 4.5,
-                'hit_min_target_z_m': 0.5,
-                'aim_strike_on_mid_shell': True,
+                # Match single-target ground-start safety gates; the node defaults
+                # reject valid low-altitude kills for ground-launched interceptors.
+                'hit_min_interceptor_z_m': 0.05,
+                'hit_min_interceptor_travel_m': 1.0,
+                'hit_min_target_z_m': -1.0,
+                'aim_strike_on_mid_shell': False,
                 'target_velocity_smooth_alpha': tv_alpha,
                 'pursuit_lead_blend': 0.28,
                 'world_name': world_name,

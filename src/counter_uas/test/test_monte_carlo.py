@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import importlib.util
 import json
+import types
 from pathlib import Path
 
 _REPO_ROOT = Path(__file__).resolve().parents[3]
@@ -123,3 +124,60 @@ def test_aggregate_writes_outputs(tmp_path) -> None:
     assert 'noise_seed_mc' in csv_text and 'cohort' in csv_text and 'meta_path' in csv_text
     assert 'unit_cohort' in csv_text and 'cell_a' in csv_text
     assert 'run_a' in csv_text and 'run_b' in csv_text
+
+
+def test_launch_args_with_mc_seed_replaces_caller_seed() -> None:
+    mc = _load_mc()
+
+    args = mc._launch_args_with_mc_seed(
+        'use_noisy_measurement:=true noise_seed:=999 dropout_prob:=0.1',
+        42,
+    )
+
+    assert args == 'use_noisy_measurement:=true dropout_prob:=0.1 noise_seed:=42'
+
+
+def test_run_mode_returns_nonzero_on_partial_collection(tmp_path, monkeypatch) -> None:
+    mc = _load_mc()
+    log_path = tmp_path / 'run_10.log'
+    log_path.write_text(_HIT_LOG, encoding='utf-8')
+    out_dir = tmp_path / 'mc'
+    calls = []
+
+    def fake_run(cmd, capture_output, text):  # noqa: ANN001, ANN202
+        assert capture_output is True
+        assert text is True
+        calls.append(cmd)
+        if len(calls) == 1:
+            return types.SimpleNamespace(returncode=0, stdout=f'{log_path}\n', stderr='')
+        return types.SimpleNamespace(returncode=2, stdout='', stderr='launch failed')
+
+    monkeypatch.setattr(mc.subprocess, 'run', fake_run)
+
+    class Args:
+        pass
+
+    args = Args()
+    args.n = 2
+    args.seed_base = 10
+    args.geometry_id = ''
+    args.launch_args = 'use_noisy_measurement:=true noise_seed:=999'
+    args.scenario = 'single'
+    args.timeout_s = 1.0
+    args.label = 'partial'
+    args.out_dir = str(out_dir)
+    args.cohort = ''
+
+    rc = mc.cmd_run(args)
+
+    assert rc == 1
+    first_cmd = ' '.join(calls[0])
+    second_cmd = ' '.join(calls[1])
+    assert 'noise_seed:=10' in first_cmd
+    assert 'noise_seed:=999' not in first_cmd
+    assert 'noise_seed:=11' in second_cmd
+    payload = json.loads((out_dir / 'partial.json').read_text(encoding='utf-8'))
+    assert payload['n_requested'] == 2
+    assert payload['n_collected'] == 1
+    assert payload['n_failed'] == 1
+    assert payload['failed_seeds'] == [11]
