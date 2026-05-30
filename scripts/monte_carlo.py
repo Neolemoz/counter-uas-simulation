@@ -303,6 +303,13 @@ def _enrich_result_with_meta(result: dict, log_path: Path) -> dict:
     return result
 
 
+def _launch_args_with_mc_seed(base_args: str | None, seed: int) -> str:
+    """Ensure each MC trial drives the simulator with its own noise_seed."""
+    cleaned = re.sub(r'(?:(?<=\s)|^)noise_seed:=[^\s]+', '', base_args or '').strip()
+    cleaned = re.sub(r'\s+', ' ', cleaned)
+    return f"{cleaned} noise_seed:={int(seed)}".strip()
+
+
 def _log_matches_aggregate_filters(
     log_path: Path,
     *,
@@ -370,6 +377,7 @@ def cmd_run(args: argparse.Namespace) -> int:
     rows: list[dict] = []
     base_args = args.launch_args or ""
     gid = getattr(args, "geometry_id", "").strip()
+    failed_seeds: list[int] = []
 
     geometry_note = ""
     if gid:
@@ -377,10 +385,7 @@ def cmd_run(args: argparse.Namespace) -> int:
 
     for i in range(args.n):
         seed = args.seed_base + i
-        # Compose seed-aware launch args without overwriting whatever the caller already set.
-        per_run_args = base_args
-        if "noise_seed" not in base_args:
-            per_run_args = f"{per_run_args} noise_seed:={seed}".strip()
+        per_run_args = _launch_args_with_mc_seed(base_args, seed)
         cmd = [
             sys.executable,
             str(rc_script),
@@ -402,14 +407,17 @@ def cmd_run(args: argparse.Namespace) -> int:
         if r.returncode not in (0, 124):
             print(r.stderr, file=sys.stderr)
             print(f"[monte_carlo] run failed (rc={r.returncode}); skipping", file=sys.stderr)
+            failed_seeds.append(seed)
             continue
         out_lines = (r.stdout or "").strip().splitlines()
         if not out_lines:
             print("[monte_carlo] run produced no output; skipping", file=sys.stderr)
+            failed_seeds.append(seed)
             continue
         log_path = Path(out_lines[0].strip())
         if not log_path.is_file():
             print(f"[monte_carlo] log path missing: {log_path}", file=sys.stderr)
+            failed_seeds.append(seed)
             continue
         result = analyze.parse_run_to_result(str(log_path))
         result["run_id"] = log_path.stem
@@ -425,8 +433,18 @@ def cmd_run(args: argparse.Namespace) -> int:
         print("no successful runs collected", file=sys.stderr)
         return 1
     summary = _summarise(rows, args.label)
+    summary["n_requested"] = int(args.n)
+    summary["n_collected"] = len(rows)
+    summary["n_failed"] = len(failed_seeds)
+    summary["failed_seeds"] = failed_seeds
     _print_summary(summary)
     _write_outputs(Path(args.out_dir), args.label, summary, rows)
+    if failed_seeds or len(rows) != int(args.n):
+        print(
+            f"[monte_carlo] collected {len(rows)}/{args.n} requested runs; failed seeds={failed_seeds}",
+            file=sys.stderr,
+        )
+        return 1
     return 0
 
 
