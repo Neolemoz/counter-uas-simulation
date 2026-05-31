@@ -19,6 +19,24 @@ import stats_helpers as stats  # noqa: E402
 from classify_run import classify_run_failure_evidence  # noqa: E402
 
 
+def _capture_rc_from_row_or_meta(row: dict[str, str], log_path: Path) -> int | None:
+    raw = (row.get('capture_rc') or '').strip()
+    if not raw:
+        mp = log_path.with_suffix('.meta.json')
+        if mp.is_file():
+            try:
+                md = json.loads(mp.read_text(encoding='utf-8'))
+                raw = str(md.get('capture_rc') or '').strip()
+            except (OSError, json.JSONDecodeError):
+                raw = ''
+    if not raw:
+        return None
+    try:
+        return int(float(raw))
+    except ValueError:
+        return None
+
+
 def main() -> int:
     ap = argparse.ArgumentParser(description='Count failure_class over MC CSV log_path column.')
     ap.add_argument('csv_path', type=Path, help='monte_carlo *.csv with log_path header')
@@ -44,6 +62,7 @@ def main() -> int:
     cohorts: set[str] = set()
     evidence_rows: list[dict[str, object]] = []
     missing_logs: list[str] = []
+    success_rows_skipped = 0
     for row in rows:
         lp = (row.get('log_path') or '').strip()
         if not lp:
@@ -61,9 +80,13 @@ def main() -> int:
                     cohorts.add(str(co).strip())
             except (OSError, json.JSONDecodeError):
                 pass
-        evidence = classify_run_failure_evidence(log_path, capture_rc=None)
-        hist[str(evidence['failure_class'])] += 1
+        evidence = classify_run_failure_evidence(log_path, capture_rc=_capture_rc_from_row_or_meta(row, log_path))
         evidence_rows.append(evidence)
+        failure_class = str(evidence['failure_class'])
+        if not failure_class:
+            success_rows_skipped += 1
+            continue
+        hist[failure_class] += 1
 
     total = int(sum(hist.values()))
     class_ci95 = {
@@ -75,6 +98,7 @@ def main() -> int:
     payload = {
         'csv': str(p.resolve()),
         'n_classified': total,
+        'n_success_skipped': success_rows_skipped,
         'failure_hist': dict(sorted(hist.items())),
         'failure_class_ci95': class_ci95,
         'f5_unknown_rate': (f5_count / total) if total else None,
