@@ -12,6 +12,7 @@ import {
   BridgeConnectionBar,
   CollapsibleUiDiagnostics,
   RefreshControls,
+  RuntimeControlBar,
 } from "@/components/RefreshControls";
 import {
   ClockMirrorPanel,
@@ -131,6 +132,14 @@ export type AppWorkstationSlotsProps = {
     snapshots: Partial<Record<TelemetryChannel, ChannelSnapshot>>;
   }[];
   tactical: Tactical;
+  runtimeBusy: boolean;
+  selectedDefenderId: string | null;
+  selectedTargetId: string | null;
+  onPauseSim: () => void;
+  onResumeSim: () => void;
+  onSpawnDefender: () => void;
+  onAssignTarget: () => void;
+  onCancelAssignment: () => void;
   hidePanelCognition: boolean;
 };
 
@@ -199,6 +208,14 @@ export function AppWorkstationSlots(props: AppWorkstationSlotsProps) {
     onExperimentRollupChange,
     experimentSlots,
     tactical,
+    runtimeBusy,
+    selectedDefenderId,
+    selectedTargetId,
+    onPauseSim,
+    onResumeSim,
+    onSpawnDefender,
+    onAssignTarget,
+    onCancelAssignment,
     hidePanelCognition,
   } = props;
 
@@ -267,9 +284,18 @@ export function AppWorkstationSlots(props: AppWorkstationSlotsProps) {
         <>
           <BridgeConnectionBar
             connected={connected}
-            busy={busy}
+            busy={busy || runtimeBusy}
             onConnect={onConnectNewSession}
             onDisconnect={onDisconnectSelected}
+          />
+          <RuntimeControlBar
+            connected={connected}
+            editingEnabled={editingEnabled}
+            busy={busy || runtimeBusy}
+            simPaused={simPaused}
+            onPauseSim={onPauseSim}
+            onResumeSim={onResumeSim}
+            onSpawnDefender={onSpawnDefender}
           />
           <SessionTabBar
             slots={slotList}
@@ -452,9 +478,11 @@ export function AppWorkstationSlots(props: AppWorkstationSlotsProps) {
               editingEnabled={editingEnabled}
               entities={entities}
               selectedEntityId={selectedEntityId}
+              selectedDefenderId={selectedDefenderId}
+              selectedTargetId={selectedTargetId}
               mode={tactical.mode}
               state={tactical.state}
-              busy={tactical.busy}
+              busy={tactical.busy || runtimeBusy}
               error={tactical.error}
               targetPickActive={tactical.targetPickActive}
               onModeChange={(m) => void tactical.setMode(m)}
@@ -468,6 +496,8 @@ export function AppWorkstationSlots(props: AppWorkstationSlotsProps) {
               }
               onAssign={() => void tactical.assign()}
               onClear={() => void tactical.clear()}
+              onAssignTarget={onAssignTarget}
+              onCancelAssignment={onCancelAssignment}
             />
             {tactical.mode === "assisted" && (
               <TacticalAssistedPanel

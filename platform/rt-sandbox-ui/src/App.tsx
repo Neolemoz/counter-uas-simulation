@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { GovernanceChrome } from "@/components/GovernanceChrome";
 import { anyTerrainLayerEnabled } from "@/cesium/terrainLayers";
 import {
@@ -16,6 +16,11 @@ import {
 } from "@/hooks/useSessionEntityEditing";
 import { useSessionDisplayNames } from "@/hooks/useSessionDisplayNames";
 import { useSessionTabOrder } from "@/hooks/useSessionTabOrder";
+import {
+  resolveSelectedDefenderId,
+  resolveSelectedTargetId,
+  useRuntimeControls,
+} from "@/hooks/useRuntimeControls";
 import { useTacticalState } from "@/hooks/useTacticalState";
 import { sessionStateFromSnapshots } from "@/telemetry/channelIndex";
 import type { EntityType } from "@/world/entityCatalog";
@@ -131,6 +136,35 @@ export default function App() {
     snapshots.tactical_recommendation,
     editingEnabled,
   );
+
+  const selectedDefenderId = useMemo(
+    () =>
+      resolveSelectedDefenderId(
+        selectedEntityId,
+        entities,
+        tactical.state?.selected_interceptor_id,
+      ),
+    [selectedEntityId, entities, tactical.state?.selected_interceptor_id],
+  );
+
+  const selectedTargetId = useMemo(
+    () =>
+      resolveSelectedTargetId(
+        selectedEntityId,
+        entities,
+        tactical.state?.selected_target_id,
+      ),
+    [selectedEntityId, entities, tactical.state?.selected_target_id],
+  );
+
+  const runtime = useRuntimeControls({
+    sessionId,
+    editingEnabled,
+    selectedDefenderId,
+    selectedTargetId,
+    doPull,
+    setLastError,
+  });
 
   const handleSelectEntity = useCallback(
     (id: string | null) => {
@@ -273,6 +307,14 @@ export default function App() {
         onExperimentRollupChange={setExperimentRollup}
         experimentSlots={experimentSlots}
         tactical={tactical}
+        runtimeBusy={runtime.busy}
+        selectedDefenderId={selectedDefenderId}
+        selectedTargetId={selectedTargetId}
+        onPauseSim={() => void runtime.pauseSim()}
+        onResumeSim={() => void runtime.resumeSim()}
+        onSpawnDefender={() => void runtime.spawnDefender()}
+        onAssignTarget={() => void runtime.assignTarget()}
+        onCancelAssignment={() => void runtime.cancelAssignment()}
         hidePanelCognition={hidePanelCognition}
       />
     </div>

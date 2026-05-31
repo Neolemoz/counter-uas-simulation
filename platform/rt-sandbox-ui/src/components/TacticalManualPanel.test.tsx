@@ -10,6 +10,8 @@ describe("TacticalManualPanel", () => {
         editingEnabled
         entities={[]}
         selectedEntityId={null}
+        selectedDefenderId={null}
+        selectedTargetId={null}
         mode="manual"
         state={{ tactical_mode: "manual" }}
         busy={false}
@@ -20,6 +22,8 @@ describe("TacticalManualPanel", () => {
         onStartTargetPick={() => undefined}
         onAssign={() => undefined}
         onClear={() => undefined}
+        onAssignTarget={() => undefined}
+        onCancelAssignment={() => undefined}
       />,
     );
     expect(markup).toContain("Assisted");
@@ -42,6 +46,8 @@ describe("TacticalManualPanel", () => {
           },
         ]}
         selectedEntityId="i1"
+        selectedDefenderId="i1"
+        selectedTargetId="t1"
         mode="manual"
         state={{
           selected_interceptor_id: "i1",
@@ -55,8 +61,38 @@ describe("TacticalManualPanel", () => {
         onStartTargetPick={() => undefined}
         onAssign={() => undefined}
         onClear={() => undefined}
+        onAssignTarget={() => undefined}
+        onCancelAssignment={() => undefined}
       />,
     );
     expect(markup).toContain("Assign candidate");
+  });
+
+  it("shows human override assign and cancel buttons", () => {
+    const markup = renderToStaticMarkup(
+      <TacticalManualPanel
+        sessionId="sess-1"
+        editingEnabled
+        entities={[]}
+        selectedEntityId={null}
+        selectedDefenderId="d1"
+        selectedTargetId="t1"
+        mode="manual"
+        state={null}
+        busy={false}
+        error={null}
+        targetPickActive={false}
+        onModeChange={() => undefined}
+        onUseSelectedInterceptor={() => undefined}
+        onStartTargetPick={() => undefined}
+        onAssign={() => undefined}
+        onClear={() => undefined}
+        onAssignTarget={() => undefined}
+        onCancelAssignment={() => undefined}
+      />,
+    );
+    expect(markup).toContain("Human override");
+    expect(markup).toContain("Assign target");
+    expect(markup).toContain("Cancel assignment");
   });
 });

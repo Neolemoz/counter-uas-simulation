@@ -173,3 +173,55 @@ export function BridgeConnectionBar({
     </div>
   );
 }
+
+export function RuntimeControlBar({
+  connected,
+  editingEnabled,
+  busy,
+  simPaused,
+  onPauseSim,
+  onResumeSim,
+  onSpawnDefender,
+}: {
+  connected: boolean;
+  editingEnabled: boolean;
+  busy: boolean;
+  simPaused: boolean;
+  onPauseSim: () => void;
+  onResumeSim: () => void;
+  onSpawnDefender: () => void;
+}) {
+  const controlsDisabled = !connected || !editingEnabled || busy;
+
+  return (
+    <div className="flex flex-wrap items-center gap-2 rounded-lg border border-slate-700/80 bg-slate-900/50 px-3 py-2">
+      <span className="text-xs font-semibold uppercase tracking-wide text-slate-400">
+        Runtime
+      </span>
+      <button
+        type="button"
+        onClick={onPauseSim}
+        disabled={controlsDisabled || simPaused}
+        className="rounded border border-amber-700/60 bg-amber-950/50 px-2.5 py-1 text-xs font-medium text-amber-100 hover:bg-amber-900/50 disabled:opacity-40"
+      >
+        Pause
+      </button>
+      <button
+        type="button"
+        onClick={onResumeSim}
+        disabled={controlsDisabled || !simPaused}
+        className="rounded border border-emerald-700/60 bg-emerald-950/50 px-2.5 py-1 text-xs font-medium text-emerald-100 hover:bg-emerald-900/50 disabled:opacity-40"
+      >
+        Resume
+      </button>
+      <button
+        type="button"
+        onClick={onSpawnDefender}
+        disabled={controlsDisabled}
+        className="rounded border border-cyan-700/60 bg-cyan-950/50 px-2.5 py-1 text-xs font-medium text-cyan-100 hover:bg-cyan-900/50 disabled:opacity-40"
+      >
+        Spawn defender
+      </button>
+    </div>
+  );
+}
