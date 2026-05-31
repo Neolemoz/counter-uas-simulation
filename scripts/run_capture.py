@@ -13,7 +13,7 @@ import os
 import subprocess
 import sys
 import time
-from dataclasses import asdict, dataclass
+from dataclasses import asdict, dataclass, replace
 from pathlib import Path
 
 
@@ -35,6 +35,7 @@ class RunMeta:
     cohort: str | None = None
     launch_args_raw: str | None = None
     launch_args_kv: dict[str, str] | None = None
+    capture_rc: int | None = None
 
 
 def _utc_ts() -> str:
@@ -85,6 +86,10 @@ def _parse_launch_args(raw: str | None) -> dict[str, str]:
         if k:
             out[k] = v.strip()
     return out
+
+
+def _write_meta(meta_path: Path, meta: RunMeta) -> None:
+    meta_path.write_text(json.dumps(asdict(meta), indent=2, sort_keys=True) + "\n", encoding="utf-8")
 
 
 def run_capture(
@@ -164,8 +169,7 @@ def run_capture(
         launch_args_raw=launch_args,
         launch_args_kv=_parse_launch_args(launch_args),
     )
-    meta_dict = asdict(meta)
-    meta_path.write_text(json.dumps(meta_dict, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    _write_meta(meta_path, meta)
 
     with log_path.open("w", encoding="utf-8") as f:
         f.write(f"=== run_id: {run_id} ===\n")
@@ -195,11 +199,19 @@ def run_capture(
                 check=False,
                 env=env,
             )
-            return log_path, meta_path, meta, int(r.returncode)
+            rc = int(r.returncode)
+            if rc == 124:
+                f.write("\n=== TIMEOUT ===\n")
+                f.flush()
+            meta_done = replace(meta, capture_rc=rc)
+            _write_meta(meta_path, meta_done)
+            return log_path, meta_path, meta_done, rc
         except subprocess.TimeoutExpired:
             f.write("\n=== TIMEOUT ===\n")
             f.flush()
-            return log_path, meta_path, meta, 124
+            meta_done = replace(meta, capture_rc=124)
+            _write_meta(meta_path, meta_done)
+            return log_path, meta_path, meta_done, 124
 
 
 def main() -> int:

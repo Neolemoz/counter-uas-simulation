@@ -25,10 +25,20 @@ def test_f1_timeout_marker() -> None:
 
 def test_f1_capture_rc_124() -> None:
     with tempfile.NamedTemporaryFile(mode='w', suffix='.log', delete=False, encoding='utf-8') as f:
-        f.write('[HIT] x min_miss=0.1 m\n')
+        f.write('no hit here\n')
         p = Path(f.name)
     try:
         assert classify_run_failure(p, capture_rc=124) == 'F1_timeout'
+    finally:
+        p.unlink(missing_ok=True)
+
+
+def test_hit_is_not_failure_even_if_capture_times_out() -> None:
+    with tempfile.NamedTemporaryFile(mode='w', suffix='.log', delete=False, encoding='utf-8') as f:
+        f.write('[HIT] x min_miss=0.1 m\n=== TIMEOUT ===\n')
+        p = Path(f.name)
+    try:
+        assert classify_run_failure(p, capture_rc=124) == ''
     finally:
         p.unlink(missing_ok=True)
 
@@ -51,6 +61,16 @@ def test_f5_hit_no_specials() -> None:
     )
     with tempfile.NamedTemporaryFile(mode='w', suffix='.log', delete=False, encoding='utf-8') as f:
         f.write(text)
+        p = Path(f.name)
+    try:
+        assert classify_run_failure(p) == ''
+    finally:
+        p.unlink(missing_ok=True)
+
+
+def test_reassignment_diagnostic_is_not_assignment_switch() -> None:
+    with tempfile.NamedTemporaryFile(mode='w', suffix='.log', delete=False, encoding='utf-8') as f:
+        f.write('Reassignment inequality margin was logged for audit only\n')
         p = Path(f.name)
     try:
         assert classify_run_failure(p) == 'F5_unknown'

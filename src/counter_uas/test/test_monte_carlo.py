@@ -123,3 +123,15 @@ def test_aggregate_writes_outputs(tmp_path) -> None:
     assert 'noise_seed_mc' in csv_text and 'cohort' in csv_text and 'meta_path' in csv_text
     assert 'unit_cohort' in csv_text and 'cell_a' in csv_text
     assert 'run_a' in csv_text and 'run_b' in csv_text
+
+
+def test_launch_args_force_unique_noise_seed() -> None:
+    mc = _load_mc()
+    out = mc._launch_args_with_noise_seed(
+        'use_noisy_measurement:=true noise_seed:=999 noise_std_m:=0.5',
+        42,
+    )
+    assert 'use_noisy_measurement:=true' in out
+    assert 'noise_std_m:=0.5' in out
+    assert 'noise_seed:=999' not in out
+    assert out.split().count('noise_seed:=42') == 1

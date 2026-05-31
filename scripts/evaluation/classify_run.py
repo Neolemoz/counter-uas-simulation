@@ -16,7 +16,7 @@ if str(_SCRIPTS_DIR) not in sys.path:
 import summarize_run  # noqa: E402
 
 _ENG_DELTA_RE = re.compile(r'delta_t_go_raw=([+-]?\d+(?:\.\d+)?(?:[eE][+-]?\d+)?)')
-_REASSIGN_RE = re.compile(r'reassign|assignment_switch|switch_tti', re.IGNORECASE)
+_REASSIGN_RE = re.compile(r'\breassign(?:ed|ing)?\b|assignment_switch|switch_tti', re.IGNORECASE)
 
 
 def classify_run_failure_evidence(
@@ -43,15 +43,19 @@ def classify_run_failure_evidence(
     has_eng_metric = '[eng_metric]' in low
     max_abs_delta = max((abs(d) for d in deltas), default=None)
 
-    failure_class = 'F5_unknown'
-    if timeout_seen:
-        failure_class = 'F1_timeout'
-    elif assignment_switch_count > 0:
-        failure_class = 'F4_assignment'
-    elif deltas and (max(abs(d) for d in deltas) > 8.0 or len(deltas) > 15):
-        failure_class = 'F3_track_instability'
-    elif not summary.hit and feasible_geom_seen:
-        failure_class = 'F2_geom_not_dyn'
+    # A confirmed HIT is a successful run, even when the capture wrapper later
+    # exits via its fixed timeout after the sim has frozen on impact.
+    failure_class = ''
+    if not summary.hit:
+        failure_class = 'F5_unknown'
+        if timeout_seen:
+            failure_class = 'F1_timeout'
+        elif assignment_switch_count > 0:
+            failure_class = 'F4_assignment'
+        elif deltas and (max(abs(d) for d in deltas) > 8.0 or len(deltas) > 15):
+            failure_class = 'F3_track_instability'
+        elif feasible_geom_seen:
+            failure_class = 'F2_geom_not_dyn'
 
     return {
         'failure_class': failure_class,
@@ -74,7 +78,7 @@ def classify_run_failure(
     capture_rc: int | None = None,
 ) -> str:
     """
-    Return F1..F5 bucket for a single Gazebo capture log.
+    Return F1..F5 bucket for a failed Gazebo capture log, or "" for a HIT.
 
     F1_timeout — run cut by timeout or obvious time limit.
     F2_geom_not_dyn — no HIT but geometry looked feasible in metrics.
