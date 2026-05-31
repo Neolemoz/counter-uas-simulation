@@ -14,6 +14,7 @@ from rt_sandbox.lifecycle import SessionState, can_transition
 from rt_sandbox.runtime_handle import runtime_is_adapter
 from rt_sandbox.session_adapter_results import apply_adapter_poll_result
 from rt_sandbox.session_record import SessionRecord
+from rt_sandbox.runtime_capture import record_runtime_capture_frame
 from rt_sandbox.session_response import fail, ok
 from rt_sandbox.telemetry_subscriptions import (
     TelemetrySubscriptionStore,
@@ -58,6 +59,7 @@ def publish_telemetry(
             payload["command_type"] = command_type
         if previous_state is not None:
             payload["previous_state"] = previous_state
+    record_runtime_capture_frame(session, channel, payload)
     trimmed = telemetry_subs.record(session.session_id, channel, payload)
     if trimmed > 0:
         audit.append(
@@ -154,6 +156,9 @@ def publish_channels_for_transition(
         "delete_entity",
         "reset_session",
         "apply_runtime_template",
+        "apply_scenario",
+        "assign_target",
+        "cancel_assignment",
         "advance_workflow",
     }:
         publish_telemetry(

@@ -263,6 +263,7 @@ def reset_session(
     session.telemetry_mirror = None
     if session.tactical is not None:
         session.tactical.reset()
+    session.live_assignments.clear()
     audit.append(
         session.session_id,
         command_id=command_id,

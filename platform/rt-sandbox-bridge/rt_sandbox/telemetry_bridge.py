@@ -111,10 +111,13 @@ def clear_telemetry_mirror(session: Any) -> None:
         mirror.clear()
 
 
-def _attacker_telemetry_entry(entry: dict[str, Any], lifecycle_state: str) -> dict[str, Any]:
+def _entity_telemetry_entry(
+    entry: dict[str, Any],
+    lifecycle_state: str,
+    assignments: dict[str, str],
+    assigned_targets: set[str],
+) -> dict[str, Any]:
     out = dict(entry)
-    if out.get("entity_type") != "drone":
-        return out
     pose = dict(out.get("pose") or out.get("position") or {})
     position = {
         "x": float(pose.get("x", 0.0)),
@@ -126,23 +129,37 @@ def _attacker_telemetry_entry(entry: dict[str, Any], lifecycle_state: str) -> di
     vy = float(velocity_in.get("y", velocity_in.get("vy", 0.0)))
     vz = float(velocity_in.get("z", velocity_in.get("vz", 0.0)))
     speed = float(velocity_in.get("speed_mps", (vx * vx + vy * vy + vz * vz) ** 0.5))
-    out["position"] = position
-    out["velocity"] = {"x": vx, "y": vy, "z": vz, "speed_mps": speed}
     heading = out.get("heading_deg")
     if heading is None:
         heading = pose.get("yaw_deg", 0.0)
+    out["position"] = position
+    out["velocity"] = {"x": vx, "y": vy, "z": vz, "speed_mps": speed}
+    out["speed_mps"] = speed
     out["heading_deg"] = float(heading)
+    entity_id = str(out.get("entity_id") or "")
+    active_target_id = assignments.get(entity_id)
+    if active_target_id:
+        out["active_target_id"] = active_target_id
+        out["assignment_state"] = "assigned"
+    else:
+        out["assignment_state"] = str(out.get("assignment_state") or "none")
+    if entity_id in assigned_targets:
+        out["target_state"] = "assigned"
+    else:
+        out["target_state"] = str(out.get("target_state") or "none")
     out["lifecycle_state"] = lifecycle_state
     return out
 
 
-def _with_attacker_telemetry_fields(
+def _with_entity_telemetry_fields(
     payload: dict[str, Any], session: Any
 ) -> dict[str, Any]:
     out = dict(payload)
     lifecycle_state = str(getattr(getattr(session, "state", None), "value", "unknown"))
+    assignments = dict(getattr(session, "live_assignments", {}) or {})
+    assigned_targets = set(assignments.values())
     out["entities"] = [
-        _attacker_telemetry_entry(item, lifecycle_state)
+        _entity_telemetry_entry(item, lifecycle_state, assignments, assigned_targets)
         if isinstance(item, dict)
         else item
         for item in list(out.get("entities") or [])
@@ -280,7 +297,7 @@ def _build_stub_channel_payload(
                 source=SOURCE_BRIDGE_REGISTRY,
                 authority_label=AUTHORITY_COMMAND,
             )
-        payload = _with_attacker_telemetry_fields(
+        payload = _with_entity_telemetry_fields(
             {"entities": session.world.registry.poses_for_telemetry()},
             session,
         )
@@ -328,7 +345,7 @@ def resolve_channel_payload(
             authority_label=AUTHORITY_EXPLANATORY_TELEMETRY,
         )
     if channel == "entity_pose_mirror":
-        payload = _with_attacker_telemetry_fields(dict(mirror.entity_pose_mirror), session)
+        payload = _with_entity_telemetry_fields(dict(mirror.entity_pose_mirror), session)
         payload["telemetry_health"] = mirror.telemetry_health
         payload["telemetry_revision"] = mirror.telemetry_revision
         return enrich_channel_payload(

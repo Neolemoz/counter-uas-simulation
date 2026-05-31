@@ -1,0 +1,109 @@
+{
+  "assignments": {
+    "defender-alpha": "attacker-alpha"
+  },
+  "capture_id": "capture-golden-0001",
+  "entities": [
+    {
+      "entity_id": "asset-alpha",
+      "entity_type": "waypoint_marker",
+      "pose": {
+        "x": 0.0,
+        "y": 0.0,
+        "yaw_deg": 0.0,
+        "z": 0.0
+      }
+    },
+    {
+      "entity_id": "defender-alpha",
+      "entity_type": "interceptor",
+      "pose": {
+        "x": 10.0,
+        "y": 0.0,
+        "yaw_deg": 0.0,
+        "z": 10.0
+      }
+    },
+    {
+      "entity_id": "attacker-alpha",
+      "entity_type": "drone",
+      "pose": {
+        "x": 50.0,
+        "y": 0.0,
+        "yaw_deg": 180.0,
+        "z": 20.0
+      }
+    }
+  ],
+  "governance_banner": "RT RUNTIME RUN CAPTURE - explanatory; not replay truth",
+  "lifecycle_transitions": [
+    {
+      "channel": "lifecycle_state",
+      "payload": {
+        "command_type": "start_capture",
+        "state": "running"
+      },
+      "timestamp_utc": "2026-06-01T00:00:01+00:00"
+    },
+    {
+      "channel": "lifecycle_state",
+      "payload": {
+        "command_type": "stop_capture",
+        "state": "running"
+      },
+      "timestamp_utc": "2026-06-01T00:00:05+00:00"
+    }
+  ],
+  "schema": "rt_runtime_run_capture_v1",
+  "session_id": "session-golden-0001",
+  "started_utc": "2026-06-01T00:00:00+00:00",
+  "stopped_utc": "2026-06-01T00:00:05+00:00",
+  "telemetry_frames": [
+    {
+      "channel": "entity_pose_mirror",
+      "payload": {
+        "entities": [
+          {
+            "active_target_id": "attacker-alpha",
+            "assignment_state": "assigned",
+            "entity_id": "defender-alpha",
+            "entity_type": "interceptor",
+            "heading_deg": 0.0,
+            "speed_mps": 0.0,
+            "target_state": "none",
+            "velocity": {
+              "speed_mps": 0.0,
+              "x": 0.0,
+              "y": 0.0,
+              "z": 0.0
+            }
+          },
+          {
+            "entity_id": "attacker-alpha",
+            "entity_type": "drone",
+            "heading_deg": 180.0,
+            "speed_mps": 0.0,
+            "target_state": "assigned",
+            "velocity": {
+              "speed_mps": 0.0,
+              "x": 0.0,
+              "y": 0.0,
+              "z": 0.0
+            }
+          }
+        ]
+      },
+      "timestamp_utc": "2026-06-01T00:00:02+00:00"
+    },
+    {
+      "channel": "lifecycle_state",
+      "payload": {
+        "command_type": "stop_capture",
+        "state": "running"
+      },
+      "timestamp_utc": "2026-06-01T00:00:05+00:00"
+    }
+  ],
+  "timestamp": "2026-06-01T00:00:05+00:00",
+  "world_revision": 3
+}

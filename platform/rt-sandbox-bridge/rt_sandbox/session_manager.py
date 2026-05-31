@@ -11,6 +11,7 @@ from rt_sandbox.audit_log import AuditLog
 from rt_sandbox.export_audit_log import ExportAuditLog
 from rt_sandbox.governance import (
     ENTITY_COMMANDS,
+    ENTITY_TYPE_LIMITS,
     GOVERNANCE_BANNER,
     GovernanceConfig,
     RateLimiter,
@@ -20,8 +21,10 @@ from rt_sandbox.governance import (
     WORKFLOW_COMMANDS,
     classify_command,
     validate_capture_payload,
+    validate_pose,
 )
-from rt_sandbox.lifecycle import SessionState
+from rt_sandbox.isolation import repo_root_from
+from rt_sandbox.lifecycle import SessionState, can_transition
 from rt_sandbox.session_capture_handler import capture_session as handle_capture_session
 from rt_sandbox.session_entity_handlers import handle_entity
 from rt_sandbox.session_lifecycle_handlers import (
@@ -43,6 +46,12 @@ from rt_sandbox.session_registry_handlers import (
     list_sessions as handle_list_sessions,
     pick_editing_session_after_evict,
     set_editing_session as handle_set_editing_session,
+)
+from rt_sandbox.runtime_capture import (
+    begin_runtime_capture,
+    finalize_runtime_capture,
+    runtime_capture_status,
+    validate_runtime_capture_artifact,
 )
 from rt_sandbox.session_response import fail, ok, response_base
 from rt_sandbox.session_runtime_commands import handle_runtime_command
@@ -67,28 +76,128 @@ from rt_sandbox.telemetry_subscriptions import TelemetrySubscriptionStore
 
 _SIM_COMMAND_CANONICAL = {
     "start_sim": "start_session",
+    "pause_sim": "pause_session",
+    "resume_sim": "resume",
     "stop_sim": "stop_session",
     "reset_sim": "reset_session",
     "spawn_attacker": "spawn_entity",
+    "spawn_defender": "spawn_entity",
+    "reposition_entity": "move_entity",
 }
 
-_DEFAULT_ATTACKER_POSE = {"x": 0.0, "y": 0.0, "z": 20.0, "yaw_deg": 0.0}
+_SIM_ENTITY_ALIASES: dict[str, tuple[str, dict[str, float]]] = {
+    "spawn_attacker": (
+        "drone",
+        {"x": 0.0, "y": 0.0, "z": 20.0, "yaw_deg": 0.0},
+    ),
+    "spawn_defender": (
+        "interceptor",
+        {"x": 0.0, "y": 0.0, "z": 10.0, "yaw_deg": 0.0},
+    ),
+}
 
 
 def _payload_for_sim_alias(command_type: str, payload: Any) -> Any:
-    if command_type != "spawn_attacker":
+    alias = _SIM_ENTITY_ALIASES.get(command_type)
+    if alias is None:
         return payload
+    entity_type, default_pose = alias
     if payload is None:
         payload_in: dict[str, Any] = {}
     elif isinstance(payload, dict):
         payload_in = dict(payload)
     else:
         return payload
-    pose = payload_in.get("pose") or dict(_DEFAULT_ATTACKER_POSE)
-    out: dict[str, Any] = {"entity_type": "drone", "pose": pose}
+    pose = payload_in.get("pose") or dict(default_pose)
+    out: dict[str, Any] = {"entity_type": entity_type, "pose": pose}
     if payload_in.get("entity_id"):
         out["entity_id"] = payload_in["entity_id"]
     return out
+
+
+_SCENARIO_TERRAIN_PRESETS = frozenset({"rt_sandbox_flat"})
+_SCENARIO_GROUP_TYPES = {
+    "assets": {"waypoint_marker", "radar"},
+    "defenders": {"interceptor"},
+    "attackers": {"drone"},
+}
+_SCENARIO_DEFAULT_TYPES = {
+    "assets": "waypoint_marker",
+    "defenders": "interceptor",
+    "attackers": "drone",
+}
+
+
+def _validate_scenario_entry(group: str, entry: Any) -> tuple[dict[str, Any] | None, str | None]:
+    if not isinstance(entry, dict):
+        return None, "INVALID_POSE"
+    entity_type = str(entry.get("entity_type") or _SCENARIO_DEFAULT_TYPES[group])
+    if entity_type not in _SCENARIO_GROUP_TYPES[group]:
+        return None, "COMMAND_FORBIDDEN"
+    pose = entry.get("pose")
+    pose_err = validate_pose(pose)
+    if pose_err:
+        return None, pose_err
+    assert isinstance(pose, dict)
+    normalized: dict[str, Any] = {
+        "entity_type": entity_type,
+        "pose": {k: float(pose[k]) for k in ("x", "y", "z")},
+    }
+    if "yaw_deg" in pose:
+        normalized["pose"]["yaw_deg"] = float(pose["yaw_deg"])
+    if entry.get("entity_id"):
+        normalized["entity_id"] = str(entry["entity_id"])
+    return normalized, None
+
+
+def _validate_scenario_payload(
+    payload: Any,
+    *,
+    config: GovernanceConfig,
+) -> tuple[dict[str, Any] | None, str | None]:
+    if not isinstance(payload, dict):
+        return None, "INVALID_STATE"
+    terrain_preset = payload.get("terrain_preset")
+    if not isinstance(terrain_preset, str) or not terrain_preset:
+        return None, "INVALID_STATE"
+    if terrain_preset not in _SCENARIO_TERRAIN_PRESETS:
+        return None, "COMMAND_FORBIDDEN"
+    if terrain_preset != config.rt_sandbox_world:
+        return None, "COMMAND_FORBIDDEN"
+
+    normalized: dict[str, Any] = {"terrain_preset": terrain_preset}
+    type_counts: dict[str, int] = {}
+    entity_ids: set[str] = set()
+    total = 0
+    for group in ("assets", "defenders", "attackers"):
+        items = payload.get(group)
+        if not isinstance(items, list):
+            return None, "INVALID_STATE"
+        normalized_items: list[dict[str, Any]] = []
+        for item in items:
+            normalized_item, err = _validate_scenario_entry(group, item)
+            if err:
+                return None, err
+            assert normalized_item is not None
+            normalized_items.append(normalized_item)
+            explicit_entity_id = normalized_item.get("entity_id")
+            if explicit_entity_id:
+                entity_id = str(explicit_entity_id)
+                if entity_id in entity_ids:
+                    return None, "INVALID_STATE"
+                entity_ids.add(entity_id)
+            entity_type = str(normalized_item["entity_type"])
+            type_counts[entity_type] = type_counts.get(entity_type, 0) + 1
+            total += 1
+        normalized[group] = normalized_items
+
+    if total > config.max_entity_count:
+        return None, "RESOURCE_LIMIT_EXCEEDED"
+    for entity_type, count in type_counts.items():
+        if count > ENTITY_TYPE_LIMITS.get(entity_type, 0):
+            return None, "RESOURCE_LIMIT_EXCEEDED"
+    normalized["total_entity_count"] = total
+    return normalized, None
 
 
 def _config_for_command(config: GovernanceConfig, command_type: str) -> GovernanceConfig:
@@ -260,7 +369,15 @@ class BridgeSessionManager:
         if not self._rate_limiter_for(session.session_id).check(now):
             return fail(base, "RESOURCE_LIMIT_EXCEEDED", "command rate limit")
 
-        if command_type in ENTITY_COMMANDS or command_type == "apply_runtime_template":
+        if command_type in ENTITY_COMMANDS or command_type in {
+            "apply_runtime_template",
+            "apply_scenario",
+            "assign_target",
+            "cancel_assignment",
+            "start_capture",
+            "stop_capture",
+            "capture_status",
+        }:
             if session.session_id != self._editing_session_id:
                 return fail(
                     base,
@@ -348,6 +465,32 @@ class BridgeSessionManager:
                 audit=self._audit,
                 telemetry=self._telemetry,
                 publish_transition=self._publish_channels_for_transition,
+                command_id=command_id,
+                issued_by=issued_by,
+            )
+        if command_type in {"start_capture", "stop_capture", "capture_status"}:
+            return self._handle_runtime_capture(
+                session,
+                command_type,
+                base,
+                command_id=command_id,
+                issued_by=issued_by,
+            )
+        if command_type in {"assign_target", "cancel_assignment"}:
+            return self._handle_live_assignment(
+                session,
+                command_type,
+                payload,
+                base,
+                command_id=command_id,
+                issued_by=issued_by,
+            )
+        if command_type == "apply_scenario":
+            return self._handle_apply_scenario(
+                session,
+                payload,
+                base,
+                config=session_config,
                 command_id=command_id,
                 issued_by=issued_by,
             )
@@ -488,6 +631,298 @@ class BridgeSessionManager:
             )
 
         return fail(base, "COMMAND_FORBIDDEN", command_type)
+
+    def _handle_runtime_capture(
+        self,
+        session: SessionRecord,
+        command_type: str,
+        base: dict[str, Any],
+        *,
+        command_id: str,
+        issued_by: str,
+    ) -> dict[str, Any]:
+        if not can_transition(session.state, command_type):
+            return fail(base, "INVALID_STATE", session.state.value)
+        if not session.runtime.is_alive():
+            return self._runtime_crashed(session, base, command_id, issued_by)
+
+        if command_type == "capture_status":
+            status = runtime_capture_status(session)
+            resp = ok(base, state=session.state.value)
+            resp.update(status)
+            return resp
+
+        if command_type == "start_capture":
+            if session.runtime_capture is not None:
+                return fail(base, "INVALID_STATE", "runtime capture already active")
+            capture_state = begin_runtime_capture(session)
+            self._audit.append(
+                session.session_id,
+                command_id=command_id,
+                command_type="start_capture",
+                issued_by=issued_by,
+                result="OK",
+                detail={
+                    "capture_id": capture_state.capture_id,
+                    "state": session.state.value,
+                },
+            )
+            self._publish_channels_for_transition(session, "start_capture", session.state)
+            self._publish_telemetry(
+                session,
+                "world_summary",
+                command_id=command_id,
+                issued_by=issued_by,
+            )
+            self._publish_telemetry(
+                session,
+                "entity_pose_mirror",
+                command_id=command_id,
+                issued_by=issued_by,
+            )
+            resp = ok(base, state=session.state.value)
+            resp["capture_id"] = capture_state.capture_id
+            resp["capture_active"] = True
+            resp["started_utc"] = capture_state.started_utc
+            resp["frames_count"] = len(capture_state.telemetry_frames)
+            resp["entities_count"] = session.world.registry.count() if session.world else 0
+            return resp
+
+        if session.runtime_capture is None:
+            return fail(base, "INVALID_STATE", "runtime capture not active")
+        self._publish_channels_for_transition(session, "stop_capture", session.state)
+        root = self._repo_root or repo_root_from()
+        artifact, artifact_path = finalize_runtime_capture(
+            session,
+            repo_root=root,
+            audit_path=self._audit.path_for(session.session_id),
+        )
+        self._audit.append(
+            session.session_id,
+            command_id=command_id,
+            command_type="stop_capture",
+            issued_by=issued_by,
+            result="OK",
+            detail={
+                "capture_id": artifact["capture_id"],
+                "artifact_ref": artifact_path.as_posix(),
+                "telemetry_frame_count": len(artifact.get("telemetry_frames") or []),
+                "state": session.state.value,
+            },
+        )
+        resp = ok(base, state=session.state.value)
+        resp["capture_id"] = artifact["capture_id"]
+        resp["capture_active"] = False
+        resp["artifact_ref"] = artifact_path.as_posix()
+        resp["artifact_path"] = artifact_path.as_posix()
+        validation = validate_runtime_capture_artifact(artifact)
+        resp["artifact_schema"] = artifact.get("schema")
+        resp["artifact_valid"] = validation["valid"]
+        resp["telemetry_frame_count"] = len(artifact.get("telemetry_frames") or [])
+        resp["frames_count"] = len(artifact.get("telemetry_frames") or [])
+        resp["entities_count"] = len(artifact.get("entities") or [])
+        resp["lifecycle_transition_count"] = len(artifact.get("lifecycle_transitions") or [])
+        return resp
+
+    def _handle_live_assignment(
+        self,
+        session: SessionRecord,
+        command_type: str,
+        payload: Any,
+        base: dict[str, Any],
+        *,
+        command_id: str,
+        issued_by: str,
+    ) -> dict[str, Any]:
+        if not can_transition(session.state, command_type):
+            return fail(base, "INVALID_STATE", session.state.value)
+        if not session.runtime.is_alive():
+            return self._runtime_crashed(session, base, command_id, issued_by)
+        if session.world is None:
+            return fail(base, "INVALID_STATE", "world not initialized")
+        if not isinstance(payload, dict):
+            return fail(base, "INVALID_PAYLOAD", command_type)
+
+        defender_id_raw = payload.get("defender_id")
+        if not isinstance(defender_id_raw, str) or not defender_id_raw:
+            return fail(base, "INVALID_PAYLOAD", "defender_id required")
+        defender_id = defender_id_raw
+        defender = session.world.registry.get(defender_id)
+        if defender is None:
+            return fail(base, "ENTITY_NOT_FOUND", "defender_id")
+        if defender.entity_type != "interceptor":
+            return fail(base, "COMMAND_FORBIDDEN", "defender must be interceptor")
+
+        previous_target_id = session.live_assignments.get(defender_id)
+        if command_type == "assign_target":
+            target_id_raw = payload.get("target_id")
+            if not isinstance(target_id_raw, str) or not target_id_raw:
+                return fail(base, "INVALID_PAYLOAD", "target_id required")
+            target_id = target_id_raw
+            target = session.world.registry.get(target_id)
+            if target is None:
+                return fail(base, "ENTITY_NOT_FOUND", "target_id")
+            if target.entity_type != "drone":
+                return fail(base, "COMMAND_FORBIDDEN", "target must be drone")
+            session.live_assignments[defender_id] = target_id
+            detail = {
+                "defender_id": defender_id,
+                "target_id": target_id,
+                "previous_target_id": previous_target_id,
+                "assignment_state": "assigned",
+                "state": session.state.value,
+            }
+            result_target_id = target_id
+            assignment_state = "assigned"
+        else:
+            removed_target_id = session.live_assignments.pop(defender_id, None)
+            detail = {
+                "defender_id": defender_id,
+                "target_id": removed_target_id,
+                "previous_target_id": previous_target_id,
+                "assignment_state": "cleared",
+                "state": session.state.value,
+            }
+            result_target_id = removed_target_id
+            assignment_state = "cleared"
+
+        self._audit.append(
+            session.session_id,
+            command_id=command_id,
+            command_type=command_type,
+            issued_by=issued_by,
+            result="OK",
+            detail=detail,
+        )
+        self._publish_channels_for_transition(session, command_type, session.state)
+        resp = ok(base, state=session.state.value)
+        resp["defender_id"] = defender_id
+        resp["target_id"] = result_target_id
+        resp["active_target_id"] = session.live_assignments.get(defender_id)
+        resp["assignment_state"] = assignment_state
+        resp["assignment_count"] = len(session.live_assignments)
+        return resp
+
+    def _handle_apply_scenario(
+        self,
+        session: SessionRecord,
+        payload: Any,
+        base: dict[str, Any],
+        *,
+        config: GovernanceConfig,
+        command_id: str,
+        issued_by: str,
+    ) -> dict[str, Any]:
+        if not session.runtime.is_alive():
+            return self._runtime_crashed(session, base, command_id, issued_by)
+        if session.world is None:
+            return fail(base, "INVALID_STATE", "world not initialized")
+        if not session.state:
+            return fail(base, "INVALID_STATE", "session state unavailable")
+
+        normalized, payload_err = _validate_scenario_payload(payload, config=config)
+        if payload_err:
+            return fail(base, payload_err, "invalid payload for apply_scenario")
+        assert normalized is not None
+
+        existing_count = session.world.registry.count()
+        scenario_total = int(normalized["total_entity_count"])
+        aggregate_after_reset = (
+            self._registry.total_entity_count() - existing_count + scenario_total
+        )
+        if aggregate_after_reset > config.max_total_entities_across_sessions:
+            return fail(
+                base,
+                "RESOURCE_LIMIT_EXCEEDED",
+                "aggregate entity cap across sessions",
+            )
+
+        reset_resp = reset_session(
+            session,
+            base,
+            config=config,
+            audit=self._audit,
+            telemetry=self._telemetry,
+            publish_transition=self._publish_channels_for_transition,
+            command_id=command_id,
+            issued_by=issued_by,
+        )
+        if not reset_resp.get("ok"):
+            return reset_resp
+
+        counts = {"assets": 0, "defenders": 0, "attackers": 0}
+        entity_ids: dict[str, list[str]] = {"assets": [], "defenders": [], "attackers": []}
+
+        def spawn_payload(group: str, item: dict[str, Any]) -> dict[str, Any]:
+            if group == "defenders":
+                return _payload_for_sim_alias("spawn_defender", item)
+            if group == "attackers":
+                return _payload_for_sim_alias("spawn_attacker", item)
+            out = {"entity_type": item["entity_type"], "pose": item["pose"]}
+            if item.get("entity_id"):
+                out["entity_id"] = item["entity_id"]
+            return out
+
+        for group in ("assets", "defenders", "attackers"):
+            for item in normalized[group]:
+                spawn_resp = handle_entity(
+                    session,
+                    "spawn_entity",
+                    spawn_payload(group, item),
+                    base,
+                    config=config,
+                    audit=self._audit,
+                    telemetry=self._telemetry,
+                    telemetry_subs=self._telemetry_subs,
+                    publish_channel=lambda ch: self._publish_telemetry(session, ch),
+                    publish_transition=lambda ct, st, skip: self._publish_channels_for_transition(
+                        session, ct, st, skip_adapter_poll=skip
+                    ),
+                    runtime_crashed=lambda: self._runtime_crashed(
+                        session, base, command_id, issued_by
+                    ),
+                    command_id=command_id,
+                    issued_by=issued_by,
+                    total_entity_count=self._registry.total_entity_count,
+                )
+                if not spawn_resp.get("ok"):
+                    self._audit.append(
+                        session.session_id,
+                        command_id=command_id,
+                        command_type="apply_scenario",
+                        issued_by=issued_by,
+                        result=str(spawn_resp.get("error_code") or "INVALID_STATE"),
+                        detail={"failed_group": group, "state": session.state.value},
+                    )
+                    return spawn_resp
+                counts[group] += 1
+                if spawn_resp.get("entity_id"):
+                    entity_ids[group].append(str(spawn_resp["entity_id"]))
+
+        detail = {
+            "terrain_preset": normalized["terrain_preset"],
+            "counts": dict(counts),
+            "entity_ids": entity_ids,
+            "state": session.state.value,
+        }
+        self._audit.append(
+            session.session_id,
+            command_id=command_id,
+            command_type="apply_scenario",
+            issued_by=issued_by,
+            result="OK",
+            detail=detail,
+        )
+        self._publish_channels_for_transition(session, "apply_scenario", session.state)
+        resp = ok(base, state=session.state.value)
+        resp["terrain_preset"] = normalized["terrain_preset"]
+        resp["counts"] = counts
+        resp["asset_count"] = counts["assets"]
+        resp["defender_count"] = counts["defenders"]
+        resp["attacker_count"] = counts["attackers"]
+        resp["entity_ids"] = entity_ids
+        resp["world_summary"] = session.world.world_summary()
+        return resp
 
     def _rate_limiter_for(self, session_id: str) -> RateLimiter:
         if session_id not in self._rate_limiters:

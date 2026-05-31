@@ -280,6 +280,10 @@ def handle_entity(
             )
         if session.pose_sync is not None:
             session.pose_sync.remove_entity(record.entity_id)
+        session.live_assignments.pop(record.entity_id, None)
+        for defender_id, target_id in list(session.live_assignments.items()):
+            if target_id == record.entity_id:
+                session.live_assignments.pop(defender_id, None)
         if sync_result:
             detail["adapter_sync"] = sync_result
         audit.append(

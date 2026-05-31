@@ -16,9 +16,14 @@ if str(_BRIDGE_PKG) not in sys.path:
 from rt_sandbox.capture import list_staged_capture_ids, validate_capture_candidate  # noqa: E402
 from rt_sandbox.capture_handoff_mirror import capture_belongs_to_session  # noqa: E402
 from rt_sandbox.capture_normalize import validate_normalized_capture  # noqa: E402
-from rt_sandbox.tactical_capture_annex import validate_tactical_annex  # noqa: E402
 from rt_sandbox.isolation import repo_root_from, rt_sandbox_captures_dir  # noqa: E402
+from rt_sandbox.runtime_capture import (  # noqa: E402
+    latest_runtime_capture,
+    list_runtime_captures,
+    validate_runtime_capture_file,
+)
 from rt_sandbox.sa_handoff import handoff_status_summary  # noqa: E402
+from rt_sandbox.tactical_capture_annex import validate_tactical_annex  # noqa: E402
 
 
 def cmd_list(repo_root: Path, session_id: str | None = None) -> int:
@@ -148,6 +153,59 @@ def cmd_tactical_continuity(repo_root: Path, capture_id: str | None) -> int:
     return 0
 
 
+def _print_runtime_capture_rows(rows: list[dict[str, object]]) -> None:
+    for row in rows:
+        print(
+            " ".join(
+                [
+                    str(row.get("capture_id")),
+                    str(row.get("session_id")),
+                    str(row.get("stopped_utc")),
+                    "valid=" + str(row.get("valid")),
+                    str(row.get("artifact_ref")),
+                ]
+            )
+        )
+
+
+def cmd_runtime_list(repo_root: Path, emit_json: bool) -> int:
+    captures = list_runtime_captures(repo_root)
+    if emit_json:
+        print(json.dumps(captures, indent=2, sort_keys=True))
+        return 0
+    if not captures:
+        print("No runtime run captures.")
+        return 0
+    _print_runtime_capture_rows(captures)
+    return 0
+
+
+def cmd_runtime_latest(repo_root: Path, emit_json: bool) -> int:
+    capture = latest_runtime_capture(repo_root)
+    if emit_json:
+        print(json.dumps(capture, indent=2, sort_keys=True))
+        return 0 if capture is not None else 1
+    if capture is None:
+        print("No runtime run captures.")
+        return 1
+    _print_runtime_capture_rows([capture])
+    return 0
+
+
+def cmd_runtime_validate(path: Path, emit_json: bool) -> int:
+    report = validate_runtime_capture_file(path)
+    if emit_json:
+        print(json.dumps(report, indent=2, sort_keys=True))
+    elif report["valid"]:
+        print(f"{path}: OK")
+    else:
+        print(
+            f"{path}: FAIL missing={report['missing']} "
+            f"type_errors={report['type_errors']}"
+        )
+    return 0 if report["valid"] else 1
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description="Inspect RT capture staging (read-only)")
     sub = parser.add_subparsers(dest="command", required=True)
@@ -176,6 +234,13 @@ def main() -> int:
         help="Summarize tactical capture annex timelines (read-only)",
     )
     tac_p.add_argument("capture_id", nargs="?", default=None)
+    rt_list_p = sub.add_parser("runtime-list", help="List runtime_run.json captures")
+    rt_list_p.add_argument("--json", action="store_true", help="Emit JSON")
+    rt_latest_p = sub.add_parser("runtime-latest", help="Show latest runtime_run.json capture")
+    rt_latest_p.add_argument("--json", action="store_true", help="Emit JSON")
+    rt_validate_p = sub.add_parser("runtime-validate", help="Validate a runtime_run.json artifact")
+    rt_validate_p.add_argument("artifact_ref")
+    rt_validate_p.add_argument("--json", action="store_true", help="Emit JSON")
     args = parser.parse_args()
     repo_root = repo_root_from()
     if args.command == "list":
@@ -191,6 +256,12 @@ def main() -> int:
         return 0
     if args.command == "tactical-continuity":
         return cmd_tactical_continuity(repo_root, args.capture_id)
+    if args.command == "runtime-list":
+        return cmd_runtime_list(repo_root, args.json)
+    if args.command == "runtime-latest":
+        return cmd_runtime_latest(repo_root, args.json)
+    if args.command == "runtime-validate":
+        return cmd_runtime_validate(Path(args.artifact_ref), args.json)
     return 1
 
 

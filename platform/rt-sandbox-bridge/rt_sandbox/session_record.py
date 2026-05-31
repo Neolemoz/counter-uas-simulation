@@ -9,6 +9,7 @@ from rt_sandbox.pose_sync import PoseSyncMirror
 from rt_sandbox.runtime_handle import RuntimeHandle
 from rt_sandbox.runtime_stub import RuntimeStub
 from rt_sandbox.telemetry_bridge import TelemetryMirror
+from rt_sandbox.runtime_capture import RuntimeCaptureState
 from rt_sandbox.tactical_controller import TacticalController
 from rt_sandbox.workflow import WorkflowState
 from rt_sandbox.world_state import WorldStateStore
@@ -30,3 +31,5 @@ class SessionRecord:
     template_apply_count: int = 0
     templates_applied: list[str] = field(default_factory=list)
     tactical: TacticalController | None = None
+    live_assignments: dict[str, str] = field(default_factory=dict)
+    runtime_capture: RuntimeCaptureState | None = None

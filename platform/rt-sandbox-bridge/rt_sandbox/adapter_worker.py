@@ -66,13 +66,11 @@ class MockSimState:
     def clock_payload(self) -> dict[str, Any]:
         return {"paused": self.paused, "mode": self.mode}
 
-    def attacker_telemetry_fields_for(
+    def entity_telemetry_fields_for(
         self,
         entity_type: str,
         pose: dict[str, Any],
     ) -> dict[str, Any]:
-        if entity_type != "drone":
-            return {}
         velocity = {"x": 0.0, "y": 0.0, "z": 0.0, "speed_mps": 0.0}
         return {
             "position": {
@@ -81,7 +79,9 @@ class MockSimState:
                 "z": float(pose.get("z", 0.0)),
             },
             "velocity": velocity,
+            "speed_mps": 0.0,
             "heading_deg": float(pose.get("yaw_deg", 0.0)),
+            "target_state": "none",
             "lifecycle_state": "spawned",
         }
 
@@ -93,7 +93,7 @@ class MockSimState:
                     "entity_type": ent["entity_type"],
                     "pose": dict(ent["pose"]),
                     "sim_entity_ref": self.sim_entity_refs.get(eid),
-                    **self.attacker_telemetry_fields_for(
+                    **self.entity_telemetry_fields_for(
                         ent["entity_type"],
                         ent["pose"],
                     ),
@@ -596,7 +596,7 @@ class AdapterWorker:
                 "entity_type": ent["entity_type"],
                 "pose": self._state.feedback_pose_for(eid),
                 "sim_entity_ref": self._state.sim_entity_refs.get(eid),
-                **self._state.attacker_telemetry_fields_for(
+                **self._state.entity_telemetry_fields_for(
                     ent["entity_type"],
                     self._state.feedback_pose_for(eid),
                 ),
@@ -685,7 +685,7 @@ class AdapterWorker:
                 "entity_type": ent["entity_type"],
                 "pose": self._state.feedback_pose_for(eid),
                 "sim_entity_ref": self._state.sim_entity_refs.get(eid),
-                **self._state.attacker_telemetry_fields_for(
+                **self._state.entity_telemetry_fields_for(
                     ent["entity_type"],
                     self._state.feedback_pose_for(eid),
                 ),

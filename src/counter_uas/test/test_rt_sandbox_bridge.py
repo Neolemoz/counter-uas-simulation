@@ -24,6 +24,12 @@ from rt_sandbox.audit_log import AuditLog  # noqa: E402
 from rt_sandbox.bridge_server import make_server  # noqa: E402
 from rt_sandbox.governance import classify_command  # noqa: E402
 from rt_sandbox.isolation import assert_writable_path, repo_root_from, rt_sandbox_runs_dir  # noqa: E402
+from rt_sandbox.runtime_capture import (  # noqa: E402
+    latest_runtime_capture,
+    list_runtime_captures,
+    validate_runtime_capture_artifact,
+    validate_runtime_capture_file,
+)
 from rt_sandbox.runtime_subcommand_governance import lint_runtime_subcommands  # noqa: E402
 from rt_sandbox.revision_hint_policy import (  # noqa: E402
     expected_world_revision_hint_keys,
@@ -208,9 +214,19 @@ def test_classify_capture_allowed() -> None:
 
 def test_sim_command_aliases_allowed() -> None:
     assert classify_command("start_sim") is None
+    assert classify_command("pause_sim") is None
+    assert classify_command("resume_sim") is None
     assert classify_command("stop_sim") is None
     assert classify_command("reset_sim") is None
     assert classify_command("spawn_attacker") is None
+    assert classify_command("spawn_defender") is None
+    assert classify_command("apply_scenario") is None
+    assert classify_command("assign_target") is None
+    assert classify_command("cancel_assignment") is None
+    assert classify_command("reposition_entity") is None
+    assert classify_command("start_capture") is None
+    assert classify_command("stop_capture") is None
+    assert classify_command("capture_status") is None
 
 
 def test_start_stop_reset_sim_aliases(
@@ -232,6 +248,16 @@ def test_start_stop_reset_sim_aliases(
     assert spawn["ok"] is True
     assert spawn["world_summary"]["by_type"]["drone"] == 1
     assert spawn["entity_id"] in adapter.entities
+
+    pause = _cmd(manager, "pause_sim", sid)
+    assert pause["ok"] is True
+    assert pause["state"] == "paused"
+    assert adapter.paused is True
+
+    resume = _cmd(manager, "resume_sim", sid)
+    assert resume["ok"] is True
+    assert resume["state"] == "running"
+    assert adapter.paused is False
 
     reset = _cmd(manager, "reset_sim", sid)
     assert reset["ok"] is True
@@ -264,6 +290,417 @@ def test_spawn_attacker_alias_accepts_pose(manager: BridgeSessionManager) -> Non
     assert entity["pose"]["x"] == 3.0
     assert entity["pose"]["y"] == 4.0
     assert entity["pose"]["z"] == 5.0
+
+
+def test_spawn_defender_alias_spawns_interceptor(manager: BridgeSessionManager) -> None:
+    start = _cmd(manager, "start_session")
+    sid = start["session_id"]
+    spawn = _cmd(manager, "spawn_defender", sid)
+    assert spawn["ok"] is True
+    assert spawn.get("entity_id")
+    assert spawn["world_summary"]["by_type"]["interceptor"] == 1
+    entity = spawn["entities"][0]
+    assert entity["entity_type"] == "interceptor"
+    assert entity["pose"]["z"] == 10.0
+
+
+def test_spawn_defender_alias_accepts_pose(manager: BridgeSessionManager) -> None:
+    start = _cmd(manager, "start_session")
+    sid = start["session_id"]
+    spawn = _cmd(manager, "spawn_defender", sid, payload={"pose": _pose(7, 8, 9)})
+    assert spawn["ok"] is True
+    entity = spawn["entities"][0]
+    assert entity["entity_type"] == "interceptor"
+    assert entity["pose"]["x"] == 7.0
+    assert entity["pose"]["y"] == 8.0
+    assert entity["pose"]["z"] == 9.0
+
+
+def test_apply_scenario_resets_and_spawns_ordered_groups(manager: BridgeSessionManager) -> None:
+    start = _cmd(manager, "start_session")
+    sid = start["session_id"]
+    preexisting = _cmd(manager, "spawn_attacker", sid)
+    assert preexisting["ok"] is True
+
+    resp = _cmd(
+        manager,
+        "apply_scenario",
+        sid,
+        payload={
+            "terrain_preset": "rt_sandbox_flat",
+            "assets": [{"pose": _pose(-10, 0, 0)}],
+            "defenders": [{"pose": _pose(0, 5, 10)}],
+            "attackers": [
+                {"pose": _pose(10, 0, 20)},
+                {"pose": _pose(20, 0, 25)},
+            ],
+        },
+    )
+    assert resp["ok"] is True
+    assert resp["terrain_preset"] == "rt_sandbox_flat"
+    assert resp["counts"] == {"assets": 1, "defenders": 1, "attackers": 2}
+    assert resp["asset_count"] == 1
+    assert resp["defender_count"] == 1
+    assert resp["attacker_count"] == 2
+    assert resp["world_summary"]["entity_count"] == 4
+    assert resp["world_summary"]["by_type"]["waypoint_marker"] == 1
+    assert resp["world_summary"]["by_type"]["interceptor"] == 1
+    assert resp["world_summary"]["by_type"]["drone"] == 2
+
+
+def test_apply_scenario_validates_before_reset(manager: BridgeSessionManager) -> None:
+    start = _cmd(manager, "start_session")
+    sid = start["session_id"]
+    preexisting = _cmd(manager, "spawn_attacker", sid)
+    assert preexisting["ok"] is True
+
+    resp = _cmd(
+        manager,
+        "apply_scenario",
+        sid,
+        payload={
+            "terrain_preset": "rt_sandbox_flat",
+            "assets": [{"pose": {"x": 0, "y": 0}}],
+            "defenders": [],
+            "attackers": [],
+        },
+    )
+    assert resp["ok"] is False
+    assert resp["error_code"] == "INVALID_POSE"
+
+    summary = _cmd(
+        manager,
+        "subscribe_telemetry",
+        sid,
+        payload={"channels": ["world_summary"]},
+    )
+    world = next(ev for ev in summary["initial_events"] if ev["channel"] == "world_summary")
+    assert world["payload"]["entity_count"] == 1
+    assert world["payload"]["by_type"]["drone"] == 1
+
+
+def test_apply_scenario_rejects_wrong_terrain(manager: BridgeSessionManager) -> None:
+    start = _cmd(manager, "start_session")
+    sid = start["session_id"]
+    resp = _cmd(
+        manager,
+        "apply_scenario",
+        sid,
+        payload={
+            "terrain_preset": "not_rt_sandbox_flat",
+            "assets": [],
+            "defenders": [],
+            "attackers": [],
+        },
+    )
+    assert resp["ok"] is False
+    assert resp["error_code"] == "COMMAND_FORBIDDEN"
+
+
+def test_assign_target_and_cancel_assignment_updates_telemetry(manager: BridgeSessionManager) -> None:
+    start = _cmd(manager, "start_session")
+    sid = start["session_id"]
+    defender = _cmd(
+        manager,
+        "spawn_defender",
+        sid,
+        payload={"pose": _pose(0, 0, 10)},
+    )
+    attacker = _cmd(
+        manager,
+        "spawn_attacker",
+        sid,
+        payload={"pose": _pose(20, 0, 20)},
+    )
+    defender_id = defender["entity_id"]
+    target_id = attacker["entity_id"]
+
+    assigned = _cmd(
+        manager,
+        "assign_target",
+        sid,
+        payload={"defender_id": defender_id, "target_id": target_id},
+    )
+    assert assigned["ok"] is True
+    assert assigned["defender_id"] == defender_id
+    assert assigned["target_id"] == target_id
+    assert assigned["active_target_id"] == target_id
+    assert assigned["assignment_state"] == "assigned"
+
+    sub = _cmd(
+        manager,
+        "subscribe_telemetry",
+        sid,
+        payload={"channels": ["entity_pose_mirror"]},
+    )
+    entities = sub["initial_events"][0]["payload"]["entities"]
+    defender_ent = next(e for e in entities if e["entity_id"] == defender_id)
+    target_ent = next(e for e in entities if e["entity_id"] == target_id)
+    assert defender_ent["active_target_id"] == target_id
+    assert defender_ent["assignment_state"] == "assigned"
+    assert target_ent["target_state"] == "assigned"
+
+    cancelled = _cmd(
+        manager,
+        "cancel_assignment",
+        sid,
+        payload={"defender_id": defender_id},
+    )
+    assert cancelled["ok"] is True
+    assert cancelled["defender_id"] == defender_id
+    assert cancelled["target_id"] == target_id
+    assert cancelled["active_target_id"] is None
+    assert cancelled["assignment_state"] == "cleared"
+
+    sub_after = _cmd(
+        manager,
+        "subscribe_telemetry",
+        sid,
+        payload={"channels": ["entity_pose_mirror"]},
+    )
+    entities_after = sub_after["initial_events"][0]["payload"]["entities"]
+    defender_after = next(e for e in entities_after if e["entity_id"] == defender_id)
+    target_after = next(e for e in entities_after if e["entity_id"] == target_id)
+    assert "active_target_id" not in defender_after
+    assert defender_after["assignment_state"] == "none"
+    assert target_after["target_state"] == "none"
+
+
+def test_move_entity_preserves_assignment_telemetry(manager: BridgeSessionManager) -> None:
+    start = _cmd(manager, "start_session")
+    sid = start["session_id"]
+    defender = _cmd(manager, "spawn_defender", sid, payload={"pose": _pose(0, 0, 10)})
+    attacker = _cmd(manager, "spawn_attacker", sid, payload={"pose": _pose(20, 0, 20)})
+    defender_id = defender["entity_id"]
+    target_id = attacker["entity_id"]
+    assigned = _cmd(
+        manager,
+        "assign_target",
+        sid,
+        payload={"defender_id": defender_id, "target_id": target_id},
+    )
+    assert assigned["ok"] is True
+
+    moved = _cmd(
+        manager,
+        "move_entity",
+        sid,
+        payload={"entity_id": defender_id, "pose": _pose(5, 6, 7)},
+    )
+    assert moved["ok"] is True
+    moved_entity = next(e for e in moved["entities"] if e["entity_id"] == defender_id)
+    assert moved_entity["pose"] == {"x": 5.0, "y": 6.0, "z": 7.0, "yaw_deg": 0.0}
+
+    sub = _cmd(
+        manager,
+        "subscribe_telemetry",
+        sid,
+        payload={"channels": ["entity_pose_mirror"]},
+    )
+    entities = sub["initial_events"][0]["payload"]["entities"]
+    defender_ent = next(e for e in entities if e["entity_id"] == defender_id)
+    target_ent = next(e for e in entities if e["entity_id"] == target_id)
+    assert defender_ent["pose"]["x"] == 5.0
+    assert defender_ent["active_target_id"] == target_id
+    assert defender_ent["assignment_state"] == "assigned"
+    assert target_ent["target_state"] == "assigned"
+
+
+def test_reposition_entity_alias_moves_entity(manager: BridgeSessionManager) -> None:
+    start = _cmd(manager, "start_session")
+    sid = start["session_id"]
+    attacker = _cmd(manager, "spawn_attacker", sid)
+    entity_id = attacker["entity_id"]
+    moved = _cmd(
+        manager,
+        "reposition_entity",
+        sid,
+        payload={"entity_id": entity_id, "pose": _pose(11, 12, 13)},
+    )
+    assert moved["ok"] is True
+    entity = next(e for e in moved["entities"] if e["entity_id"] == entity_id)
+    assert entity["pose"] == {"x": 11.0, "y": 12.0, "z": 13.0, "yaw_deg": 0.0}
+
+
+def test_assign_target_validates_entity_roles(manager: BridgeSessionManager) -> None:
+    start = _cmd(manager, "start_session")
+    sid = start["session_id"]
+    defender = _cmd(manager, "spawn_defender", sid)
+    asset = _cmd(
+        manager,
+        "spawn_entity",
+        sid,
+        payload={"entity_type": "waypoint_marker", "pose": _pose()},
+    )
+    bad_target = _cmd(
+        manager,
+        "assign_target",
+        sid,
+        payload={"defender_id": defender["entity_id"], "target_id": asset["entity_id"]},
+    )
+    assert bad_target["ok"] is False
+    assert bad_target["error_code"] == "COMMAND_FORBIDDEN"
+
+    attacker = _cmd(manager, "spawn_attacker", sid)
+    bad_defender = _cmd(
+        manager,
+        "assign_target",
+        sid,
+        payload={"defender_id": attacker["entity_id"], "target_id": attacker["entity_id"]},
+    )
+    assert bad_defender["ok"] is False
+    assert bad_defender["error_code"] == "COMMAND_FORBIDDEN"
+
+
+def test_start_stop_capture_persists_runtime_run_artifact(
+    manager: BridgeSessionManager, tmp_path: Path
+) -> None:
+    start = _cmd(manager, "start_session")
+    sid = start["session_id"]
+    cap_start = _cmd(manager, "start_capture", sid)
+    assert cap_start["ok"] is True
+    assert cap_start["capture_active"] is True
+    capture_id = cap_start["capture_id"]
+
+    defender = _cmd(manager, "spawn_defender", sid, payload={"pose": _pose(0, 0, 10)})
+    attacker = _cmd(manager, "spawn_attacker", sid, payload={"pose": _pose(20, 0, 20)})
+    defender_id = defender["entity_id"]
+    target_id = attacker["entity_id"]
+    assigned = _cmd(
+        manager,
+        "assign_target",
+        sid,
+        payload={"defender_id": defender_id, "target_id": target_id},
+    )
+    assert assigned["ok"] is True
+    moved = _cmd(
+        manager,
+        "move_entity",
+        sid,
+        payload={"entity_id": defender_id, "pose": _pose(5, 6, 7)},
+    )
+    assert moved["ok"] is True
+    assert _cmd(manager, "pause_sim", sid)["ok"] is True
+    assert _cmd(manager, "resume_sim", sid)["ok"] is True
+
+    cap_stop = _cmd(manager, "stop_capture", sid)
+    assert cap_stop["ok"] is True
+    assert cap_stop["capture_id"] == capture_id
+    assert cap_stop["capture_active"] is False
+    assert cap_stop["artifact_schema"] == "rt_runtime_run_capture_v1"
+    assert cap_stop["artifact_valid"] is True
+    assert cap_stop["telemetry_frame_count"] > 0
+    assert cap_stop["frames_count"] == cap_stop["telemetry_frame_count"]
+    assert cap_stop["entities_count"] == 2
+    assert cap_stop["artifact_path"] == cap_stop["artifact_ref"]
+    artifact_path = Path(cap_stop["artifact_ref"])
+    assert artifact_path.exists()
+    assert artifact_path.is_relative_to(tmp_path / "runs" / "rt_sandbox" / "captures")
+
+    artifact = json.loads(artifact_path.read_text(encoding="utf-8"))
+    assert artifact["schema"] == "rt_runtime_run_capture_v1"
+    assert artifact["session_id"] == sid
+    assert artifact["capture_id"] == capture_id
+    assert artifact["assignments"] == {defender_id: target_id}
+    assert len(artifact["entities"]) == 2
+    assert artifact["telemetry_frames"]
+    assert artifact["lifecycle_transitions"]
+    channels = {frame["channel"] for frame in artifact["telemetry_frames"]}
+    assert "entity_pose_mirror" in channels
+    assert "lifecycle_state" in channels
+
+
+def test_capture_start_stop_state_guards(manager: BridgeSessionManager) -> None:
+    start = _cmd(manager, "start_session")
+    sid = start["session_id"]
+    stop_without_start = _cmd(manager, "stop_capture", sid)
+    assert stop_without_start["ok"] is False
+    assert stop_without_start["error_code"] == "INVALID_STATE"
+
+    first = _cmd(manager, "start_capture", sid)
+    assert first["ok"] is True
+    duplicate = _cmd(manager, "start_capture", sid)
+    assert duplicate["ok"] is False
+    assert duplicate["error_code"] == "INVALID_STATE"
+
+
+def test_capture_status_reports_inactive_and_active_counts(manager: BridgeSessionManager) -> None:
+    start = _cmd(manager, "start_session")
+    sid = start["session_id"]
+    inactive = _cmd(manager, "capture_status", sid)
+    assert inactive["ok"] is True
+    assert inactive["capture_status"] == "inactive"
+    assert inactive["capture_active"] is False
+    assert inactive["capture_id"] is None
+    assert inactive["started_utc"] is None
+    assert inactive["frames_count"] == 0
+    assert inactive["entities_count"] == 0
+
+    start_capture = _cmd(manager, "start_capture", sid)
+    assert start_capture["ok"] is True
+    assert start_capture["frames_count"] >= 0
+    assert start_capture["entities_count"] == 0
+    defender = _cmd(manager, "spawn_defender", sid)
+    assert defender["ok"] is True
+    active = _cmd(manager, "capture_status", sid)
+    assert active["ok"] is True
+    assert active["capture_status"] == "active"
+    assert active["capture_active"] is True
+    assert active["capture_id"] == start_capture["capture_id"]
+    assert active["started_utc"] == start_capture["started_utc"]
+    assert active["frames_count"] > start_capture["frames_count"]
+    assert active["entities_count"] == 1
+
+    stopped = _cmd(manager, "stop_capture", sid)
+    assert stopped["ok"] is True
+    after_stop = _cmd(manager, "capture_status", sid)
+    assert after_stop["ok"] is True
+    assert after_stop["capture_status"] == "inactive"
+    assert after_stop["capture_active"] is False
+    assert after_stop["frames_count"] == 0
+    assert after_stop["entities_count"] == 1
+
+
+def test_runtime_capture_validation_and_listing_helpers(
+    manager: BridgeSessionManager, tmp_path: Path
+) -> None:
+    start = _cmd(manager, "start_session")
+    sid = start["session_id"]
+    assert _cmd(manager, "start_capture", sid)["ok"] is True
+    assert _cmd(manager, "spawn_defender", sid)["ok"] is True
+    cap_stop = _cmd(manager, "stop_capture", sid)
+    artifact_path = Path(cap_stop["artifact_ref"])
+
+    report = validate_runtime_capture_file(artifact_path)
+    assert report["valid"] is True
+    assert report["missing"] == []
+    assert report["type_errors"] == []
+
+    captures = list_runtime_captures(tmp_path)
+    assert len(captures) == 1
+    assert captures[0]["capture_id"] == cap_stop["capture_id"]
+    assert captures[0]["valid"] is True
+    latest = latest_runtime_capture(tmp_path)
+    assert latest is not None
+    assert latest["artifact_ref"] == artifact_path.as_posix()
+
+
+def test_runtime_capture_validation_rejects_missing_required_fields() -> None:
+    report = validate_runtime_capture_artifact({"session_id": "s"})
+    assert report["valid"] is False
+    assert "capture_id" in report["missing"]
+    assert "telemetry_frames" in report["missing"]
+
+
+def test_runtime_capture_golden_fixture_validates() -> None:
+    fixture = _REPO / "fixtures" / "rt_sandbox" / "runtime_run_capture_golden_v1.json"
+    report = validate_runtime_capture_file(fixture)
+    assert report["valid"] is True
+    artifact = json.loads(fixture.read_text(encoding="utf-8"))
+    assert artifact["schema"] == "rt_runtime_run_capture_v1"
+    assert artifact["session_id"] == "session-golden-0001"
+    assert artifact["capture_id"] == "capture-golden-0001"
+    assert artifact["assignments"] == {"defender-alpha": "attacker-alpha"}
 
 
 def test_capture_session_happy_path(manager: BridgeSessionManager, tmp_path: Path) -> None:
@@ -1720,7 +2157,7 @@ def test_adapter_fed_entity_pose_mirror(adapter_manager: BridgeSessionManager) -
     assert reg.pose["x"] == 0.0
 
 
-def test_attacker_runtime_telemetry_fields(adapter_manager: BridgeSessionManager) -> None:
+def test_entity_runtime_telemetry_fields(adapter_manager: BridgeSessionManager) -> None:
     start = _cmd(adapter_manager, "start_session")
     sid = start["session_id"]
     spawn = _cmd(
@@ -1730,6 +2167,13 @@ def test_attacker_runtime_telemetry_fields(adapter_manager: BridgeSessionManager
         payload={"entity_type": "drone", "pose": _pose(1, 2, 30)},
     )
     eid = spawn["entity_id"]
+    defender = _cmd(
+        adapter_manager,
+        "spawn_entity",
+        sid,
+        payload={"entity_type": "interceptor", "pose": _pose(4, 5, 12)},
+    )
+    did = defender["entity_id"]
     sub = _cmd(
         adapter_manager,
         "subscribe_telemetry",
@@ -1742,8 +2186,17 @@ def test_attacker_runtime_telemetry_fields(adapter_manager: BridgeSessionManager
     attacker = next(e for e in entities if e["entity_id"] == eid)
     assert attacker["position"] == {"x": 1.0, "y": 2.0, "z": 30.0}
     assert attacker["velocity"] == {"x": 0.0, "y": 0.0, "z": 0.0, "speed_mps": 0.0}
+    assert attacker["speed_mps"] == 0.0
     assert attacker["heading_deg"] == 0.0
+    assert attacker["target_state"] == "none"
     assert attacker["lifecycle_state"] == "running"
+    defender_ent = next(e for e in entities if e["entity_id"] == did)
+    assert defender_ent["position"] == {"x": 4.0, "y": 5.0, "z": 12.0}
+    assert defender_ent["velocity"] == {"x": 0.0, "y": 0.0, "z": 0.0, "speed_mps": 0.0}
+    assert defender_ent["speed_mps"] == 0.0
+    assert defender_ent["heading_deg"] == 0.0
+    assert defender_ent["target_state"] == "none"
+    assert defender_ent["lifecycle_state"] == "running"
     assert by_channel["lifecycle_state"]["state"] == "running"
 
 
@@ -2781,6 +3234,7 @@ from rt_sandbox.lifecycle import (  # noqa: E402
         "delete_entity",
         "subscribe_telemetry",
         "apply_runtime_template",
+        "apply_scenario",
         "start_workflow",
     ],
 )

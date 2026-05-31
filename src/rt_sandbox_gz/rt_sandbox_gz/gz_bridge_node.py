@@ -169,7 +169,9 @@ class RtSandboxGzBridgeNode(Node):
                         'z': float((e.get('pose') or {}).get('z', 0.0)),
                     },
                     'velocity': {'x': 0.0, 'y': 0.0, 'z': 0.0, 'speed_mps': 0.0},
+                    'speed_mps': 0.0,
                     'heading_deg': float((e.get('pose') or {}).get('yaw_deg', 0.0)),
+                    'target_state': 'none',
                     'lifecycle_state': 'spawned',
                 }
                 for e in self._entities.values()

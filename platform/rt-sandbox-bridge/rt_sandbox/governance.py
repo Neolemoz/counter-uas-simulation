@@ -27,9 +27,19 @@ SESSION_COMMANDS = frozenset(
 SIM_COMMAND_ALIASES = frozenset(
     {
         "start_sim",
+        "pause_sim",
+        "resume_sim",
         "stop_sim",
         "reset_sim",
         "spawn_attacker",
+        "spawn_defender",
+        "apply_scenario",
+        "assign_target",
+        "cancel_assignment",
+        "reposition_entity",
+        "start_capture",
+        "stop_capture",
+        "capture_status",
     }
 )
 
