@@ -63,6 +63,10 @@ export const BANNER_SA_WORKFLOW_ADVISORY =
 export const BANNER_VISIBILITY_V3 =
   "VISIBILITY OVERLAYS — heuristic wedge/horizon/LOS; not sensor coverage or operational picture";
 
+/** Additive panel banner — tactical trajectory overlays (display-only). */
+export const BANNER_TACTICAL_TRAJECTORY =
+  "TACTICAL TRAJECTORY — display-only path and solution cue; not operational authority or simulation truth";
+
 export const BASE_BANNERS = [
   BANNER_PRIMARY,
   BANNER_TRANSIENT,

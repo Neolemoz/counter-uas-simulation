@@ -1,4 +1,5 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Globe2 } from "lucide-react";
 import type { ChannelSnapshot } from "@/telemetry/channelIndex";
 import { PanelShell } from "@/components/GovernanceChrome";
 import { CesiumEditingCognitionStrip } from "@/components/CesiumEditingCognitionStrip";
@@ -17,6 +18,9 @@ import {
   flyToValleyFloor,
   setFollowEntity,
 } from "@/cesium/cameraHelpers";
+import type { DefenseZoneRenderOptions } from "@/cesium/defenseZoneConfig";
+import type { SensorDomeRenderOptions } from "@/cesium/sensorDomeLayer";
+import type { SensorDomeZoneMode } from "@/cesium/terrainLayers";
 import { anyTerrainLayerEnabled } from "@/cesium/terrainLayers";
 import {
   anyVisibilityOverlayEnabled,
@@ -31,17 +35,22 @@ import { SessionComparisonCognitionStrip } from "@/workstation/SessionComparison
 import {
   BANNER_FIDELITY_TRUTH,
   BANNER_REALISM_F4,
+  BANNER_TACTICAL_TRAJECTORY,
   BANNER_TERRAIN,
   BANNER_VISIBILITY_V3,
 } from "@/governance/banners";
 import { TerrainCognitionStrip } from "@/components/TerrainCognitionStrip";
+import {
+  RadarDomeMapQuickControls,
+  type RadarDomePreviewControlHandlers,
+  type RadarDomePreviewControlState,
+} from "@/components/RadarDomePreviewControls";
 import {
   extractFidelityContext,
   isFidelityCouplingOn,
 } from "@/fidelity/fidelityCognition";
 import {
   shortSessionId,
-  sessionAccentBgClass,
   sessionAccentColor,
 } from "@/workstation/sessionVisualIdentity";
 import { cesiumViewSummary } from "@/cesium/cognition";
@@ -50,6 +59,15 @@ import type { MirrorEntity } from "@/cesium/entityMarkers";
 import type { EntityType } from "@/world/entityCatalog";
 import type { Pose } from "@/world/bounds";
 import type { Viewer } from "cesium";
+import type { TacticalStatePayload } from "@/bridge/tacticalCommands";
+import { useTacticalCompareBaseline } from "@/hooks/useTacticalCompareBaseline";
+import type { SessionSlot } from "@/hooks/useRtSessionWorkspace";
+import { resolveTacticalCompareContext } from "@/workstation/tacticalCompareContext";
+
+const CESIUM_TOOL_BTN =
+  "rounded border border-cyan-700/60 bg-cyan-950/40 px-3 py-1.5 text-xs font-medium text-cyan-100 transition-colors duration-150 hover:bg-cyan-900/50 disabled:opacity-40";
+const CESIUM_MENU_BTN =
+  "cursor-pointer rounded border border-slate-700 bg-slate-900 px-3 py-1.5 text-slate-200 transition-colors duration-150 hover:bg-slate-800";
 
 export function CesiumRuntimePanel({
   sessionId,
@@ -69,7 +87,13 @@ export function CesiumRuntimePanel({
   onMove,
   onDelete,
   layerVisibility,
+  sensorDomeOptions,
+  defenseZoneOptions,
+  sensorDomeZoneMode,
+  radarPreviewControls = null,
   onLayerVisibilityChange,
+  tacticalState = null,
+  slotList = [],
 }: {
   sessionId: string | null;
   orderedSessionIds: readonly string[];
@@ -93,14 +117,49 @@ export function CesiumRuntimePanel({
   onMove: (entityId: string, pose: Pose) => void;
   onDelete: (entityId: string) => void;
   layerVisibility: VisualLayerVisibility;
+  sensorDomeOptions?: SensorDomeRenderOptions;
+  defenseZoneOptions?: DefenseZoneRenderOptions;
+  sensorDomeZoneMode?: SensorDomeZoneMode;
+  radarPreviewControls?: {
+    state: RadarDomePreviewControlState;
+    handlers: RadarDomePreviewControlHandlers;
+  } | null;
   onLayerVisibilityChange: (layers: VisualLayerVisibility) => void;
+  tacticalState?: TacticalStatePayload | null;
+  slotList?: readonly SessionSlot[];
 }) {
+  const compareBaseline = useTacticalCompareBaseline(sessionId, tacticalState);
+  const tacticalCompare = useMemo(
+    () =>
+      resolveTacticalCompareContext({
+        currentState: tacticalState,
+        previousState: compareBaseline,
+        activeSessionId: sessionId,
+        orderedSessionIds,
+        slots: slotList,
+        activeEntities: entities,
+      }),
+    [
+      tacticalState,
+      compareBaseline,
+      sessionId,
+      orderedSessionIds,
+      slotList,
+      entities,
+    ],
+  );
   const terrainLayers = toTerrainLayerVisibility(layerVisibility);
   const [followSelected, setFollowSelected] = useState(false);
   const [viewer, setViewer] = useState<Viewer | null>(null);
   const viewerRef = useRef<Viewer | null>(null);
 
   const terrainLayersOn = anyTerrainLayerEnabled(terrainLayers);
+  const tacticalTrajectoryOn =
+    layerVisibility.showTacticalPredictedPath ||
+    layerVisibility.showTacticalInterceptPoint ||
+    layerVisibility.showTacticalThreatCorridor ||
+    layerVisibility.showTacticalTargetRanking ||
+    layerVisibility.showTacticalCompareOverlay;
   const fidelityContext = extractFidelityContext(worldSummary);
   const fidelityOn = isFidelityCouplingOn(fidelityContext);
   const selectedEntity =
@@ -273,220 +332,213 @@ export function CesiumRuntimePanel({
     }
   }, [selectedEntityId, viewer]);
 
-  return (
-    <PanelShell title="Cesium runtime view">
-      <p className="mb-2 text-xs italic text-amber-200/90">{summary.caveat}</p>
-      <p className="mb-2 text-xs text-slate-400">{summary.dualSurfaceNote}</p>
-      <p className="mb-2 text-xs text-slate-400">{summary.mirrorNote}</p>
-      {summary.reconcileNote && (
-        <p className="mb-2 text-xs text-amber-300">{summary.reconcileNote}</p>
-      )}
-      <p className="mb-3 text-xs text-slate-500">{summary.entityCountLabel}</p>
-      {terrainLayersOn && (
-        <p className="mb-2 text-[10px] text-amber-100/80">{BANNER_TERRAIN}</p>
-      )}
-      {(terrainLayers.showContourOverlays || terrainLayers.showVegetationMarkers) && (
-        <p className="mb-2 text-[10px] text-amber-100/80">{BANNER_REALISM_F4}</p>
-      )}
-      {fidelityOn && (
-        <p className="mb-2 text-[10px] text-amber-100/80">{BANNER_FIDELITY_TRUTH}</p>
-      )}
-      {anyVisibilityOverlayEnabled(layerVisibility) && (
-        <p className="mb-2 text-[10px] text-amber-100/80">{BANNER_VISIBILITY_V3}</p>
-      )}
+  const mapStatus = pendingReconcile
+    ? "reconcile pending"
+    : !editingEnabled
+      ? "editing blocked"
+      : null;
 
-      {sessionId && (
-        <div
-          data-testid="cesium-session-chrome"
-          className="mb-3 flex flex-wrap items-center gap-2 rounded border border-l-4 bg-slate-950/60 px-3 py-2 text-xs"
-          style={
-            sessionAccent
-              ? { borderLeftColor: sessionAccent, borderColor: "rgb(51 65 85)" }
-              : { borderColor: "rgb(51 65 85)" }
-          }
-          title={sessionId}
-        >
-          <span
-            className={`inline-block h-3 w-3 rounded-sm ${sessionAccentBgClass(sessionId, orderedSessionIds)}`}
-            aria-hidden
-          />
-          <span className="text-slate-300">
-            Viewing session <span className="font-mono text-amber-200/90">{shortSessionId(sessionId)}</span>
+  return (
+    <PanelShell title="Cesium runtime view" icon={Globe2} variant="primary">
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+        <div className="flex flex-wrap items-center gap-2 text-xs">
+          <span className="rounded-full border border-cyan-500/40 bg-cyan-950/40 px-2.5 py-1 font-medium text-cyan-100">
+            {summary.entityCountLabel}
           </span>
-          {isEditingSession && (
-            <span className="rounded border border-amber-700/60 bg-amber-950/50 px-1.5 py-0.5 text-amber-200">
+          {mapStatus && (
+            <span
+              className={`rounded-full border px-2.5 py-1 ${
+                pendingReconcile
+                  ? "border-amber-600/50 bg-amber-950/40 text-amber-200"
+                  : "border-slate-700 bg-slate-950/60 text-slate-400"
+              }`}
+            >
+              {mapStatus}
+            </span>
+          )}
+          {isEditingSession && orderedSessionIds.length > 1 && (
+            <span className="rounded-full border border-amber-700/50 bg-amber-950/40 px-2.5 py-1 text-amber-200">
               editing lock
             </span>
           )}
-          {orderedSessionIds.length > 1 && (
-            <span className="text-slate-500">active globe — comparison surfaces are explanatory only</span>
-          )}
         </div>
-      )}
+        <details className="relative text-xs">
+          <summary className="cursor-pointer rounded border border-slate-700 bg-slate-950/60 px-2.5 py-1 text-slate-300 hover:bg-slate-900">
+            Context
+          </summary>
+          <div className="absolute right-0 z-10 mt-2 w-80 rounded border border-slate-800 bg-slate-950 p-3 shadow-xl shadow-black/30">
+            <div className="space-y-2 text-slate-400">
+              {sessionId && (
+                <p className="font-mono text-slate-300" title={sessionId}>
+                  session {shortSessionId(sessionId)}
+                </p>
+              )}
+              <p className="italic text-amber-200/90">{summary.caveat}</p>
+              <p>{summary.dualSurfaceNote}</p>
+              <p>{summary.mirrorNote}</p>
+              {summary.reconcileNote && <p className="text-amber-300">{summary.reconcileNote}</p>}
+              {orderedSessionIds.length > 1 && (
+                <p className="text-slate-500">active globe — comparison surfaces are explanatory only</p>
+              )}
+              {terrainLayersOn && <p className="text-[10px] text-amber-100/80">{BANNER_TERRAIN}</p>}
+              {(terrainLayers.showContourOverlays || terrainLayers.showVegetationMarkers) && (
+                <p className="text-[10px] text-amber-100/80">{BANNER_REALISM_F4}</p>
+              )}
+              {fidelityOn && <p className="text-[10px] text-amber-100/80">{BANNER_FIDELITY_TRUTH}</p>}
+              {anyVisibilityOverlayEnabled(layerVisibility) && (
+                <p className="text-[10px] text-amber-100/80">{BANNER_VISIBILITY_V3}</p>
+              )}
+              {tacticalTrajectoryOn && (
+                <p className="text-[10px] text-amber-100/80">{BANNER_TACTICAL_TRAJECTORY}</p>
+              )}
+            </div>
+          </div>
+        </details>
+      </div>
 
       {orderedSessionIds.length > 1 && (
-        <div className="mb-3">
-          <SessionComparisonCognitionStrip
-            activeSessionId={sessionId}
-            orderedSessionIds={orderedSessionIds}
-            comparisonGhostsEnabled={layerVisibility.showComparisonGhosts}
-            sessionContrastEnabled={layerVisibility.showSessionContrast}
-            compareEmphasisEnabled={layerVisibility.showCompareEmphasisV4}
-          />
-        </div>
+        <details className="mb-3 rounded border border-slate-800 bg-slate-950/40 text-xs">
+          <summary className="cursor-pointer px-3 py-2 font-semibold text-slate-300">
+            Session comparison context
+          </summary>
+          <div className="border-t border-slate-800 p-3">
+            <SessionComparisonCognitionStrip
+              activeSessionId={sessionId}
+              orderedSessionIds={orderedSessionIds}
+              comparisonGhostsEnabled={layerVisibility.showComparisonGhosts}
+              sessionContrastEnabled={layerVisibility.showSessionContrast}
+              compareEmphasisEnabled={layerVisibility.showCompareEmphasisV4}
+            />
+          </div>
+        </details>
       )}
 
-      <div className="mb-3 flex flex-wrap gap-2">
-        <VisualLayerToggleRail
-          visibility={layerVisibility}
-          memoryLine={layerMemoryLine}
-          onToggle={(layerId) =>
-            onLayerVisibilityChange(
-              toggleLayerVisibility(
-                layerVisibility,
-                layerId,
-                CANONICAL_VISUAL_LAYER_REGISTRY,
-              ),
-            )
-          }
-        />
+      <div className="mb-3 flex flex-wrap items-start gap-2">
         <button
           type="button"
-          className="rounded border border-slate-600 bg-slate-800 px-2 py-1 text-xs text-slate-200 hover:bg-slate-700 disabled:opacity-40"
-          disabled={!viewer}
-          onClick={handleResetCamera}
-        >
-          Reset bounds
-        </button>
-        <button
-          type="button"
-          className="rounded border border-slate-600 bg-slate-800 px-2 py-1 text-xs text-slate-200 hover:bg-slate-700 disabled:opacity-40"
-          disabled={!viewer}
-          onClick={handleTightBounds}
-        >
-          Tight bounds
-        </button>
-        <button
-          type="button"
-          className="rounded border border-slate-600 bg-slate-800 px-2 py-1 text-xs text-slate-200 hover:bg-slate-700 disabled:opacity-40"
-          disabled={!viewer || entities.length === 0}
-          onClick={handleFitEntities}
-        >
-          Fit entities
-        </button>
-        <button
-          type="button"
-          className="rounded border border-slate-600 bg-slate-800 px-2 py-1 text-xs text-slate-200 hover:bg-slate-700 disabled:opacity-40"
+          className={CESIUM_TOOL_BTN}
           disabled={!viewer || !selectedEntityId}
           onClick={handleFocusSelected}
         >
-          Focus selected
+          Focus
         </button>
         <button
           type="button"
-          className="rounded border border-slate-600 bg-slate-800 px-2 py-1 text-xs text-slate-200 hover:bg-slate-700 disabled:opacity-40"
+          className={CESIUM_TOOL_BTN}
+          disabled={!viewer || entities.length === 0}
+          onClick={handleFitEntities}
+        >
+          Fit
+        </button>
+        <button
+          type="button"
+          className={CESIUM_TOOL_BTN}
           disabled={!viewer}
           onClick={handleTerrainOverview}
         >
-          Terrain overview
+          Terrain
         </button>
-        <button
-          type="button"
-          className="rounded border border-slate-600 bg-slate-800 px-2 py-1 text-xs text-slate-200 hover:bg-slate-700 disabled:opacity-40"
-          disabled={!viewer}
-          onClick={handleRidgeLine}
-        >
-          Ridge line
-        </button>
-        <button
-          type="button"
-          className="rounded border border-slate-600 bg-slate-800 px-2 py-1 text-xs text-slate-200 hover:bg-slate-700 disabled:opacity-40"
-          disabled={!viewer}
-          onClick={handleCrestLine}
-        >
-          Crest line
-        </button>
-        <button
-          type="button"
-          className="rounded border border-slate-600 bg-slate-800 px-2 py-1 text-xs text-slate-200 hover:bg-slate-700 disabled:opacity-40"
-          disabled={!viewer}
-          onClick={handleValleyFloor}
-        >
-          Valley floor
-        </button>
-        <button
-          type="button"
-          className="rounded border border-slate-600 bg-slate-800 px-2 py-1 text-xs text-slate-200 hover:bg-slate-700 disabled:opacity-40"
-          disabled={!viewer || !selectedEntityId || selectedEntity?.entity_type !== "radar"}
-          onClick={handleSensorContext}
-        >
-          Sensor context
-        </button>
-        <button
-          type="button"
-          className={`rounded border px-2 py-1 text-xs ${
-            followSelected
-              ? "border-sky-500 bg-sky-900/50 text-sky-100"
-              : "border-slate-600 bg-slate-800 text-slate-200 hover:bg-slate-700"
-          } disabled:opacity-40`}
-          disabled={!viewer || !selectedEntityId}
-          onClick={handleFollowToggle}
-        >
-          Follow selected: {followSelected ? "on" : "off"}
-        </button>
-        <button
-          type="button"
-          className="rounded border border-red-800 bg-red-950/50 px-2 py-1 text-xs text-red-200 hover:bg-red-900/50 disabled:opacity-40"
-          disabled={!editingEnabled || !selectedEntityId}
-          onClick={() => selectedEntityId && onDelete(selectedEntityId)}
-        >
-          Delete selected
-        </button>
+        <details className="relative text-xs">
+          <summary className={CESIUM_MENU_BTN}>
+            More
+          </summary>
+          <div className="absolute right-0 z-10 mt-2 grid w-44 gap-1 rounded border border-slate-800 bg-slate-950 p-2 shadow-xl shadow-black/30">
+            <button type="button" className="rounded px-2 py-1 text-left text-slate-300 hover:bg-slate-900 disabled:opacity-40" disabled={!viewer} onClick={handleResetCamera}>Reset</button>
+            <button type="button" className="rounded px-2 py-1 text-left text-slate-300 hover:bg-slate-900 disabled:opacity-40" disabled={!viewer} onClick={handleTightBounds}>Tight bounds</button>
+            <button type="button" className="rounded px-2 py-1 text-left text-slate-300 hover:bg-slate-900 disabled:opacity-40" disabled={!viewer} onClick={handleRidgeLine}>Ridge</button>
+            <button type="button" className="rounded px-2 py-1 text-left text-slate-300 hover:bg-slate-900 disabled:opacity-40" disabled={!viewer} onClick={handleCrestLine}>Crest</button>
+            <button type="button" className="rounded px-2 py-1 text-left text-slate-300 hover:bg-slate-900 disabled:opacity-40" disabled={!viewer} onClick={handleValleyFloor}>Valley</button>
+            <button type="button" className="rounded px-2 py-1 text-left text-slate-300 hover:bg-slate-900 disabled:opacity-40" disabled={!viewer || !selectedEntityId || selectedEntity?.entity_type !== "radar"} onClick={handleSensorContext}>Sensor</button>
+            <button type="button" className={`rounded px-2 py-1 text-left ${followSelected ? "bg-cyan-950/60 text-cyan-100" : "text-slate-300 hover:bg-slate-900"} disabled:opacity-40`} disabled={!viewer || !selectedEntityId} onClick={handleFollowToggle}>Follow {followSelected ? "on" : "off"}</button>
+            <button type="button" className="rounded px-2 py-1 text-left text-red-200 hover:bg-red-950/50 disabled:opacity-40" disabled={!editingEnabled || !selectedEntityId} onClick={() => selectedEntityId && onDelete(selectedEntityId)}>Delete selected</button>
+          </div>
+        </details>
+        <details className="relative text-xs">
+          <summary className={CESIUM_TOOL_BTN}>Layers</summary>
+          <div className="absolute right-0 z-10 mt-1 w-52 rounded border border-slate-800 bg-slate-950 p-2 shadow-xl shadow-black/30">
+            <VisualLayerToggleRail
+              visibility={layerVisibility}
+              memoryLine={layerMemoryLine}
+              showAdvisoryFooter={
+                layerVisibility.showLayerBudgetSummary || layerVisibility.showDensityWarnings
+              }
+              onToggle={(layerId) =>
+                onLayerVisibilityChange(
+                  toggleLayerVisibility(
+                    layerVisibility,
+                    layerId,
+                    CANONICAL_VISUAL_LAYER_REGISTRY,
+                  ),
+                )
+              }
+            />
+          </div>
+        </details>
       </div>
 
-      <CesiumRuntimeView
-        sessionId={sessionId}
-        sessionAccentCss={sessionAccent}
-        markerEmphasis={connectedCount >= 2 ? "muted" : "full"}
-        entities={entities}
-        selectedEntityId={selectedEntityId}
-        layerVisibility={layerVisibility}
-        terrainLayers={terrainLayers}
-        syncHealth={syncHealth}
-        telemetryHealth={telemetryHealth}
-        perEntityDriftM={perEntityDriftM}
-        commandGhost={commandGhost}
-        editingEnabled={editingEnabled}
-        selectedType={selectedType}
-        worldSummary={worldSummary}
-        onViewerReady={handleViewerReady}
-        onSelectEntity={onSelectEntity}
-        onSpawn={onSpawn}
-        onMove={onMove}
-      />
+      <div className="relative">
+        <CesiumRuntimeView
+          sessionId={sessionId}
+          sessionAccentCss={sessionAccent}
+          markerEmphasis={connectedCount >= 2 ? "muted" : "full"}
+          entities={entities}
+          selectedEntityId={selectedEntityId}
+          layerVisibility={layerVisibility}
+          terrainLayers={terrainLayers}
+          syncHealth={syncHealth}
+          telemetryHealth={telemetryHealth}
+          perEntityDriftM={perEntityDriftM}
+          commandGhost={commandGhost}
+          editingEnabled={editingEnabled}
+          selectedType={selectedType}
+          worldSummary={worldSummary}
+          sensorDomeOptions={sensorDomeOptions}
+          defenseZoneOptions={defenseZoneOptions}
+          sensorDomeZoneMode={sensorDomeZoneMode}
+          tacticalState={tacticalState}
+          tacticalCompare={tacticalCompare}
+          onViewerReady={handleViewerReady}
+          onSelectEntity={onSelectEntity}
+          onSpawn={onSpawn}
+          onMove={onMove}
+        />
+        {radarPreviewControls && selectedEntity?.entity_type === "radar" && (
+          <div className="pointer-events-none absolute left-3 top-3 z-10 max-w-[calc(100%-1.5rem)]">
+            <RadarDomeMapQuickControls
+              state={radarPreviewControls.state}
+              handlers={radarPreviewControls.handlers}
+            />
+          </div>
+        )}
+      </div>
 
-      <TerrainCognitionStrip
-        selectedEntity={selectedEntity}
-        entities={entities}
-        layersEnabled={terrainLayersOn}
-        fidelityContext={fidelityContext}
-      />
-
-      <FidelityTruthCognitionStrip
-        fidelityContext={fidelityContext}
-        worldSummary={worldSummary}
-        selectedEntity={selectedEntity}
-        entities={entities}
-        showLosDivergence={terrainLayersOn}
-      />
-
-      <CesiumEditingCognitionStrip
-        lastCommand={lastCommand}
-        pendingReconcile={pendingReconcile}
-        mirrorSnapshot={mirrorSnapshot}
-        worldSummary={worldSummary}
-        editingEnabled={editingEnabled}
-      />
+      <details className="mt-3 rounded border border-slate-800 bg-slate-950/35 text-xs">
+        <summary className="cursor-pointer px-3 py-2 font-semibold text-slate-300">
+          Map cognition
+        </summary>
+        <div className="space-y-3 border-t border-slate-800 p-3">
+          <TerrainCognitionStrip
+            selectedEntity={selectedEntity}
+            entities={entities}
+            layersEnabled={terrainLayersOn}
+            fidelityContext={fidelityContext}
+          />
+          <FidelityTruthCognitionStrip
+            fidelityContext={fidelityContext}
+            worldSummary={worldSummary}
+            selectedEntity={selectedEntity}
+            entities={entities}
+            showLosDivergence={terrainLayersOn}
+          />
+          <CesiumEditingCognitionStrip
+            lastCommand={lastCommand}
+            pendingReconcile={pendingReconcile}
+            mirrorSnapshot={mirrorSnapshot}
+            worldSummary={worldSummary}
+            editingEnabled={editingEnabled}
+          />
+        </div>
+      </details>
     </PanelShell>
   );
 }

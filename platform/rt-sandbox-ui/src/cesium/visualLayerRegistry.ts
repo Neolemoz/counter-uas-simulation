@@ -56,7 +56,12 @@ export type LayerVisibilityKey =
   | "showVisibilityCorridorV4"
   | "showOcclusionBandsV4"
   | "showTerrainRelationLabelsV4"
-  | "showCompareEmphasisV4";
+  | "showCompareEmphasisV4"
+  | "showTacticalPredictedPath"
+  | "showTacticalInterceptPoint"
+  | "showTacticalThreatCorridor"
+  | "showTacticalTargetRanking"
+  | "showTacticalCompareOverlay";
 
 export interface VisualLayerPerformanceBudget {
   max_active_overlay_layers: number;
@@ -115,6 +120,11 @@ export interface VisualLayerVisibility {
   showOcclusionBandsV4: boolean;
   showTerrainRelationLabelsV4: boolean;
   showCompareEmphasisV4: boolean;
+  showTacticalPredictedPath: boolean;
+  showTacticalInterceptPoint: boolean;
+  showTacticalThreatCorridor: boolean;
+  showTacticalTargetRanking: boolean;
+  showTacticalCompareOverlay: boolean;
 }
 
 export const COGNITION_GROUP_TITLES: Record<CognitionGroupId, string> = {
@@ -157,6 +167,11 @@ const LAYER_ID_TO_VISIBILITY_KEY: Partial<Record<string, LayerVisibilityKey>> = 
   occlusion_bands_v4: "showOcclusionBandsV4",
   terrain_relation_labels_v4: "showTerrainRelationLabelsV4",
   compare_emphasis_v4: "showCompareEmphasisV4",
+  tactical_predicted_path: "showTacticalPredictedPath",
+  tactical_intercept_point: "showTacticalInterceptPoint",
+  tactical_threat_corridor: "showTacticalThreatCorridor",
+  tactical_target_ranking: "showTacticalTargetRanking",
+  tactical_compare_overlay: "showTacticalCompareOverlay",
 };
 
 const V4_P0_LAYERS: VisualLayerDescriptor[] = [
@@ -164,7 +179,7 @@ const V4_P0_LAYERS: VisualLayerDescriptor[] = [
     layer_id: "density_warnings_v4",
     label: "Density warnings",
     z_order: 80,
-    default_on: true,
+    default_on: false,
     plat_phase: "v4_p0",
     toggleable: true,
     visibility_key: "showDensityWarnings",
@@ -179,7 +194,7 @@ const V4_P0_LAYERS: VisualLayerDescriptor[] = [
     layer_id: "layer_budget_summary_v4",
     label: "Budget summary",
     z_order: 81,
-    default_on: true,
+    default_on: false,
     plat_phase: "v4_p0",
     toggleable: true,
     visibility_key: "showLayerBudgetSummary",
@@ -288,6 +303,89 @@ const V4_P1_LAYERS: VisualLayerDescriptor[] = [
   },
 ];
 
+const TACTICAL_LAYERS: VisualLayerDescriptor[] = [
+  {
+    layer_id: "tactical_predicted_path",
+    label: "Tactical path",
+    z_order: 88,
+    default_on: false,
+    plat_phase: "v4_p1",
+    toggleable: true,
+    visibility_key: "showTacticalPredictedPath",
+    cognition_group: "marker_context",
+    module_anchor: "tacticalTrajectoryLayer",
+    cognition_kind: "marker",
+    density_group: "entity_context",
+    display_only: true,
+    disclaimer:
+      "Tactical predicted path is display-only — heuristic straight segment until path telemetry exists",
+  },
+  {
+    layer_id: "tactical_intercept_point",
+    label: "Solution point",
+    z_order: 89,
+    default_on: false,
+    plat_phase: "v4_p1",
+    toggleable: true,
+    visibility_key: "showTacticalInterceptPoint",
+    cognition_group: "marker_context",
+    module_anchor: "tacticalTrajectoryLayer",
+    cognition_kind: "marker",
+    density_group: "entity_context",
+    display_only: true,
+    disclaimer:
+      "Solution point marker is explanatory telemetry — not assignment or command authority",
+  },
+  {
+    layer_id: "tactical_threat_corridor",
+    label: "Threat corridor",
+    z_order: 87,
+    default_on: false,
+    plat_phase: "v4_p1",
+    toggleable: true,
+    visibility_key: "showTacticalThreatCorridor",
+    cognition_group: "marker_context",
+    module_anchor: "tacticalThreatCorridor",
+    cognition_kind: "marker",
+    density_group: "entity_context",
+    display_only: true,
+    disclaimer:
+      "Threat corridor is display-only attacker-to-solution emphasis — not weapon engagement geometry",
+  },
+  {
+    layer_id: "tactical_target_ranking",
+    label: "Target ranking",
+    z_order: 86,
+    default_on: false,
+    plat_phase: "v4_p1",
+    toggleable: true,
+    visibility_key: "showTacticalTargetRanking",
+    cognition_group: "marker_context",
+    module_anchor: "tacticalTargetRanking",
+    cognition_kind: "marker",
+    density_group: "entity_context",
+    display_only: true,
+    disclaimer:
+      "Target rank labels (#1–#3) are explanatory ranking cues — not operational prioritization",
+  },
+  {
+    layer_id: "tactical_compare_overlay",
+    label: "Tactical compare",
+    z_order: 85,
+    default_on: false,
+    plat_phase: "v4_p1",
+    toggleable: true,
+    visibility_key: "showTacticalCompareOverlay",
+    cognition_group: "marker_context",
+    module_anchor: "tacticalCompareOverlay",
+    cognition_kind: "marker",
+    density_group: "entity_context",
+    display_only: true,
+    disclaimer:
+      "Tactical compare overlay is display-only — faded prior/compare path; not outcome authority",
+  },
+];
+
 export const CANONICAL_VISUAL_LAYER_REGISTRY: VisualLayerRegistryV4 = {
   ...(registryJson as VisualLayerRegistryV3),
   schema: SCHEMA_RT_VISUAL_LAYER_REGISTRY_V4,
@@ -300,6 +398,7 @@ export const CANONICAL_VISUAL_LAYER_REGISTRY: VisualLayerRegistryV4 = {
     ...(registryJson as VisualLayerRegistryV3).layers,
     ...V4_P0_LAYERS,
     ...V4_P1_LAYERS,
+    ...TACTICAL_LAYERS,
   ],
 };
 
@@ -391,6 +490,11 @@ export function defaultVisibilityFromRegistry(
     showOcclusionBandsV4: false,
     showTerrainRelationLabelsV4: false,
     showCompareEmphasisV4: false,
+    showTacticalPredictedPath: false,
+    showTacticalInterceptPoint: false,
+    showTacticalThreatCorridor: false,
+    showTacticalTargetRanking: false,
+    showTacticalCompareOverlay: false,
   };
 
   for (const layer of reg.layers) {
@@ -475,6 +579,11 @@ const OVERLAY_COUNT_KEYS: LayerVisibilityKey[] = [
   "showOcclusionBandsV4",
   "showTerrainRelationLabelsV4",
   "showCompareEmphasisV4",
+  "showTacticalPredictedPath",
+  "showTacticalInterceptPoint",
+  "showTacticalThreatCorridor",
+  "showTacticalTargetRanking",
+  "showTacticalCompareOverlay",
 ];
 
 const DENSITY_CONTROL_KEYS: LayerVisibilityKey[] = [

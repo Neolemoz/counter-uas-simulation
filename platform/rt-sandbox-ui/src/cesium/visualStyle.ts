@@ -12,7 +12,7 @@ export const MARKER_SELECTED_PIXEL_SIZE = 16;
 export const GHOST_PIXEL_SIZE = 10;
 
 export const LABEL_FONT = "12px sans-serif";
-export const LABEL_OFFSET_Y = -18;
+export const LABEL_OFFSET_Y = -13;
 export const LABEL_BACKGROUND = "rgba(15, 23, 42, 0.88)";
 
 export const BOUNDS_LINE_WIDTH = 3;
@@ -22,7 +22,7 @@ export const BOUNDS_VERTICAL_COLOR = "rgba(56, 189, 248, 0.55)";
 export const BOUNDS_TOP_COLOR = "rgba(56, 189, 248, 0.45)";
 
 export const TIGHT_BOUNDS_CAMERA_HEIGHT_M = 1200;
-export const TERRAIN_OVERVIEW_CAMERA_HEIGHT_M = 2400;
+export const TERRAIN_OVERVIEW_CAMERA_HEIGHT_M = 4000;
 
 export const SELECTION_RING_PIXEL_SIZE = 22;
 export const SELECTION_RING_COLOR = "rgba(251, 191, 36, 0.35)";
@@ -35,6 +35,17 @@ export const VISIBILITY_WEDGE_COLOR = "rgba(167, 139, 250, 0.55)";
 export const VISIBILITY_HORIZON_COLOR = "rgba(148, 163, 184, 0.45)";
 export const VISIBILITY_STACKED_LOS_COLOR = "rgba(129, 140, 248, 0.7)";
 export const DEFAULT_VISIBILITY_WEDGE_AZIMUTH_DEG = 30;
+
+/** Tactical trajectory overlay tokens (display-only). */
+export const TACTICAL_PATH_COLOR = "rgba(250, 204, 21, 0.85)";
+export const TACTICAL_PATH_HEURISTIC_COLOR = "rgba(251, 146, 60, 0.7)";
+export const TACTICAL_INTERCEPT_POINT_COLOR = "rgba(248, 113, 113, 0.92)";
+export const TACTICAL_THREAT_CORRIDOR_FILL = "rgba(251, 146, 60, 0.32)";
+export const TACTICAL_THREAT_CORRIDOR_EDGE = "rgba(185, 28, 28, 0.55)";
+export const TACTICAL_THREAT_CORRIDOR_CENTER = "rgba(254, 202, 202, 0.38)";
+export const TACTICAL_TIMING_FONT = "10px sans-serif";
+export const TACTICAL_TIMING_LABEL_FILL = "rgba(254, 243, 199, 0.96)";
+export const TACTICAL_TIMING_LABEL_BG = LABEL_BACKGROUND;
 
 export function shortEntityId(entityId: string): string {
   if (entityId.length <= 8) return entityId;
@@ -68,6 +79,27 @@ export function distanceScaleFromHeight(cameraHeightM: number): number {
   if (cameraHeightM > 1500) return 1.1;
   if (cameraHeightM < 600) return 0.95;
   return 1;
+}
+
+/** Label font size (px) tuned for zoom — keeps clustered labels readable. */
+export function labelFontSizePx(
+  cameraHeightM: number,
+  selected: boolean,
+  hovered: boolean,
+): number {
+  const emphasis = selected || hovered;
+  if (cameraHeightM > 4200) return emphasis ? 14 : 10;
+  if (cameraHeightM > 2600) return emphasis ? 15 : 11;
+  if (cameraHeightM < 700) return emphasis ? 18 : 13;
+  return emphasis ? 16 : 12;
+}
+
+export function labelFontCss(
+  cameraHeightM: number,
+  selected: boolean,
+  hovered: boolean,
+): string {
+  return `${labelFontSizePx(cameraHeightM, selected, hovered)}px sans-serif`;
 }
 
 export function sessionAccentCss(index: number): string {

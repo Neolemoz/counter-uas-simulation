@@ -14,6 +14,9 @@ export type TacticalStatePayload = {
   autonomous_loop_status?: "running" | "paused" | null;
   assignment_lock_active?: boolean;
   tti_s?: number | null;
+  /** Explanatory time-to-solution along predicted path (seconds). */
+  eta_s?: number | null;
+  interceptor_speed_cap_m_s?: number | null;
   tactical_health?: {
     feasible?: boolean;
     summary?: string;

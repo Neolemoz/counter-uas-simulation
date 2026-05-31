@@ -1,3 +1,4 @@
+import { useState } from "react";
 import type { CaptureHandoffRow } from "@/bridge/types";
 import { CaptureHandoffWorkflowPanel } from "@/components/CaptureHandoffWorkflowPanel";
 import { TacticalAssistedPanel } from "@/components/TacticalAssistedPanel";
@@ -18,6 +19,18 @@ import {
   SessionLifecyclePanel,
   WorldSummaryPanel,
 } from "@/components/TelemetryPanels";
+import {
+  DEFAULT_DEFENSE_ZONE_CONFIG,
+  type DefenseZoneConfig,
+} from "@/cesium/defenseZoneConfig";
+import {
+  DEFAULT_RADAR_DOME_CONFIG,
+  type RadarDomeConfig,
+} from "@/cesium/sensorDomeLayer";
+import {
+  DEFAULT_SENSOR_DOME_ZONE_MODE,
+  type SensorDomeZoneMode,
+} from "@/cesium/terrainLayers";
 import type { TerrainLayerVisibility } from "@/cesium/terrainLayers";
 import type { VisualLayerVisibility } from "@/cesium/visualLayerRegistry";
 import { CesiumRuntimePanel } from "@/components/CesiumRuntimePanel";
@@ -189,6 +202,54 @@ export function AppWorkstationSlots(props: AppWorkstationSlotsProps) {
     hidePanelCognition,
   } = props;
 
+  const [radarDomeConfig, setRadarDomeConfig] = useState<RadarDomeConfig>(
+    DEFAULT_RADAR_DOME_CONFIG,
+  );
+  const [defenseZoneConfig, setDefenseZoneConfig] = useState<DefenseZoneConfig>(
+    DEFAULT_DEFENSE_ZONE_CONFIG,
+  );
+  const [radarDomeSelectedOnly, setRadarDomeSelectedOnly] = useState(false);
+  const [defenseZoneSelectedOnly, setDefenseZoneSelectedOnly] = useState(false);
+  const [radarDomeVisible, setRadarDomeVisible] = useState(true);
+  const [radarVolumeVisible, setRadarVolumeVisible] = useState(true);
+  const [defenseZoneVisible, setDefenseZoneVisible] = useState(true);
+  const [radarDomeLabelsVisible, setRadarDomeLabelsVisible] = useState(true);
+  const [sensorDomeZoneMode, setSensorDomeZoneMode] = useState<SensorDomeZoneMode>(
+    DEFAULT_SENSOR_DOME_ZONE_MODE,
+  );
+  const selectedEntity = entities.find((entity) => entity.entity_id === selectedEntityId);
+  const sensorDomeOptions = {
+    show: radarDomeVisible,
+    showRing: radarDomeVisible,
+    showVolume: radarVolumeVisible,
+    selectedEntityId:
+      selectedEntity?.entity_type === "radar" ? selectedEntityId : null,
+    selectedOnly: radarDomeSelectedOnly,
+    showLabels: radarDomeLabelsVisible,
+    radii: radarDomeConfig,
+  };
+  const radarPreviewControlState = {
+    layerEnabled: terrainLayers.showSensorDomes,
+    showVolume: radarVolumeVisible,
+    showRing: radarDomeVisible,
+    selectedOnly: radarDomeSelectedOnly,
+    showLabels: radarDomeLabelsVisible,
+  };
+  const radarPreviewControlHandlers = {
+    onShowVolumeChange: setRadarVolumeVisible,
+    onShowRingChange: setRadarDomeVisible,
+    onSelectedOnlyChange: setRadarDomeSelectedOnly,
+    onShowLabelsChange: setRadarDomeLabelsVisible,
+  };
+  const defenseZoneOptions = {
+    show: defenseZoneVisible,
+    selectedEntityId:
+      selectedEntity?.entity_type === "waypoint_marker" ? selectedEntityId : null,
+    selectedOnly: defenseZoneSelectedOnly,
+    showLabels: defenseZoneConfig.showLabels,
+    config: defenseZoneConfig,
+  };
+
   return (
     <RuntimeWorkstationShell
       header={
@@ -296,7 +357,7 @@ export function AppWorkstationSlots(props: AppWorkstationSlotsProps) {
       }
       worldColumn={
         connected && sessionId ? (
-          <>
+          <div className="flex flex-col gap-4">
             <EntityPalette
               selectedType={selectedType}
               onSelectType={onSelectType}
@@ -311,6 +372,25 @@ export function AppWorkstationSlots(props: AppWorkstationSlotsProps) {
               worldSummary={mergedWorldSummary}
               showTerrainContour={terrainLayersOn}
               showContourLines={terrainLayers.showContourOverlays}
+              radarDomeConfig={radarDomeConfig}
+              defenseZoneConfig={defenseZoneConfig}
+              radarDomeSelectedOnly={radarDomeSelectedOnly}
+              defenseZoneSelectedOnly={defenseZoneSelectedOnly}
+              radarDomeVisible={radarDomeVisible}
+              radarVolumeVisible={radarVolumeVisible}
+              defenseZoneVisible={defenseZoneVisible}
+              radarDomeLabelsVisible={radarDomeLabelsVisible}
+              sensorDomeZoneMode={sensorDomeZoneMode}
+              sensorDomeLayerEnabled={terrainLayers.showSensorDomes}
+              onRadarDomeConfigChange={setRadarDomeConfig}
+              onDefenseZoneConfigChange={setDefenseZoneConfig}
+              onRadarDomeSelectedOnlyChange={setRadarDomeSelectedOnly}
+              onDefenseZoneSelectedOnlyChange={setDefenseZoneSelectedOnly}
+              onRadarDomeVisibleChange={setRadarDomeVisible}
+              onRadarVolumeVisibleChange={setRadarVolumeVisible}
+              onDefenseZoneVisibleChange={setDefenseZoneVisible}
+              onRadarDomeLabelsVisibleChange={setRadarDomeLabelsVisible}
+              onSensorDomeZoneModeChange={setSensorDomeZoneMode}
               onSelectEntity={onSelectEntity}
               onSpawn={onSpawn}
               onMove={onMove}
@@ -322,7 +402,7 @@ export function AppWorkstationSlots(props: AppWorkstationSlotsProps) {
               mirrorSnapshot={snapshots.entity_pose_mirror}
             />
             <EditHistoryPanel history={editHistory} />
-          </>
+          </div>
         ) : undefined
       }
       vizColumn={
@@ -345,13 +425,26 @@ export function AppWorkstationSlots(props: AppWorkstationSlotsProps) {
             onMove={onMove}
             onDelete={onDelete}
             layerVisibility={layerVisibility}
+            sensorDomeOptions={sensorDomeOptions}
+            defenseZoneOptions={defenseZoneOptions}
+            sensorDomeZoneMode={sensorDomeZoneMode}
+            radarPreviewControls={
+              selectedEntity?.entity_type === "radar"
+                ? {
+                    state: radarPreviewControlState,
+                    handlers: radarPreviewControlHandlers,
+                  }
+                : null
+            }
             onLayerVisibilityChange={onLayerVisibilityChange}
+            tacticalState={tactical.state}
+            slotList={slotList}
           />
         ) : (
           <ConnectPlaceholder />
         )
       }
-      mirrorsColumn={
+      tacticalColumn={
         connected ? (
           <div className="space-y-4">
             <TacticalManualPanel
@@ -403,73 +496,75 @@ export function AppWorkstationSlots(props: AppWorkstationSlotsProps) {
                 onReturnToManual={() => void tactical.returnToManual()}
               />
             )}
-            <div className="grid gap-4 lg:grid-cols-2">
-              <SessionLifecyclePanel
-                snapshot={snapshots.lifecycle_state}
-                hideCognition={hidePanelCognition}
-              />
-              <SessionHealthPanel
-                snapshot={snapshots.session_health}
-                hideCognition={hidePanelCognition}
-              />
-              <WorldSummaryPanel
-                snapshot={snapshots.world_summary}
-                hideCognition={hidePanelCognition}
-              />
-              <ClockMirrorPanel
-                snapshot={snapshots.clock_mirror}
-                hideCognition={hidePanelCognition}
-              />
-              <EntityPoseMirrorPanel
-                snapshot={snapshots.entity_pose_mirror}
-                hideCognition={hidePanelCognition}
-              />
-            </div>
           </div>
         ) : (
           <MirrorsIdleCard />
         )
       }
-      pipelineFooter={
-        <div className="space-y-4">
-          <CaptureHandoffWorkflowPanel
-            connected={connected}
-            sessionState={sessionState}
-            sessionId={sessionId}
-            handoffBySession={handoffBySession}
-            workspaceSessionIds={workspaceSessionIds}
-            experimentRollup={experimentRollup}
-          />
-          <ExperimentWorkbenchPanel
-            connected={connected}
-            slots={experimentSlots}
-            activeSessionId={sessionId}
-            handoffBySession={handoffBySession}
-            onHandoffEligibilityRollupChange={onExperimentRollupChange}
-            terrainLayersEnabled={terrainLayersOn}
-            compareModeActive={experimentCompareActive}
-            onCompareModeChange={onExperimentCompareActiveChange}
-            analyticsActive={experimentAnalyticsActive}
-            onAnalyticsActiveChange={onExperimentAnalyticsActiveChange}
-            continuityReviewActive={experimentContinuityReviewActive}
-            onContinuityReviewActiveChange={onExperimentContinuityReviewActiveChange}
-            f5Active={experimentF5Active}
-            onF5ActiveChange={onExperimentF5ActiveChange}
-          />
-        </div>
+      captureFooter={
+        <CaptureHandoffWorkflowPanel
+          connected={connected}
+          sessionState={sessionState}
+          sessionId={sessionId}
+          handoffBySession={handoffBySession}
+          workspaceSessionIds={workspaceSessionIds}
+          experimentRollup={experimentRollup}
+        />
+      }
+      experimentFooter={
+        <ExperimentWorkbenchPanel
+          connected={connected}
+          slots={experimentSlots}
+          activeSessionId={sessionId}
+          handoffBySession={handoffBySession}
+          onHandoffEligibilityRollupChange={onExperimentRollupChange}
+          terrainLayersEnabled={terrainLayersOn}
+          compareModeActive={experimentCompareActive}
+          onCompareModeChange={onExperimentCompareActiveChange}
+          analyticsActive={experimentAnalyticsActive}
+          onAnalyticsActiveChange={onExperimentAnalyticsActiveChange}
+          continuityReviewActive={experimentContinuityReviewActive}
+          onContinuityReviewActiveChange={onExperimentContinuityReviewActiveChange}
+          f5Active={experimentF5Active}
+          onF5ActiveChange={onExperimentF5ActiveChange}
+        />
       }
       diagnostics={
-        <CollapsibleUiDiagnostics
-          defaultOpen={!connected}
-          sessionId={sessionId}
-          subscriptionId={subscriptionId}
-          lastPullUtc={lastPullUtc}
-          drainedCount={drainedCount}
-          lastError={lastError}
-          sessionState={sessionState}
-          lastCommand={lastCommand?.type}
-          pendingReconcile={pendingReconcile}
-        />
+        <div className="space-y-4">
+          <div className="grid gap-4 lg:grid-cols-2 xl:grid-cols-3">
+            <SessionLifecyclePanel
+              snapshot={snapshots.lifecycle_state}
+              hideCognition={hidePanelCognition}
+            />
+            <SessionHealthPanel
+              snapshot={snapshots.session_health}
+              hideCognition={hidePanelCognition}
+            />
+            <WorldSummaryPanel
+              snapshot={snapshots.world_summary}
+              hideCognition={hidePanelCognition}
+            />
+            <ClockMirrorPanel
+              snapshot={snapshots.clock_mirror}
+              hideCognition={hidePanelCognition}
+            />
+            <EntityPoseMirrorPanel
+              snapshot={snapshots.entity_pose_mirror}
+              hideCognition={hidePanelCognition}
+            />
+          </div>
+          <CollapsibleUiDiagnostics
+            defaultOpen={!connected}
+            sessionId={sessionId}
+            subscriptionId={subscriptionId}
+            lastPullUtc={lastPullUtc}
+            drainedCount={drainedCount}
+            lastError={lastError}
+            sessionState={sessionState}
+            lastCommand={lastCommand?.type}
+            pendingReconcile={pendingReconcile}
+          />
+        </div>
       }
     />
   );
