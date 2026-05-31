@@ -73,24 +73,28 @@ class GazeboRuntimeAdapter:
             self._proc.stdin.write(req.to_line())
             self._proc.stdin.flush()
             deadline = time.monotonic() + self.ipc_timeout_s
-            line = ""
             while time.monotonic() < deadline:
                 if self._proc.stdout is None:
                     break
                 line = self._proc.stdout.readline()
-                if line:
-                    break
-                if self._proc.poll() is not None:
-                    break
-                time.sleep(0.01)
-        if not line:
-            return IpcResponse(
-                request_id=req_id,
-                ok=False,
-                error_code="RUNTIME_UNAVAILABLE",
-                error_message="adapter_ipc_timeout",
-            )
-        return IpcResponse.from_line(line)
+                if not line:
+                    if self._proc.poll() is not None:
+                        break
+                    time.sleep(0.01)
+                    continue
+                try:
+                    resp = IpcResponse.from_line(line)
+                except ValueError:
+                    continue
+                if resp.request_id != req_id:
+                    continue
+                return resp
+        return IpcResponse(
+            request_id=req_id,
+            ok=False,
+            error_code="RUNTIME_UNAVAILABLE",
+            error_message="adapter_ipc_timeout",
+        )
 
     def start(self) -> int:
         if self._attached and self.pid is not None:
@@ -103,6 +107,7 @@ class GazeboRuntimeAdapter:
         payload["ground_snap_enabled"] = self.ground_snap_enabled
         payload["enable_fidelity_coupling"] = self.enable_fidelity_coupling
         payload["fidelity_ground_z_m"] = self.fidelity_ground_z_m
+        payload["ready_timeout_s"] = self.ready_timeout_s
         resp = self._request("attach", payload)
         if not resp.ok:
             raise OSError(resp.error_message or resp.error_code or "attach failed")

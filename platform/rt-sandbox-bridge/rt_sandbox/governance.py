@@ -24,6 +24,15 @@ SESSION_COMMANDS = frozenset(
     }
 )
 
+SIM_COMMAND_ALIASES = frozenset(
+    {
+        "start_sim",
+        "stop_sim",
+        "reset_sim",
+        "spawn_attacker",
+    }
+)
+
 REGISTRY_COMMANDS = frozenset(
     {
         "list_sessions",
@@ -88,6 +97,7 @@ TACTICAL_COMMANDS = frozenset(
 
 ALLOWED_COMMANDS = (
     SESSION_COMMANDS
+    | SIM_COMMAND_ALIASES
     | REGISTRY_COMMANDS
     | HANDOFF_READ_COMMANDS
     | ENTITY_COMMANDS
@@ -217,7 +227,7 @@ class GovernanceConfig:
             tail = int(session_id.replace("-", "")[:8], 16)
         except ValueError:
             tail = 0
-        return self.ros_domain_id_offset + (tail % 10000)
+        return (self.ros_domain_id_offset + (tail % 100)) % 232
 
 
 @dataclass

@@ -66,6 +66,25 @@ class MockSimState:
     def clock_payload(self) -> dict[str, Any]:
         return {"paused": self.paused, "mode": self.mode}
 
+    def attacker_telemetry_fields_for(
+        self,
+        entity_type: str,
+        pose: dict[str, Any],
+    ) -> dict[str, Any]:
+        if entity_type != "drone":
+            return {}
+        velocity = {"x": 0.0, "y": 0.0, "z": 0.0, "speed_mps": 0.0}
+        return {
+            "position": {
+                "x": float(pose.get("x", 0.0)),
+                "y": float(pose.get("y", 0.0)),
+                "z": float(pose.get("z", 0.0)),
+            },
+            "velocity": velocity,
+            "heading_deg": float(pose.get("yaw_deg", 0.0)),
+            "lifecycle_state": "spawned",
+        }
+
     def entity_state_payload(self) -> dict[str, Any]:
         return {
             "entities": [
@@ -74,6 +93,10 @@ class MockSimState:
                     "entity_type": ent["entity_type"],
                     "pose": dict(ent["pose"]),
                     "sim_entity_ref": self.sim_entity_refs.get(eid),
+                    **self.attacker_telemetry_fields_for(
+                        ent["entity_type"],
+                        ent["pose"],
+                    ),
                 }
                 for eid, ent in self.entities.items()
             ]
@@ -231,15 +254,51 @@ class AdapterWorker:
                 stdout=subprocess.DEVNULL,
                 stderr=subprocess.DEVNULL,
                 env=env,
+                start_new_session=True,
             )
         except OSError as exc:
             return None, str(exc)
         assert self._state is not None
         self._state.launch_proc = proc
-        time.sleep(0.5)
-        if proc.poll() is not None:
-            return None, "gazebo launch exited immediately"
+        ready_timeout_s = float(req.payload.get("ready_timeout_s") or 60.0)
+        err = self._wait_for_launch_ready(req, proc, ready_timeout_s)
+        if err:
+            self._teardown_launch()
+            return None, err
         return proc.pid, None
+
+    def _wait_for_launch_ready(
+        self,
+        req: IpcRequest,
+        proc: subprocess.Popen[bytes],
+        timeout_s: float,
+    ) -> str | None:
+        state_topic = f"{session_topic_prefix(req.session_id)}entity_state"
+        ros_domain_id = req.payload.get("ros_domain_id")
+        env = os.environ.copy()
+        if ros_domain_id is not None:
+            env["ROS_DOMAIN_ID"] = str(ros_domain_id)
+        deadline = time.monotonic() + max(0.5, timeout_s)
+        while time.monotonic() < deadline:
+            if proc.poll() is not None:
+                return "gazebo launch exited during readiness wait"
+            if shutil.which("ros2") is not None:
+                try:
+                    listed = subprocess.run(
+                        ["ros2", "topic", "list"],
+                        capture_output=True,
+                        text=True,
+                        timeout=5,
+                        env=env,
+                    )
+                    if listed.returncode == 0 and state_topic in listed.stdout:
+                        return None
+                except (OSError, subprocess.TimeoutExpired):
+                    pass
+            time.sleep(0.5)
+        if proc.poll() is not None:
+            return "gazebo launch exited during readiness wait"
+        return None
 
     def _detach(self, req: IpcRequest) -> IpcResponse:
         self._teardown_launch()
@@ -262,11 +321,17 @@ class AdapterWorker:
             return
         proc = self._state.launch_proc
         if proc is not None and proc.poll() is None:
-            proc.send_signal(signal.SIGTERM)
+            try:
+                os.killpg(proc.pid, signal.SIGTERM)
+            except ProcessLookupError:
+                pass
             try:
                 proc.wait(timeout=5)
             except subprocess.TimeoutExpired:
-                proc.kill()
+                try:
+                    os.killpg(proc.pid, signal.SIGKILL)
+                except ProcessLookupError:
+                    pass
                 proc.wait(timeout=2)
         self._state.launch_proc = None
         self._state.gazebo_pid = None
@@ -531,6 +596,10 @@ class AdapterWorker:
                 "entity_type": ent["entity_type"],
                 "pose": self._state.feedback_pose_for(eid),
                 "sim_entity_ref": self._state.sim_entity_refs.get(eid),
+                **self._state.attacker_telemetry_fields_for(
+                    ent["entity_type"],
+                    self._state.feedback_pose_for(eid),
+                ),
             }
             for eid, ent in self._state.entities.items()
         ]
@@ -616,6 +685,10 @@ class AdapterWorker:
                 "entity_type": ent["entity_type"],
                 "pose": self._state.feedback_pose_for(eid),
                 "sim_entity_ref": self._state.sim_entity_refs.get(eid),
+                **self._state.attacker_telemetry_fields_for(
+                    ent["entity_type"],
+                    self._state.feedback_pose_for(eid),
+                ),
             }
             for eid, ent in self._state.entities.items()
         ]

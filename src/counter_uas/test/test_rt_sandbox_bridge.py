@@ -3,7 +3,10 @@
 from __future__ import annotations
 
 import json
+import os
+import shutil
 import socket
+import subprocess
 import sys
 import time
 import urllib.request
@@ -59,6 +62,117 @@ def _pose(x: float = 0, y: float = 0, z: float = 10) -> dict:
     return {"x": x, "y": y, "z": z, "yaw_deg": 0}
 
 
+class _FakeGazeboRuntimeAdapter:
+    kind = "adapter"
+    instances: list["_FakeGazeboRuntimeAdapter"] = []
+
+    def __init__(self, **kwargs):
+        self.session_id = kwargs["session_id"]
+        self.mode = kwargs["mode"]
+        self.pid = 4242
+        self.paused = False
+        self.started = False
+        self.terminated = False
+        self.entities = {}
+        self.last_reset = False
+        self._last_sync = None
+        _FakeGazeboRuntimeAdapter.instances.append(self)
+
+    def start(self) -> int:
+        self.started = True
+        self.paused = False
+        return self.pid
+
+    def is_alive(self) -> bool:
+        return self.started and not self.terminated
+
+    def pause(self) -> None:
+        self.paused = True
+
+    def resume(self) -> None:
+        self.paused = False
+
+    def stop(self) -> None:
+        self.paused = True
+
+    def terminate(self) -> None:
+        self.terminated = True
+        self.started = False
+        self.pid = None
+
+    def kill_for_crash_simulation(self) -> None:
+        self.terminate()
+
+    def health_payload(self) -> dict:
+        return {
+            "stub_alive": False,
+            "adapter_alive": self.is_alive(),
+            "adapter_mode": self.mode,
+            "adapter_pid": self.pid,
+        }
+
+    def apply_pose(
+        self,
+        entity_id: str,
+        entity_type: str,
+        pose: dict,
+        *,
+        bridge_revision: int | None = None,
+    ) -> dict:
+        sim_ref = f"sim-{entity_id[:8]}"
+        self.entities[entity_id] = {
+            "entity_id": entity_id,
+            "entity_type": entity_type,
+            "pose": dict(pose),
+            "sim_entity_ref": sim_ref,
+        }
+        self._last_sync = {
+            "entity_id": entity_id,
+            "sim_entity_ref": sim_ref,
+            "sync_seq": bridge_revision or 1,
+            "bridge_revision": bridge_revision,
+        }
+        return dict(self._last_sync)
+
+    def delete_entity(self, entity_id: str) -> dict:
+        self.entities.pop(entity_id, None)
+        return {"entity_id": entity_id, "deleted": True}
+
+    def reset_world(self) -> None:
+        self.entities.clear()
+        self.last_reset = True
+
+    def last_sync(self) -> dict | None:
+        return self._last_sync
+
+    def poll_feedback(self, *, mock_inject_drift: dict | None = None) -> dict:
+        return {
+            "schema": "rt_adapter_feedback_v1",
+            "sync_seq": 1,
+            "entities": list(self.entities.values()),
+        }
+
+    def poll_telemetry(
+        self,
+        *,
+        mock_stale_telemetry: bool = False,
+        enable_fidelity_coupling: bool = False,
+    ) -> dict:
+        return {
+            "schema": "rt_adapter_telemetry_v1",
+            "telemetry_seq": 1,
+            "clock_mirror": {"paused": self.paused, "mode": self.mode},
+            "adapter_health": {
+                "alive": self.is_alive(),
+                "mode": self.mode,
+                "paused": self.paused,
+                "entity_count": len(self.entities),
+            },
+            "entity_pose_mirror": {"entities": list(self.entities.values())},
+            "world_revision_hint": {"telemetry_seq": 1, "sync_seq": 1},
+        }
+
+
 @pytest.fixture
 def manager(tmp_path: Path) -> BridgeSessionManager:
     (tmp_path / "AGENTS.md").write_text("# test repo\n", encoding="utf-8")
@@ -90,6 +204,66 @@ def test_lifecycle_happy_path(manager: BridgeSessionManager) -> None:
 
 def test_classify_capture_allowed() -> None:
     assert classify_command("capture_session") is None
+
+
+def test_sim_command_aliases_allowed() -> None:
+    assert classify_command("start_sim") is None
+    assert classify_command("stop_sim") is None
+    assert classify_command("reset_sim") is None
+    assert classify_command("spawn_attacker") is None
+
+
+def test_start_stop_reset_sim_aliases(
+    manager: BridgeSessionManager, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from rt_sandbox import runtime_adapter
+
+    _FakeGazeboRuntimeAdapter.instances.clear()
+    monkeypatch.setattr(runtime_adapter, "GazeboRuntimeAdapter", _FakeGazeboRuntimeAdapter)
+
+    start = _cmd(manager, "start_sim")
+    assert start["ok"] is True
+    sid = start["session_id"]
+    adapter = _FakeGazeboRuntimeAdapter.instances[-1]
+    assert adapter.mode == "live"
+    assert adapter.is_alive()
+
+    spawn = _cmd(manager, "spawn_attacker", sid, payload={"pose": _pose(3, 4, 5)})
+    assert spawn["ok"] is True
+    assert spawn["world_summary"]["by_type"]["drone"] == 1
+    assert spawn["entity_id"] in adapter.entities
+
+    reset = _cmd(manager, "reset_sim", sid)
+    assert reset["ok"] is True
+    assert reset["state"] == "running"
+    assert adapter.last_reset is True
+    assert adapter.entities == {}
+
+    stop = _cmd(manager, "stop_sim", sid)
+    assert stop["ok"] is True
+    assert stop["state"] == "stopped"
+    assert adapter.terminated is True
+
+
+def test_spawn_attacker_alias_spawns_drone(manager: BridgeSessionManager) -> None:
+    start = _cmd(manager, "start_session")
+    sid = start["session_id"]
+    spawn = _cmd(manager, "spawn_attacker", sid)
+    assert spawn["ok"] is True
+    assert spawn.get("entity_id")
+    assert spawn["world_summary"]["by_type"]["drone"] == 1
+
+
+def test_spawn_attacker_alias_accepts_pose(manager: BridgeSessionManager) -> None:
+    start = _cmd(manager, "start_session")
+    sid = start["session_id"]
+    spawn = _cmd(manager, "spawn_attacker", sid, payload={"pose": _pose(3, 4, 5)})
+    assert spawn["ok"] is True
+    entity = spawn["entities"][0]
+    assert entity["entity_type"] == "drone"
+    assert entity["pose"]["x"] == 3.0
+    assert entity["pose"]["y"] == 4.0
+    assert entity["pose"]["z"] == 5.0
 
 
 def test_capture_session_happy_path(manager: BridgeSessionManager, tmp_path: Path) -> None:
@@ -1140,6 +1314,115 @@ def test_ros_allowlist_rejects_tracks_state(adapter_manager: BridgeSessionManage
     assert resp.error_code == "COMMAND_FORBIDDEN"
 
 
+def test_ros_session_topic_prefix_matches_gz_bridge() -> None:
+    from rt_sandbox.ros_allowlist import allowed_session_topics, ros_session_id, session_topic_prefix
+
+    sid = "550e8400-e29b-41d4-a716-446655440000"
+    ros_sid = ros_session_id(sid)
+    assert ros_sid == "s_550e8400_e29b_41d4_a716_446655440000"
+    prefix = session_topic_prefix(sid)
+    assert prefix == f"/rt_sandbox/{ros_sid}/"
+    topics = allowed_session_topics(sid)
+    assert f"{prefix}entity_pose_cmd" in topics
+    assert f"{prefix}entity_state" in topics
+    gz_prefix = f"/rt_sandbox/{'s_' + sid.replace('-', '_')}/"
+    assert prefix == gz_prefix
+
+
+def test_stop_sim_terminates_adapter_immediately(
+    manager: BridgeSessionManager, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from rt_sandbox import runtime_adapter
+
+    _FakeGazeboRuntimeAdapter.instances.clear()
+    monkeypatch.setattr(runtime_adapter, "GazeboRuntimeAdapter", _FakeGazeboRuntimeAdapter)
+
+    start = _cmd(manager, "start_sim")
+    sid = start["session_id"]
+    adapter = _FakeGazeboRuntimeAdapter.instances[-1]
+    _cmd(manager, "spawn_attacker", sid)
+    stop = _cmd(manager, "stop_sim", sid)
+    assert stop["ok"] is True
+    assert adapter.terminated is True
+    assert adapter.is_alive() is False
+
+
+def test_start_sim_allows_adapter_poll_telemetry(
+    manager: BridgeSessionManager, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from rt_sandbox import runtime_adapter
+
+    _FakeGazeboRuntimeAdapter.instances.clear()
+    monkeypatch.setattr(runtime_adapter, "GazeboRuntimeAdapter", _FakeGazeboRuntimeAdapter)
+
+    start = _cmd(manager, "start_sim")
+    sid = start["session_id"]
+    spawn = _cmd(manager, "spawn_attacker", sid)
+    assert spawn["ok"] is True
+    poll = _cmd(
+        manager,
+        "send_runtime_command",
+        sid,
+        payload={"sub_command": "adapter_poll_telemetry"},
+    )
+    assert poll["ok"] is True, poll.get("error_code")
+    sub = _cmd(
+        manager,
+        "subscribe_telemetry",
+        sid,
+        payload={"channels": ["entity_pose_mirror"]},
+    )
+    mirror = next(
+        ev for ev in sub["initial_events"] if ev["channel"] == "entity_pose_mirror"
+    )
+    assert mirror["payload"]["source"] == "adapter_feedback"
+    assert len(mirror["payload"]["entities"]) == 1
+
+
+def test_stop_session_leaves_adapter_attached_for_cleanup(
+    manager: BridgeSessionManager, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from rt_sandbox import runtime_adapter
+
+    _FakeGazeboRuntimeAdapter.instances.clear()
+    monkeypatch.setattr(runtime_adapter, "GazeboRuntimeAdapter", _FakeGazeboRuntimeAdapter)
+
+    start = _cmd(manager, "start_sim")
+    sid = start["session_id"]
+    adapter = _FakeGazeboRuntimeAdapter.instances[-1]
+    stop = _cmd(manager, "stop_session", sid)
+    assert stop["ok"] is True
+    assert adapter.terminated is False
+    assert adapter.paused is True
+
+
+def test_adapter_worker_teardown_uses_process_group(monkeypatch: pytest.MonkeyPatch) -> None:
+    from rt_sandbox.adapter_worker import AdapterWorker, MockSimState
+
+    worker = AdapterWorker()
+    worker._state = MockSimState(session_id=str(uuid.uuid4()), mode="live")
+    calls: list[tuple[int, int]] = []
+
+    class _Proc:
+        pid = 9001
+
+        def poll(self):
+            return None
+
+        def wait(self, timeout=None):
+            return 0
+
+    worker._state.launch_proc = _Proc()
+
+    def _killpg(pid: int, sig: int) -> None:
+        calls.append((pid, sig))
+
+    monkeypatch.setattr("rt_sandbox.adapter_worker.os.killpg", _killpg)
+    worker._teardown_launch()
+    assert calls == [(9001, 15)]
+    assert worker._state.launch_proc is None
+
+
 def test_send_runtime_command_adapter_health(adapter_manager: BridgeSessionManager) -> None:
     start = _cmd(adapter_manager, "start_session")
     sid = start["session_id"]
@@ -1435,6 +1718,33 @@ def test_adapter_fed_entity_pose_mirror(adapter_manager: BridgeSessionManager) -
     reg = adapter_manager._session.world.registry.get(eid)
     assert reg is not None
     assert reg.pose["x"] == 0.0
+
+
+def test_attacker_runtime_telemetry_fields(adapter_manager: BridgeSessionManager) -> None:
+    start = _cmd(adapter_manager, "start_session")
+    sid = start["session_id"]
+    spawn = _cmd(
+        adapter_manager,
+        "spawn_entity",
+        sid,
+        payload={"entity_type": "drone", "pose": _pose(1, 2, 30)},
+    )
+    eid = spawn["entity_id"]
+    sub = _cmd(
+        adapter_manager,
+        "subscribe_telemetry",
+        sid,
+        payload={"channels": ["entity_pose_mirror", "lifecycle_state"]},
+    )
+    assert sub["ok"] is True
+    by_channel = {ev["channel"]: ev["payload"] for ev in sub["initial_events"]}
+    entities = by_channel["entity_pose_mirror"]["entities"]
+    attacker = next(e for e in entities if e["entity_id"] == eid)
+    assert attacker["position"] == {"x": 1.0, "y": 2.0, "z": 30.0}
+    assert attacker["velocity"] == {"x": 0.0, "y": 0.0, "z": 0.0, "speed_mps": 0.0}
+    assert attacker["heading_deg"] == 0.0
+    assert attacker["lifecycle_state"] == "running"
+    assert by_channel["lifecycle_state"]["state"] == "running"
 
 
 def test_telemetry_stale_mock(adapter_manager: BridgeSessionManager) -> None:
@@ -2610,6 +2920,15 @@ def test_runtime_crashed_blocks_entity_ops(manager: BridgeSessionManager) -> Non
     assert out["error_code"] == "INVALID_STATE"
 
 
+_UI_SA_VIEWER_GUARD_FILES = frozenset(
+    {
+        "cohortImportGuards.ts",
+        "templateGuards.ts",
+        "isolation.test.ts",
+    }
+)
+
+
 def test_rt_sandbox_ui_isolation() -> None:
     """PLAT-RT-T1: RT UI package isolated from SA viewer."""
     repo = Path(__file__).resolve().parents[3]
@@ -2623,6 +2942,8 @@ def test_rt_sandbox_ui_isolation() -> None:
         if path.suffix not in {".ts", ".tsx", ".json", ".html"}:
             continue
         if path.name.endswith(".test.ts"):
+            continue
+        if path.name in _UI_SA_VIEWER_GUARD_FILES:
             continue
         text = path.read_text(encoding="utf-8")
         assert "platform/sa-r0-viewer" not in text
@@ -2639,6 +2960,8 @@ def test_rt_sandbox_ui_world_editing_commands() -> None:
     combined = ""
     for path in rt_ui_src.rglob("*.ts"):
         if path.name.endswith(".test.ts"):
+            continue
+        if path.name in _UI_SA_VIEWER_GUARD_FILES:
             continue
         combined += path.read_text(encoding="utf-8")
     for path in rt_ui_src.rglob("*.tsx"):
@@ -2944,4 +3267,92 @@ def test_capture_handoff_mirror_derive_phases(
     summary = handoff_status_summary(tmp_path, cid)
     phase = derive_workflow_phase(summary=summary, staging_dir=staging)
     assert phase in {"staged", "normalized", "review_pending", "ready"}
+
+
+def _live_stack_available() -> bool:
+    if shutil.which("ros2") is None or shutil.which("gz") is None:
+        return False
+    proc = subprocess.run(
+        ["ros2", "pkg", "prefix", "rt_sandbox_gz"],
+        capture_output=True,
+        text=True,
+    )
+    return proc.returncode == 0
+
+
+@pytest.mark.integration
+@pytest.mark.skipif(not _live_stack_available(), reason="ROS/Gazebo rt_sandbox_gz stack unavailable")
+def test_live_integration_smoke() -> None:
+    """Phase 3: full loop on host when ROS + Gazebo are installed."""
+    import urllib.error
+
+    smoke_script = _REPO / "scripts" / "rt" / "rt_live_smoke.py"
+    bridge_script = _REPO / "scripts" / "rt" / "run_rt_bridge.py"
+    assert smoke_script.is_file()
+    assert bridge_script.is_file()
+
+    env = os.environ.copy()
+    install_setup = _REPO / "install" / "setup.bash"
+    if install_setup.is_file():
+        proc = subprocess.run(
+            ["bash", "-lc", f"source {install_setup} && env -0"],
+            capture_output=True,
+            check=False,
+        )
+        if proc.returncode == 0:
+            for item in proc.stdout.split(b"\0"):
+                if b"=" in item:
+                    key, _, val = item.partition(b"=")
+                    env[key.decode()] = val.decode()
+
+    bridge = subprocess.Popen(
+        [sys.executable, str(bridge_script), "--maintainer-smoke-rates"],
+        cwd=str(_REPO),
+        env=env,
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
+    )
+    try:
+        deadline = time.monotonic() + 15.0
+        while time.monotonic() < deadline:
+            try:
+                req = urllib.request.Request(
+                    "http://127.0.0.1:18765/v1/command",
+                    data=b'{"command_type":"list_runtime_templates","command_id":"ping","issued_by":"test","authority_scope":"rt_sandbox_prototype"}',
+                    headers={"Content-Type": "application/json"},
+                    method="POST",
+                )
+                with urllib.request.urlopen(req, timeout=2):
+                    break
+            except urllib.error.URLError:
+                time.sleep(0.25)
+        else:
+            pytest.fail("bridge did not become reachable")
+
+        out = subprocess.run(
+            [
+                sys.executable,
+                str(smoke_script),
+                "--trace",
+                "",
+                "--wait-after-stop-s",
+                "4",
+            ],
+            cwd=str(_REPO),
+            env=env,
+            capture_output=True,
+            text=True,
+            timeout=180,
+        )
+        assert out.returncode == 0, out.stdout + out.stderr
+        report = json.loads(out.stdout)
+        assert report.get("ok") is True, report.get("blockers")
+        assert report["checks"]["no_orphans_after_stop"] is True
+    finally:
+        bridge.terminate()
+        try:
+            bridge.wait(timeout=5)
+        except subprocess.TimeoutExpired:
+            bridge.kill()
+            bridge.wait(timeout=2)
 

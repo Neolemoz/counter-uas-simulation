@@ -1,0 +1,625 @@
+{
+  "blockers": [],
+  "checks": {
+    "bridge_reachable": true,
+    "gazebo_launched": true,
+    "no_orphans_after_stop": true,
+    "reset_sim_ok": true,
+    "respawn_ok": true,
+    "spawn_attacker_ok": true,
+    "start_sim_ok": true,
+    "stop_sim_ok": true,
+    "subscribe_ok": true,
+    "telemetry_has_attacker": true
+  },
+  "ok": true,
+  "trace": [
+    {
+      "result": {
+        "lines": []
+      },
+      "step": "pre_orphans"
+    },
+    {
+      "result": {
+        "command_id": "9458f8ce-dc2d-459e-862b-c237d47a0d62",
+        "error_code": "OK",
+        "governance_banner": "RT SANDBOX \u2014 experimental simulation; not operational state",
+        "heartbeat": {
+          "event_type": "session_heartbeat",
+          "governance_banner": "RT SANDBOX \u2014 experimental simulation; not operational state",
+          "session_id": "cf8c191c-3fb4-469b-8cbd-7a7d29c0fa57",
+          "state": "running",
+          "stub_alive": true,
+          "world_summary": {
+            "bounds": {
+              "x": {
+                "max": 500.0,
+                "min": -500.0
+              },
+              "y": {
+                "max": 500.0,
+                "min": -500.0
+              },
+              "z": {
+                "max": 200.0,
+                "min": 0.0
+              }
+            },
+            "by_type": {
+              "drone": 0,
+              "interceptor": 0,
+              "radar": 0,
+              "waypoint_marker": 0
+            },
+            "entity_count": 0,
+            "revision": 0
+          }
+        },
+        "message": null,
+        "ok": true,
+        "session_id": "cf8c191c-3fb4-469b-8cbd-7a7d29c0fa57",
+        "state": "running",
+        "world_summary": {
+          "bounds": {
+            "x": {
+              "max": 500.0,
+              "min": -500.0
+            },
+            "y": {
+              "max": 500.0,
+              "min": -500.0
+            },
+            "z": {
+              "max": 200.0,
+              "min": 0.0
+            }
+          },
+          "by_type": {
+            "drone": 0,
+            "interceptor": 0,
+            "radar": 0,
+            "waypoint_marker": 0
+          },
+          "entity_count": 0,
+          "revision": 0
+        }
+      },
+      "step": "start_sim"
+    },
+    {
+      "result": {
+        "command_id": "77f8e784-220f-49d2-b72a-31682491bb6d",
+        "editing_session_id": "cf8c191c-3fb4-469b-8cbd-7a7d29c0fa57",
+        "error_code": "OK",
+        "governance_banner": "RT SANDBOX \u2014 experimental simulation; not operational state",
+        "message": null,
+        "ok": true,
+        "session_id": null,
+        "state": "running"
+      },
+      "step": "set_editing_session"
+    },
+    {
+      "result": {
+        "command_id": "4711f20f-71e0-4747-92a4-b3353fa41ef1",
+        "error_code": "OK",
+        "governance_banner": "RT SANDBOX \u2014 experimental simulation; not operational state",
+        "message": null,
+        "ok": true,
+        "runtime_health": {
+          "adapter_alive": true,
+          "adapter_mode": "live",
+          "adapter_pid": 63813,
+          "stub_alive": false
+        },
+        "session_id": "cf8c191c-3fb4-469b-8cbd-7a7d29c0fa57",
+        "state": "running"
+      },
+      "step": "adapter_health"
+    },
+    {
+      "result": {
+        "channels": [
+          "entity_pose_mirror",
+          "lifecycle_state",
+          "session_health"
+        ],
+        "command_id": "e3356056-eb60-4069-b1d4-e7ab146b97b5",
+        "error_code": "OK",
+        "governance_banner": "RT SANDBOX \u2014 experimental simulation; not operational state",
+        "initial_events": [
+          {
+            "channel": "entity_pose_mirror",
+            "governance_banner": "RT SANDBOX \u2014 experimental simulation; not operational state",
+            "payload": {
+              "authority_label": "explanatory_telemetry",
+              "entities": [],
+              "governance_banner": "RT SANDBOX \u2014 experimental simulation; not operational state",
+              "source": "adapter_feedback",
+              "telemetry_health": "ok",
+              "telemetry_revision": 2
+            },
+            "session_id": "cf8c191c-3fb4-469b-8cbd-7a7d29c0fa57",
+            "timestamp_utc": "2026-05-30T20:46:02+00:00"
+          },
+          {
+            "channel": "lifecycle_state",
+            "governance_banner": "RT SANDBOX \u2014 experimental simulation; not operational state",
+            "payload": {
+              "authority_label": "command_authoritative",
+              "command_type": null,
+              "governance_banner": "RT SANDBOX \u2014 experimental simulation; not operational state",
+              "previous_state": null,
+              "source": "bridge_session",
+              "state": "running"
+            },
+            "session_id": "cf8c191c-3fb4-469b-8cbd-7a7d29c0fa57",
+            "timestamp_utc": "2026-05-30T20:46:02+00:00"
+          },
+          {
+            "channel": "session_health",
+            "governance_banner": "RT SANDBOX \u2014 experimental simulation; not operational state",
+            "payload": {
+              "adapter_alive": true,
+              "adapter_entity_count": 0,
+              "adapter_mode": "live",
+              "adapter_pid": 63813,
+              "authority_label": "explanatory_telemetry",
+              "enable_fidelity_coupling": false,
+              "fidelity_attestation_status": "unavailable",
+              "governance_banner": "RT SANDBOX \u2014 experimental simulation; not operational state",
+              "source": "adapter_telemetry",
+              "state": "running",
+              "stub_alive": false,
+              "telemetry_health": "ok",
+              "telemetry_revision": 2
+            },
+            "session_id": "cf8c191c-3fb4-469b-8cbd-7a7d29c0fa57",
+            "timestamp_utc": "2026-05-30T20:46:02+00:00"
+          }
+        ],
+        "message": null,
+        "ok": true,
+        "session_id": "cf8c191c-3fb4-469b-8cbd-7a7d29c0fa57",
+        "state": "running",
+        "subscription_id": "ffde20b1-9d87-438b-b967-7936b870675f"
+      },
+      "step": "subscribe_telemetry"
+    },
+    {
+      "result": {
+        "command_id": "d3575b16-4410-4f12-8200-40ef03304270",
+        "entities": [
+          {
+            "entity_id": "dfc1debb-80e0-40bc-aa2e-a88fcb0fa919",
+            "entity_type": "drone",
+            "pose": {
+              "x": 5.0,
+              "y": -3.0,
+              "yaw_deg": 45.0,
+              "z": 20.0
+            }
+          }
+        ],
+        "entity_id": "dfc1debb-80e0-40bc-aa2e-a88fcb0fa919",
+        "error_code": "OK",
+        "governance_banner": "RT SANDBOX \u2014 experimental simulation; not operational state",
+        "message": null,
+        "ok": true,
+        "session_id": "cf8c191c-3fb4-469b-8cbd-7a7d29c0fa57",
+        "state": "running",
+        "world_summary": {
+          "adapter_mode": "live",
+          "apply_lag_ms": 0.0,
+          "bounds": {
+            "x": {
+              "max": 500.0,
+              "min": -500.0
+            },
+            "y": {
+              "max": 500.0,
+              "min": -500.0
+            },
+            "z": {
+              "max": 200.0,
+              "min": 0.0
+            }
+          },
+          "by_type": {
+            "drone": 1,
+            "interceptor": 0,
+            "radar": 0,
+            "waypoint_marker": 0
+          },
+          "entity_count": 1,
+          "feedback_entities": [
+            {
+              "command_pose": {
+                "x": 5.0,
+                "y": -3.0,
+                "yaw_deg": 45.0,
+                "z": 20.0
+              },
+              "drift_m": 0.0,
+              "entity_id": "dfc1debb-80e0-40bc-aa2e-a88fcb0fa919",
+              "feedback_pose": {
+                "x": 5.0,
+                "y": -3.0,
+                "yaw_deg": 45.0,
+                "z": 20.0
+              },
+              "sim_entity_ref": "sim-3ea66f7c",
+              "sync_revision": 1
+            }
+          ],
+          "last_command_utc": "2026-05-30T20:46:02+00:00",
+          "last_feedback_utc": "2026-05-30T20:46:02+00:00",
+          "last_poll_utc": "2026-05-30T20:46:02+00:00",
+          "last_sync_seq": 1,
+          "revision": 1,
+          "sync_health": "ok",
+          "sync_revision": 1
+        }
+      },
+      "step": "spawn_attacker_1"
+    },
+    {
+      "result": {
+        "command_id": "e47ef7a7-ddef-4cfd-a941-c48f871ada14",
+        "error_code": "OK",
+        "governance_banner": "RT SANDBOX \u2014 experimental simulation; not operational state",
+        "message": null,
+        "ok": true,
+        "session_id": "cf8c191c-3fb4-469b-8cbd-7a7d29c0fa57",
+        "state": "running",
+        "world_summary": {
+          "adapter_mode": "live",
+          "apply_lag_ms": 0.0,
+          "bounds": {
+            "x": {
+              "max": 500.0,
+              "min": -500.0
+            },
+            "y": {
+              "max": 500.0,
+              "min": -500.0
+            },
+            "z": {
+              "max": 200.0,
+              "min": 0.0
+            }
+          },
+          "by_type": {
+            "drone": 1,
+            "interceptor": 0,
+            "radar": 0,
+            "waypoint_marker": 0
+          },
+          "entity_count": 1,
+          "feedback_entities": [
+            {
+              "command_pose": {
+                "x": 5.0,
+                "y": -3.0,
+                "yaw_deg": 45.0,
+                "z": 20.0
+              },
+              "drift_m": 0.0,
+              "entity_id": "dfc1debb-80e0-40bc-aa2e-a88fcb0fa919",
+              "feedback_pose": {
+                "x": 5.0,
+                "y": -3.0,
+                "yaw_deg": 45.0,
+                "z": 20.0
+              },
+              "sim_entity_ref": "sim-3ea66f7c",
+              "sync_revision": 1
+            }
+          ],
+          "last_command_utc": "2026-05-30T20:46:02+00:00",
+          "last_feedback_utc": "2026-05-30T20:46:02+00:00",
+          "last_poll_utc": "2026-05-30T20:46:02+00:00",
+          "last_sync_seq": 1,
+          "revision": 1,
+          "sync_health": "ok",
+          "sync_revision": 1
+        }
+      },
+      "step": "adapter_poll_telemetry"
+    },
+    {
+      "result": {
+        "drained_count": 2,
+        "error_code": "OK",
+        "events": [
+          {
+            "channel": "entity_pose_mirror",
+            "governance_banner": "RT SANDBOX \u2014 experimental simulation; not operational state",
+            "payload": {
+              "authority_label": "explanatory_telemetry",
+              "entities": [],
+              "governance_banner": "RT SANDBOX \u2014 experimental simulation; not operational state",
+              "source": "adapter_feedback",
+              "telemetry_health": "ok",
+              "telemetry_revision": 2
+            },
+            "session_id": "cf8c191c-3fb4-469b-8cbd-7a7d29c0fa57",
+            "timestamp_utc": "2026-05-30T20:46:02+00:00"
+          },
+          {
+            "channel": "session_health",
+            "governance_banner": "RT SANDBOX \u2014 experimental simulation; not operational state",
+            "payload": {
+              "adapter_alive": true,
+              "adapter_entity_count": 1,
+              "adapter_mode": "live",
+              "adapter_pid": 63813,
+              "authority_label": "explanatory_telemetry",
+              "enable_fidelity_coupling": false,
+              "fidelity_attestation_status": "unavailable",
+              "governance_banner": "RT SANDBOX \u2014 experimental simulation; not operational state",
+              "source": "adapter_telemetry",
+              "state": "running",
+              "stub_alive": false,
+              "telemetry_health": "ok",
+              "telemetry_revision": 4
+            },
+            "session_id": "cf8c191c-3fb4-469b-8cbd-7a7d29c0fa57",
+            "timestamp_utc": "2026-05-30T20:46:03+00:00"
+          }
+        ],
+        "governance_banner": "RT SANDBOX \u2014 experimental simulation; not operational state",
+        "ok": true,
+        "session_id": "cf8c191c-3fb4-469b-8cbd-7a7d29c0fa57",
+        "subscription_id": "ffde20b1-9d87-438b-b967-7936b870675f"
+      },
+      "step": "telemetry_pull"
+    },
+    {
+      "result": {
+        "channels": [
+          "entity_pose_mirror"
+        ],
+        "command_id": "8d1c8e68-7d92-444b-bfab-603ef273b96e",
+        "error_code": "OK",
+        "governance_banner": "RT SANDBOX \u2014 experimental simulation; not operational state",
+        "initial_events": [
+          {
+            "channel": "entity_pose_mirror",
+            "governance_banner": "RT SANDBOX \u2014 experimental simulation; not operational state",
+            "payload": {
+              "authority_label": "explanatory_telemetry",
+              "entities": [
+                {
+                  "entity_id": "dfc1debb-80e0-40bc-aa2e-a88fcb0fa919",
+                  "entity_type": "drone",
+                  "heading_deg": 45.0,
+                  "lifecycle_state": "running",
+                  "pose": {
+                    "x": 5.0,
+                    "y": -3.0,
+                    "yaw_deg": 45.0,
+                    "z": 20.0
+                  },
+                  "position": {
+                    "x": 5.0,
+                    "y": -3.0,
+                    "z": 20.0
+                  },
+                  "sim_entity_ref": "sim-3ea66f7c",
+                  "velocity": {
+                    "speed_mps": 0.0,
+                    "x": 0.0,
+                    "y": 0.0,
+                    "z": 0.0
+                  }
+                }
+              ],
+              "governance_banner": "RT SANDBOX \u2014 experimental simulation; not operational state",
+              "source": "adapter_feedback",
+              "telemetry_health": "ok",
+              "telemetry_revision": 10
+            },
+            "session_id": "cf8c191c-3fb4-469b-8cbd-7a7d29c0fa57",
+            "timestamp_utc": "2026-05-30T20:46:05+00:00"
+          }
+        ],
+        "message": null,
+        "ok": true,
+        "session_id": "cf8c191c-3fb4-469b-8cbd-7a7d29c0fa57",
+        "state": "running",
+        "subscription_id": "0acabdac-a241-4aaa-b40d-1168b5b7e9ac"
+      },
+      "step": "verify_entity_pose_mirror"
+    },
+    {
+      "result": {
+        "command_id": "3952ae11-a344-45eb-a46b-6b4e16c1454c",
+        "error_code": "OK",
+        "governance_banner": "RT SANDBOX \u2014 experimental simulation; not operational state",
+        "message": null,
+        "ok": true,
+        "session_id": "cf8c191c-3fb4-469b-8cbd-7a7d29c0fa57",
+        "state": "running",
+        "world_summary": {
+          "bounds": {
+            "x": {
+              "max": 500.0,
+              "min": -500.0
+            },
+            "y": {
+              "max": 500.0,
+              "min": -500.0
+            },
+            "z": {
+              "max": 200.0,
+              "min": 0.0
+            }
+          },
+          "by_type": {
+            "drone": 0,
+            "interceptor": 0,
+            "radar": 0,
+            "waypoint_marker": 0
+          },
+          "entity_count": 0,
+          "revision": 2
+        }
+      },
+      "step": "reset_sim"
+    },
+    {
+      "result": {
+        "command_id": "ce57805c-2bdc-47fc-9316-09936b7955c5",
+        "entities": [
+          {
+            "entity_id": "e0283589-83ed-4bc2-a213-fda6d154cbc2",
+            "entity_type": "drone",
+            "pose": {
+              "x": -2.0,
+              "y": 4.0,
+              "yaw_deg": 0.0,
+              "z": 15.0
+            }
+          }
+        ],
+        "entity_id": "e0283589-83ed-4bc2-a213-fda6d154cbc2",
+        "error_code": "OK",
+        "governance_banner": "RT SANDBOX \u2014 experimental simulation; not operational state",
+        "message": null,
+        "ok": true,
+        "session_id": "cf8c191c-3fb4-469b-8cbd-7a7d29c0fa57",
+        "state": "running",
+        "telemetry": {
+          "entities": [
+            {
+              "entity_id": "e0283589-83ed-4bc2-a213-fda6d154cbc2",
+              "entity_type": "drone",
+              "pose": {
+                "x": -2.0,
+                "y": 4.0,
+                "yaw_deg": 0.0,
+                "z": 15.0
+              }
+            }
+          ],
+          "event_type": "entity_pose_heartbeat",
+          "governance_banner": "RT SANDBOX \u2014 experimental simulation; not operational state",
+          "session_id": "cf8c191c-3fb4-469b-8cbd-7a7d29c0fa57",
+          "world_summary": {
+            "adapter_mode": "live",
+            "apply_lag_ms": 0.0,
+            "bounds": {
+              "x": {
+                "max": 500.0,
+                "min": -500.0
+              },
+              "y": {
+                "max": 500.0,
+                "min": -500.0
+              },
+              "z": {
+                "max": 200.0,
+                "min": 0.0
+              }
+            },
+            "by_type": {
+              "drone": 1,
+              "interceptor": 0,
+              "radar": 0,
+              "waypoint_marker": 0
+            },
+            "entity_count": 1,
+            "feedback_entities": [
+              {
+                "command_pose": {
+                  "x": -2.0,
+                  "y": 4.0,
+                  "yaw_deg": 0.0,
+                  "z": 15.0
+                },
+                "entity_id": "e0283589-83ed-4bc2-a213-fda6d154cbc2",
+                "feedback_pose": null,
+                "sim_entity_ref": "sim-a738c5be",
+                "sync_revision": 3
+              }
+            ],
+            "last_command_utc": "2026-05-30T20:46:05+00:00",
+            "last_feedback_utc": "2026-05-30T20:46:05+00:00",
+            "last_poll_utc": "2026-05-30T20:46:05+00:00",
+            "last_sync_seq": 1,
+            "revision": 3,
+            "sync_health": "mismatch",
+            "sync_revision": 3
+          }
+        },
+        "world_summary": {
+          "adapter_mode": "live",
+          "apply_lag_ms": 0.0,
+          "bounds": {
+            "x": {
+              "max": 500.0,
+              "min": -500.0
+            },
+            "y": {
+              "max": 500.0,
+              "min": -500.0
+            },
+            "z": {
+              "max": 200.0,
+              "min": 0.0
+            }
+          },
+          "by_type": {
+            "drone": 1,
+            "interceptor": 0,
+            "radar": 0,
+            "waypoint_marker": 0
+          },
+          "entity_count": 1,
+          "feedback_entities": [
+            {
+              "command_pose": {
+                "x": -2.0,
+                "y": 4.0,
+                "yaw_deg": 0.0,
+                "z": 15.0
+              },
+              "entity_id": "e0283589-83ed-4bc2-a213-fda6d154cbc2",
+              "feedback_pose": null,
+              "sim_entity_ref": "sim-a738c5be",
+              "sync_revision": 3
+            }
+          ],
+          "last_command_utc": "2026-05-30T20:46:05+00:00",
+          "last_feedback_utc": "2026-05-30T20:46:05+00:00",
+          "last_poll_utc": "2026-05-30T20:46:05+00:00",
+          "last_sync_seq": 1,
+          "revision": 3,
+          "sync_health": "mismatch",
+          "sync_revision": 3
+        }
+      },
+      "step": "spawn_attacker_2"
+    },
+    {
+      "result": {
+        "command_id": "ced6d1a6-ca21-43fc-8b00-29fe4b499e46",
+        "error_code": "OK",
+        "governance_banner": "RT SANDBOX \u2014 experimental simulation; not operational state",
+        "message": null,
+        "ok": true,
+        "session_id": "cf8c191c-3fb4-469b-8cbd-7a7d29c0fa57",
+        "state": "stopped"
+      },
+      "step": "stop_sim"
+    },
+    {
+      "result": {
+        "lines": []
+      },
+      "step": "post_orphans"
+    }
+  ]
+}

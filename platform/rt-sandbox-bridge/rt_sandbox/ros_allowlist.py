@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import re
 
-SESSION_PREFIX_RE = re.compile(r"^/rt_sandbox/[0-9a-fA-F-]{36}/")
+SESSION_PREFIX_RE = re.compile(r"^/rt_sandbox/s_[0-9a-fA-F_]{36}/")
 
 BLOCKED_TOPIC_EXACT = frozenset(
     {
@@ -29,8 +29,12 @@ BLOCKED_SUBSTRINGS = (
 )
 
 
+def ros_session_id(session_id: str) -> str:
+    return "s_" + session_id.replace("-", "_")
+
+
 def session_topic_prefix(session_id: str) -> str:
-    return f"/rt_sandbox/{session_id}/"
+    return f"/rt_sandbox/{ros_session_id(session_id)}/"
 
 
 def allowed_session_topics(session_id: str) -> frozenset[str]:

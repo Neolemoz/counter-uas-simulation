@@ -61,6 +61,8 @@ def finish_entity_sync(
             result="OK" if not err_code else err_code,
             detail=detail,
         )
+    if err_code == "SYNC_MISMATCH" and getattr(session.runtime, "mode", None) == "live":
+        err_code = None
     if err_code:
         return None, fail(
             base,

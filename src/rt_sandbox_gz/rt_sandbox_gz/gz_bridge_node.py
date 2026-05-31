@@ -46,6 +46,7 @@ class RtSandboxGzBridgeNode(Node):
         self.declare_parameter('publish_rate_hz', 10.0)
 
         self._session_id = str(self.get_parameter('session_id').value).strip()
+        self._ros_session_id = 's_' + self._session_id.replace('-', '_')
         self._world = str(self.get_parameter('world_name').value).strip()
         self._ground_snap = bool(self.get_parameter('ground_snap_enabled').value)
         self._rate_hz = max(1.0, float(self.get_parameter('publish_rate_hz').value))
@@ -53,7 +54,7 @@ class RtSandboxGzBridgeNode(Node):
         if not self._session_id:
             raise RuntimeError('session_id parameter required')
 
-        prefix = f'/rt_sandbox/{self._session_id}/'
+        prefix = f'/rt_sandbox/{self._ros_session_id}/'
         self._cmd_topic = f'{prefix}entity_pose_cmd'
         self._state_topic = f'{prefix}entity_state'
 
@@ -162,6 +163,14 @@ class RtSandboxGzBridgeNode(Node):
                     'entity_type': e['entity_type'],
                     'sim_entity_ref': e.get('sim_entity_ref'),
                     'pose': dict(e.get('pose') or {}),
+                    'position': {
+                        'x': float((e.get('pose') or {}).get('x', 0.0)),
+                        'y': float((e.get('pose') or {}).get('y', 0.0)),
+                        'z': float((e.get('pose') or {}).get('z', 0.0)),
+                    },
+                    'velocity': {'x': 0.0, 'y': 0.0, 'z': 0.0, 'speed_mps': 0.0},
+                    'heading_deg': float((e.get('pose') or {}).get('yaw_deg', 0.0)),
+                    'lifecycle_state': 'spawned',
                 }
                 for e in self._entities.values()
             ],

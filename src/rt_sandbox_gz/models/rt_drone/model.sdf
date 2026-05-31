@@ -1,4 +1,5 @@
 <?xml version="1.0"?>
+<sdf version="1.10">
 <model name="rt_drone">
   <static>true</static>
   <link name="link">
@@ -13,3 +14,4 @@
     </visual>
   </link>
 </model>
+</sdf>

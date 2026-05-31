@@ -56,6 +56,14 @@ def entity_state_to_feedback(state: dict[str, Any], *, ground_snap_enabled: bool
                 "entity_type": entity_type,
                 "sim_entity_ref": item.get("sim_entity_ref"),
                 "pose": unsnap_feedback_pose(entity_type, pose, enabled=ground_snap_enabled),
+                "position": unsnap_feedback_pose(
+                    entity_type,
+                    dict(item.get("position") or pose),
+                    enabled=ground_snap_enabled,
+                ),
+                "velocity": dict(item.get("velocity") or {}),
+                "heading_deg": item.get("heading_deg"),
+                "lifecycle_state": item.get("lifecycle_state"),
             }
         )
     return {

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import time
+from dataclasses import replace
 from pathlib import Path
 from typing import Any
 
@@ -64,6 +65,49 @@ from rt_sandbox.session_workflow_handlers import (
 from rt_sandbox.telemetry import TelemetryBuffer
 from rt_sandbox.telemetry_subscriptions import TelemetrySubscriptionStore
 
+_SIM_COMMAND_CANONICAL = {
+    "start_sim": "start_session",
+    "stop_sim": "stop_session",
+    "reset_sim": "reset_session",
+    "spawn_attacker": "spawn_entity",
+}
+
+_DEFAULT_ATTACKER_POSE = {"x": 0.0, "y": 0.0, "z": 20.0, "yaw_deg": 0.0}
+
+
+def _payload_for_sim_alias(command_type: str, payload: Any) -> Any:
+    if command_type != "spawn_attacker":
+        return payload
+    if payload is None:
+        payload_in: dict[str, Any] = {}
+    elif isinstance(payload, dict):
+        payload_in = dict(payload)
+    else:
+        return payload
+    pose = payload_in.get("pose") or dict(_DEFAULT_ATTACKER_POSE)
+    out: dict[str, Any] = {"entity_type": "drone", "pose": pose}
+    if payload_in.get("entity_id"):
+        out["entity_id"] = payload_in["entity_id"]
+    return out
+
+
+def _config_for_command(config: GovernanceConfig, command_type: str) -> GovernanceConfig:
+    if command_type != "start_sim":
+        return config
+    return replace(config, enable_gazebo_adapter=True, adapter_mode="live")
+
+
+def _config_for_session(config: GovernanceConfig, session: Any) -> GovernanceConfig:
+    runtime = getattr(session, "runtime", None)
+    if getattr(runtime, "kind", "") != "adapter":
+        return config
+    return replace(
+        config,
+        enable_gazebo_adapter=True,
+        adapter_mode=getattr(runtime, "mode", config.adapter_mode),
+    )
+
+
 # Re-export for backward compatibility
 __all__ = ["BridgeSessionManager", "GovernanceConfig", "SessionRecord"]
 
@@ -105,12 +149,14 @@ class BridgeSessionManager:
 
     def handle_command(self, body: dict[str, Any]) -> dict[str, Any]:
         now = time.monotonic()
-        command_type = str(body.get("command_type", ""))
+        raw_command_type = str(body.get("command_type", ""))
+        command_type = _SIM_COMMAND_CANONICAL.get(raw_command_type, raw_command_type)
         command_id = str(body.get("command_id", ""))
         issued_by = str(body.get("issued_by", "rt_ui_prototype"))
         authority_scope = str(body.get("authority_scope", ""))
         session_id = body.get("session_id")
-        payload = body.get("payload")
+        payload = _payload_for_sim_alias(raw_command_type, body.get("payload"))
+        command_config = _config_for_command(self.config, raw_command_type)
 
         base = response_base(command_id, session_id)
 
@@ -134,7 +180,7 @@ class BridgeSessionManager:
         if authority_scope and authority_scope != self.config.authority_scope:
             return fail(base, "COMMAND_FORBIDDEN", "invalid authority_scope")
 
-        forbidden = classify_command(command_type)
+        forbidden = classify_command(raw_command_type)
         if forbidden:
             return fail(base, forbidden, f"command not allowed: {command_type}")
 
@@ -147,7 +193,7 @@ class BridgeSessionManager:
                 return fail(base, "RESOURCE_LIMIT_EXCEEDED", "command rate limit")
             result = start_session(
                 base,
-                config=self.config,
+                config=command_config,
                 audit=self._audit,
                 telemetry=self._telemetry,
                 publish_transition=self._publish_channels_for_transition,
@@ -209,6 +255,7 @@ class BridgeSessionManager:
             return fail(base, "SESSION_NOT_FOUND", "unknown session_id")
 
         base["session_id"] = session.session_id
+        session_config = _config_for_session(self.config, session)
 
         if not self._rate_limiter_for(session.session_id).check(now):
             return fail(base, "RESOURCE_LIMIT_EXCEEDED", "command rate limit")
@@ -256,12 +303,13 @@ class BridgeSessionManager:
             return stop_session(
                 session,
                 base,
-                config=self.config,
+                config=session_config,
                 audit=self._audit,
                 publish_transition=self._publish_channels_for_transition,
                 command_id=command_id,
                 issued_by=issued_by,
                 now=now,
+                terminate_runtime=raw_command_type == "stop_sim",
             )
         if command_type == "discard_session":
             result = discard_session(
@@ -296,7 +344,7 @@ class BridgeSessionManager:
             return reset_session(
                 session,
                 base,
-                config=self.config,
+                config=session_config,
                 audit=self._audit,
                 telemetry=self._telemetry,
                 publish_transition=self._publish_channels_for_transition,
@@ -309,7 +357,7 @@ class BridgeSessionManager:
                 command_type,
                 payload,
                 base,
-                config=self.config,
+                config=session_config,
                 audit=self._audit,
                 telemetry=self._telemetry,
                 telemetry_subs=self._telemetry_subs,
@@ -330,7 +378,7 @@ class BridgeSessionManager:
                 command_type,
                 payload,
                 base,
-                config=self.config,
+                config=session_config,
                 telemetry_subs=self._telemetry_subs,
                 audit=self._audit,
                 publish_channel=lambda ch: self._publish_telemetry(
@@ -341,7 +389,7 @@ class BridgeSessionManager:
                 ),
                 poll_bridge=lambda: poll_telemetry_bridge(
                     session,
-                    self.config,
+                    session_config,
                     self._audit,
                     lambda ch: self._publish_telemetry(
                         session,
@@ -406,7 +454,7 @@ class BridgeSessionManager:
                 session,
                 payload,
                 base,
-                config=self.config,
+                config=session_config,
                 audit=self._audit,
                 publish_channel=lambda ch: self._publish_telemetry(
                     session,
@@ -507,7 +555,7 @@ class BridgeSessionManager:
         publish_telemetry(
             session,
             channel,
-            config=self.config,
+            config=_config_for_session(self.config, session),
             telemetry_subs=self._telemetry_subs,
             audit=self._audit,
             command_type=command_type,
@@ -528,7 +576,7 @@ class BridgeSessionManager:
             session,
             command_type,
             previous_state,
-            config=self.config,
+            config=_config_for_session(self.config, session),
             telemetry_subs=self._telemetry_subs,
             audit=self._audit,
             publish_channel=lambda ch: self._publish_telemetry(session, ch),

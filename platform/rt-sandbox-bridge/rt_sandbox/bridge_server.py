@@ -90,8 +90,9 @@ def serve_forever(
     host: str = DEFAULT_HOST,
     port: int = DEFAULT_PORT,
     repo_root: Path | None = None,
+    manager: BridgeSessionManager | None = None,
 ) -> None:
-    server = make_server(host=host, port=port, repo_root=repo_root)
+    server = make_server(host=host, port=port, repo_root=repo_root, manager=manager)
     try:
         server.serve_forever()
     except KeyboardInterrupt:

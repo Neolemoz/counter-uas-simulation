@@ -290,11 +290,14 @@ def stop_session(
     command_id: str,
     issued_by: str,
     now: float,
+    terminate_runtime: bool = False,
 ) -> dict[str, Any]:
     if not can_transition(session.state, "stop_session"):
         return fail(base, "INVALID_STATE", session.state.value)
     prev = session.state
     session.runtime.stop()
+    if terminate_runtime:
+        session.runtime.terminate()
     session.state = SessionState.STOPPED
     session.cleanup_after = now + config.session_cleanup_timeout_s
     audit.append(
