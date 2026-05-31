@@ -1,9 +1,11 @@
 import { LocateFixed } from "lucide-react";
+import { CaptureSnapshotSection } from "@/components/CaptureSnapshotSection";
 import { EntityRuntimeTelemetryRow } from "@/components/EntityRuntimeTelemetryRow";
 import { PanelShell } from "./GovernanceChrome";
 import { TelemetryCognitionStrip } from "./TelemetryCognitionStrip";
 import type { ChannelSnapshot } from "@/telemetry/channelIndex";
 import { entitiesFromSnapshot } from "@/telemetry/channelIndex";
+import type { LiveCaptureSummary } from "@/telemetry/captureSummary";
 import { parseEntityRuntimeTelemetry } from "@/telemetry/entityMirrorFields";
 import { ENTITY_GLYPHS, ENTITY_LABELS, type EntityType } from "@/world/entityCatalog";
 import { entityCell, GRID_HEIGHT, GRID_WIDTH } from "@/world/gridCoords";
@@ -11,9 +13,13 @@ import { entityCell, GRID_HEIGHT, GRID_WIDTH } from "@/world/gridCoords";
 export function EntityPoseMirrorPanel({
   snapshot,
   hideCognition = false,
+  sessionId = null,
+  captureSummary,
 }: {
   snapshot: ChannelSnapshot | undefined;
   hideCognition?: boolean;
+  sessionId?: string | null;
+  captureSummary?: LiveCaptureSummary;
 }) {
   const entities = entitiesFromSnapshot(snapshot);
 
@@ -22,6 +28,9 @@ export function EntityPoseMirrorPanel({
       <p className="mb-3 text-xs leading-relaxed text-slate-500">
         Explanatory mirror snapshot — registry commands stay in the world editor.
       </p>
+      {sessionId && captureSummary && (
+        <CaptureSnapshotSection summary={captureSummary} />
+      )}
       <div className="relative h-[220px] overflow-hidden rounded border border-slate-800 bg-slate-950/80 p-3">
         <div
           className="absolute inset-0 opacity-40"

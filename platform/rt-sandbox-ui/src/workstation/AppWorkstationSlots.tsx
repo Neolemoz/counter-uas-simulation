@@ -10,10 +10,12 @@ import { EntityPalette } from "@/components/EntityPalette";
 import { EntityPoseMirrorPanel } from "@/components/EntityPoseMirrorPanel";
 import {
   BridgeConnectionBar,
+  CaptureControlBar,
   CollapsibleUiDiagnostics,
   RefreshControls,
   RuntimeControlBar,
 } from "@/components/RefreshControls";
+import { CaptureSummaryStrip } from "@/components/CaptureSummaryStrip";
 import {
   ClockMirrorPanel,
   SessionHealthPanel,
@@ -43,6 +45,7 @@ import type { AdvisoryExperimentRollup } from "@/handoff/advisoryTypes";
 import type { SessionSlot } from "@/hooks/useRtSessionWorkspace";
 import type { useTacticalState } from "@/hooks/useTacticalState";
 import type { ChannelSnapshot } from "@/telemetry/channelIndex";
+import type { LiveCaptureSummary } from "@/telemetry/captureSummary";
 import type { TelemetryChannel } from "@/telemetry/constants";
 import type { EntityType } from "@/world/entityCatalog";
 import type { Pose } from "@/world/bounds";
@@ -133,11 +136,15 @@ export type AppWorkstationSlotsProps = {
   }[];
   tactical: Tactical;
   runtimeBusy: boolean;
+  captureBusy: boolean;
+  captureSummary: LiveCaptureSummary;
   selectedDefenderId: string | null;
   selectedTargetId: string | null;
   onPauseSim: () => void;
   onResumeSim: () => void;
   onSpawnDefender: () => void;
+  onStartCapture: () => void;
+  onStopCapture: () => void;
   onAssignTarget: () => void;
   onCancelAssignment: () => void;
   hidePanelCognition: boolean;
@@ -209,11 +216,15 @@ export function AppWorkstationSlots(props: AppWorkstationSlotsProps) {
     experimentSlots,
     tactical,
     runtimeBusy,
+    captureBusy,
+    captureSummary,
     selectedDefenderId,
     selectedTargetId,
     onPauseSim,
     onResumeSim,
     onSpawnDefender,
+    onStartCapture,
+    onStopCapture,
     onAssignTarget,
     onCancelAssignment,
     hidePanelCognition,
@@ -284,19 +295,32 @@ export function AppWorkstationSlots(props: AppWorkstationSlotsProps) {
         <>
           <BridgeConnectionBar
             connected={connected}
-            busy={busy || runtimeBusy}
+            busy={busy || runtimeBusy || captureBusy}
             onConnect={onConnectNewSession}
             onDisconnect={onDisconnectSelected}
           />
-          <RuntimeControlBar
-            connected={connected}
-            editingEnabled={editingEnabled}
-            busy={busy || runtimeBusy}
-            simPaused={simPaused}
-            onPauseSim={onPauseSim}
-            onResumeSim={onResumeSim}
-            onSpawnDefender={onSpawnDefender}
-          />
+          <div className="flex flex-col gap-1">
+            <RuntimeControlBar
+              connected={connected}
+              editingEnabled={editingEnabled}
+              busy={busy || runtimeBusy}
+              simPaused={simPaused}
+              onPauseSim={onPauseSim}
+              onResumeSim={onResumeSim}
+              onSpawnDefender={onSpawnDefender}
+            />
+            <CaptureControlBar
+              connected={connected}
+              editingEnabled={editingEnabled}
+              busy={busy || captureBusy}
+              captureActive={captureSummary.captureActive}
+              onStartCapture={onStartCapture}
+              onStopCapture={onStopCapture}
+            />
+            {connected && sessionId && (
+              <CaptureSummaryStrip summary={captureSummary} />
+            )}
+          </div>
           <SessionTabBar
             slots={slotList}
             orderedSessionIds={workspaceSessionIds}
@@ -397,6 +421,7 @@ export function AppWorkstationSlots(props: AppWorkstationSlotsProps) {
               editingEnabled={editingEnabled}
               worldSummary={mergedWorldSummary}
               mirrorSnapshot={snapshots.entity_pose_mirror}
+              captureActive={captureSummary.captureActive}
               showTerrainContour={terrainLayersOn}
               showContourLines={terrainLayers.showContourOverlays}
               radarDomeConfig={radarDomeConfig}
@@ -582,6 +607,8 @@ export function AppWorkstationSlots(props: AppWorkstationSlotsProps) {
             <EntityPoseMirrorPanel
               snapshot={snapshots.entity_pose_mirror}
               hideCognition={hidePanelCognition}
+              sessionId={sessionId}
+              captureSummary={captureSummary}
             />
           </div>
           <CollapsibleUiDiagnostics

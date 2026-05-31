@@ -225,3 +225,45 @@ export function RuntimeControlBar({
     </div>
   );
 }
+
+export function CaptureControlBar({
+  connected,
+  editingEnabled,
+  busy,
+  captureActive,
+  onStartCapture,
+  onStopCapture,
+}: {
+  connected: boolean;
+  editingEnabled: boolean;
+  busy: boolean;
+  captureActive: boolean;
+  onStartCapture: () => void;
+  onStopCapture: () => void;
+}) {
+  const controlsDisabled = !connected || !editingEnabled || busy;
+
+  return (
+    <div className="flex flex-wrap items-center gap-2 rounded-lg border border-slate-700/80 bg-slate-900/50 px-3 py-2">
+      <span className="text-xs font-semibold uppercase tracking-wide text-slate-400">
+        Capture
+      </span>
+      <button
+        type="button"
+        onClick={onStartCapture}
+        disabled={controlsDisabled || captureActive}
+        className="rounded border border-violet-700/60 bg-violet-950/50 px-2.5 py-1 text-xs font-medium text-violet-100 hover:bg-violet-900/50 disabled:opacity-40"
+      >
+        Start capture
+      </button>
+      <button
+        type="button"
+        onClick={onStopCapture}
+        disabled={controlsDisabled || !captureActive}
+        className="rounded border border-rose-700/60 bg-rose-950/50 px-2.5 py-1 text-xs font-medium text-rose-100 hover:bg-rose-900/50 disabled:opacity-40"
+      >
+        Stop capture
+      </button>
+    </div>
+  );
+}

@@ -42,4 +42,24 @@ describe("EntityPoseMirrorPanel", () => {
     expect(markup).toContain("target ASSIGNED");
     expect(markup).toContain("assign ASSIGNED");
   });
+
+  it("renders capture snapshot when session exists", () => {
+    const markup = renderToStaticMarkup(
+      <EntityPoseMirrorPanel
+        sessionId="session-abc"
+        captureSummary={{
+          captureActive: true,
+          captureStatus: "active",
+          captureId: "cap-12345678-abcd",
+          framesCount: 12,
+          entitiesCount: 2,
+          startedUtc: "2026-06-01T12:34:56+00:00",
+        }}
+        hideCognition
+      />,
+    );
+    expect(markup).toContain("Capture snapshot");
+    expect(markup).toContain("active");
+    expect(markup).toContain("12");
+  });
 });

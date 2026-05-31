@@ -113,6 +113,7 @@ export function WorldEditingGrid({
   onRadarDomeLabelsVisibleChange = () => undefined,
   onSensorDomeZoneModeChange = () => undefined,
   mirrorSnapshot,
+  captureActive = false,
 }: {
   entities: UiEntity[];
   selectedEntityId: string | null;
@@ -120,6 +121,7 @@ export function WorldEditingGrid({
   editingEnabled: boolean;
   worldSummary: Record<string, unknown> | undefined;
   mirrorSnapshot?: ChannelSnapshot;
+  captureActive?: boolean;
   showTerrainContour?: boolean;
   showContourLines?: boolean;
   radarDomeConfig?: RadarDomeConfig;
@@ -618,7 +620,10 @@ export function WorldEditingGrid({
                 )}
               </div>
               {selectedRuntimeTelemetry && (
-                <SelectedEntityRuntimeStrip telemetry={selectedRuntimeTelemetry} />
+                <SelectedEntityRuntimeStrip
+                  telemetry={selectedRuntimeTelemetry}
+                  captureActive={captureActive}
+                />
               )}
             </div>
             <div className="flex shrink-0 gap-2">

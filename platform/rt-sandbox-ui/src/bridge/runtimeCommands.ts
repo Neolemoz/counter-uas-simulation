@@ -1,5 +1,5 @@
 import { sendCommand } from "./client";
-import type { BridgeCommandResponse } from "./types";
+import type { BridgeCommandResponse, CaptureStatusResponse } from "./types";
 import type { Pose } from "@/world/bounds";
 
 export async function pauseSim(sessionId: string): Promise<BridgeCommandResponse> {
@@ -52,4 +52,28 @@ export async function cancelAssignment(
     sessionId,
     payload: { defender_id: payload.defender_id },
   });
+}
+
+export async function startCapture(sessionId: string): Promise<CaptureStatusResponse> {
+  return sendCommand({
+    commandType: "start_capture",
+    sessionId,
+    payload: {},
+  }) as Promise<CaptureStatusResponse>;
+}
+
+export async function stopCapture(sessionId: string): Promise<CaptureStatusResponse> {
+  return sendCommand({
+    commandType: "stop_capture",
+    sessionId,
+    payload: {},
+  }) as Promise<CaptureStatusResponse>;
+}
+
+export async function captureStatus(sessionId: string): Promise<CaptureStatusResponse> {
+  return sendCommand({
+    commandType: "capture_status",
+    sessionId,
+    payload: {},
+  }) as Promise<CaptureStatusResponse>;
 }

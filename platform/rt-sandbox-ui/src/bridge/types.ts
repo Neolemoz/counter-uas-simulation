@@ -66,3 +66,14 @@ export interface ListCaptureHandoffStatusResponse extends BridgeCommandResponse 
   captures?: CaptureHandoffRow[];
   session_id?: string;
 }
+
+/** Live runtime capture status (start_capture / stop_capture / capture_status). */
+export interface CaptureStatusResponse extends BridgeCommandResponse {
+  capture_active?: boolean;
+  capture_status?: "active" | "inactive" | string;
+  capture_id?: string | null;
+  started_utc?: string | null;
+  frames_count?: number;
+  entities_count?: number;
+  artifact_ref?: string;
+}

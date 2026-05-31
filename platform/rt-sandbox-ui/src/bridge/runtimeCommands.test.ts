@@ -2,9 +2,12 @@ import { describe, expect, it, vi, beforeEach } from "vitest";
 import {
   assignTarget,
   cancelAssignment,
+  captureStatus,
   pauseSim,
   resumeSim,
   spawnDefender,
+  startCapture,
+  stopCapture,
 } from "./runtimeCommands";
 
 describe("runtimeCommands", () => {
@@ -58,5 +61,26 @@ describe("runtimeCommands", () => {
     const body = JSON.parse(String((fetch as ReturnType<typeof vi.fn>).mock.calls[0][1]?.body));
     expect(body.command_type).toBe("cancel_assignment");
     expect(body.payload.defender_id).toBe("d1");
+  });
+
+  it("start_capture payload shape", async () => {
+    await startCapture("sid");
+    const body = JSON.parse(String((fetch as ReturnType<typeof vi.fn>).mock.calls[0][1]?.body));
+    expect(body.command_type).toBe("start_capture");
+    expect(body.session_id).toBe("sid");
+  });
+
+  it("stop_capture payload shape", async () => {
+    await stopCapture("sid");
+    const body = JSON.parse(String((fetch as ReturnType<typeof vi.fn>).mock.calls[0][1]?.body));
+    expect(body.command_type).toBe("stop_capture");
+    expect(body.session_id).toBe("sid");
+  });
+
+  it("capture_status payload shape", async () => {
+    await captureStatus("sid");
+    const body = JSON.parse(String((fetch as ReturnType<typeof vi.fn>).mock.calls[0][1]?.body));
+    expect(body.command_type).toBe("capture_status");
+    expect(body.session_id).toBe("sid");
   });
 });

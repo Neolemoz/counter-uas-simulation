@@ -9,6 +9,7 @@ import {
 import { hasUnsyncedLocalMirror } from "@/editing/sessionMirrorDirty";
 import type { AdvisoryExperimentRollup } from "@/handoff/advisoryTypes";
 import { useCaptureHandoffMirror } from "@/hooks/useCaptureHandoffMirror";
+import { useCaptureControls } from "@/hooks/useCaptureControls";
 import { useRtSessionWorkspace } from "@/hooks/useRtSessionWorkspace";
 import {
   emptyEditState,
@@ -166,6 +167,13 @@ export default function App() {
     setLastError,
   });
 
+  const capture = useCaptureControls({
+    sessionId,
+    editingEnabled,
+    doPull,
+    setLastError,
+  });
+
   const handleSelectEntity = useCallback(
     (id: string | null) => {
       if (sessionId) {
@@ -308,11 +316,15 @@ export default function App() {
         experimentSlots={experimentSlots}
         tactical={tactical}
         runtimeBusy={runtime.busy}
+        captureBusy={capture.busy}
+        captureSummary={capture.summary}
         selectedDefenderId={selectedDefenderId}
         selectedTargetId={selectedTargetId}
         onPauseSim={() => void runtime.pauseSim()}
         onResumeSim={() => void runtime.resumeSim()}
         onSpawnDefender={() => void runtime.spawnDefender()}
+        onStartCapture={() => void capture.startCapture()}
+        onStopCapture={() => void capture.stopCapture()}
         onAssignTarget={() => void runtime.assignTarget()}
         onCancelAssignment={() => void runtime.cancelAssignment()}
         hidePanelCognition={hidePanelCognition}

@@ -17,12 +17,19 @@ function MetricPill({ label, value }: { label: string; value: string }) {
 
 export function SelectedEntityRuntimeStrip({
   telemetry,
+  captureActive = false,
 }: {
   telemetry: EntityRuntimeTelemetry;
+  captureActive?: boolean;
 }) {
   return (
     <div className="mt-2 space-y-2 border-t border-amber-900/40 pt-2">
       <div className="flex flex-wrap items-center gap-1.5">
+        {captureActive && (
+          <span className="rounded border border-violet-600/60 bg-violet-950/70 px-1.5 py-0.5 font-mono text-[10px] font-semibold uppercase tracking-wide text-violet-100">
+            CAPTURE LIVE
+          </span>
+        )}
         <MetricPill label="hdg" value={formatHeadingDeg(telemetry.headingDeg)} />
         <MetricPill label="spd" value={formatSpeedMps(telemetry.speedMps)} />
         <EntityRuntimeStatusChips
