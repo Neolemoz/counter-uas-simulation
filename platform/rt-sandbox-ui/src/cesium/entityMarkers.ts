@@ -14,6 +14,10 @@ import {
   type MarkerLabelLayoutInput,
 } from "./markerLabelLayout";
 import {
+  compactSelectedLabelSuffix,
+  type EntityRuntimeTelemetry,
+} from "@/telemetry/entityMirrorFields";
+import {
   groundedSurfaceZ,
   markerDisplayZ,
   MARKER_SURFACE_LIFT_M,
@@ -142,14 +146,16 @@ function markerLabelText(
   hovered: boolean,
   selected: boolean,
   glyphOnly: boolean,
+  selectedRuntimeSuffix = "",
 ): string {
   if (glyphOnly) return iconForType(entityType);
   if (entityType === "radar" && selected) {
-    return compactMarkerLabelText(entityType, entityId);
+    return `${compactMarkerLabelText(entityType, entityId)}${selectedRuntimeSuffix}`;
   }
-  return hovered || selected
-    ? fullMarkerLabelText(entityType, entityId, poseZ)
-    : compactMarkerLabelText(entityType, entityId);
+  if (hovered || selected) {
+    return `${fullMarkerLabelText(entityType, entityId, poseZ)}${selected ? selectedRuntimeSuffix : ""}`;
+  }
+  return compactMarkerLabelText(entityType, entityId);
 }
 
 function labelStyleForMarker(
@@ -209,6 +215,7 @@ export function syncEntityMarkers(
     markerEmphasis?: MarkerEmphasis;
     /** Assigned/selected tactical target — display-only emphasis. */
     tacticalTargetEntityId?: string | null;
+    runtimeTelemetryByEntityId?: Map<string, EntityRuntimeTelemetry>;
   },
 ): void {
   const mutedUnselected = options.markerEmphasis === "muted";
@@ -385,6 +392,11 @@ export function syncEntityMarkers(
       cameraHeight,
     );
     const markerEmphasized = selected || hovered || tacticalTarget;
+    const selectedRuntimeSuffix = selected
+      ? compactSelectedLabelSuffix(
+          options.runtimeTelemetryByEntityId?.get(ent.entity_id),
+        )
+      : "";
 
     viewer.entities.add(
       new Entity({
@@ -409,6 +421,7 @@ export function syncEntityMarkers(
                 hovered,
                 selected || tacticalTarget,
                 glyphOnly,
+                selectedRuntimeSuffix,
               )
             : "",
           font: labelStyle.font,

@@ -396,6 +396,7 @@ export function AppWorkstationSlots(props: AppWorkstationSlotsProps) {
               selectedType={selectedType}
               editingEnabled={editingEnabled}
               worldSummary={mergedWorldSummary}
+              mirrorSnapshot={snapshots.entity_pose_mirror}
               showTerrainContour={terrainLayersOn}
               showContourLines={terrainLayers.showContourOverlays}
               radarDomeConfig={radarDomeConfig}

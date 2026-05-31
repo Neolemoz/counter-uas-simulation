@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   EllipsoidTerrainProvider,
   ImageryLayer,
@@ -43,6 +43,9 @@ import type { TacticalCompareContext } from "@/workstation/tacticalCompareContex
 import type { VisualLayerVisibility } from "./visualLayerRegistry";
 import { clearVisibilityOverlayV4, syncVisibilityOverlayV4 } from "./visibilityOverlayV4";
 import type { TacticalStatePayload } from "@/bridge/tacticalCommands";
+import type { ChannelSnapshot } from "@/telemetry/channelIndex";
+import { entitiesFromSnapshot } from "@/telemetry/channelIndex";
+import { parseEntityRuntimeTelemetryMap } from "@/telemetry/entityMirrorFields";
 
 export interface CesiumRuntimeViewProps {
   sessionId: string | null;
@@ -64,6 +67,7 @@ export interface CesiumRuntimeViewProps {
   sensorDomeZoneMode?: SensorDomeZoneMode;
   tacticalState?: TacticalStatePayload | null;
   tacticalCompare?: TacticalCompareContext | null;
+  mirrorSnapshot?: ChannelSnapshot;
   onViewerReady?: (viewer: Viewer | null) => void;
   onSelectEntity: (id: string | null) => void;
   onSpawn: (pose: Pose) => void;
@@ -150,6 +154,7 @@ export function CesiumRuntimeView({
   sensorDomeZoneMode = "both",
   tacticalState = null,
   tacticalCompare = null,
+  mirrorSnapshot,
   onViewerReady,
   onSelectEntity,
   onSpawn,
@@ -162,6 +167,10 @@ export function CesiumRuntimeView({
     pose: { x: number; y: number; z: number };
   } | null>(null);
   const [hoveredEntityId, setHoveredEntityId] = useState<string | null>(null);
+  const runtimeTelemetryByEntityId = useMemo(
+    () => parseEntityRuntimeTelemetryMap(entitiesFromSnapshot(mirrorSnapshot)),
+    [mirrorSnapshot],
+  );
 
   const callbacksRef = useRef({
     onSelectEntity,
@@ -331,6 +340,7 @@ export function CesiumRuntimeView({
       applyTerrainDisplay: shouldApplyTerrainGrounding(terrainLayers),
       markerEmphasis,
       tacticalTargetEntityId,
+      runtimeTelemetryByEntityId,
     });
   }, [
     sessionId,
@@ -351,6 +361,7 @@ export function CesiumRuntimeView({
     markerEmphasis,
     tacticalState,
     tacticalCompare,
+    runtimeTelemetryByEntityId,
   ]);
 
   if (!sessionId) {

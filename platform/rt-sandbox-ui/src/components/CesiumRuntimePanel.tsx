@@ -497,6 +497,7 @@ export function CesiumRuntimePanel({
           sensorDomeZoneMode={sensorDomeZoneMode}
           tacticalState={tacticalState}
           tacticalCompare={tacticalCompare}
+          mirrorSnapshot={mirrorSnapshot}
           onViewerReady={handleViewerReady}
           onSelectEntity={onSelectEntity}
           onSpawn={onSpawn}
