@@ -1,6 +1,20 @@
+import { readFileSync } from "node:fs";
+import { dirname, join } from "node:path";
+import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 import { computeTopologyDiff } from "./topologyDiff";
 import type { ReplaySaBundle } from "./bundleSchema";
+import { parseBundleJson } from "./loadBundle";
+
+const repoRoot = join(dirname(fileURLToPath(import.meta.url)), "../../../..");
+const runtimeBasePath = join(
+  repoRoot,
+  "fixtures/rt_visualization/runtime_capture_replay_bundle_golden_v1.json",
+);
+const runtimeVariantPath = join(
+  repoRoot,
+  "fixtures/rt_visualization/runtime_capture_replay_bundle_variant_golden_v1.json",
+);
 
 function minimalBundle(entities: ReplaySaBundle["entities_static"]): ReplaySaBundle {
   return {
@@ -49,5 +63,13 @@ describe("computeTopologyDiff", () => {
     const diff = computeTopologyDiff(base, shifted);
     expect(diff.bullets.some((b) => b.includes("radar_01"))).toBe(true);
     expect(diff.highlight.entityIds).toContain("radar_01");
+  });
+
+  it("detects runtime replay entity shift", () => {
+    const base = parseBundleJson(readFileSync(runtimeBasePath, "utf-8"));
+    const variant = parseBundleJson(readFileSync(runtimeVariantPath, "utf-8"));
+    const diff = computeTopologyDiff(base, variant);
+    expect(diff.highlight.entityIds).toContain("defender-alpha");
+    expect(diff.bullets.some((b) => b.includes("defender-alpha"))).toBe(true);
   });
 });

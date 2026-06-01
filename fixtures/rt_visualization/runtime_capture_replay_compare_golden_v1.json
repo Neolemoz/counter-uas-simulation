@@ -1,0 +1,101 @@
+{
+  "artifact_type": "rt_runtime_replay_compare_v1",
+  "duration_delta": {
+    "a": {
+      "end": 1,
+      "span": 2,
+      "start": 0
+    },
+    "b": {
+      "end": 2,
+      "span": 3,
+      "start": 0
+    },
+    "delta": 1
+  },
+  "entity_count_delta": {
+    "a": 3,
+    "b": 3,
+    "delta": 0
+  },
+  "governance": {
+    "anti_claims": [
+      "not operational readiness",
+      "not validated effectiveness",
+      "not tactical superiority"
+    ],
+    "notice": "Runtime replay compare is explanatory only; not parser authority or operational evidence."
+  },
+  "inputs": {
+    "bundle_a": "fixtures/rt_visualization/runtime_capture_replay_bundle_golden_v1.json",
+    "bundle_b": "fixtures/rt_visualization/runtime_capture_replay_bundle_variant_golden_v1.json"
+  },
+  "lifecycle_markers": {
+    "a": [
+      {
+        "event_id": "rt_lifecycle_000",
+        "label": "start_capture",
+        "t": 0
+      },
+      {
+        "event_id": "rt_lifecycle_001",
+        "label": "stop_capture",
+        "t": 1
+      }
+    ],
+    "b": [
+      {
+        "event_id": "rt_lifecycle_000",
+        "label": "start_capture",
+        "t": 0
+      },
+      {
+        "event_id": "rt_lifecycle_001",
+        "label": "stop_capture",
+        "t": 1
+      },
+      {
+        "event_id": "rt_lifecycle_002",
+        "label": "variant_review_marker",
+        "t": 2
+      }
+    ]
+  },
+  "schema_version": "rt_runtime_replay_compare_v1",
+  "topology_diff_summary": {
+    "bullets": [
+      "Entity defender-alpha shifted by [15.0, 5.0, 0.0] ENU meters."
+    ],
+    "entity_added": [],
+    "entity_removed": [],
+    "entity_shifted": [
+      {
+        "delta_enu_m": [
+          15.0,
+          5.0,
+          0.0
+        ],
+        "entity_id": "defender-alpha"
+      }
+    ],
+    "los_segment_count_a": 0,
+    "los_segment_count_b": 0,
+    "overlay_added": [],
+    "overlay_removed": [],
+    "zone_added": [],
+    "zone_removed": []
+  },
+  "track_count_delta": {
+    "a": 2,
+    "b": 2,
+    "delta": 0
+  },
+  "warnings": [
+    "bundle A has no detection marker; detection deltas unavailable",
+    "bundle A has no LOS segments; LOS deltas are weak/empty",
+    "bundle A has no narrative events; event deltas are weak/empty",
+    "bundle B has no detection marker; detection deltas unavailable",
+    "bundle B has no LOS segments; LOS deltas are weak/empty",
+    "bundle B has no narrative events; event deltas are weak/empty"
+  ]
+}

@@ -1,6 +1,20 @@
+import { readFileSync } from "node:fs";
+import { dirname, join } from "node:path";
+import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 import { extractReplayOutcome, formatDeltaT } from "./replayOutcomeSummary";
 import type { ReplaySaBundle } from "./bundleSchema";
+import { parseBundleJson } from "./loadBundle";
+
+const repoRoot = join(dirname(fileURLToPath(import.meta.url)), "../../../..");
+const runtimeBasePath = join(
+  repoRoot,
+  "fixtures/rt_visualization/runtime_capture_replay_bundle_golden_v1.json",
+);
+const runtimeVariantPath = join(
+  repoRoot,
+  "fixtures/rt_visualization/runtime_capture_replay_bundle_variant_golden_v1.json",
+);
 
 const bundle: ReplaySaBundle = {
   artifact_type: "replay_sa_bundle",
@@ -36,6 +50,17 @@ describe("extractReplayOutcome", () => {
     const s = extractReplayOutcome(bundle);
     expect(s.firstDetectionT).toBe(3);
     expect(s.durationSpan).toBe(49);
+  });
+
+  it("reads runtime replay bundle duration delta inputs", () => {
+    const base = parseBundleJson(readFileSync(runtimeBasePath, "utf-8"));
+    const variant = parseBundleJson(readFileSync(runtimeVariantPath, "utf-8"));
+    const a = extractReplayOutcome(base);
+    const b = extractReplayOutcome(variant);
+    expect(a.durationSpan).toBe(2);
+    expect(b.durationSpan).toBe(3);
+    expect(formatDeltaT(a.durationSpan, b.durationSpan)).toBe("+1");
+    expect(a.firstDetectionT).toBeNull();
   });
 });
 
