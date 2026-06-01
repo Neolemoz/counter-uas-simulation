@@ -61,7 +61,18 @@ def main() -> int:
                     cohorts.add(str(co).strip())
             except (OSError, json.JSONDecodeError):
                 pass
-        evidence = classify_run_failure_evidence(log_path, capture_rc=None)
+        capture_rc = None
+        if mp.is_file():
+            try:
+                md = json.loads(mp.read_text(encoding='utf-8'))
+                raw_rc = md.get('capture_rc')
+                if raw_rc is not None:
+                    capture_rc = int(raw_rc)
+            except (OSError, json.JSONDecodeError, TypeError, ValueError):
+                capture_rc = None
+        evidence = classify_run_failure_evidence(log_path, capture_rc=capture_rc)
+        if not str(evidence['failure_class']):
+            continue
         hist[str(evidence['failure_class'])] += 1
         evidence_rows.append(evidence)
 

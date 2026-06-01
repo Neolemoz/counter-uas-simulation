@@ -43,8 +43,10 @@ def classify_run_failure_evidence(
     has_eng_metric = '[eng_metric]' in low
     max_abs_delta = max((abs(d) for d in deltas), default=None)
 
-    failure_class = 'F5_unknown'
-    if timeout_seen:
+    failure_class = ''
+    if summary.hit:
+        failure_class = ''
+    elif timeout_seen:
         failure_class = 'F1_timeout'
     elif assignment_switch_count > 0:
         failure_class = 'F4_assignment'
@@ -80,7 +82,8 @@ def classify_run_failure(
     F2_geom_not_dyn — no HIT but geometry looked feasible in metrics.
     F3_track_instability — large jump in logged t_go (when [ENG_METRIC] present).
     F4_assignment — multi-assignment / switch hints in log.
-    F5_unknown — default.
+    "" — successful HIT logs are not failures.
+    F5_unknown — default for misses with insufficient evidence.
     """
     return str(classify_run_failure_evidence(log_path, capture_rc=capture_rc)['failure_class'])
 

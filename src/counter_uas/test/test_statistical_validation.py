@@ -62,6 +62,28 @@ def test_paired_report_uses_matched_seed_rows() -> None:
     assert [r['seed'] for r in rows] == [1, 2]
 
 
+def test_paired_report_reads_capture_rc_from_meta_without_counting_hits(tmp_path: Path) -> None:
+    layer_c = _load_layer_c()
+    hit_log = tmp_path / 'hit.log'
+    hit_log.write_text(
+        '[HIT] interceptor_0 layer=engage min_miss=0.1 m hit_threshold = 1.0 m\n=== TIMEOUT ===\n',
+        encoding='utf-8',
+    )
+    hit_log.with_suffix('.meta.json').write_text(json.dumps({'capture_rc': 124}), encoding='utf-8')
+    miss_log = tmp_path / 'miss.log'
+    miss_log.write_text('feasible_geom=true\n', encoding='utf-8')
+    miss_log.with_suffix('.meta.json').write_text(json.dumps({'capture_rc': 124}), encoding='utf-8')
+
+    report, rows = layer_c.paired_report(
+        [{'success': 'true', 'seed': '1', 'log_path': str(hit_log)}],
+        [{'success': 'false', 'seed': '1', 'log_path': str(miss_log)}],
+    )
+
+    assert rows[0]['failure_b'] == ''
+    assert rows[0]['failure_c'] == 'F1_timeout'
+    assert report['failure_transitions'] == {'unclassified->F1_timeout': 1}
+
+
 def test_validate_manifest_detects_mixed_cohorts(tmp_path: Path) -> None:
     layer_c = _load_layer_c()
     log_path = tmp_path / 'run.log'

@@ -239,6 +239,7 @@ def _write_outputs(out_dir: Path, label: str, summary: dict, rows: list[dict]) -
         "seed",
         "geometry_id",
         "cohort",
+        "capture_rc",
         "meta_path",
         "git_commit",
         "git_dirty",
@@ -280,6 +281,27 @@ def _note_value(notes: str, key: str) -> str:
     return ""
 
 
+def _launch_args_with_seed(base_args: str, seed: int) -> str:
+    """Return launch args with exactly one MC-owned noise_seed token."""
+    tokens = []
+    for tok in str(base_args or "").split():
+        if ':=' in tok and tok.split(':=', 1)[0].strip() == 'noise_seed':
+            continue
+        tokens.append(tok)
+    tokens.append(f"noise_seed:={seed}")
+    return " ".join(tokens).strip()
+
+
+def _seed_key(result: dict) -> int | None:
+    raw = result.get("noise_seed_mc") or result.get("seed") or ""
+    if str(raw).strip():
+        try:
+            return int(float(str(raw).strip()))
+        except ValueError:
+            return None
+    return None
+
+
 def _enrich_result_with_meta(result: dict, log_path: Path) -> dict:
     """Attach replay/provenance fields needed for Layer C paired cohorts."""
     md = _load_log_meta(log_path)
@@ -295,6 +317,8 @@ def _enrich_result_with_meta(result: dict, log_path: Path) -> dict:
     result.setdefault("git_dirty", md.get("git_dirty") if md.get("git_dirty") is not None else "")
     result.setdefault("launch_args_raw", md.get("launch_args_raw") or "")
     result.setdefault("notes", notes)
+    if md.get("capture_rc") is not None:
+        result.setdefault("capture_rc", md.get("capture_rc"))
     if seed_text:
         result.setdefault("noise_seed_mc", seed_text)
         result.setdefault("seed", seed_text)
@@ -354,6 +378,18 @@ def cmd_aggregate(args: argparse.Namespace) -> int:
         result["log_path"] = str(log)
         _enrich_result_with_meta(result, log)
         rows.append(result)
+    seed_counts: dict[int, int] = {}
+    for row in rows:
+        seed = _seed_key(row)
+        if seed is not None:
+            seed_counts[seed] = seed_counts.get(seed, 0) + 1
+    duplicate_seeds = sorted(seed for seed, count in seed_counts.items() if count > 1)
+    if duplicate_seeds:
+        print(
+            f"duplicate seed(s) in aggregate input; refusing to double-count reruns: {duplicate_seeds}",
+            file=sys.stderr,
+        )
+        return 1
     summary = _summarise(rows, args.label)
     _print_summary(summary)
     _write_outputs(Path(args.out_dir), args.label, summary, rows)
@@ -368,6 +404,7 @@ def cmd_run(args: argparse.Namespace) -> int:
         return 2
 
     rows: list[dict] = []
+    failures: list[str] = []
     base_args = args.launch_args or ""
     gid = getattr(args, "geometry_id", "").strip()
 
@@ -377,10 +414,7 @@ def cmd_run(args: argparse.Namespace) -> int:
 
     for i in range(args.n):
         seed = args.seed_base + i
-        # Compose seed-aware launch args without overwriting whatever the caller already set.
-        per_run_args = base_args
-        if "noise_seed" not in base_args:
-            per_run_args = f"{per_run_args} noise_seed:={seed}".strip()
+        per_run_args = _launch_args_with_seed(base_args, seed)
         cmd = [
             sys.executable,
             str(rc_script),
@@ -402,14 +436,17 @@ def cmd_run(args: argparse.Namespace) -> int:
         if r.returncode not in (0, 124):
             print(r.stderr, file=sys.stderr)
             print(f"[monte_carlo] run failed (rc={r.returncode}); skipping", file=sys.stderr)
+            failures.append(f"seed={seed} rc={r.returncode}")
             continue
         out_lines = (r.stdout or "").strip().splitlines()
         if not out_lines:
             print("[monte_carlo] run produced no output; skipping", file=sys.stderr)
+            failures.append(f"seed={seed} no_output")
             continue
         log_path = Path(out_lines[0].strip())
         if not log_path.is_file():
             print(f"[monte_carlo] log path missing: {log_path}", file=sys.stderr)
+            failures.append(f"seed={seed} missing_log")
             continue
         result = analyze.parse_run_to_result(str(log_path))
         result["run_id"] = log_path.stem
@@ -427,6 +464,15 @@ def cmd_run(args: argparse.Namespace) -> int:
     summary = _summarise(rows, args.label)
     _print_summary(summary)
     _write_outputs(Path(args.out_dir), args.label, summary, rows)
+    if len(rows) != args.n:
+        if not failures:
+            failures.append(f"collected {len(rows)} of {args.n} requested rows")
+        print(
+            f"[monte_carlo] incomplete cohort: collected {len(rows)} of {args.n}; "
+            f"failures={failures}",
+            file=sys.stderr,
+        )
+        return 1
     return 0
 
 
