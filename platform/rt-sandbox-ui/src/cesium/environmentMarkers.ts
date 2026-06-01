@@ -21,13 +21,13 @@ function removeEnvEntities(viewer: Viewer): void {
 function vegetationColor(kind: VegetationKind): { point: string; outline: string } {
   if (kind === "canopy") {
     return {
-      point: "rgba(34, 197, 94, 0.9)",
-      outline: "rgba(21, 128, 61, 0.95)",
+      point: "rgba(120, 113, 108, 0.32)",
+      outline: "rgba(168, 162, 158, 0.38)",
     };
   }
   return {
-    point: "rgba(132, 204, 22, 0.85)",
-    outline: "rgba(77, 124, 15, 0.9)",
+    point: "rgba(161, 98, 7, 0.24)",
+    outline: "rgba(202, 138, 4, 0.34)",
   };
 }
 
@@ -47,21 +47,21 @@ export function syncEnvironmentMarkers(
           id: `${ENV_PREFIX}occ-${marker.marker_id}`,
           position: worldToCartesian(x, y, z),
           point: {
-            pixelSize: 10,
-            color: Color.fromCssColorString("rgba(74, 222, 128, 0.85)"),
-            outlineColor: Color.fromCssColorString("rgba(22, 101, 52, 0.9)"),
-            outlineWidth: 2,
+            pixelSize: 7,
+            color: Color.fromCssColorString("rgba(148, 163, 184, 0.28)"),
+            outlineColor: Color.fromCssColorString("rgba(203, 213, 225, 0.34)"),
+            outlineWidth: 1,
           },
           label: {
             text: marker.label,
-            font: "10px sans-serif",
-            fillColor: Color.fromCssColorString("rgba(187, 247, 208, 0.95)"),
+            font: "9px sans-serif",
+            fillColor: Color.fromCssColorString("rgba(203, 213, 225, 0.54)"),
             outlineColor: Color.BLACK,
-            outlineWidth: 2,
+            outlineWidth: 1,
             style: LabelStyle.FILL_AND_OUTLINE,
             verticalOrigin: VerticalOrigin.BOTTOM,
             showBackground: true,
-            backgroundColor: Color.fromCssColorString("rgba(15, 23, 42, 0.88)"),
+            backgroundColor: Color.fromCssColorString("rgba(15, 23, 42, 0.42)"),
           },
         }),
       );
@@ -78,21 +78,21 @@ export function syncEnvironmentMarkers(
           id: `${ENV_PREFIX}veg-${marker.marker_id}`,
           position: worldToCartesian(x, y, z),
           point: {
-            pixelSize: 12,
+            pixelSize: 7,
             color: Color.fromCssColorString(colors.point),
             outlineColor: Color.fromCssColorString(colors.outline),
-            outlineWidth: 2,
+            outlineWidth: 1,
           },
           label: {
             text: marker.label,
-            font: "10px sans-serif",
-            fillColor: Color.fromCssColorString("rgba(190, 242, 100, 0.95)"),
+            font: "9px sans-serif",
+            fillColor: Color.fromCssColorString("rgba(217, 119, 6, 0.5)"),
             outlineColor: Color.BLACK,
-            outlineWidth: 2,
+            outlineWidth: 1,
             style: LabelStyle.FILL_AND_OUTLINE,
             verticalOrigin: VerticalOrigin.BOTTOM,
             showBackground: true,
-            backgroundColor: Color.fromCssColorString("rgba(15, 23, 42, 0.88)"),
+            backgroundColor: Color.fromCssColorString("rgba(15, 23, 42, 0.42)"),
           },
         }),
       );

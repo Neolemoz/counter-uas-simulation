@@ -1,3 +1,4 @@
+import type { ComponentType } from "react";
 import { clsx } from "clsx";
 import { bannersForSession } from "@/governance/banners";
 
@@ -38,20 +39,35 @@ export function PanelShell({
   title,
   children,
   className,
+  icon: Icon,
+  variant = "secondary",
 }: {
   title: string;
   children: React.ReactNode;
   className?: string;
+  icon?: ComponentType<{ className?: string }>;
+  variant?: "primary" | "secondary" | "tertiary";
 }) {
   return (
     <section
       className={clsx(
-        "rounded-lg border border-slate-700 bg-slate-900/80 p-4",
+        "rounded-lg bg-slate-900/75",
+        variant === "primary"
+          ? "border border-cyan-500/40 p-5"
+          : variant === "tertiary"
+            ? "border border-slate-800/70 bg-slate-950/35 p-3"
+            : "border border-slate-700/60 p-4",
         className,
       )}
     >
-      <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-slate-300">
-        {title}
+      <h2
+        className={clsx(
+          "mb-3 flex items-center gap-2 font-semibold uppercase tracking-wide sm:mb-4",
+          variant === "primary" ? "text-base text-cyan-50" : "text-sm text-slate-300",
+        )}
+      >
+        {Icon && <Icon className="h-4 w-4 text-cyan-300" />}
+        <span>{title}</span>
       </h2>
       {children}
     </section>

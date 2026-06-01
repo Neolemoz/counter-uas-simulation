@@ -21,6 +21,7 @@ export interface CesiumEditingOptions {
   onDragStart?: (entityId: string) => void;
   onDragMove?: (entityId: string, pose: Pose) => void;
   onDragEnd?: () => void;
+  onHoverEntity?: (entityId: string | null) => void;
 }
 
 export function isViewerUsable(viewer: Viewer | null | undefined): viewer is Viewer {
@@ -87,7 +88,8 @@ export function attachCesiumEditingHandlers(
   options: CesiumEditingOptions,
 ): () => void {
   if (!isViewerUsable(viewer) || !viewer.scene.canvas) return () => undefined;
-  const handler = new ScreenSpaceEventHandler(viewer.scene.canvas);
+  const canvas = viewer.scene.canvas;
+  const handler = new ScreenSpaceEventHandler(canvas);
   let draggingEntityId: string | null = null;
   let dragZ = 10;
   let pointerDownEntity: string | null = null;
@@ -119,6 +121,11 @@ export function attachCesiumEditingHandlers(
     }
   }, ScreenSpaceEventType.LEFT_DOWN);
 
+  const handleMouseLeave = () => {
+    options.onHoverEntity?.(null);
+  };
+  canvas.addEventListener("mouseleave", handleMouseLeave);
+
   handler.setInputAction((movement: { position: Cartesian2 }) => {
     if (!isViewerUsable(viewer)) return;
     if (!options.editingEnabled) return;
@@ -138,12 +145,20 @@ export function attachCesiumEditingHandlers(
 
   handler.setInputAction((movement: { endPosition: Cartesian2 }) => {
     if (!isViewerUsable(viewer)) return;
-    if (!draggingEntityId || !options.editingEnabled) return;
-    const pose = pickWorldEnu(viewer, movement.endPosition);
-    if (pose) {
-      dragMoved = true;
-      options.onDragMove?.(draggingEntityId, clampPose({ ...pose, z: dragZ, yaw_deg: 0 }));
+    if (!options.editingEnabled) {
+      options.onHoverEntity?.(pickRtEntityId(viewer, movement.endPosition));
+      return;
     }
+    if (draggingEntityId) {
+      const pose = pickWorldEnu(viewer, movement.endPosition);
+      if (pose) {
+        dragMoved = true;
+        options.onDragMove?.(draggingEntityId, clampPose({ ...pose, z: dragZ, yaw_deg: 0 }));
+      }
+      options.onHoverEntity?.(draggingEntityId);
+      return;
+    }
+    options.onHoverEntity?.(pickRtEntityId(viewer, movement.endPosition));
   }, ScreenSpaceEventType.MOUSE_MOVE);
 
   handler.setInputAction((movement: { position: Cartesian2 }) => {
@@ -176,6 +191,7 @@ export function attachCesiumEditingHandlers(
 
   return () => {
     restoreCamera(viewer);
+    canvas.removeEventListener("mouseleave", handleMouseLeave);
     if (!handler.isDestroyed()) {
       handler.destroy();
     }

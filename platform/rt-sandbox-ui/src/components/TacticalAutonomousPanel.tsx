@@ -1,3 +1,4 @@
+import { Crosshair } from "lucide-react";
 import { PanelShell } from "@/components/GovernanceChrome";
 import type { TacticalStatePayload } from "@/bridge/tacticalCommands";
 import type { UiEntity } from "@/editing/localEntityMirror";
@@ -37,7 +38,7 @@ export function TacticalAutonomousPanel({
   const lockActive = state?.assignment_lock_active === true;
 
   return (
-    <PanelShell title="Tactical sandbox (autonomous)">
+    <PanelShell title="Tactical sandbox (autonomous)" icon={Crosshair}>
       <p className="mb-2 text-xs text-amber-200/90">{AUTONOMOUS_BANNER}</p>
 
       {!sessionId && (

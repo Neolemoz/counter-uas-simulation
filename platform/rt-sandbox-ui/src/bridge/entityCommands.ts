@@ -17,6 +17,17 @@ export async function spawnEntity(
   });
 }
 
+export async function spawnAttacker(
+  sessionId: string,
+  payload: { pose: Pose },
+): Promise<BridgeCommandResponse> {
+  return sendCommand({
+    commandType: "spawn_attacker",
+    sessionId,
+    payload: { pose: payload.pose },
+  });
+}
+
 export async function moveEntity(
   sessionId: string,
   payload: { entity_id: string; pose: Pose },

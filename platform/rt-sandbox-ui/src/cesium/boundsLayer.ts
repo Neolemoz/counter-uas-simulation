@@ -19,6 +19,7 @@ import {
 } from "./visualStyle";
 import { worldToCartesian } from "./coordinates";
 import { isViewerUsable } from "./cesiumEditing";
+import { sampleTerrainHeight } from "./rtFictionalTerrain";
 
 const BOUNDS_TOP_ID = "rt-world-bounds-top";
 const BOUNDS_VERT_PREFIX = "rt-world-bounds-vert-";
@@ -186,9 +187,9 @@ export function syncBoundsLayer(
 }
 
 export function boundsCenterCartesian(): import("cesium").Cartesian3 {
-  const { x, y, z } = WORLD_BOUNDS;
+  const { x, y } = WORLD_BOUNDS;
   const cx = (x.min + x.max) / 2;
   const cy = (y.min + y.max) / 2;
-  const cz = (z.min + z.max) / 2;
+  const cz = sampleTerrainHeight(cx, cy) + 18;
   return worldToCartesian(cx, cy, cz);
 }

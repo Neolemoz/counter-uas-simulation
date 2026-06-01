@@ -1,5 +1,5 @@
 import { describe, expect, it, vi, beforeEach } from "vitest";
-import { deleteEntity, moveEntity, spawnEntity } from "./entityCommands";
+import { deleteEntity, moveEntity, spawnAttacker, spawnEntity } from "./entityCommands";
 
 describe("entityCommands", () => {
   beforeEach(() => {
@@ -20,6 +20,17 @@ describe("entityCommands", () => {
     expect(body.command_type).toBe("spawn_entity");
     expect(body.session_id).toBe("sid");
     expect(body.payload.entity_type).toBe("drone");
+  });
+
+  it("spawn_attacker payload shape", async () => {
+    await spawnAttacker("sid", {
+      pose: { x: 1, y: 2, z: 10, yaw_deg: 0 },
+    });
+    const call = (fetch as ReturnType<typeof vi.fn>).mock.calls[0];
+    const body = JSON.parse(String(call[1]?.body));
+    expect(body.command_type).toBe("spawn_attacker");
+    expect(body.session_id).toBe("sid");
+    expect(body.payload.pose.x).toBe(1);
   });
 
   it("move_entity payload shape", async () => {

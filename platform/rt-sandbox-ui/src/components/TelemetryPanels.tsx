@@ -1,10 +1,11 @@
+import { Activity } from "lucide-react";
 import { PanelShell } from "./GovernanceChrome";
 import { TelemetryCognitionStrip } from "./TelemetryCognitionStrip";
 import type { ChannelSnapshot } from "@/telemetry/channelIndex";
 
 function Field({ label, value }: { label: string; value: string }) {
   return (
-    <div className="flex justify-between gap-4 text-sm">
+    <div className="flex justify-between gap-3 text-xs">
       <span className="text-slate-400">{label}</span>
       <span className="font-mono text-slate-100">{value}</span>
     </div>
@@ -20,7 +21,7 @@ export function SessionLifecyclePanel({
 }) {
   const payload = snapshot?.payload ?? {};
   return (
-    <PanelShell title="Session lifecycle">
+    <PanelShell title="Session lifecycle" icon={Activity} variant="tertiary">
       <div className="space-y-2">
         <Field label="state" value={String(payload.state ?? "—")} />
         <Field
@@ -51,7 +52,7 @@ export function SessionHealthPanel({
       : null;
 
   return (
-    <PanelShell title="Session health">
+    <PanelShell title="Session health" icon={Activity} variant="tertiary">
       <div className="space-y-2">
         <Field label="state" value={String(payload.state ?? "—")} />
         <Field
@@ -90,7 +91,7 @@ export function WorldSummaryPanel({
       : "—";
 
   return (
-    <PanelShell title="World summary">
+    <PanelShell title="World summary" icon={Activity} variant="tertiary">
       <div className="space-y-2">
         <Field label="entity_count" value={String(payload.entity_count ?? "—")} />
         <Field label="revision" value={String(payload.revision ?? "—")} />
@@ -115,7 +116,7 @@ export function ClockMirrorPanel({
 }) {
   const payload = snapshot?.payload ?? {};
   return (
-    <PanelShell title="Clock mirror">
+    <PanelShell title="Clock mirror" icon={Activity} variant="tertiary">
       <div className="space-y-2">
         <Field label="paused" value={String(payload.paused ?? "—")} />
         <Field label="mode" value={String(payload.mode ?? "—")} />

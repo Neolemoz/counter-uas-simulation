@@ -1,3 +1,4 @@
+import { PackagePlus } from "lucide-react";
 import { PanelShell } from "@/components/GovernanceChrome";
 import type { EntityType } from "@/world/entityCatalog";
 import { ENTITY_GLYPHS, ENTITY_LABELS, ENTITY_TYPES } from "@/world/entityCatalog";
@@ -16,11 +17,11 @@ export function EntityPalette({
 }) {
 
   return (
-    <PanelShell title="Entity palette">
+    <PanelShell title="Entity palette" icon={PackagePlus} className="!p-3 [&>h2]:mb-2">
       <p className="mb-2 text-xs text-slate-500">
         Select type, then place on SVG grid or Cesium globe (same session registry commands).
       </p>
-      <div className="flex flex-wrap gap-2">
+      <div className="flex flex-wrap gap-1.5">
         {ENTITY_TYPES.map((type) => {
           const count = String(entityCountsByType[type] || 0) + "/" + String(ENTITY_TYPE_LIMITS[type]);
           const active = selectedType === type;
@@ -30,7 +31,7 @@ export function EntityPalette({
               type="button"
               disabled={!editingEnabled}
               onClick={() => onSelectType(type)}
-              className={`rounded border px-3 py-1.5 text-sm font-mono ${
+              className={`rounded border px-2.5 py-1 text-xs font-mono ${
                 active
                   ? "border-emerald-500 bg-emerald-900/50 text-emerald-100"
                   : "border-slate-600 bg-slate-800 text-slate-300 hover:bg-slate-700"

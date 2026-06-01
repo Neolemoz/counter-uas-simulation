@@ -58,9 +58,10 @@ describe("visualLayerRegistry", () => {
   it("default visibility matches frozen terrain defaults and panel chrome", () => {
     const defaults = defaultVisibilityFromRegistry();
     expect(toTerrainLayerVisibility(defaults)).toEqual(DEFAULT_TERRAIN_LAYERS);
-    expect(defaults.showBounds).toBe(true);
-    expect(defaults.showVerticalBounds).toBe(true);
+    expect(defaults.showBounds).toBe(false);
+    expect(defaults.showVerticalBounds).toBe(false);
     expect(defaults.showLabels).toBe(true);
+    expect(defaults.showSensorDomes).toBe(true);
   });
 
   it("preserves frozen default-off policy for optional layers", () => {
@@ -68,7 +69,6 @@ describe("visualLayerRegistry", () => {
     expect(defaults.showContourOverlays).toBe(false);
     expect(defaults.showVegetationMarkers).toBe(false);
     expect(defaults.showEnvironmentMarkers).toBe(false);
-    expect(defaults.showSensorDomes).toBe(false);
   });
 
   it("preserves frozen default-on for mesh, ridges, and entity_markers registry row", () => {
@@ -143,7 +143,7 @@ describe("visualLayerRegistry", () => {
 
   it("counts active overlay layers for budget advisory", () => {
     const defaults = defaultVisibilityFromRegistry();
-    expect(countActiveOverlayLayers(defaults)).toBe(2);
+    expect(countActiveOverlayLayers(defaults)).toBe(3);
   });
 
   it("warns when overlay budget exceeded (advisory only)", () => {
@@ -168,8 +168,8 @@ describe("visualLayerRegistry", () => {
 
   it("adds V4 P0 density and comparison controls with safe defaults", () => {
     const defaults = defaultVisibilityFromRegistry();
-    expect(defaults.showDensityWarnings).toBe(true);
-    expect(defaults.showLayerBudgetSummary).toBe(true);
+    expect(defaults.showDensityWarnings).toBe(false);
+    expect(defaults.showLayerBudgetSummary).toBe(false);
     expect(defaults.showSessionContrast).toBe(true);
     expect(defaults.showComparisonGhosts).toBe(false);
     expect(densityControlLayers().map((l) => l.layer_id)).toEqual([
@@ -207,10 +207,10 @@ describe("visualLayerRegistry", () => {
   it("summarizes density budget as warn-only", () => {
     const heavy = {
       ...defaultVisibilityFromRegistry(),
+      showDensityWarnings: true,
       showContourOverlays: true,
       showVegetationMarkers: true,
       showEnvironmentMarkers: true,
-      showSensorDomes: true,
       showVisibilityWedge: true,
     };
     const summary = densityBudgetSummary(heavy);

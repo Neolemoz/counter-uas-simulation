@@ -2,17 +2,29 @@ import {
   BoundingSphere,
   Cartesian3,
   HeadingPitchRange,
-  Math as CesiumMath,
   Viewer,
 } from "cesium";
 import { boundsCenterCartesian } from "./boundsLayer";
 import { DEFAULT_CAMERA_HEIGHT_M } from "./constants";
 import {
-  applyTerrainDisplayOffset,
   NOMINAL_SENSOR_DOME_RADIUS_M,
   primaryRidgePolyline,
+  sampleTerrainHeight,
   valleyFloorPolyline,
 } from "./rtFictionalTerrain";
+import {
+  DEFAULT_CAMERA_PITCH_RAD,
+  ENTITY_FOCUS_PITCH_RAD,
+  FIT_ENTITIES_PITCH_RAD,
+  markerDisplayZ,
+  POLYLINE_PRESET_PITCH_RAD,
+  SENSOR_CONTEXT_PITCH_RAD,
+  TERRAIN_OVERVIEW_PITCH_RAD,
+  ZONE_SURFACE_LIFT_M,
+} from "./terrainGrounding";
+import {
+  zoneBoundaryPositionsGrounded,
+} from "./defenseZoneGeometry";
 import {
   TERRAIN_OVERVIEW_CAMERA_HEIGHT_M,
   TIGHT_BOUNDS_CAMERA_HEIGHT_M,
@@ -37,23 +49,33 @@ function flyToHeight(
   center: Cartesian3,
   heightM: number,
   duration: number,
+  pitchRad = DEFAULT_CAMERA_PITCH_RAD,
+  preserveHeading = true,
 ): void {
   if (!viewer.scene.globe?.ellipsoid) return;
-  const carto = viewer.scene.globe.ellipsoid.cartesianToCartographic(center);
   viewer.trackedEntity = undefined;
-  viewer.camera.flyTo({
-    destination: Cartesian3.fromRadians(
-      carto.longitude,
-      carto.latitude,
-      carto.height + heightM,
-    ),
+  const heading = preserveHeading ? viewer.camera.heading : 0;
+  const offset = new HeadingPitchRange(heading, pitchRad, heightM);
+  const sphere = new BoundingSphere(center, 8);
+  if (duration <= 0) {
+    viewer.camera.viewBoundingSphere(sphere, offset);
+    return;
+  }
+  viewer.camera.flyToBoundingSphere(sphere, {
     duration,
+    offset,
   });
 }
 
 export function flyToBounds(viewer: Viewer | null | undefined): void {
   if (!isViewerUsable(viewer)) return;
   flyToHeight(viewer, boundsCenterCartesian(), DEFAULT_CAMERA_HEIGHT_M, 0.8);
+}
+
+/** Initial session camera — pitched toward terrain (pass #1). */
+export function setInitialGroundedCamera(viewer: Viewer | null | undefined): void {
+  if (!isViewerUsable(viewer)) return;
+  flyToHeight(viewer, boundsCenterCartesian(), DEFAULT_CAMERA_HEIGHT_M, 0);
 }
 
 export function flyToTightBounds(viewer: Viewer | null | undefined): void {
@@ -67,15 +89,11 @@ export function flyToEntity(viewer: Viewer | null | undefined, entityId: string)
   if (!entity?.position) return;
   const position =
     entity.position.getValue(viewer.clock.currentTime) ?? boundsCenterCartesian();
-  const carto = viewer.scene.globe.ellipsoid.cartesianToCartographic(position);
+  const sphere = new BoundingSphere(position, 12);
   viewer.trackedEntity = undefined;
-  viewer.camera.flyTo({
-    destination: Cartesian3.fromRadians(
-      carto.longitude,
-      carto.latitude,
-      carto.height + 400,
-    ),
+  viewer.camera.flyToBoundingSphere(sphere, {
     duration: 0.6,
+    offset: new HeadingPitchRange(viewer.camera.heading, ENTITY_FOCUS_PITCH_RAD, 280),
   });
 }
 
@@ -91,7 +109,12 @@ export function flyToFitEntities(
       worldToCartesian(
         Number(ent.pose.x ?? 0),
         Number(ent.pose.y ?? 0),
-        Number(ent.pose.z ?? 0),
+        markerDisplayZ(
+          Number(ent.pose.x ?? 0),
+          Number(ent.pose.y ?? 0),
+          Number(ent.pose.z ?? 10),
+          true,
+        ),
       ),
     );
   }
@@ -103,13 +126,23 @@ export function flyToFitEntities(
   viewer.trackedEntity = undefined;
   viewer.camera.flyToBoundingSphere(sphere, {
     duration: 0.8,
-    offset: new HeadingPitchRange(0, CesiumMath.toRadians(-45), sphere.radius * 2.5),
+    offset: new HeadingPitchRange(
+      viewer.camera.heading,
+      FIT_ENTITIES_PITCH_RAD,
+      Math.max(420, sphere.radius * 2.4),
+    ),
   });
 }
 
 export function flyToTerrainOverview(viewer: Viewer | null | undefined): void {
   if (!isViewerUsable(viewer)) return;
-  flyToHeight(viewer, boundsCenterCartesian(), TERRAIN_OVERVIEW_CAMERA_HEIGHT_M, 1.0);
+  flyToHeight(
+    viewer,
+    boundsCenterCartesian(),
+    TERRAIN_OVERVIEW_CAMERA_HEIGHT_M,
+    1.0,
+    TERRAIN_OVERVIEW_PITCH_RAD,
+  );
 }
 
 function flyAlongPolyline(viewer: Viewer, polyline: [number, number, number][]): void {
@@ -122,7 +155,11 @@ function flyAlongPolyline(viewer: Viewer, polyline: [number, number, number][]):
   viewer.trackedEntity = undefined;
   viewer.camera.flyToBoundingSphere(sphere, {
     duration: 1.0,
-    offset: new HeadingPitchRange(0, CesiumMath.toRadians(-35), sphere.radius * 3.5),
+    offset: new HeadingPitchRange(
+      viewer.camera.heading,
+      POLYLINE_PRESET_PITCH_RAD,
+      Math.max(680, sphere.radius * 3.2),
+    ),
   });
 }
 
@@ -161,19 +198,21 @@ export function flyToSensorContext(
   const rx = Number(radar.pose.x ?? 0);
   const ry = Number(radar.pose.y ?? 0);
   const rz = Number(radar.pose.z ?? 10);
-  const z = applyTerrainDisplay ? applyTerrainDisplayOffset(rx, ry, rz) : rz;
-  const center = worldToCartesian(rx, ry, z);
+  const centerZ = applyTerrainDisplay
+    ? markerDisplayZ(rx, ry, rz, true)
+    : rz + sampleTerrainHeight(rx, ry);
+  const center = worldToCartesian(rx, ry, centerZ);
   const r = NOMINAL_SENSOR_DOME_RADIUS_M;
-  const ring: Cartesian3[] = [];
-  for (let i = 0; i <= 8; i++) {
-    const a = (i / 8) * Math.PI * 2;
-    ring.push(worldToCartesian(rx + Math.cos(a) * r, ry + Math.sin(a) * r, z));
-  }
+  const ring = zoneBoundaryPositionsGrounded("circle", rx, ry, r, ZONE_SURFACE_LIFT_M, 24);
   const sphere = BoundingSphere.fromPoints([center, ...ring]);
   viewer.trackedEntity = undefined;
   viewer.camera.flyToBoundingSphere(sphere, {
     duration: 0.9,
-    offset: new HeadingPitchRange(0, CesiumMath.toRadians(-40), sphere.radius * 2.2),
+    offset: new HeadingPitchRange(
+      viewer.camera.heading,
+      SENSOR_CONTEXT_PITCH_RAD,
+      Math.max(360, sphere.radius * 2.1),
+    ),
   });
 }
 
@@ -229,9 +268,9 @@ export function flyOnSessionSwitch(
   if (!isViewerUsable(viewer)) return;
   if (entities.length > 0) {
     flyToFitEntities(viewer, entities);
-  } else {
-    flyToBounds(viewer);
+    return;
   }
+  flyToHeight(viewer, boundsCenterCartesian(), DEFAULT_CAMERA_HEIGHT_M, 0.8);
 }
 
 export function setFollowEntity(

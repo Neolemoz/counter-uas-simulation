@@ -32,20 +32,20 @@ export function syncTerrainContourLayer(
         id: `${CONTOUR_PREFIX}${idx++}`,
         polyline: {
           positions,
-          width: 1.5,
+          width: 1,
           material: new PolylineDashMaterialProperty({
-            color: Color.fromCssColorString("rgba(148, 163, 184, 0.55)"),
-            dashLength: 6,
+            color: Color.fromCssColorString("rgba(148, 163, 184, 0.18)"),
+            dashLength: 10,
           }),
         },
         label:
           !labeled
             ? {
                 text: CONTOUR_CAUTION,
-                font: "10px sans-serif",
-                fillColor: Color.fromCssColorString("rgba(203, 213, 225, 0.9)"),
+                font: "9px sans-serif",
+                fillColor: Color.fromCssColorString("rgba(203, 213, 225, 0.52)"),
                 showBackground: true,
-                backgroundColor: Color.fromCssColorString("rgba(15, 23, 42, 0.85)"),
+                backgroundColor: Color.fromCssColorString("rgba(15, 23, 42, 0.42)"),
               }
             : undefined,
       }),

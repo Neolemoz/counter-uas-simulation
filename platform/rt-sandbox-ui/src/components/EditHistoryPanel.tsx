@@ -1,17 +1,18 @@
+import { History } from "lucide-react";
 import type { EditHistoryEntry } from "@/editing/editHistory";
 import { describeCommandIntent } from "@/editing/cognition";
 import { PanelShell } from "./GovernanceChrome";
 
 export function EditHistoryPanel({ history }: { history: EditHistoryEntry[] }) {
   return (
-    <PanelShell title="Edit history (session-local)">
+    <PanelShell title="Edit history (session-local)" icon={History}>
       <p className="mb-2 text-xs text-slate-500">
         Not persisted — cleared on disconnect. Command-authoritative registry log.
       </p>
       {history.length === 0 ? (
         <p className="text-sm text-slate-500">No edits yet.</p>
       ) : (
-        <ul className="max-h-48 space-y-2 overflow-y-auto text-xs font-mono">
+        <ul className="max-h-48 space-y-1.5 overflow-y-auto text-xs font-mono">
           {history.map((entry) => (
             <li
               key={entry.id}

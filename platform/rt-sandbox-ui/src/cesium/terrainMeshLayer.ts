@@ -43,10 +43,9 @@ export function syncTerrainMeshLayer(
       const h01 = sampleTerrainHeight(x0, y1);
       const h11 = sampleTerrainHeight(x1, y1);
       const avg = (h00 + h10 + h01 + h11) / 4;
-      const alpha = 0.14 + Math.min(0.38, avg / 110);
-      const shade = 0.22 + Math.min(0.5, avg / 90);
-      const green = Math.round(80 + shade * 120);
-      const blue = Math.round(60 + shade * 40);
+      const alpha = 0.035 + Math.min(0.09, avg / 420);
+      const warm = Math.round(95 + Math.min(45, avg / 3));
+      const cool = Math.round(92 + Math.min(35, avg / 4));
 
       viewer.entities.add(
         new Entity({
@@ -59,7 +58,7 @@ export function syncTerrainMeshLayer(
               worldToCartesian(x0, y1, h01),
             ],
             material: Color.fromCssColorString(
-              `rgba(34, ${green}, ${blue}, ${alpha.toFixed(2)})`,
+              `rgba(${warm}, ${cool}, 82, ${alpha.toFixed(3)})`,
             ),
             outline: false,
             perPositionHeight: true,

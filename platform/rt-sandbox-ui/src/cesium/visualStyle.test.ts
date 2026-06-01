@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { labelText, markerPixelSize, shortEntityId } from "@/cesium/visualStyle";
+import { labelFontSizePx, labelText, markerPixelSize, shortEntityId } from "@/cesium/visualStyle";
 
 describe("visualStyle", () => {
   it("shortens entity ids", () => {
@@ -14,5 +14,9 @@ describe("visualStyle", () => {
 
   it("scales marker size when selected", () => {
     expect(markerPixelSize(true)).toBeGreaterThan(markerPixelSize(false));
+  });
+
+  it("scales label font with camera distance", () => {
+    expect(labelFontSizePx(5000, false, false)).toBeLessThan(labelFontSizePx(600, true, false));
   });
 });

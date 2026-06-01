@@ -1,3 +1,4 @@
+import { Crosshair } from "lucide-react";
 import { PanelShell } from "@/components/GovernanceChrome";
 import type {
   TacticalRecommendationPayload,
@@ -44,7 +45,7 @@ export function TacticalAssistedPanel({
   const tid = recommendation?.recommended_target_id;
 
   return (
-    <PanelShell title="Tactical sandbox (assisted)">
+    <PanelShell title="Tactical sandbox (assisted)" icon={Crosshair}>
       <p className="mb-2 text-xs text-amber-200/90">{ASSISTED_BANNER}</p>
 
       {!sessionId && (

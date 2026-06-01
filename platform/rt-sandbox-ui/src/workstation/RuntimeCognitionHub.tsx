@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { BrainCircuit } from "lucide-react";
 import { PanelShell } from "@/components/GovernanceChrome";
 import { FidelityTruthCognitionStrip } from "@/components/FidelityTruthCognitionStrip";
 import { VisibilityCognitionStrip } from "@/components/VisibilityCognitionStrip";
@@ -15,12 +16,8 @@ import {
   deriveVisibilityOverlayV4Hints,
   visibilityOverlayV4SummaryLine,
 } from "@/cesium/visibilityOverlayV4";
+import { sensorContextHubLine } from "@/cesium/visibilityCognition";
 import {
-  sensorBlockVisible,
-  sensorContextHubLine,
-} from "@/cesium/visibilityCognition";
-import {
-  isFidelityCouplingOn,
   fidelityHubLine,
   mergeFidelityContextFromPayloads,
 } from "@/fidelity/fidelityCognition";
@@ -95,10 +92,10 @@ function CognitionBlock({
 }) {
   return (
     <details
-      className="rounded border border-slate-700 bg-slate-950/30"
+      className="rounded border border-slate-800/80 bg-slate-950/25"
       open={defaultOpen}
     >
-      <summary className="cursor-pointer px-3 py-2 text-xs font-semibold text-slate-300">
+      <summary className="cursor-pointer px-3 py-2 text-xs font-semibold text-slate-300 hover:bg-slate-900/60">
         {title}
       </summary>
       <div className="border-t border-slate-800 px-3 py-2">{children}</div>
@@ -148,7 +145,6 @@ export function RuntimeCognitionHub({
     snapshots.session_health?.payload as Record<string, unknown> | undefined,
   );
   const fidelityLine = fidelityHubLine(fidelityContext);
-  const fidelityOn = isFidelityCouplingOn(fidelityContext);
   const worldSummaryPayload = snapshots.world_summary?.payload as
     | Record<string, unknown>
     | undefined;
@@ -169,8 +165,22 @@ export function RuntimeCognitionHub({
     : [];
 
   return (
-    <PanelShell title="Runtime cognition">
-      <CognitionBlock title="Session" defaultOpen>
+    <PanelShell title="Runtime cognition" icon={BrainCircuit} className="max-h-[560px] overflow-y-auto">
+      <div className="mb-3 grid grid-cols-2 gap-2 text-xs">
+        <div className="rounded border border-slate-800 bg-slate-950/50 px-2.5 py-2">
+          <div className="text-[10px] uppercase text-slate-500">Session</div>
+          <div className="mt-1 font-mono text-amber-200/90">
+            {sessionId ? shortSessionId(sessionId) : "—"}
+          </div>
+        </div>
+        <div className="rounded border border-slate-800 bg-slate-950/50 px-2.5 py-2">
+          <div className="text-[10px] uppercase text-slate-500">Channels</div>
+          <div className="mt-1 text-cyan-100">
+            {HUB_CHANNELS.filter(({ key }) => channelMap[key]).length}/{HUB_CHANNELS.length} live
+          </div>
+        </div>
+      </div>
+      <CognitionBlock title="Session" defaultOpen={false}>
         {sessionId && (
           <p className="mb-2 font-mono text-xs text-amber-200/80">
             {sessionContextLine(sessionId, "active") ??
@@ -181,17 +191,17 @@ export function RuntimeCognitionHub({
           Consolidated authority, source, and health from pull mirrors — explanatory only.
         </p>
         {experimentCompareActive && (
-          <p className="mt-2 text-xs text-sky-300/90">
+          <p className="mt-2 text-xs text-cyan-300/90">
             Experiment compare active — telemetry mirrors only; not operational A/B proof
           </p>
         )}
         {experimentAnalyticsActive && (
-          <p className="mt-2 text-xs text-violet-300/90">
+          <p className="mt-2 text-xs text-cyan-300/90">
             Experiment analytics — derived summaries only
           </p>
         )}
         {experimentContinuityReviewActive && (
-          <p className="mt-2 text-xs text-fuchsia-300/90">
+          <p className="mt-2 text-xs text-cyan-300/90">
             Tactical annex review — replay-boundary timelines only
           </p>
         )}
@@ -203,7 +213,7 @@ export function RuntimeCognitionHub({
       </CognitionBlock>
 
       <div className="mt-2 space-y-2">
-        <CognitionBlock title="Terrain (explanatory)" defaultOpen={terrainLayersEnabled}>
+        <CognitionBlock title="Terrain (explanatory)" defaultOpen={false}>
           {terrainLine ? (
             <p className="text-xs text-emerald-400/90">{terrainLine}</p>
           ) : (
@@ -211,7 +221,7 @@ export function RuntimeCognitionHub({
           )}
         </CognitionBlock>
 
-        <CognitionBlock title="Density controls" defaultOpen={layerVisibility.showDensityWarnings}>
+        <CognitionBlock title="Density controls" defaultOpen={false}>
           <p className="text-xs text-slate-300" data-testid="hub-density-summary">
             {budgetSummary}
           </p>
@@ -228,7 +238,7 @@ export function RuntimeCognitionHub({
 
         <CognitionBlock
           title="Session compare (visual only)"
-          defaultOpen={layerVisibility.showSessionContrast}
+          defaultOpen={false}
         >
           <SessionComparisonCognitionStrip
             activeSessionId={sessionId}
@@ -258,8 +268,8 @@ export function RuntimeCognitionHub({
           </p>
         </CognitionBlock>
 
-        <CognitionBlock title="Fidelity (F5b)" defaultOpen={fidelityOn}>
-          <p className="mb-2 text-xs text-violet-300/90">{fidelityLine}</p>
+        <CognitionBlock title="Fidelity (F5b)" defaultOpen={false}>
+          <p className="mb-2 text-xs text-cyan-300/90">{fidelityLine}</p>
           <FidelityTruthCognitionStrip
             fidelityContext={fidelityContext}
             worldSummary={worldSummaryPayload}
@@ -270,7 +280,7 @@ export function RuntimeCognitionHub({
 
         <CognitionBlock
           title="Sensor context (nominal)"
-          defaultOpen={terrainLayers != null && sensorBlockVisible(terrainLayers)}
+          defaultOpen={false}
         >
           {sensorLine ? (
             <p className="text-xs text-slate-300">{sensorLine}</p>
@@ -279,7 +289,7 @@ export function RuntimeCognitionHub({
           )}
         </CognitionBlock>
 
-        <CognitionBlock title="Authority + channels" defaultOpen>
+        <CognitionBlock title="Authority + channels" defaultOpen={false}>
           <div className="space-y-2">
             {HUB_CHANNELS.map(({ key, label }) => (
               <ChannelCognitionRow

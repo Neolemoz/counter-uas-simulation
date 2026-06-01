@@ -8,7 +8,6 @@ import {
 import { isViewerUsable } from "./cesiumEditing";
 import { worldToCartesian } from "./coordinates";
 import {
-  ridgeElevationBandColor,
   RT_RIDGE_TERRAIN,
   sampleTerrainHeight,
 } from "./rtFictionalTerrain";
@@ -40,28 +39,28 @@ export function syncTerrainOverlays(
     const avgZ =
       ridge.polyline_enu_m.reduce((s, p) => s + (p[2] > 0 ? p[2] : sampleTerrainHeight(p[0], p[1])), 0) /
       Math.max(1, ridge.polyline_enu_m.length);
-    const bandColor = ridgeElevationBandColor(avgZ);
+    const bandColor = avgZ > 55 ? "rgba(180, 134, 73, 0.24)" : "rgba(148, 163, 184, 0.2)";
 
     viewer.entities.add(
       new Entity({
         id: `${OVERLAY_PREFIX}ridge-${ridge.ridge_id}`,
         polyline: {
           positions,
-          width: showElevationBands ? 5 : 4,
+          width: showElevationBands ? 3 : 2,
           material: new PolylineDashMaterialProperty({
             color: Color.fromCssColorString(bandColor),
-            dashLength: 12,
+            dashLength: 18,
           }),
         },
         label: {
           text: `${ridge.label} (explanatory)`,
-          font: "11px sans-serif",
-          fillColor: Color.fromCssColorString("rgba(253, 224, 171, 0.95)"),
+          font: "9px sans-serif",
+          fillColor: Color.fromCssColorString("rgba(203, 213, 225, 0.58)"),
           outlineColor: Color.BLACK,
-          outlineWidth: 2,
+          outlineWidth: 1,
           style: LabelStyle.FILL_AND_OUTLINE,
           showBackground: true,
-          backgroundColor: Color.fromCssColorString("rgba(30, 41, 59, 0.85)"),
+          backgroundColor: Color.fromCssColorString("rgba(15, 23, 42, 0.45)"),
         },
       }),
     );
