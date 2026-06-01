@@ -4,9 +4,9 @@ from __future__ import annotations
 
 import uuid
 from datetime import datetime, timedelta, timezone
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
-from rt_sandbox.tactical_geometry import compute_intercept
+from rt_sandbox.tactical_geometry import compute_intercept, velocity_from_pose
 from rt_sandbox.tactical_state import (
     INTERCEPTOR_ENTITY_TYPE,
     TARGET_ENTITY_TYPES,
@@ -15,6 +15,26 @@ from rt_sandbox.tactical_state import (
 
 if TYPE_CHECKING:
     from rt_sandbox.session_record import SessionRecord
+
+
+
+def _pose_with_runtime_velocity(session: SessionRecord, entity: Any) -> dict[str, Any]:
+    pose: dict[str, Any] = dict(entity.pose)
+    mirror = getattr(session, "telemetry_mirror", None)
+    if mirror is None:
+        return pose
+    entity_pose_mirror = getattr(mirror, "entity_pose_mirror", {}) or {}
+    for entry in entity_pose_mirror.get("entities", []):
+        if str(entry.get("entity_id") or "") != entity.entity_id:
+            continue
+        velocity = entry.get("velocity")
+        if isinstance(velocity, dict):
+            pose["velocity"] = dict(velocity)
+        for key in ("vx", "vy", "vz", "speed_mps", "heading_deg"):
+            if key in entry:
+                pose[key] = entry[key]
+        return pose
+    return pose
 
 RECOMMENDATION_TTL_S = 30.0
 RECOMMENDATION_GOVERNANCE_BANNER = (
@@ -62,9 +82,7 @@ def rank_recommendation(
         e for e in registry.all_entities() if e.entity_type in TARGET_ENTITY_TYPES
     ]
 
-    best_tti: float | None = None
-    best_iid: str | None = None
-    best_tid: str | None = None
+    feasible_pairs: list[dict[str, Any]] = []
     pairs_evaluated = 0
 
     for i_rec in interceptors:
@@ -75,14 +93,15 @@ def rank_recommendation(
                 continue
             pairs_evaluated += 1
             ip = i_rec.pose
-            tp = t_rec.pose
+            tp = _pose_with_runtime_velocity(session, t_rec)
+            tvx, tvy, tvz = velocity_from_pose(tp)
             result = compute_intercept(
                 float(tp["x"]),
                 float(tp["y"]),
                 float(tp["z"]),
-                0.0,
-                0.0,
-                0.0,
+                tvx,
+                tvy,
+                tvz,
                 float(ip["x"]),
                 float(ip["y"]),
                 float(ip["z"]),
@@ -91,18 +110,23 @@ def rank_recommendation(
             if result is None:
                 continue
             tti = result[0]
-            if best_tti is None:
-                best_tti, best_iid, best_tid = tti, i_rec.entity_id, t_rec.entity_id
-                continue
-            if tti < best_tti - 1e-9:
-                best_tti, best_iid, best_tid = tti, i_rec.entity_id, t_rec.entity_id
-            elif abs(tti - best_tti) <= 1e-9:
-                candidate = (i_rec.entity_id, t_rec.entity_id)
-                current = (best_iid or "", best_tid or "")
-                if candidate < current:
-                    best_tti, best_iid, best_tid = tti, i_rec.entity_id, t_rec.entity_id
+            feasible_pairs.append(
+                {
+                    "interceptor_id": i_rec.entity_id,
+                    "target_id": t_rec.entity_id,
+                    "candidate_id": i_rec.entity_id,
+                    "tti_s": tti,
+                }
+            )
 
-    if best_tti is None or best_iid is None or best_tid is None:
+    feasible_pairs.sort(
+        key=lambda pair: (
+            float(pair["tti_s"]),
+            str(pair["interceptor_id"]),
+            str(pair["target_id"]),
+        )
+    )
+    if not feasible_pairs:
         return TacticalRecommendation(
             recommendation_id=rec_id,
             recommended_interceptor_id=None,
@@ -119,11 +143,12 @@ def rank_recommendation(
             pairs_evaluated=pairs_evaluated,
         )
 
+    best = feasible_pairs[0]
     return TacticalRecommendation(
         recommendation_id=rec_id,
-        recommended_interceptor_id=best_iid,
-        recommended_target_id=best_tid,
-        tti_s=best_tti,
+        recommended_interceptor_id=str(best["interceptor_id"]),
+        recommended_target_id=str(best["target_id"]),
+        tti_s=float(best["tti_s"]),
         feasibility={"feasible": True, "reason": "feasible"},
         explanation=(
             f"Lowest cap-speed TTI among {pairs_evaluated} pair"
@@ -131,6 +156,7 @@ def rank_recommendation(
         ),
         expires_at_utc=_expires_at(),
         pairs_evaluated=pairs_evaluated,
+        ranked_pairs=feasible_pairs,
     )
 
 

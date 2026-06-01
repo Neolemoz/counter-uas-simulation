@@ -7,7 +7,11 @@ import time
 from typing import TYPE_CHECKING, Any
 
 from rt_sandbox.entity_registry import EntityRecord
-from rt_sandbox.tactical_geometry import compute_intercept
+from rt_sandbox.tactical_geometry import (
+    compute_intercept,
+    predicted_path_enu_m,
+    velocity_from_pose,
+)
 from rt_sandbox.tactical_recommendation import (
     cleared_recommendation,
     rank_recommendation,
@@ -80,7 +84,14 @@ class TacticalController:
         prev_t = self.state.assigned_target_id
         self.state.assigned_interceptor_id = None
         self.state.assigned_target_id = None
+        if prev_i:
+            session.live_assignments.pop(prev_i, None)
+        self._sync_assigned_pairs_from_session(session)
         self.state.last_intercept_pose = None
+        self.state.predicted_path_enu_m = None
+        self.state.eta_s = None
+        self.state.switch_blocked_reason = None
+        self.state.candidate_tti_delta_s = None
         self.capture_buffer.record_assignment(
             assigned_interceptor_id=None,
             assigned_target_id=None,
@@ -104,6 +115,12 @@ class TacticalController:
             "assigned_target_id": s.assigned_target_id,
             "assigned_candidate_id": s.assigned_interceptor_id,
             "tti_s": s.tti_s,
+            "eta_s": s.eta_s,
+            "switch_blocked_reason": s.switch_blocked_reason,
+            "candidate_tti_delta_s": s.candidate_tti_delta_s,
+            "assigned_pairs": [dict(pair) for pair in s.assigned_pairs],
+            "duplicate_target_blocked": s.duplicate_target_blocked,
+            "coordination_state": s.coordination_state,
             "tactical_health": dict(s.tactical_health),
             "assignment_lock_active": s.assignment_lock_active(now),
             "autonomous_loop_status": (
@@ -114,6 +131,11 @@ class TacticalController:
             "pending_recommendation_id": s.pending_recommendation_id,
             "last_intercept_pose": (
                 dict(s.last_intercept_pose) if s.last_intercept_pose else None
+            ),
+            "predicted_path_enu_m": (
+                [dict(point) for point in s.predicted_path_enu_m]
+                if s.predicted_path_enu_m
+                else None
             ),
             "interceptor_speed_cap_m_s": s.interceptor_speed_cap_m_s,
         }
@@ -194,8 +216,21 @@ class TacticalController:
                 "summary": "feasible",
                 "stale": False,
             }
+            if rec.recommended_interceptor_id and rec.recommended_target_id:
+                intercept, _err = self._compute_intercept_on_session(
+                    session, rec.recommended_interceptor_id, rec.recommended_target_id
+                )
+                if intercept is not None:
+                    tti, eta, _pose, path = intercept
+                    self.state.tti_s = tti
+                    self.state.eta_s = eta
+                    self.state.predicted_path_enu_m = path
         else:
             self.state.tti_s = None
+            self.state.eta_s = None
+            self.state.predicted_path_enu_m = None
+            self.state.switch_blocked_reason = None
+            self.state.candidate_tti_delta_s = None
             self.state.tactical_health = {
                 "feasible": False,
                 "summary": str(rec.feasibility.get("reason", "infeasible")),
@@ -289,15 +324,20 @@ class TacticalController:
         if err:
             return err, None
         assert intercept is not None
-        tti, pose = intercept
+        tti, eta, pose, path = intercept
         prev_i = self.state.assigned_interceptor_id
         prev_t = self.state.assigned_target_id
         self.state.assigned_interceptor_id = interceptor_id
         self.state.assigned_target_id = target_id
+        session.live_assignments[interceptor_id] = target_id
+        self._sync_assigned_pairs_from_session(session)
         self.state.selected_interceptor_id = interceptor_id
         self.state.selected_target_id = target_id
         self.state.tti_s = tti
+        self.state.eta_s = eta
         self.state.last_intercept_pose = pose
+        self.state.predicted_path_enu_m = path
+        self.state.switch_blocked_reason = None
         self.state.tactical_health = {
             "feasible": True,
             "summary": "feasible",
@@ -319,12 +359,22 @@ class TacticalController:
         )
         return None, pose
 
+
+    def _sync_assigned_pairs_from_session(self, session: SessionRecord) -> None:
+        self.state.assigned_pairs = [
+            {"interceptor_id": iid, "target_id": tid}
+            for iid, tid in sorted(session.live_assignments.items())
+        ]
+
     def _compute_intercept_on_session(
         self,
         session: SessionRecord,
         interceptor_id: str,
         target_id: str,
-    ) -> tuple[tuple[float, dict[str, float]] | None, str | None]:
+    ) -> tuple[
+        tuple[float, float, dict[str, float], list[dict[str, float]]] | None,
+        str | None,
+    ]:
         i_rec, err = self._entity_record_for(session, interceptor_id)
         if err:
             return None, err
@@ -332,23 +382,48 @@ class TacticalController:
         if err:
             return None, err
         assert i_rec is not None and t_rec is not None
-        return self._compute_from_records(i_rec, t_rec)
+        return self._compute_from_records(session, i_rec, t_rec)
+
+    def _target_pose_with_runtime_velocity(
+        self, session: SessionRecord, target: EntityRecord
+    ) -> dict[str, Any]:
+        pose: dict[str, Any] = dict(target.pose)
+        mirror = getattr(session, "telemetry_mirror", None)
+        if mirror is None:
+            return pose
+        entity_pose_mirror = getattr(mirror, "entity_pose_mirror", {}) or {}
+        for entry in entity_pose_mirror.get("entities", []):
+            if str(entry.get("entity_id") or "") != target.entity_id:
+                continue
+            velocity = entry.get("velocity")
+            if isinstance(velocity, dict):
+                pose["velocity"] = dict(velocity)
+            for key in ("vx", "vy", "vz", "speed_mps", "heading_deg"):
+                if key in entry:
+                    pose[key] = entry[key]
+            return pose
+        return pose
 
     def _compute_from_records(
         self,
+        session: SessionRecord,
         interceptor: EntityRecord,
         target: EntityRecord,
-    ) -> tuple[tuple[float, dict[str, float]] | None, str | None]:
+    ) -> tuple[
+        tuple[float, float, dict[str, float], list[dict[str, float]]] | None,
+        str | None,
+    ]:
         ip = interceptor.pose
-        tp = target.pose
+        tp = self._target_pose_with_runtime_velocity(session, target)
         cap = self.state.interceptor_speed_cap_m_s
+        tvx, tvy, tvz = velocity_from_pose(tp)
         result = compute_intercept(
             float(tp["x"]),
             float(tp["y"]),
             float(tp["z"]),
-            0.0,
-            0.0,
-            0.0,
+            tvx,
+            tvy,
+            tvz,
             float(ip["x"]),
             float(ip["y"]),
             float(ip["z"]),
@@ -356,6 +431,10 @@ class TacticalController:
         )
         if result is None:
             self.state.tti_s = None
+            self.state.eta_s = None
+            self.state.predicted_path_enu_m = None
+            self.state.switch_blocked_reason = None
+            self.state.candidate_tti_delta_s = None
             self.state.tactical_health = {
                 "feasible": False,
                 "summary": "no_intercept_solution_in_window",
@@ -370,13 +449,18 @@ class TacticalController:
             "z": phz,
             "yaw_deg": yaw_deg,
         }
-        return (t, pose), None
+        path = predicted_path_enu_m(ip, pose)
+        return (t, t, pose, path), None
 
     def _refresh_explanatory_for(self, session: SessionRecord) -> None:
         iid = self.state.selected_interceptor_id
         tid = self.state.selected_target_id
         if not iid or not tid:
             self.state.tti_s = None
+            self.state.eta_s = None
+            self.state.predicted_path_enu_m = None
+            self.state.switch_blocked_reason = None
+            self.state.candidate_tti_delta_s = None
             self.state.tactical_health = {
                 "feasible": False,
                 "summary": "no_selection" if not (iid or tid) else "incomplete_selection",
@@ -386,8 +470,11 @@ class TacticalController:
         intercept, err = self._compute_intercept_on_session(session, iid, tid)
         if err or intercept is None:
             return
-        tti, _pose = intercept
+        tti, eta, _pose, path = intercept
         self.state.tti_s = tti
+        self.state.eta_s = eta
+        self.state.predicted_path_enu_m = path
+        self.state.switch_blocked_reason = None
         self.state.tactical_health = {
             "feasible": True,
             "summary": "feasible",

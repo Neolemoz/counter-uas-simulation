@@ -19,6 +19,7 @@ if str(_GZ_PKG) not in sys.path:
 from rt_sandbox.governance import classify_command  # noqa: E402
 from rt_sandbox.session_manager import BridgeSessionManager, GovernanceConfig  # noqa: E402
 from rt_sandbox.tactical_geometry import compute_intercept, solve_intercept_time  # noqa: E402
+from rt_sandbox.telemetry_bridge import ensure_telemetry_mirror  # noqa: E402
 
 from gazebo_target_sim.guidance_lib import (  # noqa: E402
     compute_intercept as gz_compute_intercept,
@@ -154,6 +155,84 @@ def test_manual_assign_and_clear(manager: BridgeSessionManager) -> None:
     cleared = _cmd(manager, "clear_assignment", sid, payload={})
     assert cleared["ok"] is True
     assert cleared["tactical_state"]["assigned_interceptor_id"] is None
+
+
+def test_moving_target_intercept_exports_eta_and_predicted_path(
+    manager: BridgeSessionManager,
+) -> None:
+    sid, iid, tid = _start_with_entities(manager)
+    stationary_assign = _cmd(
+        manager,
+        "assign_candidate",
+        sid,
+        payload={"interceptor_id": iid, "target_id": tid},
+    )
+    assert stationary_assign["ok"] is True
+    stationary_pose = stationary_assign["tactical_state"]["last_intercept_pose"]
+
+    moving_start = _cmd(manager, "start_session")
+    assert moving_start["ok"] is True
+    moving_sid = moving_start["session_id"]
+    edit = _cmd(
+        manager,
+        "set_editing_session",
+        moving_sid,
+        payload={"session_id": moving_sid},
+    )
+    assert edit["ok"] is True
+    moving_interceptor = _cmd(
+        manager,
+        "spawn_entity",
+        moving_sid,
+        payload={"entity_type": "interceptor", "pose": _pose(0, 0, 10)},
+    )
+    assert moving_interceptor["ok"] is True
+    moving_target_pose = _pose(100, 0, 10)
+    moving_target = _cmd(
+        manager,
+        "spawn_entity",
+        moving_sid,
+        payload={"entity_type": "drone", "pose": moving_target_pose},
+    )
+    assert moving_target["ok"] is True
+    moving_session = manager._registry.get(moving_sid)
+    assert moving_session is not None
+    mirror = ensure_telemetry_mirror(moving_session)
+    mirror.entity_pose_mirror = {
+        "entities": [
+            {
+                "entity_id": moving_target["entity_id"],
+                "velocity": {"x": 0.0, "y": 5.0, "z": 0.0},
+            }
+        ]
+    }
+
+    moving_assign = _cmd(
+        manager,
+        "assign_candidate",
+        moving_sid,
+        payload={
+            "interceptor_id": moving_interceptor["entity_id"],
+            "target_id": moving_target["entity_id"],
+        },
+    )
+    assert moving_assign["ok"] is True
+    state = moving_assign["tactical_state"]
+    moving_pose = state["last_intercept_pose"]
+
+    assert state["assigned_interceptor_id"] == moving_interceptor["entity_id"]
+    assert state["assigned_target_id"] == moving_target["entity_id"]
+    assert state["tti_s"] is not None and state["tti_s"] > 0.0
+    assert state["eta_s"] == pytest.approx(state["tti_s"])
+    assert moving_pose["y"] > stationary_pose["y"]
+
+    path = state["predicted_path_enu_m"]
+    assert isinstance(path, list)
+    assert len(path) == 2
+    assert path[0] == {"x": 0.0, "y": 0.0, "z": 10.0}
+    assert path[1]["x"] == pytest.approx(moving_pose["x"])
+    assert path[1]["y"] == pytest.approx(moving_pose["y"])
+    assert path[1]["z"] == pytest.approx(moving_pose["z"])
 
 
 def test_tactical_editing_session_mismatch(manager: BridgeSessionManager) -> None:
