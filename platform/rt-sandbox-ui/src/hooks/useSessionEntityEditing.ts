@@ -2,8 +2,11 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import {
   deleteEntity,
   moveEntity,
+  spawnAttacker,
   spawnEntity,
 } from "@/bridge/entityCommands";
+import { applyScenario } from "@/bridge/scenarioCommands";
+import type { BridgeCommandResponse } from "@/bridge/types";
 import {
   applyLocalEntityCommand,
   countEntitiesByType,
@@ -27,6 +30,12 @@ import {
   type Pose,
 } from "@/world/bounds";
 import { defaultPose, type EntityType } from "@/world/entityCatalog";
+import {
+  entitiesToScenarioPayload,
+  validateScenarioCaps,
+} from "@/world/scenarioPayload";
+import type { ApplyRuntimeStatus } from "@/components/WorldEditorApplyStatus";
+import { APPLY_STATUS_CLEAR_MS } from "@/components/WorldEditorApplyStatus";
 import { shouldClearPendingReconcile } from "@/sync/cognition";
 import type { ChannelSnapshot } from "@/telemetry/channelIndex";
 
@@ -58,6 +67,10 @@ export type UseSessionEntityEditingParams = {
   workspaceSessionIds: string[];
   selectedType: EntityType;
   doPull: () => Promise<void>;
+  refreshAfterApply: (
+    sessionId: string,
+    result: BridgeCommandResponse,
+  ) => Promise<void>;
   setLastError: (message: string | null) => void;
 };
 
@@ -73,6 +86,7 @@ export function useSessionEntityEditing({
   workspaceSessionIds,
   selectedType,
   doPull,
+  refreshAfterApply,
   setLastError,
 }: UseSessionEntityEditingParams) {
   const [editBySession, setEditBySession] = useState<
@@ -86,6 +100,9 @@ export function useSessionEntityEditing({
   }>();
   const [pendingReconcile, setPendingReconcile] = useState(false);
   const [commandBusy, setCommandBusy] = useState(false);
+  const [applyRuntimeStatus, setApplyRuntimeStatus] = useState<ApplyRuntimeStatus>({
+    phase: "idle",
+  });
   const lastCommandMs = useRef(0);
 
   const sessionEdit = sessionId
@@ -229,7 +246,10 @@ export function useSessionEntityEditing({
       const clamped = clampPose(defaultPose(entityType, pose.x, pose.y));
       void runEntityCommand(
         "spawn_entity",
-        () => spawnEntity(sessionId, { entity_type: entityType, pose: clamped }),
+        () =>
+          entityType === "drone"
+            ? spawnAttacker(sessionId, { pose: clamped })
+            : spawnEntity(sessionId, { entity_type: entityType, pose: clamped }),
         { entityType, pose: clamped },
       );
     },
@@ -260,6 +280,92 @@ export function useSessionEntityEditing({
     },
     [sessionId, runEntityCommand],
   );
+
+  const handleApplyScenario = useCallback(async () => {
+    if (!sessionId || !editingEnabled) return;
+    const capCheck = validateScenarioCaps(entities);
+    if (!capCheck.ok) {
+      setLastError(capCheck.reason ?? "apply blocked");
+      setApplyRuntimeStatus({
+        phase: "failed",
+        message: capCheck.reason ?? "apply blocked",
+      });
+      return;
+    }
+    const appliedEntityCount = entities.length;
+    const payload = entitiesToScenarioPayload(entities);
+    const now = Date.now();
+    if (now - lastCommandMs.current < COMMAND_BURST_INTERVAL_MS) {
+      setLastError("Command rate limited — wait before next edit");
+      return;
+    }
+    lastCommandMs.current = now;
+    setCommandBusy(true);
+    setPendingReconcile(true);
+    setApplyRuntimeStatus({ phase: "applying" });
+    try {
+      const result = await applyScenario(sessionId, payload);
+      setLastCommand({
+        type: "apply_scenario",
+        ok: result.ok,
+        errorCode: result.error_code,
+        message: result.message,
+      });
+      const entry = createEditHistoryEntry({
+        commandType: "apply_scenario",
+        ok: result.ok,
+        errorCode: result.error_code,
+        message: result.message,
+      });
+      const current = editBySession[sessionId] ?? emptyEditState();
+      patchSessionEdit(sessionId, {
+        editHistory: appendEditHistory(current.editHistory, entry),
+      });
+      if (!result.ok) {
+        const message = result.error_code ?? result.message ?? "apply_scenario failed";
+        setLastError(message);
+        setApplyRuntimeStatus({ phase: "failed", message });
+        setPendingReconcile(false);
+        return;
+      }
+      setLastError(null);
+      patchSessionEdit(sessionId, {
+        localEntities: {},
+        locallyDeletedIds: new Set(),
+        selectedEntityId: null,
+      });
+      await refreshAfterApply(sessionId, result);
+      setApplyRuntimeStatus({ phase: "applied", entityCount: appliedEntityCount });
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "apply_scenario error";
+      setLastError(message);
+      setApplyRuntimeStatus({ phase: "failed", message });
+      setPendingReconcile(false);
+    } finally {
+      setCommandBusy(false);
+    }
+  }, [
+    sessionId,
+    editingEnabled,
+    entities,
+    refreshAfterApply,
+    setLastError,
+    editBySession,
+    patchSessionEdit,
+  ]);
+
+  useEffect(() => {
+    setApplyRuntimeStatus({ phase: "idle" });
+  }, [sessionId]);
+
+  useEffect(() => {
+    if (applyRuntimeStatus.phase !== "applied") return;
+    const id = window.setTimeout(
+      () => setApplyRuntimeStatus({ phase: "idle" }),
+      APPLY_STATUS_CLEAR_MS,
+    );
+    return () => window.clearTimeout(id);
+  }, [applyRuntimeStatus]);
 
   useEffect(() => {
     if (!sessionId) return;
@@ -344,6 +450,8 @@ export function useSessionEntityEditing({
     handleSpawn,
     handleMove,
     handleDelete,
+    handleApplyScenario,
+    applyRuntimeStatus,
     patchSessionEdit,
   };
 }

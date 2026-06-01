@@ -2,17 +2,24 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   discardSession,
   listSessions,
+  stopSession,
   pullTelemetry,
   setEditingSession,
   startSession,
   subscribeTelemetry,
   unsubscribeTelemetry,
 } from "@/bridge/client";
+import type { BridgeCommandResponse } from "@/bridge/types";
 import {
   mergeChannelSnapshots,
   sessionStateFromSnapshots,
   type ChannelSnapshot,
 } from "@/telemetry/channelIndex";
+import {
+  extractWorldSummaryFromApplyResult,
+  patchSnapshotsWithApplyWorldSummary,
+  refreshSessionAfterApply,
+} from "@/telemetry/applyRefresh";
 import {
   BACKGROUND_PULL_HZ,
   DEFAULT_PULL_HZ,
@@ -224,6 +231,7 @@ export function useRtSessionWorkspace(options: UseRtSessionWorkspaceOptions = {}
     async (targetId: string) => {
       setBusy(true);
       try {
+        await stopSession(targetId).catch(() => undefined);
         await unsubscribeTelemetry(targetId).catch(() => undefined);
         await discardSession(targetId).catch(() => undefined);
       } finally {
@@ -288,6 +296,35 @@ export function useRtSessionWorkspace(options: UseRtSessionWorkspaceOptions = {}
     }
   }, [pullSlot, selectedSessionId]);
 
+  const refreshSessionAfterApplyCommand = useCallback(
+    async (targetSessionId: string, result?: BridgeCommandResponse) => {
+      const ws = result ? extractWorldSummaryFromApplyResult(result) : null;
+      if (ws) {
+        setSlots((prev) => {
+          const next = new Map(prev);
+          const current = next.get(targetSessionId) ?? emptySlot(targetSessionId, "background");
+          next.set(targetSessionId, {
+            ...current,
+            snapshots: patchSnapshotsWithApplyWorldSummary(
+              current.snapshots,
+              targetSessionId,
+              ws,
+            ),
+          });
+          return next;
+        });
+      }
+      await refreshSessionAfterApply({
+        pull: () => pullSlot(targetSessionId),
+        readWorldSummary: () =>
+          slotsRef.current.get(targetSessionId)?.snapshots.world_summary?.payload,
+        readEntityMirror: () =>
+          slotsRef.current.get(targetSessionId)?.snapshots.entity_pose_mirror,
+      });
+    },
+    [pullSlot],
+  );
+
   const resetSnapshots = useCallback(() => {
     if (!selectedSessionId) return;
     updateSlot(selectedSessionId, { snapshots: {} });
@@ -317,6 +354,7 @@ export function useRtSessionWorkspace(options: UseRtSessionWorkspaceOptions = {}
   useEffect(() => {
     return () => {
       for (const slot of slotsRef.current.values()) {
+        void stopSession(slot.sessionId).catch(() => undefined);
         void unsubscribeTelemetry(slot.sessionId).catch(() => undefined);
         void discardSession(slot.sessionId).catch(() => undefined);
       }
@@ -360,6 +398,7 @@ export function useRtSessionWorkspace(options: UseRtSessionWorkspaceOptions = {}
     lastError: lastError ?? activeSlot?.lastError ?? null,
     setLastError,
     doPull,
+    refreshSessionAfterApply: refreshSessionAfterApplyCommand,
     connectNewSession,
     disconnectSession,
     selectTab,

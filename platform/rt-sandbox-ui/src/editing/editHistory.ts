@@ -1,4 +1,8 @@
-export type EditCommandType = "spawn_entity" | "move_entity" | "delete_entity";
+export type EditCommandType =
+  | "spawn_entity"
+  | "move_entity"
+  | "delete_entity"
+  | "apply_scenario";
 
 export interface EditHistoryEntry {
   id: string;

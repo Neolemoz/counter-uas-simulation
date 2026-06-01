@@ -6,6 +6,8 @@ export function describeCommandIntent(commandType: EditCommandType): string {
     spawn_entity: "Registry spawn — command authoritative",
     move_entity: "Registry reposition — command authoritative",
     delete_entity: "Registry delete — command authoritative",
+    apply_scenario:
+      "Apply scenario — reset runtime world and spawn current layout",
   };
   return labels[commandType];
 }

@@ -38,6 +38,7 @@ import type { TerrainLayerVisibility } from "@/cesium/terrainLayers";
 import type { VisualLayerVisibility } from "@/cesium/visualLayerRegistry";
 import { CesiumRuntimePanel } from "@/components/CesiumRuntimePanel";
 import { WorldEditingGrid } from "@/components/WorldEditingGrid";
+import type { ApplyRuntimeStatus } from "@/components/WorldEditorApplyStatus";
 import type { EditHistoryEntry, EditCommandType } from "@/editing/editHistory";
 import type { UiEntity } from "@/editing/localEntityMirror";
 import { ExperimentWorkbenchPanel } from "@/experiment/ExperimentWorkbenchPanel";
@@ -118,6 +119,9 @@ export type AppWorkstationSlotsProps = {
   onSpawn: (pose: Pose, entityType?: EntityType) => void;
   onMove: (entityId: string, pose: Pose) => void;
   onDelete: (entityId: string) => void;
+  onApplyToRuntime: () => void;
+  applyToRuntimeDisabled: boolean;
+  applyRuntimeStatus: ApplyRuntimeStatus;
   snapshots: Partial<Record<TelemetryChannel, ChannelSnapshot>>;
   experimentCompareActive: boolean;
   onExperimentCompareActiveChange: (active: boolean) => void;
@@ -202,6 +206,9 @@ export function AppWorkstationSlots(props: AppWorkstationSlotsProps) {
     onSpawn,
     onMove,
     onDelete,
+    onApplyToRuntime,
+    applyToRuntimeDisabled,
+    applyRuntimeStatus,
     snapshots,
     experimentCompareActive,
     onExperimentCompareActiveChange,
@@ -447,6 +454,9 @@ export function AppWorkstationSlots(props: AppWorkstationSlotsProps) {
               onSpawn={onSpawn}
               onMove={onMove}
               onDelete={onDelete}
+              onApplyToRuntime={onApplyToRuntime}
+              applyToRuntimeDisabled={applyToRuntimeDisabled}
+              applyRuntimeStatus={applyRuntimeStatus}
             />
             <EditingCognitionStrip
               lastCommand={lastCommand}

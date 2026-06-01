@@ -64,6 +64,10 @@ import {
   shouldShowSpawnPreview,
   type GridCell,
 } from "./worldEditorHover";
+import {
+  WorldEditorApplyStatus,
+  type ApplyRuntimeStatus,
+} from "./WorldEditorApplyStatus";
 
 const CELL_SIZE = WORLD_EDITOR_CELL_SIZE;
 const MIN_ZOOM = 1;
@@ -90,6 +94,9 @@ export function WorldEditingGrid({
   onSpawn,
   onMove,
   onDelete,
+  onApplyToRuntime,
+  applyToRuntimeDisabled = true,
+  applyRuntimeStatus = { phase: "idle" },
   worldSummary,
   showTerrainContour = true,
   showContourLines = false,
@@ -147,6 +154,9 @@ export function WorldEditingGrid({
   onSpawn: (pose: Pose, entityType: EntityType) => void;
   onMove: (entityId: string, pose: Pose) => void;
   onDelete: (entityId: string) => void;
+  onApplyToRuntime?: () => void;
+  applyToRuntimeDisabled?: boolean;
+  applyRuntimeStatus?: ApplyRuntimeStatus;
 }) {
   const svgRef = useRef<SVGSVGElement>(null);
   const suppressClickRef = useRef(false);
@@ -509,6 +519,28 @@ export function WorldEditingGrid({
       className="col-span-full !p-3 [&>h2]:mb-2"
     >
       <BoundsIndicator worldSummary={worldSummary} />
+      {onApplyToRuntime && (
+        <div
+          className="mt-2 flex flex-wrap items-center justify-between gap-2 rounded border border-slate-800 bg-slate-950/60 px-3 py-2"
+          data-testid="world-editor-apply-runtime-bar"
+        >
+          <p className="text-xs text-slate-500">
+            Resets runtime world and spawns current layout.
+          </p>
+          <div className="flex flex-wrap items-center gap-2">
+            <WorldEditorApplyStatus status={applyRuntimeStatus} />
+            <button
+              type="button"
+              disabled={applyToRuntimeDisabled}
+              onClick={onApplyToRuntime}
+              data-testid="world-editor-apply-runtime"
+              className="rounded border border-emerald-700 bg-emerald-950/50 px-3 py-1.5 text-xs font-medium text-emerald-100 hover:bg-emerald-900/50 disabled:cursor-not-allowed disabled:opacity-40"
+            >
+              Apply to runtime
+            </button>
+          </div>
+        </div>
+      )}
       <div className="mt-2 space-y-3">
         <div
           className={`grid ${WORLD_EDITOR_COORD_BAR_HEIGHT_CLASS} grid-rows-2 gap-1 rounded border border-slate-800 bg-slate-950/60 px-3 py-2`}

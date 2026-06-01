@@ -56,6 +56,7 @@ export default function App() {
     lastError,
     setLastError,
     doPull,
+    refreshSessionAfterApply,
     connectNewSession,
     disconnectSession,
     selectTab,
@@ -115,6 +116,9 @@ export default function App() {
     handleSpawn,
     handleMove,
     handleDelete,
+    handleApplyScenario,
+    applyRuntimeStatus,
+    commandBusy,
     patchSessionEdit,
   } = useSessionEntityEditing({
     sessionId,
@@ -128,6 +132,7 @@ export default function App() {
     workspaceSessionIds,
     selectedType,
     doPull,
+    refreshAfterApply: refreshSessionAfterApply,
     setLastError,
   });
 
@@ -302,6 +307,14 @@ export default function App() {
         onSpawn={handleSpawn}
         onMove={handleMove}
         onDelete={handleDelete}
+        onApplyToRuntime={() => void handleApplyScenario()}
+        applyToRuntimeDisabled={
+          !sessionId ||
+          !editingEnabled ||
+          entities.length === 0 ||
+          commandBusy
+        }
+        applyRuntimeStatus={applyRuntimeStatus}
         snapshots={snapshots}
         experimentCompareActive={experimentCompareActive}
         onExperimentCompareActiveChange={setExperimentCompareActive}
