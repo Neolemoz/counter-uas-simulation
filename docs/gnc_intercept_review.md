@@ -187,3 +187,7 @@ The repo contains multiple “success” notions:
 ## One-line executive summary
 
 The CV intercept solver is **geometrically coherent**, but the system’s reliability bottleneck is the **missing reachable-set / dynamics-consistent layer** and **insufficient separation of optimistic MC vs Gazebo truth** — fix gates, estimation, and MC–plant parity before chasing higher intercept solver complexity.
+
+## RT sandbox ↔ offline kinematic parity (Step 4)
+
+Shared engagement tuple: `src/rt_sandbox_gz/config/rt_engagement_limits.yaml` (see `docs/gnc_rt_sim_parity.md`). Offline `realtime_sim` turn-rate cap and RT kinematic plant defaults load the same values; pose-step parity is tested via `simulation/rt_plant_adapter.py`.

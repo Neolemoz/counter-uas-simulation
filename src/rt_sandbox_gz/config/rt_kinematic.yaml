@@ -1,0 +1,15 @@
+# RT sandbox bridge parameters (kinematic plant + shared engagement tuple).
+# Canonical numeric defaults: config/rt_engagement_limits.yaml
+
+rt_sandbox_gz_bridge_node:
+  ros__parameters:
+    kinematic_plant_enabled: true
+    publish_rate_hz: 10.0
+    max_speed_mps: 25.0
+    max_accel_mps2: 30.0
+    max_turn_rate_rad_s: 0.2792526803190757
+    max_climb_mps: 8.0
+    drag_decel_per_mps: 0.12
+    wind_x_mps: 0.0
+    wind_y_mps: 0.0
+    wind_z_mps: 0.0

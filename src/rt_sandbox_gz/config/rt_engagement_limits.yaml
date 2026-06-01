@@ -1,0 +1,13 @@
+# Canonical engagement kinematics + environment (RT sandbox + offline simulation).
+# Loaded by simulation/engagement_limits.py and rt_sandbox_gz launch defaults.
+
+engagement_limits:
+  max_speed_mps: 25.0
+  max_accel_mps2: 30.0
+  max_turn_rate_deg_s: 16.0
+  max_turn_rate_rad_s: 0.2792526803190757
+  max_climb_mps: 8.0
+  drag_decel_per_mps: 0.12
+  wind_x_mps: 0.0
+  wind_y_mps: 0.0
+  wind_z_mps: 0.0

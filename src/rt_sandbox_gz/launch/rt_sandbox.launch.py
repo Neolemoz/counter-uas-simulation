@@ -71,6 +71,22 @@ def _setup(context, *args, **kwargs):
         remappings=[(f'/world/{world_name}/clock', '/clock')],
     )
 
+    kinematic_enabled = LaunchConfiguration('kinematic_plant_enabled').perform(context).strip().lower() in (
+        '1',
+        'true',
+        'yes',
+        'on',
+    )
+    publish_rate_hz = float(LaunchConfiguration('publish_rate_hz').perform(context))
+    max_speed_mps = float(LaunchConfiguration('max_speed_mps').perform(context))
+    max_accel_mps2 = float(LaunchConfiguration('max_accel_mps2').perform(context))
+    max_turn_rate_rad_s = float(LaunchConfiguration('max_turn_rate_rad_s').perform(context))
+    max_climb_mps = float(LaunchConfiguration('max_climb_mps').perform(context))
+    drag_decel_per_mps = float(LaunchConfiguration('drag_decel_per_mps').perform(context))
+    wind_x_mps = float(LaunchConfiguration('wind_x_mps').perform(context))
+    wind_y_mps = float(LaunchConfiguration('wind_y_mps').perform(context))
+    wind_z_mps = float(LaunchConfiguration('wind_z_mps').perform(context))
+
     bridge_node = Node(
         package='rt_sandbox_gz',
         executable='rt_sandbox_gz_bridge_node',
@@ -81,7 +97,16 @@ def _setup(context, *args, **kwargs):
                 'session_id': session_id,
                 'world_name': world_name,
                 'ground_snap_enabled': ground_snap,
-                'publish_rate_hz': 10.0,
+                'publish_rate_hz': publish_rate_hz,
+                'kinematic_plant_enabled': kinematic_enabled,
+                'max_speed_mps': max_speed_mps,
+                'max_accel_mps2': max_accel_mps2,
+                'max_turn_rate_rad_s': max_turn_rate_rad_s,
+                'max_climb_mps': max_climb_mps,
+                'drag_decel_per_mps': drag_decel_per_mps,
+                'wind_x_mps': wind_x_mps,
+                'wind_y_mps': wind_y_mps,
+                'wind_z_mps': wind_z_mps,
             },
         ],
     )
@@ -115,6 +140,24 @@ def generate_launch_description() -> LaunchDescription:
                 default_value='127.0.0.1',
                 description='GZ_IP for transport; auto for legacy discovery',
             ),
+            DeclareLaunchArgument('publish_rate_hz', default_value='10.0'),
+            DeclareLaunchArgument(
+                'kinematic_plant_enabled',
+                default_value='true',
+                description='Integrate pose commands with kinematic limits before set_pose',
+            ),
+            DeclareLaunchArgument('max_speed_mps', default_value='25.0'),
+            DeclareLaunchArgument('max_accel_mps2', default_value='30.0'),
+            DeclareLaunchArgument('max_turn_rate_rad_s', default_value='0.2792526803190757'),
+            DeclareLaunchArgument('max_climb_mps', default_value='8.0'),
+            DeclareLaunchArgument(
+                'drag_decel_per_mps',
+                default_value='0.12',
+                description='Linear drag: decel (m/s^2) = coeff * speed (0 = off)',
+            ),
+            DeclareLaunchArgument('wind_x_mps', default_value='0.0'),
+            DeclareLaunchArgument('wind_y_mps', default_value='0.0'),
+            DeclareLaunchArgument('wind_z_mps', default_value='0.0'),
             OpaqueFunction(function=_setup),
         ],
     )

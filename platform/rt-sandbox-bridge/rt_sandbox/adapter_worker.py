@@ -24,6 +24,13 @@ def _utc_now() -> str:
     return datetime.now(timezone.utc).replace(microsecond=0).isoformat()
 
 from rt_sandbox.adapter_ipc import IpcRequest, IpcResponse
+from rt_sandbox.kinematic_entity import (
+    advance_entity_toward_command,
+    default_entity_record,
+    entity_telemetry_fields,
+)
+from rt_sandbox.engagement_limits import default_engagement_limits
+from rt_sandbox.kinematic_plant import AeroEnvironment, KinematicLimits
 from rt_sandbox.live_ros_client import LiveRosClient
 from rt_sandbox.ros_allowlist import (
     allowed_session_topics,
@@ -50,6 +57,16 @@ class MockSimState:
     ground_snap_enabled: bool = True
     enable_fidelity_coupling: bool = False
     fidelity_ground_z_m: float = 0.0
+    kinematic_plant_enabled: bool = True
+    kinematic_limits: KinematicLimits = field(
+        default_factory=lambda: KinematicLimits(
+            **default_engagement_limits().kinematic_limits_kwargs()
+        )
+    )
+    aero: AeroEnvironment = field(
+        default_factory=lambda: AeroEnvironment(**default_engagement_limits().aero_kwargs())
+    )
+    last_poll_monotonic: float | None = None
 
     def feedback_pose_for(self, entity_id: str) -> dict[str, float]:
         ent = self.entities.get(entity_id)
@@ -68,19 +85,18 @@ class MockSimState:
 
     def entity_telemetry_fields_for(
         self,
-        entity_type: str,
-        pose: dict[str, Any],
+        entity_id: str,
     ) -> dict[str, Any]:
-        velocity = {"x": 0.0, "y": 0.0, "z": 0.0, "speed_mps": 0.0}
+        ent = self.entities.get(entity_id) or {}
+        pose = self.feedback_pose_for(entity_id) or dict(ent.get("pose") or {})
+        telem = entity_telemetry_fields(ent)
         return {
             "position": {
                 "x": float(pose.get("x", 0.0)),
                 "y": float(pose.get("y", 0.0)),
                 "z": float(pose.get("z", 0.0)),
             },
-            "velocity": velocity,
-            "speed_mps": 0.0,
-            "heading_deg": float(pose.get("yaw_deg", 0.0)),
+            **telem,
             "target_state": "none",
             "lifecycle_state": "spawned",
         }
@@ -93,10 +109,7 @@ class MockSimState:
                     "entity_type": ent["entity_type"],
                     "pose": dict(ent["pose"]),
                     "sim_entity_ref": self.sim_entity_refs.get(eid),
-                    **self.entity_telemetry_fields_for(
-                        ent["entity_type"],
-                        ent["pose"],
-                    ),
+                    **self.entity_telemetry_fields_for(eid),
                 }
                 for eid, ent in self.entities.items()
             ]
@@ -185,6 +198,17 @@ class AdapterWorker:
         ground_z = req.payload.get("fidelity_ground_z_m")
         if ground_z is not None:
             self._state.fidelity_ground_z_m = float(ground_z)
+        plant_enabled = req.payload.get("kinematic_plant_enabled")
+        if plant_enabled is not None:
+            self._state.kinematic_plant_enabled = bool(plant_enabled)
+        limits_in = req.payload.get("kinematic_limits")
+        if isinstance(limits_in, dict):
+            self._state.kinematic_limits = KinematicLimits.from_mapping(limits_in)
+        aero_in = req.payload.get("aero")
+        if isinstance(aero_in, dict):
+            self._state.aero = AeroEnvironment.from_mapping(aero_in)
+        elif req.payload.get("drag_decel_per_mps") is not None or req.payload.get("wind_x_mps") is not None:
+            self._state.aero = AeroEnvironment.from_mapping(req.payload)
         gazebo_pid = None
         if mode == "live":
             gazebo_pid, err = self._try_launch_gazebo(req)
@@ -248,6 +272,20 @@ class AdapterWorker:
         ground_snap = req.payload.get("ground_snap_enabled")
         if ground_snap is not None:
             cmd.append(f"ground_snap_enabled:={'true' if ground_snap else 'false'}")
+        assert self._state is not None
+        cmd.append(
+            f"kinematic_plant_enabled:={'true' if self._state.kinematic_plant_enabled else 'false'}"
+        )
+        lim = self._state.kinematic_limits
+        cmd.append(f"max_speed_mps:={lim.max_speed_mps}")
+        cmd.append(f"max_accel_mps2:={lim.max_accel_mps2}")
+        cmd.append(f"max_turn_rate_rad_s:={lim.max_turn_rate_rad_s}")
+        cmd.append(f"max_climb_mps:={lim.max_climb_mps}")
+        aero = self._state.aero
+        cmd.append(f"drag_decel_per_mps:={aero.drag_decel_per_mps}")
+        cmd.append(f"wind_x_mps:={aero.wind_x_mps}")
+        cmd.append(f"wind_y_mps:={aero.wind_y_mps}")
+        cmd.append(f"wind_z_mps:={aero.wind_z_mps}")
         try:
             proc = subprocess.Popen(
                 cmd,
@@ -405,10 +443,24 @@ class AdapterWorker:
         if sim_ref is None:
             sim_ref = f"sim-{uuid.uuid4().hex[:8]}"
             self._state.sim_entity_refs[entity_id] = sim_ref
-        self._state.entities[entity_id] = {
-            "entity_type": entity_type,
-            "pose": pose,
-        }
+        existing = self._state.entities.get(entity_id)
+        if existing is None:
+            self._state.entities[entity_id] = default_entity_record(entity_type, pose)
+        else:
+            existing["entity_type"] = entity_type
+        ent = self._state.entities[entity_id]
+        if self._state.mode != "live":
+            advance_entity_toward_command(
+                ent,
+                pose,
+                limits=self._state.kinematic_limits,
+                plant_enabled=self._state.kinematic_plant_enabled,
+                aero=self._state.aero,
+            )
+        else:
+            ent["commanded_pose"] = dict(pose)
+            if not self._state.kinematic_plant_enabled:
+                ent["pose"] = dict(pose)
         self._state.sync_seq += 1
         sync_seq = self._state.sync_seq
         ts = _utc_now()
@@ -596,10 +648,7 @@ class AdapterWorker:
                 "entity_type": ent["entity_type"],
                 "pose": self._state.feedback_pose_for(eid),
                 "sim_entity_ref": self._state.sim_entity_refs.get(eid),
-                **self._state.entity_telemetry_fields_for(
-                    ent["entity_type"],
-                    self._state.feedback_pose_for(eid),
-                ),
+                **self._state.entity_telemetry_fields_for(eid),
             }
             for eid, ent in self._state.entities.items()
         ]
@@ -655,7 +704,7 @@ class AdapterWorker:
             if sim_ref is None:
                 sim_ref = f"sim-{uuid.uuid4().hex[:8]}"
                 self._state.sim_entity_refs[eid] = sim_ref
-            self._state.entities[eid] = {"entity_type": entity_type, "pose": pose}
+            self._state.entities[eid] = default_entity_record(entity_type, pose)
             self._state.drift_offsets.pop(eid, None)
             applied += 1
         self._state.sync_seq += 1
@@ -679,16 +728,30 @@ class AdapterWorker:
         alive = True
         if self._state.launch_proc is not None:
             alive = self._state.launch_proc.poll() is None
+        if self._state.mode != "live" and self._state.kinematic_plant_enabled and not mock_stale:
+            now = time.monotonic()
+            last = self._state.last_poll_monotonic
+            dt = max(0.0, now - float(last)) if last is not None else 0.0
+            self._state.last_poll_monotonic = now
+            if dt > 0.0:
+                for ent in self._state.entities.values():
+                    commanded = dict(ent.get("commanded_pose") or ent.get("pose") or {})
+                    advance_entity_toward_command(
+                        ent,
+                        commanded,
+                        limits=self._state.kinematic_limits,
+                        plant_enabled=True,
+                        aero=self._state.aero,
+                        dt=dt,
+                        now=now,
+                    )
         entities = [
             {
                 "entity_id": eid,
                 "entity_type": ent["entity_type"],
                 "pose": self._state.feedback_pose_for(eid),
                 "sim_entity_ref": self._state.sim_entity_refs.get(eid),
-                **self._state.entity_telemetry_fields_for(
-                    ent["entity_type"],
-                    self._state.feedback_pose_for(eid),
-                ),
+                **self._state.entity_telemetry_fields_for(eid),
             }
             for eid, ent in self._state.entities.items()
         ]

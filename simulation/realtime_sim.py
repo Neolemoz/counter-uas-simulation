@@ -25,8 +25,11 @@ from defense_types import (
 from guidance.naive import compute_naive_direction
 from guidance.pn import compute_pn_acceleration
 from guidance.predictive import compute_predictive_direction
+from engagement_limits import default_engagement_limits
 
 ManeuverAxis = Literal["y", "z"]
+
+_ENGAGEMENT = default_engagement_limits()
 
 # Pure PN navigation constant (—); STEP A3: modest gain increase with higher PN accel cap
 PN_GAIN = 4.0
@@ -48,8 +51,8 @@ SWITCH_TTI_MARGIN_S = 0.35
 # Single-switch policy: handoff only before this time (seconds); at most one switch per run — STEP A3
 SWITCH_ALLOW_UNTIL_S = 2.0
 
-# STEP A3: higher turn-rate cap so PN can use the raised accel limit under stricter TTI switch rule
-MAX_TURN_RATE_DEG_S = 16.0
+# Shared with RT sandbox (``config/rt_engagement_limits.yaml``) — conservative 16 deg/s cap
+MAX_TURN_RATE_DEG_S = _ENGAGEMENT.turn_rate_deg_s
 
 # Monte Carlo (STEP A1): per-trial RNG stream offset so each trial gets independent position noise draws
 MC_TRIAL_SEED_BASE = 10_000
