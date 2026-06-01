@@ -7,6 +7,10 @@ import { parseBundleJson } from "./loadBundle";
 const repoRoot = join(dirname(fileURLToPath(import.meta.url)), "../../../..");
 const ridgeDemoPath = join(repoRoot, "fixtures/sa_r0/demo_ridge_defense/index.json");
 const valleyDemoPath = join(repoRoot, "fixtures/sa_r0/demo_valley_ingress/index.json");
+const runtimeReplayGoldenPath = join(
+  repoRoot,
+  "fixtures/rt_visualization/runtime_capture_replay_bundle_golden_v1.json",
+);
 const rtTacticalDemoPath = join(
   repoRoot,
   "platform/sa-r0-viewer/public/demo/rt_tactical_continuity/index.json",
@@ -30,6 +34,14 @@ describe("replay_sa_bundle_v1", () => {
     const bundle = parseBundleJson(text);
     expect(bundle.scenario.topology_tags).toContain("valley_ingress");
     expect(bundle.los_segments?.length).toBeGreaterThan(0);
+  });
+
+  it("parses RT runtime capture replay bundle golden", () => {
+    const bundle = parseBundleJson(readFileSync(runtimeReplayGoldenPath, "utf-8"));
+    expect(bundle.bundle_schema_version).toBe("replay_sa_bundle_v1");
+    expect(bundle.clock.domain).toBe("runtime_capture_frame_index");
+    expect(bundle.tracks.length).toBeGreaterThan(0);
+    expect(bundle.panels?.telemetry_series?.length).toBeGreaterThan(0);
   });
 
   it("parses RT tactical continuity demo with embedded annex", () => {

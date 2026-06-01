@@ -1,0 +1,371 @@
+{
+  "bundle": {
+    "artifact_type": "replay_sa_bundle",
+    "bundle_schema_version": "replay_sa_bundle_v1",
+    "clock": {
+      "domain": "runtime_capture_frame_index",
+      "duration": {
+        "end": 1,
+        "start": 0,
+        "step": 1
+      },
+      "markers": [
+        {
+          "category": "lifecycle",
+          "event_id": "rt_lifecycle_000",
+          "label": "start_capture",
+          "t": 0
+        },
+        {
+          "category": "lifecycle",
+          "event_id": "rt_lifecycle_001",
+          "label": "stop_capture",
+          "t": 1
+        }
+      ]
+    },
+    "comparison_hints": {
+      "catalog_entry_id": "rt_runtime_capture",
+      "comparison_ready": false,
+      "duration_class": "short",
+      "scenario_id": "rt_runtime_capture-golden-0001",
+      "topology_key": "rt_runtime_capture"
+    },
+    "comprehension": {
+      "at_a_glance": {
+        "cards": [
+          {
+            "label": "Capture",
+            "value": "capture-golden-0001"
+          },
+          {
+            "label": "Session",
+            "value": "session-golden-0001"
+          },
+          {
+            "label": "Tracks",
+            "value": "2"
+          },
+          {
+            "label": "Entities",
+            "value": "3"
+          }
+        ],
+        "summary": {
+          "assignment_count": 1,
+          "mapping_warnings": 0
+        }
+      },
+      "headline": "RT runtime import preview (capture-golden-0001)",
+      "scan_guide": [
+        "Review static entities from capture stop snapshot.",
+        "Scrub mirror tracks from entity_pose_mirror frames.",
+        "Read assignment rows in telemetry panel as explanatory only."
+      ]
+    },
+    "entities_static": [
+      {
+        "authoritative": false,
+        "entity_id": "asset-alpha",
+        "kind": "waypoint",
+        "label": "asset-alpha",
+        "position_enu_m": [
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      {
+        "authoritative": false,
+        "entity_id": "defender-alpha",
+        "kind": "interceptor",
+        "label": "defender-alpha",
+        "position_enu_m": [
+          10.0,
+          0.0,
+          10.0
+        ]
+      },
+      {
+        "authoritative": false,
+        "entity_id": "attacker-alpha",
+        "kind": "threat",
+        "label": "attacker-alpha",
+        "position_enu_m": [
+          50.0,
+          0.0,
+          20.0
+        ]
+      }
+    ],
+    "georef_display": {
+      "anchor": {
+        "h_m": 0.0,
+        "lat_deg": 35.0,
+        "lon_deg": -116.0
+      },
+      "caveat": "Fictional georef from RT sandbox \u2014 not deployed geography.",
+      "frame": "scenario_enu",
+      "origin_enu_m": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    "governance": {
+      "anti_claims": [
+        "not operational readiness evidence",
+        "not a tactical authority surface",
+        "not live RT bridge state"
+      ],
+      "constraints": [
+        "evaluation-side only",
+        "additive-only",
+        "parser-safe",
+        "non-authoritative",
+        "read_only_viewer",
+        "rt_runtime_capture_import"
+      ],
+      "notice": "Derived evaluation artifact from RT runtime capture. Does not replace parser-visible summaries, runtime topics, tactical authority, or replay log contracts.",
+      "schema_version": "replay_sa_bundle_v1"
+    },
+    "interpretation_caveats": [
+      "Mapped from rt_runtime_run_capture_v1 \u2014 explanatory RT mirror, not replay log truth.",
+      "Clock domain uses runtime capture frame indices, not ROS log line numbers.",
+      "Track samples reflect entity_pose_mirror frames only; sparse gaps are expected.",
+      "Static entities and assignments mirror command-authoritative RT registry at capture stop."
+    ],
+    "lineage": {
+      "capture_id": "capture-golden-0001",
+      "import_kind": "rt_runtime_run_capture_v1",
+      "runtime_capture_path": "fixtures/rt_sandbox/runtime_run_capture_golden_v1.json",
+      "session_id": "session-golden-0001",
+      "started_utc": "2026-06-01T00:00:00+00:00",
+      "stopped_utc": "2026-06-01T00:00:05+00:00",
+      "world_revision": 3
+    },
+    "los_segments": [],
+    "mode": "replay_static",
+    "narrative": {
+      "annotations": [],
+      "bookmarks": [],
+      "events": [],
+      "windows": []
+    },
+    "overlays": [],
+    "panels": {
+      "telemetry_series": [
+        {
+          "assignment_state": "assigned",
+          "dist_m": 14.142,
+          "interceptor_id": "defender-alpha",
+          "source": "runtime_capture_mirror",
+          "speed_mps": 0.0,
+          "t": 0,
+          "target_id": "attacker-alpha"
+        }
+      ],
+      "threat_assessment": [
+        {
+          "caveat": "Import-local label \u2014 not threat score or readiness.",
+          "label": "rt_runtime_capture",
+          "t": 1
+        }
+      ]
+    },
+    "rt_runtime_import": {
+      "dry_run_preview_schema": "rt_runtime_replay_import_dry_run_v1",
+      "mapping_warnings": [],
+      "schema": "rt_runtime_replay_import_v1"
+    },
+    "scenario": {
+      "provenance": {
+        "fictional_disclaimer": "Mapped from RT sandbox capture \u2014 not deployed scenario pack.",
+        "fixture_source": "fixtures/rt_sandbox/runtime_run_capture_golden_v1.json"
+      },
+      "replay_duration_class": "short",
+      "scenario_id": "rt_runtime_capture-golden-0001",
+      "title": "RT runtime capture: capture-golden-0001",
+      "topology_tags": [
+        "rt_sandbox",
+        "runtime_capture"
+      ]
+    },
+    "source_artifacts": {
+      "embedded": true,
+      "import_tool": "rt_runtime_replay_bundle.py",
+      "runtime_capture_path": "fixtures/rt_sandbox/runtime_run_capture_golden_v1.json",
+      "runtime_capture_schema": "rt_runtime_run_capture_v1"
+    },
+    "tracks": [
+      {
+        "interpretation_caveat": "RT runtime mirror track \u2014 not parser /tracks/state replay.",
+        "role": "threat",
+        "samples": [
+          {
+            "source": "runtime_capture_entities",
+            "t": 0,
+            "x_m": 50.0,
+            "y_m": 0.0,
+            "z_m": 20.0
+          },
+          {
+            "heading_deg": 180.0,
+            "source": "entity_pose_mirror",
+            "speed_mps": 0.0,
+            "t": 0,
+            "x_m": 0.0,
+            "y_m": 0.0,
+            "z_m": 0.0
+          }
+        ],
+        "track_id": "attacker-alpha"
+      },
+      {
+        "interpretation_caveat": "RT runtime mirror track \u2014 not parser /tracks/state replay.",
+        "role": "interceptor",
+        "samples": [
+          {
+            "source": "runtime_capture_entities",
+            "t": 0,
+            "x_m": 10.0,
+            "y_m": 0.0,
+            "z_m": 10.0
+          },
+          {
+            "heading_deg": 0.0,
+            "source": "entity_pose_mirror",
+            "speed_mps": 0.0,
+            "t": 0,
+            "x_m": 0.0,
+            "y_m": 0.0,
+            "z_m": 0.0
+          }
+        ],
+        "track_id": "defender-alpha"
+      }
+    ],
+    "views": {
+      "eoir_mock": {
+        "fov_deg": 45,
+        "thumbnail_frames": []
+      },
+      "onboard_mock": {
+        "camera_id": "rt_capture",
+        "caveat": "No video frames in runtime capture \u2014 mirror poses only.",
+        "frames": []
+      },
+      "radar_mock": {
+        "linked_track_ids": [
+          "attacker-alpha",
+          "defender-alpha"
+        ],
+        "sweep_sector_deg": 120
+      }
+    },
+    "zones": []
+  },
+  "bundle_summary": {
+    "artifact_type": "replay_sa_bundle",
+    "bundle_schema_version": "replay_sa_bundle_v1",
+    "clock": {
+      "domain": "runtime_capture_frame_index",
+      "duration": {
+        "end": 1,
+        "start": 0,
+        "step": 1
+      },
+      "markers": [
+        {
+          "category": "lifecycle",
+          "event_id": "rt_lifecycle_000",
+          "label": "start_capture",
+          "t": 0
+        },
+        {
+          "category": "lifecycle",
+          "event_id": "rt_lifecycle_001",
+          "label": "stop_capture",
+          "t": 1
+        }
+      ]
+    },
+    "entities_static_count": 3,
+    "lint_issues": [],
+    "lint_ok": true,
+    "telemetry_series_count": 1,
+    "tracks_count": 2
+  },
+  "dry_run_preview": {
+    "assignment_summary": {
+      "assignment_count": 1,
+      "pairs": [
+        {
+          "defender_id": "defender-alpha",
+          "target_id": "attacker-alpha"
+        }
+      ]
+    },
+    "entities_count": 3,
+    "governance_banner": "RT runtime replay import dry-run \u2014 read-only preview; not replay truth",
+    "lifecycle_summary": {
+      "commands_seen": [
+        "start_capture",
+        "stop_capture"
+      ],
+      "states_seen": [
+        "running",
+        "running"
+      ],
+      "transition_count": 2
+    },
+    "mapping_ok": true,
+    "markers": [
+      {
+        "category": "lifecycle",
+        "event_id": "rt_lifecycle_000",
+        "label": "start_capture",
+        "t": 0
+      },
+      {
+        "category": "lifecycle",
+        "event_id": "rt_lifecycle_001",
+        "label": "stop_capture",
+        "t": 1
+      }
+    ],
+    "missing_fields_warnings": [],
+    "replay_clock": {
+      "domain": "runtime_capture_frame_index",
+      "duration": {
+        "end": 1,
+        "start": 0,
+        "step": 1
+      },
+      "markers": [
+        {
+          "category": "lifecycle",
+          "event_id": "rt_lifecycle_000",
+          "label": "start_capture",
+          "t": 0
+        },
+        {
+          "category": "lifecycle",
+          "event_id": "rt_lifecycle_001",
+          "label": "stop_capture",
+          "t": 1
+        }
+      ]
+    },
+    "schema": "rt_runtime_replay_import_dry_run_v1",
+    "source": {
+      "artifact_path": "fixtures/rt_sandbox/runtime_run_capture_golden_v1.json",
+      "capture_id": "capture-golden-0001",
+      "runtime_capture_schema": "rt_runtime_run_capture_v1",
+      "session_id": "session-golden-0001"
+    },
+    "tracks_count": 2
+  },
+  "schema": "rt_runtime_replay_mapping_golden_v1",
+  "source_artifact": "fixtures/rt_sandbox/runtime_run_capture_golden_v1.json"
+}
