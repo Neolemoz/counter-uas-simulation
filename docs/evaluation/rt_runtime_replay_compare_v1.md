@@ -8,6 +8,9 @@ Compare two D1 runtime replay bundles after they have already been exported as
 `replay_sa_bundle_v1`. The adapter is read-only and does not call the runtime bridge,
 Gazebo, ROS, or viewer UI code.
 
+End-to-end maintainer usage is documented in
+[rt_runtime_maintainer_workflow_v1.md](rt_runtime_maintainer_workflow_v1.md).
+
 ## Tool
 
 ```bash

@@ -9,6 +9,9 @@ candidate `replay_sa_bundle_v1` payloads for SA-R0 replay review. This path is a
 read-only at import time, and does not modify the RT bridge, Gazebo, ROS topics, or the
 SA viewer.
 
+End-to-end maintainer usage is documented in
+[rt_runtime_maintainer_workflow_v1.md](rt_runtime_maintainer_workflow_v1.md).
+
 ## Tools
 
 | Tool | Role |

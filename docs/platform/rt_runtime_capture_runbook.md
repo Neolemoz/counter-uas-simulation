@@ -68,3 +68,44 @@ python3 scripts/rt/rt_capture_inspect.py runtime-latest --json
 ```
 
 Minimum validated fields are `session_id`, `capture_id`, timestamps, `entities`, `telemetry_frames`, `assignments`, and `lifecycle_transitions`.
+
+## Replay Export
+
+Preview the runtime capture to replay mapping without writing files:
+
+```bash
+python3 scripts/rt/rt_runtime_replay_import_dry_run.py \
+  runs/rt_sandbox/captures/<capture_id>/runtime_run.json \
+  --json
+```
+
+Export a derived `replay_sa_bundle_v1` artifact:
+
+```bash
+python3 scripts/evaluation/rt_runtime_replay_bundle.py \
+  runs/rt_sandbox/captures/<capture_id>/runtime_run.json \
+  --out fixtures/rt_visualization/<bundle_name>.json
+```
+
+The exported bundle is an explanatory evaluation artifact only. It is not parser truth,
+not SA corpus import, and not operational evidence.
+
+## Runtime Replay Compare
+
+Compare two exported runtime replay bundles:
+
+```bash
+python3 scripts/evaluation/rt_runtime_replay_compare.py \
+  fixtures/rt_visualization/runtime_capture_replay_bundle_golden_v1.json \
+  fixtures/rt_visualization/runtime_capture_replay_bundle_variant_golden_v1.json \
+  --json
+```
+
+The wired SA-R0 compare demo can be reviewed through the existing viewer path:
+
+```text
+http://localhost:5173?pair=rt_runtime_capture_replay
+```
+
+For the complete maintainer sequence, see
+[rt_runtime_maintainer_workflow_v1.md](../evaluation/rt_runtime_maintainer_workflow_v1.md).
