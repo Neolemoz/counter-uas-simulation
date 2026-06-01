@@ -27,6 +27,20 @@ def test_classify_run_failure_evidence_tracks_timeout(tmp_path: Path) -> None:
     assert evidence['timeout_seen'] is True
 
 
+def test_successful_hit_is_not_a_failure_even_with_timeout_rc(tmp_path: Path) -> None:
+    classify = _load_classify()
+    log = tmp_path / 'hit_then_wrapper_timeout.log'
+    log.write_text(
+        '[HIT] interceptor_0 layer=engage min_miss=0.1 m hit_threshold = 1.0 m\n'
+        '=== TIMEOUT ===\n',
+        encoding='utf-8',
+    )
+    evidence = classify.classify_run_failure_evidence(log, capture_rc=124)
+    assert evidence['failure_class'] == ''
+    assert evidence['hit_seen'] is True
+    assert evidence['timeout_seen'] is True
+
+
 def test_classify_run_failure_evidence_tracks_instability(tmp_path: Path) -> None:
     classify = _load_classify()
     log = tmp_path / 'unstable.log'

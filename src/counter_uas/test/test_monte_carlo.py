@@ -5,6 +5,7 @@ from __future__ import annotations
 import importlib.util
 import json
 from pathlib import Path
+from types import SimpleNamespace
 
 _REPO_ROOT = Path(__file__).resolve().parents[3]
 
@@ -43,6 +44,7 @@ def _write_synthetic_logs(tmp_dir: Path) -> None:
                 'notes': 'mc_label=unit seed=100 geometry_id="cell_a"',
                 'launch_args_raw': 'use_gazebo_gui:=false noise_seed:=100',
                 'launch_args_kv': {'noise_seed': '100'},
+                'capture_rc': 124,
             },
         ),
         encoding='utf-8',
@@ -121,5 +123,94 @@ def test_aggregate_writes_outputs(tmp_path) -> None:
     csv_text = csv_path.read_text(encoding='utf-8')
     assert 'run_id' in csv_text and 'miss_distance_m' in csv_text
     assert 'noise_seed_mc' in csv_text and 'cohort' in csv_text and 'meta_path' in csv_text
+    assert 'capture_rc' in csv_text and '124' in csv_text
     assert 'unit_cohort' in csv_text and 'cell_a' in csv_text
     assert 'run_a' in csv_text and 'run_b' in csv_text
+
+
+def test_launch_args_with_seed_overrides_caller_noise_seed() -> None:
+    mc = _load_mc()
+    assert mc._launch_args_with_seed('use_gazebo_gui:=false noise_seed:=999', 42) == (
+        'use_gazebo_gui:=false noise_seed:=42'
+    )
+
+
+def test_aggregate_rejects_duplicate_seed_rows(tmp_path) -> None:
+    mc = _load_mc()
+    logs_dir = tmp_path / 'logs'
+    logs_dir.mkdir()
+    _write_synthetic_logs(logs_dir)
+    (logs_dir / 'run_c.log').write_text(_MISS_LOG, encoding='utf-8')
+    (logs_dir / 'run_c.meta.json').write_text(
+        json.dumps(
+            {
+                'cohort': 'unit_cohort',
+                'git_commit': 'abc123',
+                'git_dirty': False,
+                'notes': 'mc_label=unit seed=100 geometry_id="cell_a"',
+                'launch_args_raw': 'use_gazebo_gui:=false noise_seed:=100',
+                'launch_args_kv': {'noise_seed': '100'},
+            },
+        ),
+        encoding='utf-8',
+    )
+
+    class Args:
+        pass
+
+    args = Args()
+    args.logs_dir = str(logs_dir)
+    args.pattern = '*.log'
+    args.label = 'unit'
+    args.out_dir = str(tmp_path / 'mc')
+    args.meta_cohort = ''
+    args.notes_substring = ''
+
+    assert mc.cmd_aggregate(args) == 1
+
+
+def test_run_returns_nonzero_for_partial_cohort(tmp_path, monkeypatch) -> None:
+    mc = _load_mc()
+    scripts_dir = tmp_path / 'scripts'
+    scripts_dir.mkdir()
+    (scripts_dir / 'run_capture.py').write_text('# stub\n', encoding='utf-8')
+    log = tmp_path / 'run_1.log'
+    log.write_text(_HIT_LOG, encoding='utf-8')
+    log.with_suffix('.meta.json').write_text(
+        json.dumps({'notes': 'mc_label=unit seed=7', 'launch_args_kv': {'noise_seed': '7'}, 'capture_rc': 0}),
+        encoding='utf-8',
+    )
+
+    class Analyze:
+        @staticmethod
+        def parse_run_to_result(path: str) -> dict:
+            assert path == str(log)
+            return {'success': True, 'miss_distance_m': 0.1, 'intercept_time_s': 3.0}
+
+    calls: list[list[str]] = []
+
+    def fake_run(cmd, capture_output, text):  # noqa: ANN001, ANN202
+        calls.append(cmd)
+        if len(calls) == 1:
+            return SimpleNamespace(returncode=0, stdout=f'{log}\n{log.with_suffix(".meta.json")}\n', stderr='')
+        return SimpleNamespace(returncode=2, stdout='', stderr='boom')
+
+    monkeypatch.setattr(mc, 'WORKSPACE', tmp_path)
+    monkeypatch.setattr(mc, '_load_analyze_run', lambda: Analyze)
+    monkeypatch.setattr(mc.subprocess, 'run', fake_run)
+
+    args = SimpleNamespace(
+        n=2,
+        seed_base=7,
+        launch_args='use_gazebo_gui:=false noise_seed:=999',
+        geometry_id='',
+        scenario='single',
+        timeout_s=1.0,
+        label='unit',
+        out_dir=str(tmp_path / 'mc'),
+        cohort='',
+    )
+
+    assert mc.cmd_run(args) == 1
+    assert any('noise_seed:=7' in part for part in calls[0])
+    assert any('noise_seed:=8' in part for part in calls[1])
