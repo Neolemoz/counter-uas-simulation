@@ -172,10 +172,22 @@ def _by_seed(rows: list[dict[str, str]]) -> tuple[dict[int, dict[str, str]], lis
 
 
 def _failure_class(row: dict[str, str]) -> str:
+    if _boolish(row.get("success")):
+        return ""
     log_path = (row.get("log_path") or "").strip()
     if not log_path or not Path(log_path).is_file():
         return ""
-    return classify_run_failure(Path(log_path), capture_rc=None)
+    raw_rc = (row.get("capture_rc") or "").strip()
+    if not raw_rc:
+        meta = _meta_for_row(row)
+        raw_rc = str(meta.get("capture_rc") if meta.get("capture_rc") is not None else "")
+    capture_rc = None
+    if raw_rc:
+        try:
+            capture_rc = int(float(raw_rc))
+        except ValueError:
+            capture_rc = None
+    return classify_run_failure(Path(log_path), capture_rc=capture_rc)
 
 
 def paired_report(

@@ -3351,6 +3351,10 @@ class InterceptionLogicNode(Node):
         self._prev_velocity = {iid: (0.0, 0.0, 0.0) for iid in self._ids}
         self._last_control_time = None
         self._control_dt = self._control_dt_default
+        self._target = None
+        self._target_filter_velocity = None
+        self._t_go_filtered = {iid: None for iid in self._ids}
+        self._guidance_unit_prev.clear()
         for iid in self._ids:
             self._intercept_point_filtered[iid] = None
             self._guidance_mode[iid] = 'pursuit'

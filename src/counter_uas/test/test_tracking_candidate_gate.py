@@ -26,10 +26,17 @@ from __future__ import annotations
 
 import importlib.util
 import math
+import re
 import sys
 from pathlib import Path
 
 _REPO_ROOT = Path(__file__).resolve().parents[3]
+
+
+def _yaml_number(text: str, key: str) -> float:
+    match = re.search(rf'^\s*{re.escape(key)}:\s*([0-9.]+)\s*$', text, re.MULTILINE)
+    assert match is not None, f'missing {key} in config.yaml'
+    return float(match.group(1))
 
 
 def _load_tracking_module():  # noqa: ANN201
@@ -221,3 +228,13 @@ def test_tracks_state_odometry_carries_finite_position_velocity_and_covariance()
     assert all(math.isfinite(float(v)) for v in vals)
     assert msg.pose.covariance[0] > 0.0
     assert msg.twist.covariance[0] > 0.0
+
+
+def test_default_bringup_config_uses_km_scale_tracking_gates() -> None:
+    cfg = (_REPO_ROOT / 'src' / 'counter_uas' / 'config' / 'config.yaml').read_text(encoding='utf-8')
+    assert _yaml_number(cfg, 'candidate_match_gate_m') >= 20.0
+    assert _yaml_number(cfg, 'association_gate_m') >= 25.0
+    assert _yaml_number(cfg, 'confirmation_hits') <= 2
+    assert _yaml_number(cfg, 'candidate_max_missed_frames') >= 5
+    assert _yaml_number(cfg, 'max_track_speed_mps') >= 80.0
+    assert _yaml_number(cfg, 'max_update_jump_m') >= 25.0
