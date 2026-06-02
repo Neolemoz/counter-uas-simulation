@@ -77,6 +77,12 @@ import type {
 } from "@/bridge/tacticalCommands";
 import { useTacticalCompareBaseline } from "@/hooks/useTacticalCompareBaseline";
 import type { SessionSlot } from "@/hooks/useRtSessionWorkspace";
+import type {
+  PlanningCoverageLayerOptions,
+  PlanningPolygonState,
+  PlanningRadarState,
+  PlanningVertex,
+} from "@/cesium/planningDrawing";
 import { resolveTacticalCompareContext } from "@/workstation/tacticalCompareContext";
 
 const CESIUM_TOOL_BTN =
@@ -106,6 +112,7 @@ export function CesiumRuntimePanel({
   defenseZoneOptions,
   sensorDomeZoneMode,
   radarPreviewControls = null,
+  planningDrawing,
   onLayerVisibilityChange,
   tacticalState = null,
   tacticalRecommendation = null,
@@ -140,6 +147,13 @@ export function CesiumRuntimePanel({
     state: RadarDomePreviewControlState;
     handlers: RadarDomePreviewControlHandlers;
   } | null;
+  planningDrawing?: {
+    enabled: boolean;
+    polygon: PlanningPolygonState;
+    radars: PlanningRadarState;
+    coverageOptions: PlanningCoverageLayerOptions;
+    onMapClick: (vertex: PlanningVertex) => void;
+  };
   onLayerVisibilityChange: (layers: VisualLayerVisibility) => void;
   tacticalState?: TacticalStatePayload | null;
   tacticalRecommendation?: TacticalRecommendationPayload | null;
@@ -573,6 +587,7 @@ export function CesiumRuntimePanel({
           tacticalRecommendation={tacticalRecommendation}
           tacticalCompare={tacticalCompare}
           mirrorSnapshot={mirrorSnapshot}
+          planningDrawing={planningDrawing}
           onViewerReady={handleViewerReady}
           onSelectEntity={onSelectEntity}
           onSpawn={onSpawn}

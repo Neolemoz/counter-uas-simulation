@@ -63,6 +63,14 @@ import type {
 import type { ChannelSnapshot } from "@/telemetry/channelIndex";
 import { entitiesFromSnapshot } from "@/telemetry/channelIndex";
 import { parseEntityRuntimeTelemetryMap } from "@/telemetry/entityMirrorFields";
+import {
+  attachPlanningDrawingHandlers,
+  syncPlanningDefenseAreaLayer,
+  type PlanningCoverageLayerOptions,
+  type PlanningPolygonState,
+  type PlanningRadarState,
+  type PlanningVertex,
+} from "./planningDrawing";
 
 export interface CesiumRuntimeViewProps {
   sessionId: string | null;
@@ -86,6 +94,13 @@ export interface CesiumRuntimeViewProps {
   tacticalRecommendation?: TacticalRecommendationPayload | null;
   tacticalCompare?: TacticalCompareContext | null;
   mirrorSnapshot?: ChannelSnapshot;
+  planningDrawing?: {
+    enabled: boolean;
+    polygon: PlanningPolygonState;
+    radars: PlanningRadarState;
+    coverageOptions: PlanningCoverageLayerOptions;
+    onMapClick: (vertex: PlanningVertex) => void;
+  };
   onViewerReady?: (viewer: Viewer | null) => void;
   onSelectEntity: (id: string | null) => void;
   onSpawn: (pose: Pose) => void;
@@ -174,6 +189,7 @@ export function CesiumRuntimeView({
   tacticalRecommendation = null,
   tacticalCompare = null,
   mirrorSnapshot,
+  planningDrawing,
   onViewerReady,
   onSelectEntity,
   onSpawn,
@@ -239,6 +255,7 @@ export function CesiumRuntimeView({
         clearTacticalRankingCueLayer(viewer);
         clearTacticalCompareOverlay(viewer);
         clearTacticalSelectionEmphasisLayer(viewer);
+        syncPlanningDefenseAreaLayer(viewer, null);
         viewer.trackedEntity = undefined;
       }
       if (!viewer.isDestroyed()) {
@@ -288,6 +305,18 @@ export function CesiumRuntimeView({
 
     return detach;
   }, [sessionId]);
+
+  useEffect(() => {
+    const viewer = viewerRef.current;
+    if (!viewer || !sessionId) return;
+
+    const detach = attachPlanningDrawingHandlers(viewer, {
+      enabled: planningDrawing?.enabled === true,
+      onAddVertex: (vertex) => planningDrawing?.onMapClick(vertex),
+    });
+
+    return detach;
+  }, [sessionId, planningDrawing?.enabled, planningDrawing?.onMapClick]);
 
   useEffect(() => {
     const viewer = viewerRef.current;
@@ -373,6 +402,12 @@ export function CesiumRuntimeView({
       applyTerrainDisplay: shouldApplyTerrainGrounding(terrainLayers),
       stale: tacticalState?.tactical_health?.stale === true,
     });
+    syncPlanningDefenseAreaLayer(
+      viewer,
+      planningDrawing?.polygon,
+      planningDrawing?.radars,
+      planningDrawing?.coverageOptions,
+    );
     syncEntityMarkers(viewer, entities, {
       selectedEntityId,
       hoveredEntityId,
@@ -407,6 +442,9 @@ export function CesiumRuntimeView({
     tacticalState,
     tacticalRecommendation,
     tacticalCompare,
+    planningDrawing?.polygon,
+    planningDrawing?.radars,
+    planningDrawing?.coverageOptions,
     runtimeTelemetryByEntityId,
   ]);
 

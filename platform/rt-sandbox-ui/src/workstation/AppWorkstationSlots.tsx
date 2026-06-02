@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import type { CaptureHandoffRow } from "@/bridge/types";
 import { CaptureHandoffWorkflowPanel } from "@/components/CaptureHandoffWorkflowPanel";
 import { TacticalAssistedPanel } from "@/components/TacticalAssistedPanel";
@@ -56,6 +56,33 @@ import type { LiveCaptureSummary } from "@/telemetry/captureSummary";
 import type { TelemetryChannel } from "@/telemetry/constants";
 import type { EntityType } from "@/world/entityCatalog";
 import type { Pose } from "@/world/bounds";
+import {
+  DEFAULT_PLANNING_COVERAGE_OPTIONS,
+  EMPTY_PLANNING_POLYGON,
+  EMPTY_PLANNING_RADARS,
+  PLANNING_RADAR_PRESETS,
+  addPlanningRadarSite,
+  addPlanningVertex,
+  canFinishPlanningPolygon,
+  cancelPlanningDrawing,
+  clearPlanningPolygon,
+  clearPlanningRadarSites,
+  deletePlanningRadarSite,
+  estimatePlanningCoverage,
+  finishPlanningPolygon,
+  planningToolAllowsDrawing,
+  planningToolAllowsRadarPlacement,
+  planningToolUsesCesiumClick,
+  selectPlanningRadarSite,
+  updatePlanningRadarPreset,
+  type PlanningCoverageEstimate,
+  type PlanningCoverageLayerOptions,
+  type PlanningPolygonState,
+  type PlanningRadarPresetId,
+  type PlanningRadarState,
+  type PlanningTool,
+  type PlanningVertex,
+} from "@/cesium/planningDrawing";
 import { BackgroundDiagnostics } from "@/workstation/BackgroundDiagnostics";
 import { BackgroundDiagnosticsCompact } from "@/workstation/BackgroundDiagnosticsCompact";
 import { ConnectPlaceholder } from "@/workstation/ConnectPlaceholder";
@@ -66,6 +93,337 @@ import { SessionTabBar } from "@/workstation/SessionTabBar";
 import { SessionWorkflowStrip } from "@/workstation/SessionWorkflowStrip";
 
 type Tactical = ReturnType<typeof useTacticalState>;
+
+export type RuntimeWorkspaceMode = "grid" | "planning";
+
+export const DEFAULT_RUNTIME_WORKSPACE_MODE: RuntimeWorkspaceMode = "grid";
+
+export function editingEnabledForWorkspaceMode(
+  _mode: RuntimeWorkspaceMode,
+  editingEnabled: boolean,
+): boolean {
+  return editingEnabled;
+}
+
+export function workspaceModeShowsPlanningPlaceholder(
+  mode: RuntimeWorkspaceMode,
+): boolean {
+  return mode === "planning";
+}
+
+export function RuntimeWorkspaceModeSelector({
+  mode,
+  onModeChange,
+}: {
+  mode: RuntimeWorkspaceMode;
+  onModeChange: (mode: RuntimeWorkspaceMode) => void;
+}) {
+  const options: { mode: RuntimeWorkspaceMode; label: string }[] = [
+    { mode: "grid", label: "Grid Mode" },
+    { mode: "planning", label: "Planning Mode" },
+  ];
+  return (
+    <div
+      className="rounded border border-slate-800 bg-slate-950/50 p-2"
+      data-testid="runtime-workspace-mode-selector"
+    >
+      <div className="grid grid-cols-2 gap-1">
+        {options.map((option) => (
+          <button
+            key={option.mode}
+            type="button"
+            onClick={() => onModeChange(option.mode)}
+            aria-pressed={mode === option.mode}
+            className={`rounded border px-2.5 py-1.5 text-xs font-semibold transition-colors ${
+              mode === option.mode
+                ? "border-cyan-600/70 bg-cyan-950/60 text-cyan-100"
+                : "border-slate-700 bg-slate-950 text-slate-400 hover:border-slate-600 hover:text-slate-200"
+            }`}
+          >
+            {option.label}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function formatAreaM2(areaM2: number): string {
+  if (areaM2 >= 1_000_000) return `${(areaM2 / 1_000_000).toFixed(2)} km2`;
+  return `${Math.round(areaM2).toLocaleString()} m2`;
+}
+
+export function PlanningModePanel({
+  tool,
+  polygon,
+  radars,
+  coverage,
+  coverageOptions,
+  onToolChange,
+  onFinishPolygon,
+  onCancelDrawing,
+  onClearPolygon,
+  onSelectRadarSite,
+  onDeleteRadarSite,
+  onRadarPresetChange,
+  onClearRadarSites,
+  onCoverageOptionsChange,
+  onResetCoverageState,
+}: {
+  tool: PlanningTool;
+  polygon: PlanningPolygonState;
+  radars: PlanningRadarState;
+  coverage: PlanningCoverageEstimate;
+  coverageOptions: PlanningCoverageLayerOptions;
+  onToolChange: (tool: PlanningTool) => void;
+  onFinishPolygon: () => void;
+  onCancelDrawing: () => void;
+  onClearPolygon: () => void;
+  onSelectRadarSite: (siteId: string | null) => void;
+  onDeleteRadarSite: (siteId: string) => void;
+  onRadarPresetChange: (siteId: string, presetId: PlanningRadarPresetId) => void;
+  onClearRadarSites: () => void;
+  onCoverageOptionsChange: (options: PlanningCoverageLayerOptions) => void;
+  onResetCoverageState: () => void;
+}) {
+  const canFinish = canFinishPlanningPolygon(polygon);
+  const hasDraft = polygon.draftVertices.length > 0;
+  const hasCompleted = (polygon.completedVertices?.length ?? 0) > 0;
+  const selectedRadar =
+    radars.sites.find((site) => site.id === radars.selectedSiteId) ?? null;
+
+  const toolOptions: { tool: PlanningTool; label: string }[] = [
+    { tool: "select", label: "Select" },
+    { tool: "draw_defense_area", label: "Draw Defense Area" },
+    { tool: "place_radar_site", label: "Place Radar Site" },
+  ];
+
+  return (
+    <div className="space-y-3" data-testid="planning-mode-placeholder">
+      <div
+        className="rounded border border-cyan-800/60 bg-cyan-950/20 p-3"
+        data-testid="planning-toolbar-placeholder"
+      >
+        <h3 className="text-xs font-semibold uppercase tracking-wide text-cyan-100">
+          Planning toolbar
+        </h3>
+        <p className="mt-2 text-xs leading-relaxed text-slate-300">
+          Planning Mode is UI-local and explanatory only. Planning artifacts are not
+          runtime authority, are not validated sensing, and cause no simulation behavior
+          change.
+        </p>
+        <div className="mt-3 grid grid-cols-1 gap-2">
+          {toolOptions.map((option) => (
+            <button
+              key={option.tool}
+              type="button"
+              aria-pressed={tool === option.tool}
+              onClick={() => onToolChange(option.tool)}
+              className={`rounded border px-2.5 py-1.5 text-xs font-semibold ${
+                tool === option.tool
+                  ? "border-cyan-600/70 bg-cyan-950/70 text-cyan-100"
+                  : "border-slate-700 bg-slate-950 text-slate-300 hover:border-slate-600"
+              }`}
+            >
+              {option.label}
+            </button>
+          ))}
+        </div>
+        <div className="mt-3 grid gap-2 text-xs">
+          <button
+            type="button"
+            disabled={!canFinish}
+            onClick={onFinishPolygon}
+            className="rounded border border-emerald-700 bg-emerald-950/45 px-3 py-1.5 font-medium text-emerald-100 disabled:cursor-not-allowed disabled:opacity-40"
+          >
+            Finish Polygon
+          </button>
+          <button
+            type="button"
+            disabled={!hasDraft}
+            onClick={onCancelDrawing}
+            className="rounded border border-amber-700 bg-amber-950/35 px-3 py-1.5 font-medium text-amber-100 disabled:cursor-not-allowed disabled:opacity-40"
+          >
+            Cancel Drawing
+          </button>
+          <button
+            type="button"
+            disabled={!hasDraft && !hasCompleted}
+            onClick={onClearPolygon}
+            className="rounded border border-slate-700 bg-slate-950 px-3 py-1.5 font-medium text-slate-200 disabled:cursor-not-allowed disabled:opacity-40"
+          >
+            Clear Polygon
+          </button>
+        </div>
+      </div>
+      <div
+        className="rounded border border-slate-800 bg-slate-950/45 p-3"
+        data-testid="planning-panel-placeholder"
+      >
+        <h3 className="text-xs font-semibold uppercase tracking-wide text-slate-200">
+          Planning panel
+        </h3>
+        <p className="mt-2 text-xs leading-relaxed text-slate-400">
+          UI-local planning only: no runtime authority, no bridge commands, no
+          apply_scenario path, no validated sensing, and no simulation behavior change.
+        </p>
+        <div className="mt-3 grid grid-cols-2 gap-2 text-xs">
+          <span className="rounded border border-slate-800 bg-slate-950 px-2 py-1 text-slate-300">
+            Draft vertices {polygon.draftVertices.length}
+          </span>
+          <span className="rounded border border-slate-800 bg-slate-950 px-2 py-1 text-slate-300">
+            Polygon {hasCompleted ? "complete" : "not set"}
+          </span>
+          <span className="rounded border border-slate-800 bg-slate-950 px-2 py-1 text-slate-300">
+            Radar sites {radars.sites.length}
+          </span>
+          <span className="rounded border border-slate-800 bg-slate-950 px-2 py-1 text-slate-300">
+            Selected {selectedRadar ? selectedRadar.radar_type : "none"}
+          </span>
+        </div>
+        <div className="mt-3 space-y-2" data-testid="planning-radar-site-list">
+          {radars.sites.length === 0 ? (
+            <p className="text-xs text-slate-500">No planning radar sites.</p>
+          ) : (
+            radars.sites.map((site) => (
+              <button
+                key={site.id}
+                type="button"
+                aria-pressed={site.id === radars.selectedSiteId}
+                onClick={() => onSelectRadarSite(site.id)}
+                className={`w-full rounded border px-2 py-1.5 text-left text-xs ${
+                  site.id === radars.selectedSiteId
+                    ? "border-yellow-500/70 bg-yellow-950/30 text-yellow-100"
+                    : "border-slate-800 bg-slate-950 text-slate-300 hover:border-slate-700"
+                }`}
+              >
+                {site.radar_type} ({site.detection_range_m}m)
+              </button>
+            ))
+          )}
+        </div>
+        <div
+          className="mt-3 rounded border border-slate-800 bg-slate-950/60 p-2 text-xs"
+          data-testid="planning-visual-legend"
+        >
+          <h4 className="font-semibold uppercase tracking-wide text-slate-300">
+            Visual legend
+          </h4>
+          <div className="mt-2 grid grid-cols-1 gap-1 text-slate-300">
+            <span><span className="text-cyan-300">cyan area</span> defense area</span>
+            <span><span className="text-green-300">green ring</span> radar range</span>
+            <span><span className="text-green-400">green cells</span> covered cells</span>
+            <span><span className="text-red-300">red cells</span> uncovered cells</span>
+            <span><span className="text-red-400">red markers</span> blind spot hints</span>
+          </div>
+        </div>
+        <div
+          className="mt-3 rounded border border-slate-800 bg-slate-950/60 p-2 text-xs"
+          data-testid="planning-coverage-status"
+        >
+          <div className="flex flex-wrap gap-2">
+            <label className="inline-flex items-center gap-2 text-slate-300">
+              <input
+                type="checkbox"
+                checked={coverageOptions.showCoverage}
+                onChange={(event) =>
+                  onCoverageOptionsChange({
+                    ...coverageOptions,
+                    showCoverage: event.currentTarget.checked,
+                  })
+                }
+              />
+              show coverage
+            </label>
+            <label className="inline-flex items-center gap-2 text-slate-300">
+              <input
+                type="checkbox"
+                checked={coverageOptions.showBlindSpots}
+                onChange={(event) =>
+                  onCoverageOptionsChange({
+                    ...coverageOptions,
+                    showBlindSpots: event.currentTarget.checked,
+                  })
+                }
+              />
+              show blind spots
+            </label>
+          </div>
+          <p className="mt-2 text-slate-400">
+            Coverage is heuristic, a visual estimate, not validated sensing, and
+            not runtime authority.
+          </p>
+          <div className="mt-2 grid grid-cols-2 gap-2">
+            <span>Radar count {coverage.radarCount}</span>
+            <span>Coverage {coverage.coveragePercent.toFixed(1)}%</span>
+            <span>Polygon {formatAreaM2(coverage.totalPolygonAreaM2)}</span>
+            <span>Covered {formatAreaM2(coverage.estimatedCoveredAreaM2)}</span>
+            <span>Uncovered {formatAreaM2(coverage.estimatedUncoveredAreaM2)}</span>
+            <span>Blind hints {coverage.blindSpotHints.length}</span>
+          </div>
+        </div>
+        <div className="mt-3 grid gap-2 text-xs" data-testid="planning-radar-editor">
+          <label className="grid gap-1 text-slate-300">
+            Radar preset
+            <select
+              value={
+                PLANNING_RADAR_PRESETS.find(
+                  (preset) =>
+                    preset.radar_type === selectedRadar?.radar_type &&
+                    preset.detection_range_m === selectedRadar?.detection_range_m,
+                )?.id ?? "medium"
+              }
+              disabled={!selectedRadar}
+              onChange={(event) => {
+                if (selectedRadar) {
+                  onRadarPresetChange(
+                    selectedRadar.id,
+                    event.currentTarget.value as PlanningRadarPresetId,
+                  );
+                }
+              }}
+              className="rounded border border-slate-700 bg-slate-950 px-2 py-1 text-slate-100 disabled:opacity-40"
+            >
+              {PLANNING_RADAR_PRESETS.map((preset) => (
+                <option key={preset.id} value={preset.id}>
+                  {preset.label} ({preset.detection_range_m}m)
+                </option>
+              ))}
+            </select>
+          </label>
+          <button
+            type="button"
+            disabled={!selectedRadar}
+            onClick={() => {
+              if (selectedRadar) onDeleteRadarSite(selectedRadar.id);
+            }}
+            className="rounded border border-rose-800 bg-rose-950/35 px-3 py-1.5 font-medium text-rose-100 disabled:cursor-not-allowed disabled:opacity-40"
+          >
+            Delete Radar Site
+          </button>
+          <button
+            type="button"
+            disabled={radars.sites.length === 0}
+            onClick={onClearRadarSites}
+            className="rounded border border-slate-700 bg-slate-950 px-3 py-1.5 font-medium text-slate-200 disabled:cursor-not-allowed disabled:opacity-40"
+          >
+            Clear Radar Sites
+          </button>
+          <button
+            type="button"
+            onClick={onResetCoverageState}
+            className="rounded border border-slate-700 bg-slate-950 px-3 py-1.5 font-medium text-slate-200"
+          >
+            Reset Coverage View
+          </button>
+
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export const PlanningModePlaceholder = PlanningModePanel;
 
 export type AppWorkstationSlotsProps = {
   connected: boolean;
@@ -280,6 +638,56 @@ export function AppWorkstationSlots(props: AppWorkstationSlotsProps) {
   const [sensorDomeZoneMode, setSensorDomeZoneMode] = useState<SensorDomeZoneMode>(
     DEFAULT_SENSOR_DOME_ZONE_MODE,
   );
+  const [workspaceMode, setWorkspaceMode] = useState<RuntimeWorkspaceMode>(
+    DEFAULT_RUNTIME_WORKSPACE_MODE,
+  );
+  const [planningTool, setPlanningTool] = useState<PlanningTool>("select");
+  const [planningPolygon, setPlanningPolygon] = useState<PlanningPolygonState>(
+    EMPTY_PLANNING_POLYGON,
+  );
+  const [planningRadars, setPlanningRadars] = useState<PlanningRadarState>(
+    EMPTY_PLANNING_RADARS,
+  );
+  const [planningCoverageOptions, setPlanningCoverageOptions] =
+    useState<PlanningCoverageLayerOptions>(DEFAULT_PLANNING_COVERAGE_OPTIONS);
+  const planningCoverage = useMemo(
+    () => estimatePlanningCoverage(planningPolygon, planningRadars),
+    [planningPolygon, planningRadars],
+  );
+  const planningModeActive = workspaceModeShowsPlanningPlaceholder(workspaceMode);
+  const planningDrawingEnabled = planningToolAllowsDrawing(
+    planningModeActive,
+    planningTool,
+  );
+  const planningRadarPlacementEnabled = planningToolAllowsRadarPlacement(
+    planningModeActive,
+    planningTool,
+  );
+  const planningCesiumClickEnabled = planningToolUsesCesiumClick(
+    planningModeActive,
+    planningTool,
+  );
+  const effectiveEditingEnabled = editingEnabledForWorkspaceMode(
+    workspaceMode,
+    editingEnabled,
+  );
+  const cesiumEntityEditingEnabled = effectiveEditingEnabled && !planningCesiumClickEnabled;
+  const handleWorkspaceModeChange = (mode: RuntimeWorkspaceMode) => {
+    setWorkspaceMode(mode);
+    if (mode === "grid") setPlanningTool("select");
+  };
+  const handlePlanningMapClick = useCallback(
+    (vertex: PlanningVertex) => {
+      if (planningDrawingEnabled) {
+        setPlanningPolygon((current) => addPlanningVertex(current, vertex));
+        return;
+      }
+      if (planningRadarPlacementEnabled) {
+        setPlanningRadars((current) => addPlanningRadarSite(current, vertex));
+      }
+    },
+    [planningDrawingEnabled, planningRadarPlacementEnabled],
+  );
   const selectedEntity = entities.find((entity) => entity.entity_id === selectedEntityId);
   const sensorDomeOptions = {
     show: radarDomeVisible,
@@ -479,60 +887,104 @@ export function AppWorkstationSlots(props: AppWorkstationSlotsProps) {
       worldColumn={
         connected && sessionId ? (
           <div className="flex flex-col gap-4">
-            <EntityPalette
-              selectedType={selectedType}
-              onSelectType={onSelectType}
-              entityCountsByType={mergedEntityCounts}
-              editingEnabled={editingEnabled}
+            <RuntimeWorkspaceModeSelector
+              mode={workspaceMode}
+              onModeChange={handleWorkspaceModeChange}
             />
-            <WorldEditingGrid
-              entities={entities}
-              selectedEntityId={selectedEntityId}
-              selectedType={selectedType}
-              editingEnabled={editingEnabled}
-              worldSummary={mergedWorldSummary}
-              mirrorSnapshot={snapshots.entity_pose_mirror}
-              captureActive={captureSummary.captureActive}
-              showTerrainContour={terrainLayersOn}
-              showContourLines={terrainLayers.showContourOverlays}
-              radarDomeConfig={radarDomeConfig}
-              defenseZoneConfig={defenseZoneConfig}
-              radarDomeSelectedOnly={radarDomeSelectedOnly}
-              defenseZoneSelectedOnly={defenseZoneSelectedOnly}
-              radarDomeVisible={radarDomeVisible}
-              radarVolumeVisible={radarVolumeVisible}
-              defenseZoneVisible={defenseZoneVisible}
-              radarDomeLabelsVisible={radarDomeLabelsVisible}
-              sensorDomeZoneMode={sensorDomeZoneMode}
-              sensorDomeLayerEnabled={terrainLayers.showSensorDomes}
-              onRadarDomeConfigChange={setRadarDomeConfig}
-              onDefenseZoneConfigChange={setDefenseZoneConfig}
-              onRadarDomeSelectedOnlyChange={setRadarDomeSelectedOnly}
-              onDefenseZoneSelectedOnlyChange={setDefenseZoneSelectedOnly}
-              onRadarDomeVisibleChange={setRadarDomeVisible}
-              onRadarVolumeVisibleChange={setRadarVolumeVisible}
-              onDefenseZoneVisibleChange={setDefenseZoneVisible}
-              onRadarDomeLabelsVisibleChange={setRadarDomeLabelsVisible}
-              onSensorDomeZoneModeChange={setSensorDomeZoneMode}
-              onSelectEntity={onSelectEntity}
-              onSpawn={onSpawn}
-              onMove={onMove}
-              onDelete={onDelete}
-              onApplyToRuntime={onApplyToRuntime}
-              applyToRuntimeDisabled={applyToRuntimeDisabled}
-              applyRuntimeStatus={applyRuntimeStatus}
-            />
-            <ScenarioEvaluationPanel
-              entities={entities}
-              sessionId={sessionId}
-              disabled={!editingEnabled}
-            />
-            <EditingCognitionStrip
-              lastCommand={lastCommand}
-              pendingReconcile={pendingReconcile}
-              mirrorSnapshot={snapshots.entity_pose_mirror}
-            />
-            <EditHistoryPanel history={editHistory} />
+            {!workspaceModeShowsPlanningPlaceholder(workspaceMode) ? (
+              <>
+                <EntityPalette
+                  selectedType={selectedType}
+                  onSelectType={onSelectType}
+                  entityCountsByType={mergedEntityCounts}
+                  editingEnabled={effectiveEditingEnabled}
+                />
+                <WorldEditingGrid
+                  entities={entities}
+                  selectedEntityId={selectedEntityId}
+                  selectedType={selectedType}
+                  editingEnabled={effectiveEditingEnabled}
+                  worldSummary={mergedWorldSummary}
+                  mirrorSnapshot={snapshots.entity_pose_mirror}
+                  captureActive={captureSummary.captureActive}
+                  showTerrainContour={terrainLayersOn}
+                  showContourLines={terrainLayers.showContourOverlays}
+                  radarDomeConfig={radarDomeConfig}
+                  defenseZoneConfig={defenseZoneConfig}
+                  radarDomeSelectedOnly={radarDomeSelectedOnly}
+                  defenseZoneSelectedOnly={defenseZoneSelectedOnly}
+                  radarDomeVisible={radarDomeVisible}
+                  radarVolumeVisible={radarVolumeVisible}
+                  defenseZoneVisible={defenseZoneVisible}
+                  radarDomeLabelsVisible={radarDomeLabelsVisible}
+                  sensorDomeZoneMode={sensorDomeZoneMode}
+                  sensorDomeLayerEnabled={terrainLayers.showSensorDomes}
+                  onRadarDomeConfigChange={setRadarDomeConfig}
+                  onDefenseZoneConfigChange={setDefenseZoneConfig}
+                  onRadarDomeSelectedOnlyChange={setRadarDomeSelectedOnly}
+                  onDefenseZoneSelectedOnlyChange={setDefenseZoneSelectedOnly}
+                  onRadarDomeVisibleChange={setRadarDomeVisible}
+                  onRadarVolumeVisibleChange={setRadarVolumeVisible}
+                  onDefenseZoneVisibleChange={setDefenseZoneVisible}
+                  onRadarDomeLabelsVisibleChange={setRadarDomeLabelsVisible}
+                  onSensorDomeZoneModeChange={setSensorDomeZoneMode}
+                  onSelectEntity={onSelectEntity}
+                  onSpawn={onSpawn}
+                  onMove={onMove}
+                  onDelete={onDelete}
+                  onApplyToRuntime={onApplyToRuntime}
+                  applyToRuntimeDisabled={applyToRuntimeDisabled}
+                  applyRuntimeStatus={applyRuntimeStatus}
+                />
+                <ScenarioEvaluationPanel
+                  entities={entities}
+                  sessionId={sessionId}
+                  disabled={!effectiveEditingEnabled}
+                />
+                <EditingCognitionStrip
+                  lastCommand={lastCommand}
+                  pendingReconcile={pendingReconcile}
+                  mirrorSnapshot={snapshots.entity_pose_mirror}
+                />
+                <EditHistoryPanel history={editHistory} />
+              </>
+            ) : (
+              <PlanningModePanel
+                tool={planningTool}
+                polygon={planningPolygon}
+                radars={planningRadars}
+                coverage={planningCoverage}
+                coverageOptions={planningCoverageOptions}
+                onToolChange={setPlanningTool}
+                onFinishPolygon={() =>
+                  setPlanningPolygon((current) => finishPlanningPolygon(current))
+                }
+                onCancelDrawing={() =>
+                  setPlanningPolygon((current) => cancelPlanningDrawing(current))
+                }
+                onClearPolygon={() => setPlanningPolygon(clearPlanningPolygon())}
+                onSelectRadarSite={(siteId) =>
+                  setPlanningRadars((current) =>
+                    selectPlanningRadarSite(current, siteId),
+                  )
+                }
+                onDeleteRadarSite={(siteId) =>
+                  setPlanningRadars((current) => deletePlanningRadarSite(current, siteId))
+                }
+                onRadarPresetChange={(siteId, presetId) =>
+                  setPlanningRadars((current) =>
+                    updatePlanningRadarPreset(current, siteId, presetId),
+                  )
+                }
+                onClearRadarSites={() =>
+                  setPlanningRadars((current) => clearPlanningRadarSites(current))
+                }
+                onCoverageOptionsChange={setPlanningCoverageOptions}
+                onResetCoverageState={() =>
+                  setPlanningCoverageOptions(DEFAULT_PLANNING_COVERAGE_OPTIONS)
+                }
+              />
+            )}
           </div>
         ) : undefined
       }
@@ -549,7 +1001,7 @@ export function AppWorkstationSlots(props: AppWorkstationSlotsProps) {
             worldSummary={mergedWorldSummary}
             mirrorSnapshot={snapshots.entity_pose_mirror}
             pendingReconcile={pendingReconcile}
-            editingEnabled={editingEnabled}
+            editingEnabled={cesiumEntityEditingEnabled}
             lastCommand={lastCommand}
             onSelectEntity={onSelectEntity}
             onSpawn={onSpawn}
@@ -567,6 +1019,13 @@ export function AppWorkstationSlots(props: AppWorkstationSlotsProps) {
                   }
                 : null
             }
+            planningDrawing={{
+              enabled: planningCesiumClickEnabled,
+              polygon: planningPolygon,
+              radars: planningRadars,
+              coverageOptions: planningCoverageOptions,
+              onMapClick: handlePlanningMapClick,
+            }}
             onLayerVisibilityChange={onLayerVisibilityChange}
             tacticalState={tactical.state}
             tacticalRecommendation={tactical.recommendation}
