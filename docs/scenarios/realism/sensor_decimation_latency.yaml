@@ -1,0 +1,18 @@
+overlay_id: sensor_decimation_latency
+seed_required: true
+scenario_scope: single_target_sensing_realism
+parameter_overrides:
+  radar_sim_node:
+  - radar.publish_every_n: 2
+  - radar.delay_mean_s: 0.08
+  - radar.delay_jitter_s: 0.02
+  - radar.seed: 42
+  camera_sim_node:
+  - camera.publish_every_n: 3
+  - camera.delay_mean_s: 0.12
+  - camera.delay_jitter_s: 0.03
+  - camera.seed: 43
+notes: >
+  Sensor-native decimation (publish_every_n) and transport delay on radar_sim / camera_sim.
+  Still geometry_msgs/Point. Defaults publish_every_n=1 and delay_mean_s=0 preserve legacy
+  per-callback synchronous publishes. Seeded RNG makes jitter repeatable when seed >= 0.

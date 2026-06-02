@@ -1,6 +1,9 @@
+import os
+
+from ament_index_python.packages import get_package_share_directory
 from launch import LaunchDescription
+from launch.actions import DeclareLaunchArgument, IncludeLaunchDescription, OpaqueFunction
 from launch.conditions import IfCondition
-from launch.actions import DeclareLaunchArgument, IncludeLaunchDescription
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch.substitutions import LaunchConfiguration, PathJoinSubstitution
 from launch_ros.actions import Node
@@ -8,15 +11,22 @@ from launch_ros.parameter_descriptions import ParameterFile
 from launch_ros.substitutions import FindPackageShare
 
 
-def generate_launch_description() -> LaunchDescription:
-    config_file = PathJoinSubstitution(
-        [
-            FindPackageShare('counter_uas'),
-            'config',
-            LaunchConfiguration('counter_uas_config'),
-        ],
-    )
-    params = [ParameterFile(config_file, allow_substs=True)]
+def _is_true(value: str) -> bool:
+    return value.strip().lower() in ('true', '1', 'yes', 'on')
+
+
+def _parameter_files(context):  # noqa: ANN001
+    config_dir = os.path.join(get_package_share_directory('counter_uas'), 'config')
+    base_name = LaunchConfiguration('counter_uas_config').perform(context)
+    files = [ParameterFile(os.path.join(config_dir, base_name), allow_substs=True)]
+    if _is_true(LaunchConfiguration('enable_sensor_realism_overlay').perform(context)):
+        overlay_name = LaunchConfiguration('sensor_realism_overlay_config').perform(context)
+        files.append(ParameterFile(os.path.join(config_dir, overlay_name), allow_substs=True))
+    return files
+
+
+def launch_setup(context):  # noqa: ANN001
+    params = _parameter_files(context)
 
     gazebo_target = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(
@@ -52,13 +62,69 @@ def generate_launch_description() -> LaunchDescription:
             'target_start_x_m': LaunchConfiguration('target_start_x_m'),
             'target_start_y_m': LaunchConfiguration('target_start_y_m'),
             'target_start_z_m': LaunchConfiguration('target_start_z_m'),
-            # Forward through so one ``ros2 launch counter_uas bringup`` line can toggle
-            # Gazebo GUI and RViz (defaults match gazebo_target.launch.py).
             'use_gazebo_gui': LaunchConfiguration('use_gazebo_gui'),
             'use_rviz': LaunchConfiguration('use_rviz'),
         }.items(),
     )
 
+    return [
+        gazebo_target,
+        Node(
+            package='radar_sim',
+            executable='radar_sim_node',
+            name='radar_sim_node',
+            output='screen',
+            parameters=params,
+            remappings=[('/drone/position', LaunchConfiguration('sensor_input_topic'))],
+        ),
+        Node(
+            package='camera_sim',
+            executable='camera_sim_node',
+            name='camera_sim_node',
+            output='screen',
+            parameters=params,
+            remappings=[('/drone/position', LaunchConfiguration('sensor_input_topic'))],
+        ),
+        Node(
+            package='fusion',
+            executable='fusion_node',
+            name='fusion_node',
+            output='screen',
+            parameters=params,
+        ),
+        Node(
+            package='tracking',
+            executable='tracking_node',
+            name='tracking_node',
+            output='screen',
+            parameters=params,
+        ),
+        Node(
+            package='threat_assessment',
+            executable='threat_assessment_node',
+            name='threat_assessment_node',
+            output='screen',
+            parameters=params,
+        ),
+        Node(
+            package='visualization',
+            executable='viz_node',
+            name='viz_node',
+            output='screen',
+            parameters=params,
+        ),
+        Node(
+            package='counter_uas',
+            executable='lifecycle_observer_node',
+            name='lifecycle_observer_node',
+            output='screen',
+            condition=IfCondition(LaunchConfiguration('enable_lifecycle_observer')),
+            parameters=params,
+        ),
+    ]
+
+
+def generate_launch_description() -> LaunchDescription:
     return LaunchDescription(
         [
             DeclareLaunchArgument(
@@ -66,8 +132,21 @@ def generate_launch_description() -> LaunchDescription:
                 default_value='config.yaml',
                 description=(
                     'YAML under share/counter_uas/config/ (e.g. config.yaml, config_gazebo_counter_uas.yaml, '
-                    'config_lab_toy.yaml).'
+                    'config_lab_toy.yaml, config_lab_toy_sensor_realism.yaml).'
                 ),
+            ),
+            DeclareLaunchArgument(
+                'enable_sensor_realism_overlay',
+                default_value='false',
+                description=(
+                    'When true, append config_sensor_realism_overlay.yaml to radar/camera parameters '
+                    '(default-off; no topic changes).'
+                ),
+            ),
+            DeclareLaunchArgument(
+                'sensor_realism_overlay_config',
+                default_value='config_sensor_realism_overlay.yaml',
+                description='Patch YAML merged when enable_sensor_realism_overlay is true.',
             ),
             DeclareLaunchArgument(
                 'intercept_measurement_source',
@@ -209,58 +288,6 @@ def generate_launch_description() -> LaunchDescription:
                     'real bringup topology.'
                 ),
             ),
-            gazebo_target,
-            Node(
-                package='radar_sim',
-                executable='radar_sim_node',
-                name='radar_sim_node',
-                output='screen',
-                parameters=params,
-                remappings=[('/drone/position', LaunchConfiguration('sensor_input_topic'))],
-            ),
-            Node(
-                package='camera_sim',
-                executable='camera_sim_node',
-                name='camera_sim_node',
-                output='screen',
-                parameters=params,
-                remappings=[('/drone/position', LaunchConfiguration('sensor_input_topic'))],
-            ),
-            Node(
-                package='fusion',
-                executable='fusion_node',
-                name='fusion_node',
-                output='screen',
-                parameters=params,
-            ),
-            Node(
-                package='tracking',
-                executable='tracking_node',
-                name='tracking_node',
-                output='screen',
-                parameters=params,
-            ),
-            Node(
-                package='threat_assessment',
-                executable='threat_assessment_node',
-                name='threat_assessment_node',
-                output='screen',
-                parameters=params,
-            ),
-            Node(
-                package='visualization',
-                executable='viz_node',
-                name='viz_node',
-                output='screen',
-                parameters=params,
-            ),
-            Node(
-                package='counter_uas',
-                executable='lifecycle_observer_node',
-                name='lifecycle_observer_node',
-                output='screen',
-                condition=IfCondition(LaunchConfiguration('enable_lifecycle_observer')),
-                parameters=params,
-            ),
+            OpaqueFunction(function=launch_setup),
         ],
     )

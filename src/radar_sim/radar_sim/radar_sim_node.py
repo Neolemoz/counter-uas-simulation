@@ -5,6 +5,12 @@ import rclpy
 from rclpy.node import Node
 from geometry_msgs.msg import Point
 
+from radar_sim.range_realism import (
+    effective_detection_probability,
+    effective_measurement_std,
+)
+from radar_sim.timing_realism import should_publish_on_callback, transport_delay_s
+
 
 def _deg2rad(d: float) -> float:
     return d * math.pi / 180.0
@@ -14,8 +20,8 @@ class RadarSimNode(Node):
     """
     Subscribes to true drone position and publishes noisy radar-style detections.
 
-    Output rate matches the input rate (one detection per incoming message).
-    Optional angular gating (azimuth / elevation about boresight +X) and Bernoulli missed detections.
+    Output rate matches the input rate (one detection per incoming message) unless
+    ``radar.publish_every_n`` > 1. Optional angular gating and Bernoulli missed detections.
     """
 
     def __init__(self) -> None:
@@ -28,13 +34,11 @@ class RadarSimNode(Node):
         self.declare_parameter('radar.azimuth_half_deg', 90.0)
         self.declare_parameter('radar.elevation_half_deg', 60.0)
         self.declare_parameter('radar.detection_probability', 1.0)
+        self.declare_parameter('radar.detection_probability_decay_with_range', 0.0)
+        self.declare_parameter('radar.min_detection_probability', 0.0)
+        self.declare_parameter('radar.measurement_std_scale_with_range', 0.0)
+        self.declare_parameter('radar.publish_every_n', 1)
         self.declare_parameter('radar.seed', -1)
-        # Transport / processing latency tier (Phase 3, L1):
-        #   delay_mean_s  — mean publish delay applied AFTER the detection is generated
-        #   delay_jitter_s — half-width of uniform jitter (||) added to delay_mean_s
-        # Together they mimic radar pipeline latency without faking signal physics.  Set
-        # both to 0 to disable (legacy behaviour) — the harness can sweep these to study
-        # guidance robustness vs delay.
         self.declare_parameter('radar.delay_mean_s', 0.0)
         self.declare_parameter('radar.delay_jitter_s', 0.0)
 
@@ -45,9 +49,14 @@ class RadarSimNode(Node):
         self._az_half = max(_deg2rad(float(self.get_parameter('radar.azimuth_half_deg').value)), 1e-6)
         self._el_half = max(_deg2rad(float(self.get_parameter('radar.elevation_half_deg').value)), 1e-6)
         self._p_detect = min(1.0, max(0.0, float(self.get_parameter('radar.detection_probability').value)))
+        self._pd_decay = max(0.0, float(self.get_parameter('radar.detection_probability_decay_with_range').value))
+        self._pd_min = min(1.0, max(0.0, float(self.get_parameter('radar.min_detection_probability').value)))
+        self._std_scale_range = max(
+            0.0, float(self.get_parameter('radar.measurement_std_scale_with_range').value)
+        )
+        self._publish_every_n = max(1, int(self.get_parameter('radar.publish_every_n').value))
         seed = int(self.get_parameter('radar.seed').value)
-        if seed >= 0:
-            random.seed(seed)
+        self._rng: random.Random | None = random.Random(seed) if seed >= 0 else None
         self._delay_mean_s = max(0.0, float(self.get_parameter('radar.delay_mean_s').value))
         self._delay_jitter_s = max(0.0, float(self.get_parameter('radar.delay_jitter_s').value))
 
@@ -59,8 +68,12 @@ class RadarSimNode(Node):
             self._std_xy = 0.5
             self._std_z = 0.2
 
+        self._input_callback_count = 0
         self._pub = self.create_publisher(Point, '/radar/detections', 10)
         self.create_subscription(Point, '/drone/position', self._on_position, 10)
+
+    def _rand(self) -> random.Random:
+        return self._rng if self._rng is not None else random
 
     def _in_beam(self, msg: Point) -> bool:
         dx = msg.x - self._px
@@ -69,12 +82,15 @@ class RadarSimNode(Node):
         rng = math.sqrt(dx * dx + dy * dy + dz * dz)
         if rng < 1e-9:
             return True
-        # Boresight +X: azimuth about X from XY plane, elevation from X axis.
         az = math.atan2(dy, dx)
         el = math.asin(max(-1.0, min(1.0, dz / rng)))
         return abs(az) <= self._az_half and abs(el) <= self._el_half
 
     def _on_position(self, msg: Point) -> None:
+        self._input_callback_count += 1
+        if not should_publish_on_callback(self._input_callback_count, self._publish_every_n):
+            return
+
         dx = msg.x - self._px
         dy = msg.y - self._py
         dz = msg.z - self._pz
@@ -87,29 +103,35 @@ class RadarSimNode(Node):
                 f'Target outside radar beam: distance={distance:.2f} m',
             )
             return
-        if self._p_detect < 1.0 and random.random() > self._p_detect:
-            self.get_logger().info('Radar missed detection (PD draw)')
+        p_eff = effective_detection_probability(
+            base_p=self._p_detect,
+            distance_m=distance,
+            max_range_m=self._range_m,
+            decay_with_range=self._pd_decay,
+            min_detection_probability=self._pd_min,
+        )
+        if p_eff < 1.0 and self._rand().random() > p_eff:
+            self.get_logger().info(
+                f'Radar missed detection (PD draw) distance={distance:.2f} m p_eff={p_eff:.3f}',
+            )
             return
 
         self.get_logger().info(f'Detected target at distance={distance:.2f} m')
 
+        std_xy = effective_measurement_std(
+            self._std_xy, distance, self._range_m, self._std_scale_range
+        )
+        std_z = effective_measurement_std(
+            self._std_z, distance, self._range_m, self._std_scale_range
+        )
         out = Point()
-        out.x = msg.x + random.gauss(0.0, self._std_xy)
-        out.y = msg.y + random.gauss(0.0, self._std_xy)
-        out.z = msg.z + random.gauss(0.0, self._std_z)
+        out.x = msg.x + self._rand().gauss(0.0, std_xy)
+        out.y = msg.y + self._rand().gauss(0.0, std_xy)
+        out.z = msg.z + self._rand().gauss(0.0, std_z)
         self._publish_with_delay(out)
 
     def _publish_with_delay(self, out: Point) -> None:
-        """Publish ``out`` immediately, or after ``delay_mean ± jitter`` via a one-shot timer.
-
-        Using a one-shot timer keeps the executor non-blocking and lets multiple delayed
-        publishes coexist; if both knobs are 0 we just publish synchronously.
-        """
-        if self._delay_mean_s <= 0.0 and self._delay_jitter_s <= 0.0:
-            self._pub.publish(out)
-            return
-        jitter = random.uniform(-self._delay_jitter_s, self._delay_jitter_s)
-        delay_s = max(0.0, self._delay_mean_s + jitter)
+        delay_s = transport_delay_s(self._delay_mean_s, self._delay_jitter_s, self._rng)
         if delay_s <= 1e-4:
             self._pub.publish(out)
             return

@@ -70,6 +70,7 @@ Correct reading: [reviewer_interpretation_guide.md](reviewer_interpretation_guid
 | ID | Layer / wave | Status | Freeze audit | Key artifact surfaces |
 |----|----------------|--------|--------------|------------------------|
 | GOV-0 | Primary governance | active | — | [AGENTS.md](../../AGENTS.md) |
+| SIM-SR1 | Sensor simulation realism (range PD/σ, timing, propagation overlay) | frozen stable | — (narrative in [realism README](../scenarios/realism/README.md) § Sensor realism freeze) | `radar_sim`, `camera_sim`, `config_sensor_realism_overlay.yaml`, `enable_sensor_realism_overlay`, harness tests, [SENSOR_REALISM_RUNBOOK.md](../scenarios/realism/SENSOR_REALISM_RUNBOOK.md) |
 | RT-1..5 | Runtime realism waves 1–5 | frozen stable | — (narrative in [realism README](../scenarios/realism/README.md)) | fixture CSVs, [README.md](../../README.md) |
 | RT-4o | Passive observability tap | frozen stable | — | observer summaries, realism docs |
 | RT-5e | Threshold envelope / phase | frozen stable | — | Wave 5 fixtures, realism docs |

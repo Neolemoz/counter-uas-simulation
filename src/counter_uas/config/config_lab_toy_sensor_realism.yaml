@@ -1,0 +1,71 @@
+# Lab-scale bringup with sensor realism overlays baked in (see config_sensor_realism_overlay.yaml).
+world_sim_node:
+  ros__parameters:
+    scenario: single
+
+radar_sim_node:
+  ros__parameters:
+    scenario: single
+    radar:
+      range: 12.0
+      position_x: 0.0
+      position_y: 0.0
+      position_z: 0.0
+      azimuth_half_deg: 90.0
+      elevation_half_deg: 60.0
+      detection_probability: 1.0
+      detection_probability_decay_with_range: 0.85
+      min_detection_probability: 0.15
+      measurement_std_scale_with_range: 1.0
+      publish_every_n: 2
+      delay_mean_s: 0.08
+      delay_jitter_s: 0.02
+      seed: 42
+
+camera_sim_node:
+  ros__parameters:
+    scenario: single
+    camera:
+      mount_x: 0.0
+      mount_y: 0.0
+      mount_z: 0.0
+      yaw_deg: 0.0
+      horizontal_fov_deg: 90.0
+      vertical_fov_deg: 55.0
+      max_range_m: 20.0
+      detection_probability: 0.98
+      detection_probability_decay_with_range: 0.75
+      min_detection_probability: 0.20
+      measurement_std_scale_with_range: 0.8
+      publish_every_n: 3
+      delay_mean_s: 0.12
+      delay_jitter_s: 0.03
+      seed: 43
+
+fusion_node:
+  ros__parameters:
+    scenario: single
+    fusion:
+      distance_threshold: 6.0
+      radar_weight: 1.0
+      camera_weight: 1.0
+
+tracking_node:
+  ros__parameters:
+    scenario: single
+    mahalanobis_gate_threshold: 16.27
+    candidate_match_gate_m: 2.0
+    confirmation_hits: 2
+
+viz_node:
+  ros__parameters:
+    scenario: single
+    threat:
+      medium_distance: 8.0
+      high_distance: 5.0
+
+threat_assessment_node:
+  ros__parameters:
+    tracks_topic: /tracks
+    high_distance_m: 5.0
+    medium_distance_m: 8.0

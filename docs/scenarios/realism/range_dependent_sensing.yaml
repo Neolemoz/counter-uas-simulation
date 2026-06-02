@@ -1,0 +1,16 @@
+overlay_id: range_dependent_sensing
+seed_required: false
+scenario_scope: single_target_sensing_realism
+parameter_overrides:
+  radar_sim_node:
+  - radar.detection_probability_decay_with_range: 0.85
+  - radar.min_detection_probability: 0.15
+  - radar.measurement_std_scale_with_range: 1.0
+  camera_sim_node:
+  - camera.detection_probability_decay_with_range: 0.75
+  - camera.min_detection_probability: 0.20
+  - camera.measurement_std_scale_with_range: 0.8
+notes: >
+  Optional range-dependent PD falloff and measurement sigma scaling in radar_sim and
+  camera_sim. Still publishes geometry_msgs/Point. Defaults (decay=0, std_scale=0) preserve
+  legacy flat PD and fixed noise. Apply via counter_uas config YAML or ros2 param overrides.

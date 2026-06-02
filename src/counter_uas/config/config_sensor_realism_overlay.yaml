@@ -1,0 +1,26 @@
+# Default-off patch: merge via bringup ``enable_sensor_realism_overlay:=true``.
+# Sources: docs/scenarios/realism/range_dependent_sensing.yaml
+#          docs/scenarios/realism/sensor_decimation_latency.yaml
+radar_sim_node:
+  ros__parameters:
+    scenario: single
+    radar:
+      detection_probability_decay_with_range: 0.85
+      min_detection_probability: 0.15
+      measurement_std_scale_with_range: 1.0
+      publish_every_n: 2
+      delay_mean_s: 0.08
+      delay_jitter_s: 0.02
+      seed: 42
+
+camera_sim_node:
+  ros__parameters:
+    scenario: single
+    camera:
+      detection_probability_decay_with_range: 0.75
+      min_detection_probability: 0.20
+      measurement_std_scale_with_range: 0.8
+      publish_every_n: 3
+      delay_mean_s: 0.12
+      delay_jitter_s: 0.03
+      seed: 43

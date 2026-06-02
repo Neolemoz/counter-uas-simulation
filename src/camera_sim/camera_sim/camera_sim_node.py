@@ -5,6 +5,12 @@ import rclpy
 from rclpy.node import Node
 from geometry_msgs.msg import Point
 
+from camera_sim.range_realism import (
+    effective_detection_probability,
+    effective_measurement_std,
+)
+from camera_sim.timing_realism import should_publish_on_callback, transport_delay_s
+
 
 def _deg2rad(d: float) -> float:
     return d * math.pi / 180.0
@@ -24,7 +30,11 @@ class CameraSimNode(Node):
         self.declare_parameter('camera.vertical_fov_deg', 55.0)
         self.declare_parameter('camera.max_range_m', 500.0)
         self.declare_parameter('camera.detection_probability', 0.95)
-        # Phase 3 (L1): mimic camera pipeline latency without faking optics.
+        self.declare_parameter('camera.detection_probability_decay_with_range', 0.0)
+        self.declare_parameter('camera.min_detection_probability', 0.0)
+        self.declare_parameter('camera.measurement_std_scale_with_range', 0.0)
+        self.declare_parameter('camera.publish_every_n', 1)
+        self.declare_parameter('camera.seed', -1)
         self.declare_parameter('camera.delay_mean_s', 0.0)
         self.declare_parameter('camera.delay_jitter_s', 0.0)
 
@@ -40,6 +50,16 @@ class CameraSimNode(Node):
         self._vz_half = self._vz / 2.0
         self._r_max = max(float(self.get_parameter('camera.max_range_m').value), 0.0)
         self._p_detect = min(1.0, max(0.0, float(self.get_parameter('camera.detection_probability').value)))
+        self._pd_decay = max(
+            0.0, float(self.get_parameter('camera.detection_probability_decay_with_range').value)
+        )
+        self._pd_min = min(1.0, max(0.0, float(self.get_parameter('camera.min_detection_probability').value)))
+        self._std_scale_range = max(
+            0.0, float(self.get_parameter('camera.measurement_std_scale_with_range').value)
+        )
+        self._publish_every_n = max(1, int(self.get_parameter('camera.publish_every_n').value))
+        seed = int(self.get_parameter('camera.seed').value)
+        self._rng: random.Random | None = random.Random(seed) if seed >= 0 else None
         self._delay_mean_s = max(0.0, float(self.get_parameter('camera.delay_mean_s').value))
         self._delay_jitter_s = max(0.0, float(self.get_parameter('camera.delay_jitter_s').value))
 
@@ -51,14 +71,21 @@ class CameraSimNode(Node):
             self._std_xy = 0.2
             self._std_z = 0.1
 
+        self._input_callback_count = 0
         self._pub = self.create_publisher(Point, '/camera/detections', 10)
         self.create_subscription(Point, '/drone/position', self._on_position, 10)
 
+    def _rand(self) -> random.Random:
+        return self._rng if self._rng is not None else random
+
     def _on_position(self, msg: Point) -> None:
+        self._input_callback_count += 1
+        if not should_publish_on_callback(self._input_callback_count, self._publish_every_n):
+            return
+
         tx = msg.x - self._mx
         ty = msg.y - self._my
         tz = msg.z - self._mz
-        # Rotate into camera frame: X_cam forward at yaw (world +X rotated by yaw to align boresight).
         cam_x = self._cos_y * tx + self._sin_y * ty
         cam_y = -self._sin_y * tx + self._cos_y * ty
         cam_z = tz
@@ -74,24 +101,34 @@ class CameraSimNode(Node):
         if abs(az) > self._hz_half or abs(el) > self._vz_half:
             self.get_logger().info('Camera missed target (outside FOV)')
             return
-        if self._p_detect < 1.0 and random.random() > self._p_detect:
-            self.get_logger().info('Camera missed detection (PD draw)')
+        p_eff = effective_detection_probability(
+            base_p=self._p_detect,
+            distance_m=rng,
+            max_range_m=self._r_max,
+            decay_with_range=self._pd_decay,
+            min_detection_probability=self._pd_min,
+        )
+        if p_eff < 1.0 and self._rand().random() > p_eff:
+            self.get_logger().info(
+                f'Camera missed detection (PD draw) range={rng:.2f} m p_eff={p_eff:.3f}',
+            )
             return
 
+        std_xy = effective_measurement_std(
+            self._std_xy, rng, self._r_max, self._std_scale_range
+        )
+        std_z = effective_measurement_std(
+            self._std_z, rng, self._r_max, self._std_scale_range
+        )
         out = Point()
-        out.x = msg.x + random.gauss(0.0, self._std_xy)
-        out.y = msg.y + random.gauss(0.0, self._std_xy)
-        out.z = msg.z + random.gauss(0.0, self._std_z)
+        out.x = msg.x + self._rand().gauss(0.0, std_xy)
+        out.y = msg.y + self._rand().gauss(0.0, std_xy)
+        out.z = msg.z + self._rand().gauss(0.0, std_z)
         self._publish_with_delay(out)
         self.get_logger().info('Camera detected target')
 
     def _publish_with_delay(self, out: Point) -> None:
-        """Synchronous publish, or one-shot timer when delay > 0 (mirrors radar_sim_node)."""
-        if self._delay_mean_s <= 0.0 and self._delay_jitter_s <= 0.0:
-            self._pub.publish(out)
-            return
-        jitter = random.uniform(-self._delay_jitter_s, self._delay_jitter_s)
-        delay_s = max(0.0, self._delay_mean_s + jitter)
+        delay_s = transport_delay_s(self._delay_mean_s, self._delay_jitter_s, self._rng)
         if delay_s <= 1e-4:
             self._pub.publish(out)
             return

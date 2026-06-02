@@ -1,5 +1,22 @@
 # Runtime realism scenario overlays
 
+## Sensor realism freeze (SIM-SR1)
+
+**Status:** frozen stable (Steps 1–5, default-off).
+
+| Capability | Surface |
+|------------|---------|
+| Range-dependent PD + measurement σ | `radar_sim` / `camera_sim` params (`detection_probability_decay_with_range`, `measurement_std_scale_with_range`, …) |
+| Timing realism | `publish_every_n`, `delay_mean_s` / `delay_jitter_s`, seeded jitter |
+| Propagation overlay | `enable_sensor_realism_overlay`, `config_sensor_realism_overlay.yaml`, headless harness |
+| Topics | Unchanged: `geometry_msgs/Point` on `/radar/detections`, `/camera/detections`, `/fused_detections`; `nav_msgs/Odometry` on `/tracks/state` |
+
+**Boundaries (unchanged):** no topic/schema changes; no parser-contract changes; no tracker/fusion redesign; no RT sandbox / tactical / SA viewer coupling. Overlays remain **default-off** unless explicitly enabled ([SENSOR_REALISM_RUNBOOK.md](SENSOR_REALISM_RUNBOOK.md)).
+
+**Regression:** `src/counter_uas/test/test_sensor_range_realism.py`, `test_sensor_timing_realism.py`, `test_sensor_realism_propagation.py`.
+
+---
+
 These files define **additive**, **seedable**, replay-safe realism overlay packs for the current
 simulation runtime. They are not launch defaults and they do not redefine parser-visible
 contracts.
@@ -19,6 +36,9 @@ Current starter overlays:
 - `ghost_detections.yaml`
 - `fragmented_detections.yaml`
 - `crossing_targets.yaml`
+- `range_dependent_sensing.yaml` — optional radar/camera PD decay and range-scaled measurement σ (default-off params)
+- `sensor_decimation_latency.yaml` — optional `publish_every_n` decimation + `delay_mean_s` / `delay_jitter_s` (default-off)
+- [SENSOR_REALISM_RUNBOOK.md](SENSOR_REALISM_RUNBOOK.md) — bringup commands for combined overlays
 
 Wave 1 lifecycle-stress sweep profiles live in:
 
