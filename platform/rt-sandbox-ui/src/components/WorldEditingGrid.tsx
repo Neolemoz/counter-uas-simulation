@@ -74,6 +74,32 @@ const MIN_ZOOM = 1;
 const MAX_ZOOM = 2.8;
 const PAN_CLICK_TOLERANCE_PX = 4;
 
+type DefenseSizeDrafts = Record<keyof DefenseZoneSizes, string>;
+
+function defenseSizeDraftsFromSizes(sizes: DefenseZoneSizes): DefenseSizeDrafts {
+  return {
+    coreM: String(sizes.coreM),
+    engageM: String(sizes.engageM),
+    warningM: String(sizes.warningM),
+  };
+}
+
+function normalizedDefenseSizeUpdate(
+  sizes: DefenseZoneSizes,
+  key: keyof DefenseZoneSizes,
+  value: number,
+): DefenseZoneSizes {
+  const nextSizes = {
+    ...sizes,
+    [key]: Math.max(10, value || 10),
+  };
+  if (nextSizes.engageM <= nextSizes.coreM) nextSizes.engageM = nextSizes.coreM + 10;
+  if (nextSizes.warningM <= nextSizes.engageM) {
+    nextSizes.warningM = nextSizes.engageM + 10;
+  }
+  return nextSizes;
+}
+
 function clampViewOffset(value: number, visibleSize: number, fullSize: number): number {
   return Math.max(0, Math.min(fullSize - visibleSize, value));
 }
@@ -176,6 +202,9 @@ export function WorldEditingGrid({
     pointerId: number;
     moved: boolean;
   }>(null);
+  const [defenseSizeDrafts, setDefenseSizeDrafts] = useState<DefenseSizeDrafts>(
+    () => defenseSizeDraftsFromSizes(defenseZoneConfig.sizes),
+  );
 
   const svgWidth = GRID_WIDTH * CELL_SIZE;
   const svgHeight = GRID_HEIGHT * CELL_SIZE;
@@ -385,15 +414,14 @@ export function WorldEditingGrid({
     });
   };
 
-  const updateDefenseSize = (key: keyof DefenseZoneSizes, value: number) => {
-    const nextSizes = {
-      ...defenseZoneConfig.sizes,
-      [key]: Math.max(10, value || 10),
-    };
-    if (nextSizes.engageM <= nextSizes.coreM) nextSizes.engageM = nextSizes.coreM + 10;
-    if (nextSizes.warningM <= nextSizes.engageM) {
-      nextSizes.warningM = nextSizes.engageM + 10;
-    }
+  const applyDefenseSizeDraft = (key: keyof DefenseZoneSizes) => {
+    const parsed = Number(defenseSizeDrafts[key]);
+    const nextSizes = normalizedDefenseSizeUpdate(
+      defenseZoneConfig.sizes,
+      key,
+      Number.isFinite(parsed) ? parsed : 10,
+    );
+    setDefenseSizeDrafts(defenseSizeDraftsFromSizes(nextSizes));
     onDefenseZoneConfigChange({ ...defenseZoneConfig, sizes: nextSizes });
   };
 
@@ -471,6 +499,14 @@ export function WorldEditingGrid({
     onSelectedOnlyChange: onRadarDomeSelectedOnlyChange,
     onShowLabelsChange: onRadarDomeLabelsVisibleChange,
   };
+
+  useEffect(() => {
+    setDefenseSizeDrafts(defenseSizeDraftsFromSizes(defenseZoneConfig.sizes));
+  }, [
+    defenseZoneConfig.sizes.coreM,
+    defenseZoneConfig.sizes.engageM,
+    defenseZoneConfig.sizes.warningM,
+  ]);
 
   useEffect(() => {
     if (!spawnSettleCell) return;
@@ -968,10 +1004,20 @@ export function WorldEditingGrid({
                       type="number"
                       min={10}
                       step={10}
-                      value={defenseZoneConfig.sizes[key]}
+                      value={defenseSizeDrafts[key]}
                       onChange={(e) =>
-                        updateDefenseSize(key, Number(e.target.value))
+                        setDefenseSizeDrafts((current) => ({
+                          ...current,
+                          [key]: e.target.value,
+                        }))
                       }
+                      onBlur={() => applyDefenseSizeDraft(key)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") {
+                          e.preventDefault();
+                          applyDefenseSizeDraft(key);
+                        }
+                      }}
                       className="w-20 rounded border border-slate-700 bg-slate-950 px-2 py-1 text-right font-mono text-slate-100"
                     />
                   </label>

@@ -1,7 +1,9 @@
 import { describe, expect, it } from "vitest";
 import { DEFENSE_ZONE_LEVELS } from "./defenseZoneLayer";
 import {
+  DEFENSE_LABEL_MAX_ANCHOR_DISTANCE_M,
   zoneBoundaryPositionsGrounded,
+  labelAnchorWorld,
   labelAzimuthDegForDefenseZone,
   metersToSvg,
 } from "./defenseZoneGeometry";
@@ -41,5 +43,18 @@ describe("defenseZoneGeometry", () => {
 
   it("scales meters to svg pixels", () => {
     expect(metersToSvg(100, 14)).toBeGreaterThan(0);
+  });
+
+  it("caps large world label anchors near the protected asset", () => {
+    const anchor = labelAnchorWorld("circle", 0, 0, 1600, 0);
+    expect(Math.hypot(anchor.wx, anchor.wy)).toBeLessThanOrEqual(
+      DEFENSE_LABEL_MAX_ANCHOR_DISTANCE_M,
+    );
+  });
+
+  it("keeps small world label anchors just outside the zone", () => {
+    const anchor = labelAnchorWorld("circle", 0, 0, 100, 0);
+    expect(anchor.wx).toBeCloseTo(110);
+    expect(anchor.wy).toBeCloseTo(0);
   });
 });

@@ -4,6 +4,8 @@ import { sampleTerrainHeight } from "./rtFictionalTerrain";
 import { GRID_SCALE, GRID_Y_SCALE, worldToCell } from "@/world/gridCoords";
 import type { DefenseZoneShape } from "./defenseZoneConfig";
 
+export const DEFENSE_LABEL_MAX_ANCHOR_DISTANCE_M = 420;
+
 /** Meters → SVG pixels (world editor grid). */
 export function metersToSvg(sizeM: number, cellSize: number): number {
   return sizeM * GRID_SCALE * cellSize;
@@ -61,20 +63,29 @@ export function labelAnchorWorld(
   sizeM: number,
   azimuthDeg: number,
 ): { wx: number; wy: number } {
-  const labelOffset = 1.1;
+  const labelDistance = Math.min(
+    sizeM * 1.1,
+    DEFENSE_LABEL_MAX_ANCHOR_DISTANCE_M,
+  );
   if (shape === "rectangle") {
     if (azimuthDeg >= 60 && azimuthDeg < 150) {
-      return { wx: x, wy: y + sizeM * labelOffset };
+      return { wx: x, wy: y + labelDistance };
     }
     if (azimuthDeg >= 150 && azimuthDeg < 270) {
-      return { wx: x - sizeM * labelOffset, wy: y - sizeM * 0.15 };
+      return {
+        wx: x - labelDistance,
+        wy: y - Math.min(sizeM * 0.15, labelDistance * 0.25),
+      };
     }
-    return { wx: x + sizeM * labelOffset, wy: y - sizeM * 0.15 };
+    return {
+      wx: x + labelDistance,
+      wy: y - Math.min(sizeM * 0.15, labelDistance * 0.25),
+    };
   }
   const az = (azimuthDeg * Math.PI) / 180;
   return {
-    wx: x + Math.cos(az) * sizeM * labelOffset,
-    wy: y + Math.sin(az) * sizeM * labelOffset,
+    wx: x + Math.cos(az) * labelDistance,
+    wy: y + Math.sin(az) * labelDistance,
   };
 }
 
