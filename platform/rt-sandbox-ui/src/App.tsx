@@ -33,10 +33,17 @@ import {
   readSessionLayerVisibility,
   writeSessionLayerVisibility,
 } from "@/workstation/sessionLayerVisibilityStore";
+import {
+  readStoredSessionRuntimeProfile,
+  writeStoredSessionRuntimeProfile,
+  type SessionRuntimeProfile,
+} from "@/runtime/sessionRuntimeProfile";
 import { AppWorkstationSlots } from "@/workstation/AppWorkstationSlots";
 
 export default function App() {
   const [backgroundDiagOpen, setBackgroundDiagOpen] = useState(false);
+  const [sessionRuntimeProfile, setSessionRuntimeProfile] =
+    useState<SessionRuntimeProfile>(readStoredSessionRuntimeProfile);
   const { labelFor, renameSession } = useSessionDisplayNames();
   const {
     slots,
@@ -61,6 +68,7 @@ export default function App() {
     doPull,
     refreshSessionAfterApply,
     connectNewSession,
+    activeRequestedRuntimeProfile,
     disconnectSession,
     selectTab,
     backgroundSlots,
@@ -69,6 +77,14 @@ export default function App() {
   const [selectedType, setSelectedType] = useState<EntityType>("drone");
   const [layerVisibility, setLayerVisibility] = useState<VisualLayerVisibility>(() =>
     defaultVisibilityFromRegistry(),
+  );
+
+  const handleSessionRuntimeProfileChange = useCallback(
+    (profile: SessionRuntimeProfile) => {
+      setSessionRuntimeProfile(profile);
+      writeStoredSessionRuntimeProfile(profile);
+    },
+    [],
   );
 
   const handleLayerVisibilityChange = useCallback(
@@ -284,7 +300,10 @@ export default function App() {
         renameSession={renameSession}
         onSelectTab={handleSelectTab}
         reorderSessions={reorderSessions}
-        onConnectNewSession={() => void connectNewSession()}
+        sessionRuntimeProfile={sessionRuntimeProfile}
+        onSessionRuntimeProfileChange={handleSessionRuntimeProfileChange}
+        activeRequestedRuntimeProfile={activeRequestedRuntimeProfile}
+        onConnectNewSession={() => void connectNewSession(sessionRuntimeProfile)}
         onDisconnectSelected={() => {
           if (selectedSessionId) handleDisconnectSession(selectedSessionId);
         }}

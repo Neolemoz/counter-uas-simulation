@@ -1,6 +1,11 @@
 import { useState } from "react";
-import { lifecycleControlStates } from "@/lifecycle/lifecycleControlStates";
+import { RuntimeProfileSelector } from "@/components/RuntimeProfileSelector";
 import { ENTITY_CONTROL_GOVERNANCE } from "@/entity/entityControlStates";
+import { lifecycleControlStates } from "@/lifecycle/lifecycleControlStates";
+import {
+  sessionRuntimeProfileLabel,
+  type SessionRuntimeProfile,
+} from "@/runtime/sessionRuntimeProfile";
 import { SCENARIO_CONTROL_GOVERNANCE } from "@/scenario/scenarioControlStates";
 import { DEFAULT_PULL_HZ, MAX_PULL_HZ } from "@/telemetry/constants";
 
@@ -142,20 +147,45 @@ export function UiDiagnostics({
 export function BridgeConnectionBar({
   connected,
   busy,
+  atCapacity = false,
+  sessionRuntimeProfile,
+  onSessionRuntimeProfileChange,
+  activeRequestedRuntimeProfile,
   onConnect,
   onDisconnect,
 }: {
   connected: boolean;
   busy: boolean;
+  atCapacity?: boolean;
+  sessionRuntimeProfile: SessionRuntimeProfile;
+  onSessionRuntimeProfileChange: (profile: SessionRuntimeProfile) => void;
+  activeRequestedRuntimeProfile?: SessionRuntimeProfile | null;
   onConnect: () => void;
   onDisconnect: () => void;
 }) {
   return (
-    <div className="flex flex-wrap items-center gap-3">
+    <div className="flex flex-col gap-3">
+      <RuntimeProfileSelector
+        value={sessionRuntimeProfile}
+        onChange={onSessionRuntimeProfileChange}
+        disabled={busy}
+      />
+      {connected && activeRequestedRuntimeProfile && (
+        <p
+          className="text-xs text-slate-500"
+          data-testid="bridge-active-runtime-profile"
+        >
+          Active session runtime:{" "}
+          <span className="font-medium text-slate-300">
+            {sessionRuntimeProfileLabel(activeRequestedRuntimeProfile)}
+          </span>
+        </p>
+      )}
+      <div className="flex flex-wrap items-center gap-3">
       <button
         type="button"
         onClick={onConnect}
-        disabled={connected || busy}
+        disabled={connected || busy || atCapacity}
         className="rounded bg-emerald-800 px-3 py-1.5 text-sm font-medium text-emerald-100 hover:bg-emerald-700 disabled:opacity-50"
       >
         Start session & subscribe
@@ -173,6 +203,7 @@ export function BridgeConnectionBar({
       >
         {connected ? "Connected (loopback)" : "Not connected"}
       </span>
+      </div>
     </div>
   );
 }

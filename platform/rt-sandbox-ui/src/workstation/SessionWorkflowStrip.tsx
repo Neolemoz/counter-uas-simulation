@@ -1,3 +1,7 @@
+import {
+  sessionRuntimeProfileLabel,
+  type SessionRuntimeProfile,
+} from "@/runtime/sessionRuntimeProfile";
 import { StatusBadge, type StatusBadgeTone } from "./StatusBadge";
 
 function lifecycleTone(state: string): StatusBadgeTone {
@@ -26,6 +30,7 @@ export function SessionWorkflowStrip({
   lastError,
   connectedCount,
   editingSessionId,
+  requestedRuntimeProfile,
 }: {
   connected: boolean;
   sessionState: string;
@@ -34,6 +39,7 @@ export function SessionWorkflowStrip({
   lastError: string | null;
   connectedCount?: number;
   editingSessionId?: string | null;
+  requestedRuntimeProfile?: SessionRuntimeProfile | null;
 }) {
   return (
     <div
@@ -51,6 +57,13 @@ export function SessionWorkflowStrip({
           label={`sessions: ${connectedCount}/3`}
           tone="neutral"
           title="Connected workspace slots (local cap 3)"
+        />
+      )}
+      {connected && requestedRuntimeProfile && (
+        <StatusBadge
+          label={sessionRuntimeProfileLabel(requestedRuntimeProfile)}
+          tone={requestedRuntimeProfile === "mock_adapter" ? "ok" : "neutral"}
+          title="Runtime profile selected at session start (read-only)"
         />
       )}
       {connected && editingSessionId && (

@@ -1,0 +1,292 @@
+import {
+  sessionRuntimeProfileGovernance,
+  sessionRuntimeProfileLabel,
+  type SessionRuntimeProfile,
+} from "@/runtime/sessionRuntimeProfile";
+import { adapterModeLabel } from "@/sync/cognition";
+import {
+  formatLastPullAge,
+  isPullAgeStale,
+} from "@/telemetry/pullAge";
+import type { StatusBadgeTone } from "@/workstation/StatusBadge";
+
+/** Read-only UI profile — not bridge runtime_kind. */
+export type RuntimeProfile = "stub" | "mock_adapter" | "live_adapter";
+
+export const ADAPTER_VISIBILITY_GOVERNANCE =
+  "Read-only telemetry mirror — not command authority. Adapter controls are maintainer-only.";
+
+export type FreshnessView = {
+  label: string;
+  tone: StatusBadgeTone;
+  detail?: string;
+};
+
+export type AdapterStatusView = {
+  profile: RuntimeProfile;
+  profileTitle: string;
+  profileDescription: string;
+  requestedProfile: SessionRuntimeProfile | null;
+  requestedProfileLabel: string | null;
+  requestedProfileGovernance: string | null;
+  runtimeTypeLabel: string;
+  adapterMode: string;
+  adapterAlive: boolean | null;
+  adapterPid: string | null;
+  stubAlive: boolean | null;
+  adapterEntityCount: number | null;
+  telemetryHealth: string | null;
+  syncHealth: string | null;
+  telemetryRevision: number | null;
+  bridgeLastPollUtc: string | null;
+  telemetryFreshness: FreshnessView;
+  syncFreshness: FreshnessView;
+  uiPullFreshness: FreshnessView;
+};
+
+const PROFILE_META: Record<
+  RuntimeProfile,
+  { title: string; description: string; runtimeTypeLabel: string }
+> = {
+  stub: {
+    title: "Stub runtime",
+    description: "Bridge RuntimeStub — no Gazebo adapter worker.",
+    runtimeTypeLabel: "Stub",
+  },
+  mock_adapter: {
+    title: "Mock adapter",
+    description: "Adapter worker in mock mode — in-memory sim feedback.",
+    runtimeTypeLabel: "Mock adapter",
+  },
+  live_adapter: {
+    title: "Live adapter",
+    description: "Adapter worker in live mode — Gazebo/ROS session topics.",
+    runtimeTypeLabel: "Live adapter",
+  },
+};
+
+function asRecord(value: unknown): Record<string, unknown> | undefined {
+  return value && typeof value === "object"
+    ? (value as Record<string, unknown>)
+    : undefined;
+}
+
+function boolOrNull(value: unknown): boolean | null {
+  if (typeof value === "boolean") return value;
+  return null;
+}
+
+function stringOrNull(value: unknown): string | null {
+  if (value === null || value === undefined) return null;
+  return String(value);
+}
+
+function numberOrNull(value: unknown): number | null {
+  if (typeof value === "number" && Number.isFinite(value)) return value;
+  return null;
+}
+
+function normalizeMode(
+  sessionHealth?: Record<string, unknown>,
+  worldSummary?: Record<string, unknown>,
+): string {
+  const fromWorld = adapterModeLabel(worldSummary);
+  if (fromWorld !== "off") return fromWorld;
+  const sh = sessionHealth ?? {};
+  const nested = asRecord(sh.adapter_health);
+  const mode =
+    stringOrNull(nested?.mode) ??
+    stringOrNull(sh.adapter_mode) ??
+    stringOrNull(sh.runtime_mode);
+  if (mode) return mode;
+  return "off";
+}
+
+export function pickAdapterFields(sessionHealth?: Record<string, unknown>): {
+  adapterAlive: boolean | null;
+  stubAlive: boolean | null;
+  adapterMode: string | null;
+  adapterPid: string | null;
+  adapterEntityCount: number | null;
+} {
+  const sh = sessionHealth ?? {};
+  const nested = asRecord(sh.adapter_health);
+  return {
+    adapterAlive:
+      boolOrNull(nested?.alive) ?? boolOrNull(sh.adapter_alive),
+    stubAlive: boolOrNull(sh.stub_alive),
+    adapterMode:
+      stringOrNull(nested?.mode) ?? stringOrNull(sh.adapter_mode),
+    adapterPid: stringOrNull(sh.adapter_pid),
+    adapterEntityCount: numberOrNull(sh.adapter_entity_count),
+  };
+}
+
+export function deriveRuntimeProfile(
+  sessionHealth?: Record<string, unknown>,
+  worldSummary?: Record<string, unknown>,
+): RuntimeProfile {
+  const mode = normalizeMode(sessionHealth, worldSummary);
+  const { adapterAlive } = pickAdapterFields(sessionHealth);
+
+  if (mode === "live") return "live_adapter";
+  if (mode === "mock" || adapterAlive === true) return "mock_adapter";
+  return "stub";
+}
+
+function healthFreshness(
+  health: string | null | undefined,
+  kind: "telemetry" | "sync",
+): FreshnessView {
+  if (!health) {
+    return {
+      label: kind === "telemetry" ? "Telemetry: unknown" : "Sync: unknown",
+      tone: "neutral",
+      detail: "No health field on latest pull snapshot.",
+    };
+  }
+  if (health === "ok") {
+    return {
+      label: kind === "telemetry" ? "Telemetry: fresh" : "Sync: ok",
+      tone: "ok",
+      detail: `Bridge reports ${kind}_health=ok.`,
+    };
+  }
+  if (health === "stale" || health === "feedback_lost") {
+    return {
+      label:
+        kind === "telemetry"
+          ? `Telemetry: ${health}`
+          : `Sync: ${health}`,
+      tone: health === "feedback_lost" ? "error" : "warn",
+      detail: `Bridge reports ${kind}_health=${health}.`,
+    };
+  }
+  return {
+    label: `${kind === "telemetry" ? "Telemetry" : "Sync"}: ${health}`,
+    tone: health === "mismatch" ? "error" : "warn",
+    detail: `Bridge reports ${kind}_health=${health}.`,
+  };
+}
+
+function mergeHealth(
+  primary: string | null | undefined,
+  fallback: string | null | undefined,
+): string | null {
+  if (typeof primary === "string" && primary) return primary;
+  if (typeof fallback === "string" && fallback) return fallback;
+  return null;
+}
+
+export function deriveAdapterStatus({
+  sessionHealthPayload,
+  worldSummaryPayload,
+  lastPullUtc,
+  pullHz = 1,
+  nowMs = Date.now(),
+  requestedRuntimeProfile = null,
+}: {
+  sessionHealthPayload?: Record<string, unknown>;
+  worldSummaryPayload?: Record<string, unknown>;
+  lastPullUtc?: string | null;
+  pullHz?: number;
+  nowMs?: number;
+  requestedRuntimeProfile?: SessionRuntimeProfile | null;
+}): AdapterStatusView {
+  const sh = sessionHealthPayload ?? {};
+  const ws = worldSummaryPayload ?? {};
+  const profile = deriveRuntimeProfile(sh, ws);
+  const meta = PROFILE_META[profile];
+  const adapterFields = pickAdapterFields(sh);
+  const adapterMode = normalizeMode(sh, ws);
+
+  const telemetryHealth = mergeHealth(
+    typeof ws.telemetry_health === "string" ? ws.telemetry_health : null,
+    typeof sh.telemetry_health === "string" ? sh.telemetry_health : null,
+  );
+  const syncHealth =
+    typeof ws.sync_health === "string" ? ws.sync_health : null;
+
+  const bridgeLastPollUtc =
+    typeof ws.last_poll_utc === "string"
+      ? ws.last_poll_utc
+      : typeof sh.last_poll_utc === "string"
+        ? sh.last_poll_utc
+        : null;
+
+  const telemetryRevision = numberOrNull(
+    ws.telemetry_revision ?? sh.telemetry_revision,
+  );
+
+  const uiStale = isPullAgeStale("active", lastPullUtc ?? null, pullHz, nowMs);
+  const uiPullFreshness: FreshnessView = {
+    label: uiStale ? "UI pull: stale" : "UI pull: current",
+    tone: uiStale ? "warn" : "ok",
+    detail: lastPullUtc
+      ? `Last browser pull ${formatLastPullAge(lastPullUtc, nowMs)}.`
+      : "No successful telemetry pull yet.",
+  };
+
+  let telemetryFreshness = healthFreshness(telemetryHealth, "telemetry");
+  if (bridgeLastPollUtc) {
+    telemetryFreshness = {
+      ...telemetryFreshness,
+      detail: [
+        telemetryFreshness.detail,
+        `Adapter poll ${formatLastPullAge(bridgeLastPollUtc, nowMs)}.`,
+      ]
+        .filter(Boolean)
+        .join(" "),
+    };
+  }
+
+  const syncFreshness = healthFreshness(syncHealth, "sync");
+
+  return {
+    profile,
+    profileTitle: meta.title,
+    profileDescription: meta.description,
+    requestedProfile: requestedRuntimeProfile,
+    requestedProfileLabel: requestedRuntimeProfile
+      ? sessionRuntimeProfileLabel(requestedRuntimeProfile)
+      : null,
+    requestedProfileGovernance: requestedRuntimeProfile
+      ? sessionRuntimeProfileGovernance(requestedRuntimeProfile)
+      : null,
+    runtimeTypeLabel: meta.runtimeTypeLabel,
+    adapterMode,
+    adapterAlive: adapterFields.adapterAlive,
+    adapterPid: adapterFields.adapterPid,
+    stubAlive: adapterFields.stubAlive,
+    adapterEntityCount: adapterFields.adapterEntityCount,
+    telemetryHealth,
+    syncHealth,
+    telemetryRevision,
+    bridgeLastPollUtc,
+    telemetryFreshness,
+    syncFreshness,
+    uiPullFreshness,
+  };
+}
+
+export function profileShellClass(profile: RuntimeProfile): string {
+  switch (profile) {
+    case "live_adapter":
+      return "border-emerald-700/70 bg-emerald-950/30";
+    case "mock_adapter":
+      return "border-cyan-700/70 bg-cyan-950/30";
+    default:
+      return "border-slate-600/80 bg-slate-900/50";
+  }
+}
+
+export function profileAccentClass(profile: RuntimeProfile): string {
+  switch (profile) {
+    case "live_adapter":
+      return "text-emerald-200";
+    case "mock_adapter":
+      return "text-cyan-200";
+    default:
+      return "text-slate-200";
+  }
+}

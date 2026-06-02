@@ -19,6 +19,7 @@ import {
   ScenarioControlBar,
 } from "@/components/RefreshControls";
 import { CaptureSummaryStrip } from "@/components/CaptureSummaryStrip";
+import { AdapterStatusPanel } from "@/components/AdapterStatusPanel";
 import {
   ClockMirrorPanel,
   SessionHealthPanel,
@@ -48,6 +49,7 @@ import type { UiEntity } from "@/editing/localEntityMirror";
 import { ExperimentWorkbenchPanel } from "@/experiment/ExperimentWorkbenchPanel";
 import type { AdvisoryExperimentRollup } from "@/handoff/advisoryTypes";
 import type { SessionSlot } from "@/hooks/useRtSessionWorkspace";
+import type { SessionRuntimeProfile } from "@/runtime/sessionRuntimeProfile";
 import type { useTacticalState } from "@/hooks/useTacticalState";
 import type { ChannelSnapshot } from "@/telemetry/channelIndex";
 import type { LiveCaptureSummary } from "@/telemetry/captureSummary";
@@ -92,6 +94,9 @@ export type AppWorkstationSlotsProps = {
   renameSession: (sessionId: string) => void;
   onSelectTab: (sessionId: string) => void;
   reorderSessions: (orderedIds: string[]) => void;
+  sessionRuntimeProfile: SessionRuntimeProfile;
+  onSessionRuntimeProfileChange: (profile: SessionRuntimeProfile) => void;
+  activeRequestedRuntimeProfile: SessionRuntimeProfile;
   onConnectNewSession: () => void;
   onDisconnectSelected: () => void;
   onCloseSession: (sessionId: string) => void;
@@ -194,6 +199,9 @@ export function AppWorkstationSlots(props: AppWorkstationSlotsProps) {
     renameSession,
     onSelectTab,
     reorderSessions,
+    sessionRuntimeProfile,
+    onSessionRuntimeProfileChange,
+    activeRequestedRuntimeProfile,
     onConnectNewSession,
     onDisconnectSelected,
     onCloseSession,
@@ -323,6 +331,10 @@ export function AppWorkstationSlots(props: AppWorkstationSlotsProps) {
           <BridgeConnectionBar
             connected={connected}
             busy={busy || runtimeBusy || captureBusy}
+            atCapacity={atCapacity}
+            sessionRuntimeProfile={sessionRuntimeProfile}
+            onSessionRuntimeProfileChange={onSessionRuntimeProfileChange}
+            activeRequestedRuntimeProfile={activeRequestedRuntimeProfile}
             onConnect={onConnectNewSession}
             onDisconnect={onDisconnectSelected}
           />
@@ -412,6 +424,7 @@ export function AppWorkstationSlots(props: AppWorkstationSlotsProps) {
           lastError={lastError}
           connectedCount={connectedCount}
           editingSessionId={editingSessionId}
+          requestedRuntimeProfile={activeRequestedRuntimeProfile}
         />
       }
       cognitionColumn={
@@ -433,6 +446,9 @@ export function AppWorkstationSlots(props: AppWorkstationSlotsProps) {
               session_health: snapshots.session_health,
               entity_pose_mirror: snapshots.entity_pose_mirror,
             }}
+            lastPullUtc={lastPullUtc}
+            pullHz={pullHz}
+            requestedRuntimeProfile={activeRequestedRuntimeProfile}
           />
         ) : undefined
       }
@@ -557,7 +573,10 @@ export function AppWorkstationSlots(props: AppWorkstationSlotsProps) {
             slotList={slotList}
           />
         ) : (
-          <ConnectPlaceholder />
+          <ConnectPlaceholder
+            sessionRuntimeProfile={sessionRuntimeProfile}
+            onSessionRuntimeProfileChange={onSessionRuntimeProfileChange}
+          />
         )
       }
       tacticalColumn={
@@ -652,6 +671,14 @@ export function AppWorkstationSlots(props: AppWorkstationSlotsProps) {
       diagnostics={
         <div className="space-y-4">
           <div className="grid gap-4 lg:grid-cols-2 xl:grid-cols-3">
+            <AdapterStatusPanel
+              sessionHealth={snapshots.session_health}
+              worldSummary={snapshots.world_summary}
+              lastPullUtc={lastPullUtc}
+              pullHz={pullHz}
+              requestedRuntimeProfile={activeRequestedRuntimeProfile}
+              pendingRuntimeProfile={connected ? null : sessionRuntimeProfile}
+            />
             <SessionLifecyclePanel
               snapshot={snapshots.lifecycle_state}
               hideCognition={hidePanelCognition}

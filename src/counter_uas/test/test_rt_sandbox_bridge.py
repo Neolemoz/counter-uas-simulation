@@ -1704,6 +1704,41 @@ def test_send_runtime_command_forbidden_when_adapter_disabled(
     assert out["error_code"] == "COMMAND_FORBIDDEN"
 
 
+def test_start_session_runtime_profile_stub_default(
+    manager: BridgeSessionManager,
+) -> None:
+    from rt_sandbox.runtime_stub import RuntimeStub
+
+    start = _cmd(manager, "start_session")
+    assert start["ok"] is True
+    assert isinstance(manager._session.runtime, RuntimeStub)
+    _cmd(manager, "discard_session", start["session_id"])
+
+
+def test_start_session_runtime_profile_mock_adapter(
+    manager: BridgeSessionManager,
+) -> None:
+    from rt_sandbox.runtime_adapter import GazeboRuntimeAdapter
+
+    start = _cmd(
+        manager,
+        "start_session",
+        payload={"runtime_profile": "mock_adapter"},
+    )
+    assert start["ok"] is True
+    assert isinstance(manager._session.runtime, GazeboRuntimeAdapter)
+    assert manager._session.runtime.mode == "mock"
+    _cmd(manager, "discard_session", start["session_id"])
+
+
+def test_start_session_runtime_profile_rejects_live(
+    manager: BridgeSessionManager,
+) -> None:
+    out = _cmd(manager, "start_session", payload={"runtime_profile": "live"})
+    assert out["ok"] is False
+    assert out["error_code"] == "COMMAND_FORBIDDEN"
+
+
 def test_mock_adapter_session_lifecycle(adapter_manager: BridgeSessionManager) -> None:
     start = _cmd(adapter_manager, "start_session")
     assert start["ok"] is True

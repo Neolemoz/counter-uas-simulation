@@ -27,6 +27,8 @@ import {
   registryBudgetSummaryLine,
   type VisualLayerVisibility,
 } from "@/cesium/visualLayerRegistry";
+import { AdapterStatusSummaryStrip } from "@/components/AdapterStatusSummaryStrip";
+import type { SessionRuntimeProfile } from "@/runtime/sessionRuntimeProfile";
 import { SessionComparisonCognitionStrip } from "./SessionComparisonCognitionStrip";
 import { StatusBadge } from "./StatusBadge";
 
@@ -116,6 +118,9 @@ export function RuntimeCognitionHub({
   experimentAnalyticsActive = false,
   experimentContinuityReviewActive = false,
   experimentF5Active = false,
+  lastPullUtc = null,
+  pullHz = 1,
+  requestedRuntimeProfile = null,
 }: {
   snapshots: {
     world_summary?: ChannelSnapshot;
@@ -133,6 +138,9 @@ export function RuntimeCognitionHub({
   experimentAnalyticsActive?: boolean;
   experimentContinuityReviewActive?: boolean;
   experimentF5Active?: boolean;
+  lastPullUtc?: string | null;
+  pullHz?: number;
+  requestedRuntimeProfile?: SessionRuntimeProfile | null;
 }) {
   const terrainLine = terrainHubSummary(terrainLayersEnabled, terrainLayers);
   const channelMap: Record<string, ChannelSnapshot | undefined> = {
@@ -213,6 +221,20 @@ export function RuntimeCognitionHub({
       </CognitionBlock>
 
       <div className="mt-2 space-y-2">
+        <CognitionBlock title="Runtime adapter (read-only)" defaultOpen>
+          <AdapterStatusSummaryStrip
+            sessionHealth={snapshots.session_health}
+            worldSummary={snapshots.world_summary}
+            lastPullUtc={lastPullUtc}
+            pullHz={pullHz}
+            requestedRuntimeProfile={requestedRuntimeProfile}
+          />
+          <p className="mt-2 text-[10px] text-slate-500">
+            Status from session_health and world_summary pulls — not attach/detach
+            authority.
+          </p>
+        </CognitionBlock>
+
         <CognitionBlock title="Terrain (explanatory)" defaultOpen={false}>
           {terrainLine ? (
             <p className="text-xs text-emerald-400/90">{terrainLine}</p>

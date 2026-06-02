@@ -22,6 +22,7 @@ from rt_sandbox.governance import (
     classify_command,
     validate_capture_payload,
     validate_pose,
+    validate_start_session_payload,
 )
 from rt_sandbox.isolation import repo_root_from
 from rt_sandbox.lifecycle import SessionState, can_transition
@@ -200,10 +201,23 @@ def _validate_scenario_payload(
     return normalized, None
 
 
-def _config_for_command(config: GovernanceConfig, command_type: str) -> GovernanceConfig:
-    if command_type != "start_sim":
+def _config_for_command(
+    config: GovernanceConfig,
+    command_type: str,
+    payload: Any = None,
+) -> GovernanceConfig:
+    if command_type == "start_sim":
+        return replace(config, enable_gazebo_adapter=True, adapter_mode="live")
+    if command_type == "start_session":
+        if validate_start_session_payload(payload):
+            return config
+        profile = "stub"
+        if isinstance(payload, dict):
+            profile = str(payload.get("runtime_profile", "stub"))
+        if profile == "mock_adapter":
+            return replace(config, enable_gazebo_adapter=True, adapter_mode="mock")
         return config
-    return replace(config, enable_gazebo_adapter=True, adapter_mode="live")
+    return config
 
 
 def _config_for_session(config: GovernanceConfig, session: Any) -> GovernanceConfig:
@@ -265,7 +279,6 @@ class BridgeSessionManager:
         authority_scope = str(body.get("authority_scope", ""))
         session_id = body.get("session_id")
         payload = _payload_for_sim_alias(raw_command_type, body.get("payload"))
-        command_config = _config_for_command(self.config, raw_command_type)
 
         base = response_base(command_id, session_id)
 
@@ -296,6 +309,13 @@ class BridgeSessionManager:
         cap_err = validate_capture_payload(command_type, payload)
         if cap_err:
             return fail(base, cap_err, "invalid capture payload")
+
+        if command_type == "start_session":
+            start_err = validate_start_session_payload(payload)
+            if start_err:
+                return fail(base, start_err, "invalid start_session payload")
+
+        command_config = _config_for_command(self.config, raw_command_type, payload)
 
         if command_type == "start_session":
             if not self._global_rate_limiter.check(now):

@@ -11,6 +11,10 @@ import {
 } from "@/bridge/client";
 import type { BridgeCommandResponse } from "@/bridge/types";
 import {
+  DEFAULT_SESSION_RUNTIME_PROFILE,
+  type SessionRuntimeProfile,
+} from "@/runtime/sessionRuntimeProfile";
+import {
   mergeChannelSnapshots,
   sessionStateFromSnapshots,
   type ChannelSnapshot,
@@ -35,6 +39,7 @@ export type SessionSlot = {
   sessionId: string;
   subscriptionId: string | null;
   role: SessionSlotRole;
+  requestedRuntimeProfile: SessionRuntimeProfile;
   snapshots: Partial<Record<TelemetryChannel, ChannelSnapshot>>;
   lastError: string | null;
   connected: boolean;
@@ -58,11 +63,16 @@ export function shouldPullSlotInAutoRefresh(
   return true;
 }
 
-function emptySlot(sessionId: string, role: SessionSlotRole): SessionSlot {
+function emptySlot(
+  sessionId: string,
+  role: SessionSlotRole,
+  requestedRuntimeProfile: SessionRuntimeProfile = DEFAULT_SESSION_RUNTIME_PROFILE,
+): SessionSlot {
   return {
     sessionId,
     subscriptionId: null,
     role,
+    requestedRuntimeProfile,
     snapshots: {},
     lastError: null,
     connected: false,
@@ -154,7 +164,7 @@ export function useRtSessionWorkspace(options: UseRtSessionWorkspaceOptions = {}
     [updateSlot],
   );
 
-  const connectNewSession = useCallback(async () => {
+  const connectNewSession = useCallback(async (runtimeProfile: SessionRuntimeProfile) => {
     if (atCapacity) {
       setLastError("SESSION_CAPACITY_EXCEEDED");
       return;
@@ -162,7 +172,7 @@ export function useRtSessionWorkspace(options: UseRtSessionWorkspaceOptions = {}
     setBusy(true);
     setLastError(null);
     try {
-      const started = await startSession();
+      const started = await startSession({ runtimeProfile });
       if (!started.ok || !started.session_id) {
         setLastError(started.error_code ?? started.message ?? "start failed");
         return;
@@ -204,6 +214,7 @@ export function useRtSessionWorkspace(options: UseRtSessionWorkspaceOptions = {}
           sessionId: sid,
           subscriptionId: sub.subscription_id ?? null,
           role,
+          requestedRuntimeProfile: runtimeProfile,
           snapshots: initialSnapshots,
           lastError: null,
           connected: true,
@@ -226,6 +237,9 @@ export function useRtSessionWorkspace(options: UseRtSessionWorkspaceOptions = {}
       setBusy(false);
     }
   }, [atCapacity]);
+
+  const activeRequestedRuntimeProfile =
+    activeSlot?.requestedRuntimeProfile ?? DEFAULT_SESSION_RUNTIME_PROFILE;
 
   const disconnectSession = useCallback(
     async (targetId: string) => {
@@ -405,6 +419,7 @@ export function useRtSessionWorkspace(options: UseRtSessionWorkspaceOptions = {}
     resetSnapshots,
     backgroundSlots,
     refreshRegistry,
+    activeRequestedRuntimeProfile,
     sessionStateFromSnapshots: (sid: string) =>
       sessionStateFromSnapshots(slots.get(sid)?.snapshots ?? {}),
   };

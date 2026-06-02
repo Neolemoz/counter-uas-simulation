@@ -1,4 +1,8 @@
 import {
+  buildStartSessionPayload,
+  type SessionRuntimeProfile,
+} from "@/runtime/sessionRuntimeProfile";
+import {
   BRIDGE_COMMAND_URL,
   BRIDGE_PULL_URL,
   TELEMETRY_CHANNELS,
@@ -44,8 +48,15 @@ export async function sendCommand(
   return (await resp.json()) as BridgeCommandResponse;
 }
 
-export async function startSession(): Promise<BridgeCommandResponse> {
-  return sendCommand({ commandType: "start_session" });
+export async function startSession(options?: {
+  runtimeProfile?: SessionRuntimeProfile;
+}): Promise<BridgeCommandResponse> {
+  const profile = options?.runtimeProfile ?? "stub";
+  const payload = buildStartSessionPayload(profile);
+  return sendCommand({
+    commandType: "start_session",
+    ...(payload ? { payload } : {}),
+  });
 }
 
 export async function stopSession(sessionId: string): Promise<BridgeCommandResponse> {

@@ -55,6 +55,27 @@ describe("useRtSessionWorkspace contract", () => {
     );
   });
 
+  it("stores requested runtime profile per session slot", () => {
+    const slots = new Map([
+      [
+        "session-stub",
+        {
+          sessionId: "session-stub",
+          requestedRuntimeProfile: "stub" as const,
+        },
+      ],
+      [
+        "session-mock",
+        {
+          sessionId: "session-mock",
+          requestedRuntimeProfile: "mock_adapter" as const,
+        },
+      ],
+    ]);
+    expect(slots.get("session-stub")?.requestedRuntimeProfile).toBe("stub");
+    expect(slots.get("session-mock")?.requestedRuntimeProfile).toBe("mock_adapter");
+  });
+
   it("tracks pulling per slot (active refresh must not use global flag)", () => {
     const slots = new Map([
       [

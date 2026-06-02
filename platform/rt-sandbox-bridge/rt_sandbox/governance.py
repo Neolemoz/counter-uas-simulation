@@ -158,6 +158,8 @@ RUNTIME_SUBCOMMAND_AUDIT_EXCEPTIONS: dict[str, str] = {
     "adapter_resync": "sync_update",
 }
 
+SESSION_RUNTIME_PROFILES = frozenset({"stub", "mock_adapter"})
+
 RT_FORBIDDEN_COMMANDS = frozenset(
     {
         "engage",
@@ -272,6 +274,23 @@ def classify_command(command_type: str) -> str | None:
     if command_type == "resume_session":
         return "COMMAND_FORBIDDEN"
     if command_type not in ALLOWED_COMMANDS:
+        return "COMMAND_FORBIDDEN"
+    return None
+
+
+def validate_start_session_payload(payload: Any) -> str | None:
+    """Optional additive start_session payload — stub default; mock_adapter only."""
+    if payload is None:
+        return None
+    if not isinstance(payload, dict):
+        return "COMMAND_FORBIDDEN"
+    if not payload:
+        return None
+    extra = set(payload.keys()) - {"runtime_profile"}
+    if extra:
+        return "COMMAND_FORBIDDEN"
+    profile = payload.get("runtime_profile", "stub")
+    if not isinstance(profile, str) or profile not in SESSION_RUNTIME_PROFILES:
         return "COMMAND_FORBIDDEN"
     return None
 

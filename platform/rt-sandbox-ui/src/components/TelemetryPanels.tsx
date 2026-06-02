@@ -1,4 +1,5 @@
 import { Activity } from "lucide-react";
+import { pickAdapterFields } from "@/adapter/adapterStatus";
 import { PanelShell } from "./GovernanceChrome";
 import { TelemetryCognitionStrip } from "./TelemetryCognitionStrip";
 import type { ChannelSnapshot } from "@/telemetry/channelIndex";
@@ -46,31 +47,30 @@ export function SessionHealthPanel({
   hideCognition?: boolean;
 }) {
   const payload = snapshot?.payload ?? {};
-  const adapterHealth =
-    payload.adapter_health && typeof payload.adapter_health === "object"
-      ? (payload.adapter_health as Record<string, unknown>)
-      : null;
+  const adapter = pickAdapterFields(payload as Record<string, unknown>);
 
   return (
     <PanelShell title="Session health" icon={Activity} variant="tertiary">
       <div className="space-y-2">
         <Field label="state" value={String(payload.state ?? "—")} />
         <Field
-          label="runtime_mode"
-          value={String(payload.runtime_mode ?? "—")}
+          label="stub_alive"
+          value={
+            adapter.stubAlive === null ? "—" : adapter.stubAlive ? "yes" : "no"
+          }
         />
-        {adapterHealth && (
-          <>
-            <Field
-              label="adapter_alive"
-              value={String(adapterHealth.alive ?? "—")}
-            />
-            <Field
-              label="adapter_mode"
-              value={String(adapterHealth.mode ?? "—")}
-            />
-          </>
-        )}
+        <Field
+          label="adapter_alive"
+          value={
+            adapter.adapterAlive === null
+              ? "—"
+              : adapter.adapterAlive
+                ? "yes"
+                : "no"
+          }
+        />
+        <Field label="adapter_mode" value={adapter.adapterMode ?? "—"} />
+        <Field label="adapter_pid" value={adapter.adapterPid ?? "—"} />
       </div>
       {!hideCognition && <TelemetryCognitionStrip snapshot={snapshot} />}
     </PanelShell>
