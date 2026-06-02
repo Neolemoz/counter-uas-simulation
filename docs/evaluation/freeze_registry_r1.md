@@ -76,6 +76,7 @@ Correct reading: [reviewer_interpretation_guide.md](reviewer_interpretation_guid
 | RT-5e | Threshold envelope / phase | frozen stable | — | Wave 5 fixtures, realism docs |
 | RT-6 | Topology index surface | frozen stable | — | `topology-index`, wave6 fixtures |
 | RT-7 | Selection/oracle divergence | frozen stable | — | D0–D5 classifier, frozen parser fields |
+| EVAL-STAT-VAL-R1 | Monte Carlo statistical validation harness (guidance/realism arms) | frozen stable | [statistical_validation_freeze_audit.md](statistical_validation_freeze_audit.md) | `run_statistical_validation_sweep.py`, `summarize_statistical_validation.py`, profile CSVs, [statistical_validation_phase_plan.md](statistical_validation_phase_plan.md), [statistical_validation_multi_defender_audit.md](statistical_validation_multi_defender_audit.md) |
 | EVAL-RO | Replay observability tooling | frozen | [replay_observability_freeze_audit.md](replay_observability_freeze_audit.md) | `replay_observability.py`, `replay_observability_v1` |
 | EVAL-RI | Reviewer interpretation hardening R1 | frozen | [reviewer_interpretation_hardening_freeze_audit.md](reviewer_interpretation_hardening_freeze_audit.md) | static report wording, governance lint |
 | EVAL-RN-UX | Replay narrative UX phase 2 | superseded | [replay_narrative_ux_freeze_audit.md](replay_narrative_ux_freeze_audit.md) | planning only |

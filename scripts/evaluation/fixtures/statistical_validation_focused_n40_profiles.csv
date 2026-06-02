@@ -1,0 +1,5 @@
+label,scenario,n,seed_base,launch_args
+predictive_baseline,single,40,6201,use_gazebo_gui:=false eng_rollout_feasibility_gate:=false
+predictive_intercept,single,40,6201,use_gazebo_gui:=false eng_rollout_feasibility_gate:=true intercept_heatmap_prob_use_kinematic_rollout:=true
+hysteresis_off,single,40,6201,use_gazebo_gui:=false eng_rollout_feasibility_gate:=true intercept_mc_hysteresis_enabled:=false
+hysteresis_on,single,40,6201,use_gazebo_gui:=false eng_rollout_feasibility_gate:=true intercept_mc_hysteresis_enabled:=true

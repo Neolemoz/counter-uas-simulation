@@ -1,0 +1,8 @@
+label,scenario,n,seed_base,launch_args
+predictive_baseline,single,2,6201,use_gazebo_gui:=false eng_rollout_feasibility_gate:=false
+predictive_intercept,single,2,6201,use_gazebo_gui:=false eng_rollout_feasibility_gate:=true intercept_heatmap_prob_use_kinematic_rollout:=true
+hysteresis_off,single,2,6201,use_gazebo_gui:=false eng_rollout_feasibility_gate:=true intercept_mc_hysteresis_enabled:=false
+hysteresis_on,single,2,6201,use_gazebo_gui:=false eng_rollout_feasibility_gate:=true intercept_mc_hysteresis_enabled:=true
+multi_defender,multi,2,6201,use_gazebo_gui:=false eng_rollout_feasibility_gate:=true
+aero_realism_on,single,2,6201,use_gazebo_gui:=false eng_rollout_feasibility_gate:=true interceptor_max_turn_rate_rad_s:=0.2792526803190757 interceptor_max_accel_m_s2:=30.0
+sensor_realism_on,bringup,2,6201,use_gazebo_gui:=false counter_uas_config:=config_gazebo_counter_uas.yaml enable_sensor_realism_overlay:=true enable_lifecycle_observer:=true target_start_x_m:=-1500.0 target_start_y_m:=0.0 target_start_z_m:=300.0
