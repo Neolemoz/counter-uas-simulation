@@ -18,7 +18,7 @@ Two operating modes
    tests / CI where Gazebo is not available.
 
 2. ``--mode run`` — drive ``scripts/run_capture.py`` for ``--n`` runs. Each injected
-   Monte Carlo RNG uses ``noise_seed:=<seed_base+i>`` (unless overridden) and records
+   Monte Carlo RNG uses ``noise_seed:=<seed_base+i>`` (overriding caller values) and records
    ``noise_seed_mc`` + optional static ``geometry_id`` for reproducible pairing with
    spatial scenario matrices.
 
@@ -242,6 +242,7 @@ def _write_outputs(out_dir: Path, label: str, summary: dict, rows: list[dict]) -
         "meta_path",
         "git_commit",
         "git_dirty",
+        "capture_rc",
         "launch_args_raw",
         "notes",
         "log_path",
@@ -295,6 +296,8 @@ def _enrich_result_with_meta(result: dict, log_path: Path) -> dict:
     result.setdefault("git_dirty", md.get("git_dirty") if md.get("git_dirty") is not None else "")
     result.setdefault("launch_args_raw", md.get("launch_args_raw") or "")
     result.setdefault("notes", notes)
+    if md.get("capture_rc") is not None:
+        result.setdefault("capture_rc", md.get("capture_rc"))
     if seed_text:
         result.setdefault("noise_seed_mc", seed_text)
         result.setdefault("seed", seed_text)
@@ -322,6 +325,16 @@ def _log_matches_aggregate_filters(
             if notes_substring not in head:
                 return False
     return True
+
+
+def _launch_args_with_noise_seed(base_args: str | None, seed: int) -> str:
+    tokens = [
+        tok
+        for tok in str(base_args or '').split()
+        if tok.split(':=', 1)[0].strip() != 'noise_seed'
+    ]
+    tokens.append(f'noise_seed:={seed}')
+    return ' '.join(tokens).strip()
 
 
 def cmd_aggregate(args: argparse.Namespace) -> int:
@@ -377,10 +390,7 @@ def cmd_run(args: argparse.Namespace) -> int:
 
     for i in range(args.n):
         seed = args.seed_base + i
-        # Compose seed-aware launch args without overwriting whatever the caller already set.
-        per_run_args = base_args
-        if "noise_seed" not in base_args:
-            per_run_args = f"{per_run_args} noise_seed:={seed}".strip()
+        per_run_args = _launch_args_with_noise_seed(base_args, seed)
         cmd = [
             sys.executable,
             str(rc_script),
@@ -425,8 +435,17 @@ def cmd_run(args: argparse.Namespace) -> int:
         print("no successful runs collected", file=sys.stderr)
         return 1
     summary = _summarise(rows, args.label)
+    summary["expected_runs"] = int(args.n)
+    summary["complete"] = len(rows) == int(args.n)
+    summary["dropped_runs"] = int(args.n) - len(rows)
     _print_summary(summary)
     _write_outputs(Path(args.out_dir), args.label, summary, rows)
+    if len(rows) != int(args.n):
+        print(
+            f"[monte_carlo] incomplete cohort: collected {len(rows)}/{args.n} runs",
+            file=sys.stderr,
+        )
+        return 1
     return 0
 
 

@@ -44,7 +44,9 @@ def classify_run_failure_evidence(
     max_abs_delta = max((abs(d) for d in deltas), default=None)
 
     failure_class = 'F5_unknown'
-    if timeout_seen:
+    if summary.hit:
+        failure_class = ''
+    elif timeout_seen:
         failure_class = 'F1_timeout'
     elif assignment_switch_count > 0:
         failure_class = 'F4_assignment'

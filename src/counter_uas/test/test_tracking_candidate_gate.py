@@ -26,10 +26,73 @@ from __future__ import annotations
 
 import importlib.util
 import math
+import re
 import sys
+import types
 from pathlib import Path
 
 _REPO_ROOT = Path(__file__).resolve().parents[3]
+
+
+def _yaml_number(text: str, key: str) -> float:
+    match = re.search(rf'^\s*{re.escape(key)}:\s*([0-9.]+)\s*$', text, re.MULTILINE)
+    assert match is not None, f'missing {key} in config.yaml'
+    return float(match.group(1))
+
+
+def _install_ros_stubs_if_needed() -> None:
+    try:
+        import rclpy  # noqa: F401
+        import geometry_msgs.msg  # noqa: F401
+        import nav_msgs.msg  # noqa: F401
+        return
+    except ModuleNotFoundError:
+        pass
+
+    class _Time:
+        def to_msg(self):  # noqa: ANN201
+            return types.SimpleNamespace(sec=0, nanosec=0)
+
+    class _Point:
+        def __init__(self) -> None:
+            self.x = 0.0
+            self.y = 0.0
+            self.z = 0.0
+
+    class _Odometry:
+        def __init__(self) -> None:
+            self.header = types.SimpleNamespace(frame_id='', stamp=None)
+            self.child_frame_id = ''
+            self.pose = types.SimpleNamespace(
+                pose=types.SimpleNamespace(position=_Point(), orientation=types.SimpleNamespace(w=0.0)),
+                covariance=[0.0] * 36,
+            )
+            self.twist = types.SimpleNamespace(
+                twist=types.SimpleNamespace(linear=_Point()),
+                covariance=[0.0] * 36,
+            )
+
+    rclpy_mod = types.ModuleType('rclpy')
+    rclpy_time_mod = types.ModuleType('rclpy.time')
+    rclpy_time_mod.Time = _Time  # type: ignore[attr-defined]
+    rclpy_node_mod = types.ModuleType('rclpy.node')
+    rclpy_node_mod.Node = type('Node', (), {})  # type: ignore[attr-defined]
+    rclpy_mod.time = rclpy_time_mod  # type: ignore[attr-defined]
+
+    geom_pkg = types.ModuleType('geometry_msgs')
+    geom_msg = types.ModuleType('geometry_msgs.msg')
+    geom_msg.Point = _Point  # type: ignore[attr-defined]
+    nav_pkg = types.ModuleType('nav_msgs')
+    nav_msg = types.ModuleType('nav_msgs.msg')
+    nav_msg.Odometry = _Odometry  # type: ignore[attr-defined]
+
+    sys.modules.setdefault('rclpy', rclpy_mod)
+    sys.modules.setdefault('rclpy.time', rclpy_time_mod)
+    sys.modules.setdefault('rclpy.node', rclpy_node_mod)
+    sys.modules.setdefault('geometry_msgs', geom_pkg)
+    sys.modules['geometry_msgs.msg'] = geom_msg
+    sys.modules.setdefault('nav_msgs', nav_pkg)
+    sys.modules['nav_msgs.msg'] = nav_msg
 
 
 def _load_tracking_module():  # noqa: ANN201
@@ -44,6 +107,7 @@ def _load_tracking_module():  # noqa: ANN201
     if rclpy_mod is not None and not hasattr(rclpy_mod, 'time'):
         sys.modules.pop('rclpy', None)
         sys.modules.pop('rclpy.node', None)
+    _install_ros_stubs_if_needed()
     path = _REPO_ROOT / 'src' / 'tracking' / 'tracking' / 'tracking_node.py'
     assert path.is_file(), f'missing {path}'
     spec = importlib.util.spec_from_file_location('tracking_node_under_test', path)
@@ -221,3 +285,13 @@ def test_tracks_state_odometry_carries_finite_position_velocity_and_covariance()
     assert all(math.isfinite(float(v)) for v in vals)
     assert msg.pose.covariance[0] > 0.0
     assert msg.twist.covariance[0] > 0.0
+
+
+def test_default_bringup_config_uses_km_scale_tracking_gates() -> None:
+    cfg = (_REPO_ROOT / 'src' / 'counter_uas' / 'config' / 'config.yaml').read_text(encoding='utf-8')
+    assert _yaml_number(cfg, 'candidate_match_gate_m') >= 20.0
+    assert _yaml_number(cfg, 'association_gate_m') >= 25.0
+    assert _yaml_number(cfg, 'confirmation_hits') <= 2
+    assert _yaml_number(cfg, 'candidate_max_missed_frames') >= 5
+    assert _yaml_number(cfg, 'max_track_speed_mps') >= 80.0
+    assert _yaml_number(cfg, 'max_update_jump_m') >= 25.0
