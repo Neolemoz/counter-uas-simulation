@@ -64,7 +64,7 @@ def _install_ros_stubs_if_needed() -> None:
             self.header = types.SimpleNamespace(frame_id='', stamp=None)
             self.child_frame_id = ''
             self.pose = types.SimpleNamespace(
-                pose=types.SimpleNamespace(position=_Point()),
+                pose=types.SimpleNamespace(position=_Point(), orientation=types.SimpleNamespace(w=0.0)),
                 covariance=[0.0] * 36,
             )
             self.twist = types.SimpleNamespace(
