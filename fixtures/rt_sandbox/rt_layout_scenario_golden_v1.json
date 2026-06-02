@@ -1,0 +1,68 @@
+{
+  "created_utc": "2026-06-02T00:00:00Z",
+  "entities": [
+    {
+      "entity_type": "radar",
+      "pose": {
+        "x": 0.0,
+        "y": 0.0,
+        "yaw_deg": 0.0,
+        "z": 10.0
+      }
+    },
+    {
+      "entity_type": "interceptor",
+      "pose": {
+        "x": -5.0,
+        "y": 0.0,
+        "yaw_deg": 0.0,
+        "z": 10.0
+      }
+    },
+    {
+      "entity_type": "interceptor",
+      "pose": {
+        "x": 4.0,
+        "y": -4.0,
+        "yaw_deg": 0.0,
+        "z": 10.0
+      }
+    },
+    {
+      "entity_type": "interceptor",
+      "pose": {
+        "x": -4.0,
+        "y": 5.0,
+        "yaw_deg": 0.0,
+        "z": 10.0
+      }
+    },
+    {
+      "entity_type": "drone",
+      "pose": {
+        "x": -1500.0,
+        "y": 0.0,
+        "yaw_deg": 0.0,
+        "z": 300.0
+      }
+    },
+    {
+      "entity_type": "waypoint_marker",
+      "pose": {
+        "x": -750.0,
+        "y": 0.0,
+        "yaw_deg": 0.0,
+        "z": 20.0
+      }
+    }
+  ],
+  "layout_id": "rt_layout_mc_golden",
+  "notes": "Golden offline RT layout fixture for Monte Carlo profile translation only.",
+  "schema_version": "rt_layout_scenario_v1",
+  "source": {
+    "authority": "offline_fixture",
+    "origin": "fixtures/rt_sandbox",
+    "ui_flow": "world_editor_layout_export_preview"
+  },
+  "terrain_preset": "rt_sandbox_flat"
+}
