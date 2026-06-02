@@ -35,6 +35,9 @@ import { SessionComparisonCognitionStrip } from "@/workstation/SessionComparison
 import {
   BANNER_FIDELITY_TRUTH,
   BANNER_REALISM_F4,
+  BANNER_TACTICAL_COMPARE,
+  BANNER_TACTICAL_RANKING_CUES,
+  BANNER_TACTICAL_THREAT_CORRIDOR,
   BANNER_TACTICAL_TRAJECTORY,
   BANNER_TERRAIN,
   BANNER_VISIBILITY_V3,
@@ -54,12 +57,24 @@ import {
   sessionAccentColor,
 } from "@/workstation/sessionVisualIdentity";
 import { cesiumViewSummary } from "@/cesium/cognition";
+import {
+  deriveTacticalCompareDeltaLabels,
+  formatTacticalCompareSummary,
+} from "@/cesium/tacticalCompareDelta";
+import { hasTacticalCompareGeometry } from "@/cesium/tacticalCompareOverlay";
+import {
+  formatTacticalRankingSummary,
+  resolveTacticalRankingCues,
+} from "@/cesium/tacticalRankingCueLayer";
 import { feedbackEntityRows } from "@/sync/cognition";
 import type { MirrorEntity } from "@/cesium/entityMarkers";
 import type { EntityType } from "@/world/entityCatalog";
 import type { Pose } from "@/world/bounds";
 import type { Viewer } from "cesium";
-import type { TacticalStatePayload } from "@/bridge/tacticalCommands";
+import type {
+  TacticalRecommendationPayload,
+  TacticalStatePayload,
+} from "@/bridge/tacticalCommands";
 import { useTacticalCompareBaseline } from "@/hooks/useTacticalCompareBaseline";
 import type { SessionSlot } from "@/hooks/useRtSessionWorkspace";
 import { resolveTacticalCompareContext } from "@/workstation/tacticalCompareContext";
@@ -93,6 +108,7 @@ export function CesiumRuntimePanel({
   radarPreviewControls = null,
   onLayerVisibilityChange,
   tacticalState = null,
+  tacticalRecommendation = null,
   slotList = [],
 }: {
   sessionId: string | null;
@@ -126,6 +142,7 @@ export function CesiumRuntimePanel({
   } | null;
   onLayerVisibilityChange: (layers: VisualLayerVisibility) => void;
   tacticalState?: TacticalStatePayload | null;
+  tacticalRecommendation?: TacticalRecommendationPayload | null;
   slotList?: readonly SessionSlot[];
 }) {
   const compareBaseline = useTacticalCompareBaseline(sessionId, tacticalState);
@@ -154,12 +171,35 @@ export function CesiumRuntimePanel({
   const viewerRef = useRef<Viewer | null>(null);
 
   const terrainLayersOn = anyTerrainLayerEnabled(terrainLayers);
+  const tacticalThreatCorridorOn = layerVisibility.showTacticalThreatCorridor;
+  const tacticalRankingCuesOn = layerVisibility.showTacticalRankingCues;
+  const tacticalCompareOn = layerVisibility.showTacticalCompareOverlay;
   const tacticalTrajectoryOn =
     layerVisibility.showTacticalPredictedPath ||
     layerVisibility.showTacticalInterceptPoint ||
-    layerVisibility.showTacticalThreatCorridor ||
-    layerVisibility.showTacticalTargetRanking ||
-    layerVisibility.showTacticalCompareOverlay;
+    layerVisibility.showTacticalTimingLabels ||
+    layerVisibility.showTacticalSelectionEmphasis;
+  const tacticalRankingSummary = useMemo(() => {
+    if (!tacticalRankingCuesOn) return null;
+    return formatTacticalRankingSummary(
+      resolveTacticalRankingCues(tacticalState, tacticalRecommendation),
+    );
+  }, [tacticalRankingCuesOn, tacticalState, tacticalRecommendation]);
+  const tacticalCompareSummary = useMemo(() => {
+    if (!tacticalCompareOn || !tacticalCompare) return null;
+    return formatTacticalCompareSummary({
+      source: tacticalCompare.source,
+      compareSessionId: tacticalCompare.compareSessionId,
+      deltas: deriveTacticalCompareDeltaLabels(
+        tacticalState,
+        tacticalCompare.compareState,
+      ),
+      hasCompareGeometry: hasTacticalCompareGeometry(
+        tacticalCompare.compareState,
+        tacticalCompare.compareEntities,
+      ),
+    });
+  }, [tacticalCompareOn, tacticalCompare, tacticalState]);
   const fidelityContext = extractFidelityContext(worldSummary);
   const fidelityOn = isFidelityCouplingOn(fidelityContext);
   const selectedEntity =
@@ -391,6 +431,15 @@ export function CesiumRuntimePanel({
               {tacticalTrajectoryOn && (
                 <p className="text-[10px] text-amber-100/80">{BANNER_TACTICAL_TRAJECTORY}</p>
               )}
+              {tacticalThreatCorridorOn && (
+                <p className="text-[10px] text-amber-100/80">{BANNER_TACTICAL_THREAT_CORRIDOR}</p>
+              )}
+              {tacticalRankingCuesOn && (
+                <p className="text-[10px] text-amber-100/80">{BANNER_TACTICAL_RANKING_CUES}</p>
+              )}
+              {tacticalCompareOn && (
+                <p className="text-[10px] text-amber-100/80">{BANNER_TACTICAL_COMPARE}</p>
+              )}
             </div>
           </div>
         </details>
@@ -409,6 +458,14 @@ export function CesiumRuntimePanel({
               sessionContrastEnabled={layerVisibility.showSessionContrast}
               compareEmphasisEnabled={layerVisibility.showCompareEmphasisV4}
             />
+            {tacticalCompareSummary && (
+              <p
+                className="mt-2 rounded border border-slate-700/80 bg-slate-900/50 px-2 py-1.5 text-[10px] text-slate-400"
+                data-testid="tactical-compare-cognition"
+              >
+                {tacticalCompareSummary}
+              </p>
+            )}
           </div>
         </details>
       )}
@@ -476,6 +533,23 @@ export function CesiumRuntimePanel({
         </details>
       </div>
 
+      {tacticalRankingSummary && (
+        <p
+          className="mb-2 rounded border border-indigo-800/50 bg-indigo-950/35 px-2.5 py-1.5 text-[10px] text-indigo-100/90"
+          data-testid="tactical-ranking-summary"
+        >
+          {tacticalRankingSummary}
+        </p>
+      )}
+      {tacticalCompareSummary && (
+        <p
+          className="mb-2 rounded border border-slate-700/80 bg-slate-900/50 px-2.5 py-1.5 text-[10px] text-slate-400"
+          data-testid="tactical-compare-summary"
+        >
+          {tacticalCompareSummary}
+        </p>
+      )}
+
       <div className="relative">
         <CesiumRuntimeView
           sessionId={sessionId}
@@ -496,6 +570,7 @@ export function CesiumRuntimePanel({
           defenseZoneOptions={defenseZoneOptions}
           sensorDomeZoneMode={sensorDomeZoneMode}
           tacticalState={tacticalState}
+          tacticalRecommendation={tacticalRecommendation}
           tacticalCompare={tacticalCompare}
           mirrorSnapshot={mirrorSnapshot}
           onViewerReady={handleViewerReady}

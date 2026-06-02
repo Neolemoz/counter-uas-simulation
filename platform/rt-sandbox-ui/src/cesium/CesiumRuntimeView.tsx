@@ -33,16 +33,33 @@ import {
 } from "./terrainLayers";
 import type { DefenseZoneRenderOptions } from "./defenseZoneConfig";
 import type { SensorDomeRenderOptions } from "./sensorDomeLayer";
-import { syncTacticalCompareOverlay } from "./tacticalCompareOverlay";
+import {
+  clearTacticalCompareOverlay,
+  syncTacticalCompareOverlay,
+} from "./tacticalCompareOverlay";
+import {
+  clearTacticalCorridorLayer,
+  syncTacticalCorridorLayer,
+} from "./tacticalCorridorLayer";
+import {
+  clearTacticalRankingCueLayer,
+  syncTacticalRankingCueLayer,
+} from "./tacticalRankingCueLayer";
 import {
   clearTacticalTrajectoryLayer,
-  resolveTacticalRoleIds,
   syncTacticalTrajectoryLayer,
 } from "./tacticalTrajectoryLayer";
+import {
+  clearTacticalSelectionEmphasisLayer,
+  syncTacticalSelectionEmphasisLayer,
+} from "./tacticalSelectionEmphasisLayer";
 import type { TacticalCompareContext } from "@/workstation/tacticalCompareContext";
 import type { VisualLayerVisibility } from "./visualLayerRegistry";
 import { clearVisibilityOverlayV4, syncVisibilityOverlayV4 } from "./visibilityOverlayV4";
-import type { TacticalStatePayload } from "@/bridge/tacticalCommands";
+import type {
+  TacticalRecommendationPayload,
+  TacticalStatePayload,
+} from "@/bridge/tacticalCommands";
 import type { ChannelSnapshot } from "@/telemetry/channelIndex";
 import { entitiesFromSnapshot } from "@/telemetry/channelIndex";
 import { parseEntityRuntimeTelemetryMap } from "@/telemetry/entityMirrorFields";
@@ -66,6 +83,7 @@ export interface CesiumRuntimeViewProps {
   defenseZoneOptions?: DefenseZoneRenderOptions;
   sensorDomeZoneMode?: SensorDomeZoneMode;
   tacticalState?: TacticalStatePayload | null;
+  tacticalRecommendation?: TacticalRecommendationPayload | null;
   tacticalCompare?: TacticalCompareContext | null;
   mirrorSnapshot?: ChannelSnapshot;
   onViewerReady?: (viewer: Viewer | null) => void;
@@ -153,6 +171,7 @@ export function CesiumRuntimeView({
   defenseZoneOptions,
   sensorDomeZoneMode = "both",
   tacticalState = null,
+  tacticalRecommendation = null,
   tacticalCompare = null,
   mirrorSnapshot,
   onViewerReady,
@@ -216,6 +235,10 @@ export function CesiumRuntimeView({
         clearHorizonHintLayer(viewer);
         clearVisibilityOverlayV4(viewer);
         clearTacticalTrajectoryLayer(viewer);
+        clearTacticalCorridorLayer(viewer);
+        clearTacticalRankingCueLayer(viewer);
+        clearTacticalCompareOverlay(viewer);
+        clearTacticalSelectionEmphasisLayer(viewer);
         viewer.trackedEntity = undefined;
       }
       if (!viewer.isDestroyed()) {
@@ -306,8 +329,24 @@ export function CesiumRuntimeView({
     syncTacticalTrajectoryLayer(viewer, {
       showPath: layerVisibility.showTacticalPredictedPath,
       showInterceptPoint: layerVisibility.showTacticalInterceptPoint,
-      showThreatCorridor: layerVisibility.showTacticalThreatCorridor,
-      showTargetRanking: layerVisibility.showTacticalTargetRanking,
+      showTimingLabels: layerVisibility.showTacticalTimingLabels,
+      tacticalState,
+      tacticalRecommendation,
+      entities,
+      applyTerrainDisplay: shouldApplyTerrainGrounding(terrainLayers),
+      stale: tacticalState?.tactical_health?.stale === true,
+    });
+    syncTacticalRankingCueLayer(viewer, {
+      enabled: layerVisibility.showTacticalRankingCues,
+      tacticalState,
+      tacticalRecommendation,
+      entities,
+      selectedEntityId,
+      applyTerrainDisplay: shouldApplyTerrainGrounding(terrainLayers),
+      stale: tacticalState?.tactical_health?.stale === true,
+    });
+    syncTacticalCorridorLayer(viewer, {
+      enabled: layerVisibility.showTacticalThreatCorridor,
       tacticalState,
       entities,
       applyTerrainDisplay: shouldApplyTerrainGrounding(terrainLayers),
@@ -324,9 +363,16 @@ export function CesiumRuntimeView({
       entities: compareEntities,
       applyTerrainDisplay: shouldApplyTerrainGrounding(terrainLayers),
       stale: tacticalState?.tactical_health?.stale === true,
+      compareSource: tacticalCompare?.source,
     });
-    const { targetId: tacticalTargetEntityId } =
-      resolveTacticalRoleIds(tacticalState);
+    syncTacticalSelectionEmphasisLayer(viewer, {
+      enabled: layerVisibility.showTacticalSelectionEmphasis,
+      tacticalState,
+      entities,
+      selectedEntityId,
+      applyTerrainDisplay: shouldApplyTerrainGrounding(terrainLayers),
+      stale: tacticalState?.tactical_health?.stale === true,
+    });
     syncEntityMarkers(viewer, entities, {
       selectedEntityId,
       hoveredEntityId,
@@ -339,7 +385,6 @@ export function CesiumRuntimeView({
       sessionAccentCss,
       applyTerrainDisplay: shouldApplyTerrainGrounding(terrainLayers),
       markerEmphasis,
-      tacticalTargetEntityId,
       runtimeTelemetryByEntityId,
     });
   }, [
@@ -360,6 +405,7 @@ export function CesiumRuntimeView({
     sessionAccentCss,
     markerEmphasis,
     tacticalState,
+    tacticalRecommendation,
     tacticalCompare,
     runtimeTelemetryByEntityId,
   ]);

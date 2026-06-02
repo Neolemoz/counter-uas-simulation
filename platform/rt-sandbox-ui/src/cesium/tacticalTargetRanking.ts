@@ -68,6 +68,7 @@ function normalizeRankingList(
 
 function readRankingArray(state: Record<string, unknown>): unknown[] | null {
   for (const key of [
+    "ranked_candidates",
     "target_ranking",
     "target_candidates",
     "ranked_targets",

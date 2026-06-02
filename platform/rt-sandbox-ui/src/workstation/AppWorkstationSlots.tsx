@@ -506,6 +506,7 @@ export function AppWorkstationSlots(props: AppWorkstationSlotsProps) {
             }
             onLayerVisibilityChange={onLayerVisibilityChange}
             tacticalState={tactical.state}
+            tacticalRecommendation={tactical.recommendation}
             slotList={slotList}
           />
         ) : (

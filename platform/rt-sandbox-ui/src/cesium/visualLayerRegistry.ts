@@ -60,7 +60,9 @@ export type LayerVisibilityKey =
   | "showTacticalPredictedPath"
   | "showTacticalInterceptPoint"
   | "showTacticalThreatCorridor"
-  | "showTacticalTargetRanking"
+  | "showTacticalRankingCues"
+  | "showTacticalTimingLabels"
+  | "showTacticalSelectionEmphasis"
   | "showTacticalCompareOverlay";
 
 export interface VisualLayerPerformanceBudget {
@@ -123,7 +125,9 @@ export interface VisualLayerVisibility {
   showTacticalPredictedPath: boolean;
   showTacticalInterceptPoint: boolean;
   showTacticalThreatCorridor: boolean;
-  showTacticalTargetRanking: boolean;
+  showTacticalRankingCues: boolean;
+  showTacticalTimingLabels: boolean;
+  showTacticalSelectionEmphasis: boolean;
   showTacticalCompareOverlay: boolean;
 }
 
@@ -170,7 +174,9 @@ const LAYER_ID_TO_VISIBILITY_KEY: Partial<Record<string, LayerVisibilityKey>> = 
   tactical_predicted_path: "showTacticalPredictedPath",
   tactical_intercept_point: "showTacticalInterceptPoint",
   tactical_threat_corridor: "showTacticalThreatCorridor",
-  tactical_target_ranking: "showTacticalTargetRanking",
+  tactical_ranking_cues: "showTacticalRankingCues",
+  tactical_timing_labels: "showTacticalTimingLabels",
+  tactical_selection_emphasis: "showTacticalSelectionEmphasis",
   tactical_compare_overlay: "showTacticalCompareOverlay",
 };
 
@@ -345,7 +351,7 @@ const TACTICAL_LAYERS: VisualLayerDescriptor[] = [
     toggleable: true,
     visibility_key: "showTacticalThreatCorridor",
     cognition_group: "marker_context",
-    module_anchor: "tacticalThreatCorridor",
+    module_anchor: "tacticalCorridorLayer",
     cognition_kind: "marker",
     density_group: "entity_context",
     display_only: true,
@@ -353,36 +359,69 @@ const TACTICAL_LAYERS: VisualLayerDescriptor[] = [
       "Threat corridor is display-only attacker-to-solution emphasis — not weapon engagement geometry",
   },
   {
-    layer_id: "tactical_target_ranking",
-    label: "Target ranking",
+    layer_id: "tactical_ranking_cues",
+    label: "Ranking cues",
     z_order: 86,
     default_on: false,
     plat_phase: "v4_p1",
     toggleable: true,
-    visibility_key: "showTacticalTargetRanking",
+    visibility_key: "showTacticalRankingCues",
     cognition_group: "marker_context",
-    module_anchor: "tacticalTargetRanking",
+    module_anchor: "tacticalRankingCueLayer",
     cognition_kind: "marker",
     density_group: "entity_context",
     display_only: true,
     disclaimer:
-      "Target rank labels (#1–#3) are explanatory ranking cues — not operational prioritization",
+      "Ranking cues are explanatory — recommendation-only when no ranked list exists; not command authority",
+  },
+  {
+    layer_id: "tactical_timing_labels",
+    label: "Timing labels",
+    z_order: 90,
+    default_on: false,
+    plat_phase: "v4_p1",
+    toggleable: true,
+    visibility_key: "showTacticalTimingLabels",
+    cognition_group: "marker_context",
+    module_anchor: "tacticalTrajectoryLayer",
+    cognition_kind: "marker",
+    density_group: "entity_context",
+    display_only: true,
+    disclaimer:
+      "TTI/ETA labels are explanatory tactical telemetry - not command authority",
+  },
+  {
+    layer_id: "tactical_selection_emphasis",
+    label: "Tactical target",
+    z_order: 91,
+    default_on: false,
+    plat_phase: "v4_p1",
+    toggleable: true,
+    visibility_key: "showTacticalSelectionEmphasis",
+    cognition_group: "marker_context",
+    module_anchor: "tacticalSelectionEmphasisLayer",
+    cognition_kind: "marker",
+    density_group: "entity_context",
+    display_only: true,
+    disclaimer:
+      "Tactical target emphasis is visual only - edit selection remains command priority",
   },
   {
     layer_id: "tactical_compare_overlay",
     label: "Tactical compare",
-    z_order: 85,
+    z_order: 84,
     default_on: false,
     plat_phase: "v4_p1",
     toggleable: true,
     visibility_key: "showTacticalCompareOverlay",
-    cognition_group: "marker_context",
+    cognition_group: "comparison_context",
     module_anchor: "tacticalCompareOverlay",
-    cognition_kind: "marker",
+    cognition_kind: "comparison",
     density_group: "entity_context",
+    comparison_role: "comparison",
     display_only: true,
     disclaimer:
-      "Tactical compare overlay is display-only — faded prior/compare path; not outcome authority",
+      "Tactical compare ghosts are display-only — background session path/solution; not command or outcome authority",
   },
 ];
 
@@ -493,7 +532,9 @@ export function defaultVisibilityFromRegistry(
     showTacticalPredictedPath: false,
     showTacticalInterceptPoint: false,
     showTacticalThreatCorridor: false,
-    showTacticalTargetRanking: false,
+    showTacticalRankingCues: false,
+    showTacticalTimingLabels: false,
+    showTacticalSelectionEmphasis: false,
     showTacticalCompareOverlay: false,
   };
 
@@ -582,7 +623,9 @@ const OVERLAY_COUNT_KEYS: LayerVisibilityKey[] = [
   "showTacticalPredictedPath",
   "showTacticalInterceptPoint",
   "showTacticalThreatCorridor",
-  "showTacticalTargetRanking",
+  "showTacticalRankingCues",
+  "showTacticalTimingLabels",
+  "showTacticalSelectionEmphasis",
   "showTacticalCompareOverlay",
 ];
 

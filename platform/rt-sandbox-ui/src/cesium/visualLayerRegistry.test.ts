@@ -138,6 +138,7 @@ describe("visualLayerRegistry", () => {
       "session_contrast_v4",
       "comparison_ghosts_v4",
       "compare_emphasis_v4",
+      "tactical_compare_overlay",
     ]);
   });
 
@@ -232,5 +233,21 @@ describe("visualLayerRegistry", () => {
     };
     expect(registryBudgetSummaryLine(heavy)).toMatch(/advisory/i);
     expect(registryBudgetSummaryLine(heavy)).toMatch(/overlays/);
+  });
+
+  it("adds tactical timing and target emphasis controls with safe defaults", () => {
+    const defaults = defaultVisibilityFromRegistry();
+    expect(defaults.showTacticalTimingLabels).toBe(false);
+    expect(defaults.showTacticalSelectionEmphasis).toBe(false);
+
+    for (const id of ["tactical_timing_labels", "tactical_selection_emphasis"]) {
+      const layer = CANONICAL_VISUAL_LAYER_REGISTRY.layers.find(
+        (l) => l.layer_id === id,
+      );
+      expect(layer?.toggleable).toBe(true);
+      expect(layer?.display_only).toBe(true);
+      expect(layer?.default_on).toBe(false);
+      expect(layer?.disclaimer).toMatch(/telemetry|visual|command|selection/i);
+    }
   });
 });

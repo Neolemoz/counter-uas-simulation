@@ -43,6 +43,9 @@ export const TACTICAL_INTERCEPT_POINT_COLOR = "rgba(248, 113, 113, 0.92)";
 export const TACTICAL_THREAT_CORRIDOR_FILL = "rgba(251, 146, 60, 0.32)";
 export const TACTICAL_THREAT_CORRIDOR_EDGE = "rgba(185, 28, 28, 0.55)";
 export const TACTICAL_THREAT_CORRIDOR_CENTER = "rgba(254, 202, 202, 0.38)";
+/** Muted compare-session tactical ghost path (display-only). */
+export const TACTICAL_COMPARE_PATH_COLOR = "rgba(148, 163, 184, 0.5)";
+export const TACTICAL_COMPARE_SOLUTION_COLOR = "rgba(148, 163, 184, 0.62)";
 export const TACTICAL_TIMING_FONT = "10px sans-serif";
 export const TACTICAL_TIMING_LABEL_FILL = "rgba(254, 243, 199, 0.96)";
 export const TACTICAL_TIMING_LABEL_BG = LABEL_BACKGROUND;

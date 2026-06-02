@@ -9,7 +9,10 @@ import {
 } from "cesium";
 import type { TacticalStatePayload } from "@/bridge/tacticalCommands";
 import { isViewerUsable } from "./cesiumEditing";
-import { deriveTacticalCompareDeltaLabels } from "./tacticalCompareDelta";
+import {
+  deriveTacticalCompareDeltaLabels,
+  type TacticalCompareDeltaLabels,
+} from "./tacticalCompareDelta";
 import {
   deriveTacticalTrajectoryGeometry,
   type EnuPoint,
@@ -18,13 +21,23 @@ import {
 import type { MirrorEntity } from "./entityMarkers";
 import { applyTerrainDisplayOffset } from "./rtFictionalTerrain";
 import { worldToCartesian } from "./coordinates";
+import type { TacticalCompareSource } from "@/workstation/tacticalCompareContext";
 import {
-  TACTICAL_INTERCEPT_POINT_COLOR,
+  TACTICAL_COMPARE_PATH_COLOR,
+  TACTICAL_COMPARE_SOLUTION_COLOR,
   TACTICAL_TIMING_FONT,
   TACTICAL_TIMING_LABEL_BG,
 } from "./visualStyle";
 
 const COMPARE_PREFIX = "rt-tactical-compare-";
+
+function removeCompareEntities(viewer: Viewer): void {
+  const toRemove: Entity[] = [];
+  viewer.entities.values.forEach((e) => {
+    if ((e.id ?? "").startsWith(COMPARE_PREFIX)) toRemove.push(e);
+  });
+  for (const e of toRemove) viewer.entities.remove(e);
+}
 
 function displayZ(
   x: number,
@@ -60,6 +73,17 @@ function compareLabelOptions(alphaScale: number) {
   };
 }
 
+function compareDeltaAnchor(
+  geometry: ReturnType<typeof deriveTacticalTrajectoryGeometry>,
+): EnuPoint | null {
+  if (!geometry) return null;
+  if (geometry.interceptPose) return geometry.interceptPose;
+  if (geometry.pathPoints.length > 0) {
+    return geometry.pathPoints[Math.floor(geometry.pathPoints.length / 2)];
+  }
+  return null;
+}
+
 export interface TacticalCompareOverlaySyncOptions {
   enabled: boolean;
   currentState: TacticalStatePayload | null | undefined;
@@ -67,6 +91,17 @@ export interface TacticalCompareOverlaySyncOptions {
   entities: MirrorEntity[];
   applyTerrainDisplay: boolean;
   stale?: boolean;
+  compareSource?: TacticalCompareSource;
+}
+
+export function hasTacticalCompareGeometry(
+  compareState: TacticalStatePayload | null | undefined,
+  entities: MirrorEntity[],
+): boolean {
+  const geometry = deriveTacticalTrajectoryGeometry(compareState, entities);
+  if (!geometry) return false;
+  if (geometry.pathPoints.length >= 2) return true;
+  return Boolean(geometry.interceptPose ?? geometry.pathEndPose);
 }
 
 export function syncTacticalCompareOverlay(
@@ -74,12 +109,7 @@ export function syncTacticalCompareOverlay(
   options: TacticalCompareOverlaySyncOptions,
 ): void {
   if (!isViewerUsable(viewer)) return;
-
-  const toRemove: Entity[] = [];
-  viewer.entities.values.forEach((e) => {
-    if ((e.id ?? "").startsWith(COMPARE_PREFIX)) toRemove.push(e);
-  });
-  for (const e of toRemove) viewer.entities.remove(e);
+  removeCompareEntities(viewer);
 
   if (!options.enabled || !options.compareState) return;
 
@@ -87,38 +117,68 @@ export function syncTacticalCompareOverlay(
     options.compareState,
     options.entities,
   );
-  if (!geometry || geometry.pathPoints.length < 2) return;
-
-  const alphaScale = (options.stale ? 0.45 : 1) * 0.55;
-  const deltas = deriveTacticalCompareDeltaLabels(
+  const deltas: TacticalCompareDeltaLabels = deriveTacticalCompareDeltaLabels(
     options.currentState,
     options.compareState,
   );
+  const alphaScale = (options.stale ? 0.45 : 1) * 0.55;
+  const sourceTag =
+    options.compareSource === "session"
+      ? "background session"
+      : options.compareSource === "embedded"
+        ? "embedded compare"
+        : options.compareSource === "previous"
+          ? "prior snapshot"
+          : "compare";
 
-  const positions = geometry.pathPoints.map((p) =>
-    toCartesian(p, options.applyTerrainDisplay),
-  );
+  if (geometry && geometry.pathPoints.length >= 2) {
+    const positions = geometry.pathPoints.map((p) =>
+      toCartesian(p, options.applyTerrainDisplay),
+    );
+    viewer.entities.add(
+      new Entity({
+        id: `${COMPARE_PREFIX}path`,
+        polyline: {
+          positions,
+          width: 2,
+          material: new PolylineDashMaterialProperty({
+            color: Color.fromCssColorString(TACTICAL_COMPARE_PATH_COLOR).withAlpha(
+              0.5 * alphaScale,
+            ),
+            dashLength: 5,
+            gapColor: Color.TRANSPARENT,
+          }),
+        },
+      }),
+    );
 
-  viewer.entities.add(
-    new Entity({
-      id: `${COMPARE_PREFIX}path`,
-      polyline: {
-        positions,
-        width: 2,
-        material: new PolylineDashMaterialProperty({
-          color: Color.fromCssColorString("rgba(248, 113, 113, 0.42)").withAlpha(
-            0.42 * alphaScale,
+    const pathMid = geometry.pathPoints[Math.floor(geometry.pathPoints.length / 2)];
+    viewer.entities.add(
+      new Entity({
+        id: `${COMPARE_PREFIX}path-hint`,
+        position: toCartesian(pathMid, options.applyTerrainDisplay),
+        label: {
+          text: `compare path · ${sourceTag} · display only`,
+          font: "9px sans-serif",
+          fillColor: Color.fromCssColorString("rgba(148, 163, 184, 0.9)").withAlpha(
+            0.9 * alphaScale,
           ),
-          dashLength: 6,
-          gapColor: Color.TRANSPARENT,
-        }),
-      },
-    }),
-  );
+          outlineColor: Color.BLACK,
+          outlineWidth: 1,
+          style: LabelStyle.FILL_AND_OUTLINE,
+          verticalOrigin: VerticalOrigin.BOTTOM,
+          pixelOffset: new Cartesian2(-64, -6),
+          showBackground: true,
+          backgroundColor: Color.fromCssColorString("rgba(15, 23, 42, 0.75)"),
+          disableDepthTestDistance: Number.POSITIVE_INFINITY,
+        },
+      }),
+    );
+  }
 
   const solution =
-    geometry.interceptPose ??
-    (geometry.pathEndPose ? geometry.pathEndPose : null);
+    geometry?.interceptPose ??
+    (geometry?.pathEndPose ? geometry.pathEndPose : null);
   if (solution) {
     viewer.entities.add(
       new Entity({
@@ -126,27 +186,43 @@ export function syncTacticalCompareOverlay(
         position: toCartesian(solution, options.applyTerrainDisplay),
         point: {
           pixelSize: 8,
-          color: Color.fromCssColorString(TACTICAL_INTERCEPT_POINT_COLOR).withAlpha(
-            0.5 * alphaScale,
+          color: Color.fromCssColorString(TACTICAL_COMPARE_SOLUTION_COLOR).withAlpha(
+            0.55 * alphaScale,
           ),
-          outlineColor: Color.fromCssColorString("rgba(148, 163, 184, 0.75)"),
+          outlineColor: Color.fromCssColorString("rgba(100, 116, 139, 0.8)"),
           outlineWidth: 1,
+          disableDepthTestDistance: Number.POSITIVE_INFINITY,
+        },
+        label: {
+          text: "compare solution · display only",
+          font: "9px sans-serif",
+          fillColor: Color.fromCssColorString("rgba(203, 213, 225, 0.9)").withAlpha(
+            0.9 * alphaScale,
+          ),
+          outlineColor: Color.BLACK,
+          outlineWidth: 1,
+          style: LabelStyle.FILL_AND_OUTLINE,
+          verticalOrigin: VerticalOrigin.TOP,
+          pixelOffset: new Cartesian2(0, 8),
+          showBackground: true,
+          backgroundColor: Color.fromCssColorString("rgba(15, 23, 42, 0.72)"),
+          disableDepthTestDistance: Number.POSITIVE_INFINITY,
         },
       }),
     );
   }
 
-  if (deltas.block) {
-    const mid = geometry.pathPoints[Math.floor(geometry.pathPoints.length / 2)];
+  const deltaAnchor = compareDeltaAnchor(geometry);
+  if (deltas.block && deltaAnchor) {
     viewer.entities.add(
       new Entity({
         id: `${COMPARE_PREFIX}delta`,
-        position: toCartesian(mid, options.applyTerrainDisplay),
+        position: toCartesian(deltaAnchor, options.applyTerrainDisplay),
         label: {
-          text: deltas.block,
+          text: `${deltas.block}\ncompare summary · display only`,
           ...compareLabelOptions(alphaScale),
           verticalOrigin: VerticalOrigin.CENTER,
-          pixelOffset: new Cartesian2(-58, 14),
+          pixelOffset: new Cartesian2(58, 18),
         },
       }),
     );
@@ -154,11 +230,7 @@ export function syncTacticalCompareOverlay(
 
   const { targetId: currentTarget } = resolveTacticalRoleIds(options.currentState);
   const { targetId: compareTarget } = resolveTacticalRoleIds(options.compareState);
-  if (
-    deltas.targetLine &&
-    compareTarget &&
-    compareTarget !== currentTarget
-  ) {
+  if (deltas.targetLine && compareTarget && compareTarget !== currentTarget) {
     const targetEnt = options.entities.find((e) => e.entity_id === compareTarget);
     const pose = targetEnt?.pose;
     if (pose) {
@@ -171,7 +243,7 @@ export function syncTacticalCompareOverlay(
             id: `${COMPARE_PREFIX}target-hint`,
             position: toCartesian({ x, y, z }, options.applyTerrainDisplay),
             label: {
-              text: "compare target",
+              text: "compare target · display only",
               font: "9px sans-serif",
               fillColor: Color.fromCssColorString("rgba(148, 163, 184, 0.88)"),
               outlineColor: Color.BLACK,
@@ -181,6 +253,7 @@ export function syncTacticalCompareOverlay(
               pixelOffset: new Cartesian2(0, -20),
               showBackground: true,
               backgroundColor: Color.fromCssColorString("rgba(15, 23, 42, 0.72)"),
+              disableDepthTestDistance: Number.POSITIVE_INFINITY,
             },
           }),
         );
@@ -192,11 +265,6 @@ export function syncTacticalCompareOverlay(
 export function clearTacticalCompareOverlay(
   viewer: Viewer | null | undefined,
 ): void {
-  syncTacticalCompareOverlay(viewer, {
-    enabled: false,
-    currentState: null,
-    compareState: null,
-    entities: [],
-    applyTerrainDisplay: false,
-  });
+  if (!isViewerUsable(viewer)) return;
+  removeCompareEntities(viewer);
 }

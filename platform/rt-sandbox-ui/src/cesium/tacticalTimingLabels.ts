@@ -1,4 +1,7 @@
-import type { TacticalStatePayload } from "@/bridge/tacticalCommands";
+import type {
+  TacticalRecommendationPayload,
+  TacticalStatePayload,
+} from "@/bridge/tacticalCommands";
 import type { EnuPoint } from "./tacticalTrajectoryLayer";
 
 export const DEFAULT_INTERCEPTOR_SPEED_CAP_M_S = 25;
@@ -15,7 +18,7 @@ function finitePositive(value: unknown): number | null {
 }
 
 function readOptionalSeconds(
-  state: TacticalStatePayload | null | undefined,
+  state: TacticalRecommendationPayload | TacticalStatePayload | null | undefined,
   key: "tti_s" | "eta_s",
 ): number | null {
   if (!state) return null;
@@ -45,18 +48,15 @@ export function interceptorSpeedCapMps(
 
 export function deriveTacticalTimingSeconds(
   state: TacticalStatePayload | null | undefined,
-  pathPoints: EnuPoint[],
+  recommendation?: TacticalRecommendationPayload | null | undefined,
 ): TacticalTimingSeconds {
-  const speedCap = interceptorSpeedCapMps(state);
-  const pathS =
-    pathPoints.length >= 2 ? pathLengthM(pathPoints) / speedCap : null;
-
   const ttiFromState = readOptionalSeconds(state, "tti_s");
+  const ttiFromRecommendation = readOptionalSeconds(recommendation, "tti_s");
   const etaFromState = readOptionalSeconds(state, "eta_s");
 
   return {
-    ttiS: ttiFromState ?? pathS,
-    etaS: etaFromState ?? pathS,
+    ttiS: ttiFromState ?? ttiFromRecommendation,
+    etaS: etaFromState,
   };
 }
 

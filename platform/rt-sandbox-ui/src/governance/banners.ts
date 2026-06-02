@@ -67,6 +67,18 @@ export const BANNER_VISIBILITY_V3 =
 export const BANNER_TACTICAL_TRAJECTORY =
   "TACTICAL TRAJECTORY — display-only path and solution cue; not operational authority or simulation truth";
 
+/** Additive panel banner — tactical threat corridor overlay (display-only). */
+export const BANNER_TACTICAL_THREAT_CORRIDOR =
+  "TACTICAL THREAT CORRIDOR — explanatory attacker-to-solution emphasis; not sensor coverage or engagement guarantee";
+
+/** Additive panel banner — tactical ranking cue overlay (display-only). */
+export const BANNER_TACTICAL_RANKING_CUES =
+  "TACTICAL RANKING CUES — recommendation or ranked-list display only; not command authority or operational prioritization";
+
+/** Additive panel banner — multi-session tactical compare overlay (display-only). */
+export const BANNER_TACTICAL_COMPARE =
+  "TACTICAL COMPARE — background-session ghosts and deltas are explanatory only; active session remains command authority";
+
 export const BASE_BANNERS = [
   BANNER_PRIMARY,
   BANNER_TRANSIENT,

@@ -2,13 +2,15 @@ import {
   Color,
   Entity,
   LabelStyle,
-  PolygonHierarchy,
   PolylineDashMaterialProperty,
   VerticalOrigin,
   Viewer,
   Cartesian2,
 } from "cesium";
-import type { TacticalStatePayload } from "@/bridge/tacticalCommands";
+import type {
+  TacticalRecommendationPayload,
+  TacticalStatePayload,
+} from "@/bridge/tacticalCommands";
 import { isViewerUsable } from "./cesiumEditing";
 import { worldToCartesian } from "./coordinates";
 import type { MirrorEntity } from "./entityMarkers";
@@ -18,26 +20,15 @@ import {
   formatTacticalTimingBlock,
 } from "./tacticalTimingLabels";
 import {
-  buildCorridorRibbonPolygon,
-  deriveThreatCorridorGeometry,
-} from "./tacticalThreatCorridor";
-import {
-  parseTacticalTargetRanking,
-  rankLabelFor,
-} from "./tacticalTargetRanking";
-import {
   TACTICAL_INTERCEPT_POINT_COLOR,
   TACTICAL_PATH_COLOR,
   TACTICAL_PATH_HEURISTIC_COLOR,
-  TACTICAL_THREAT_CORRIDOR_CENTER,
-  TACTICAL_THREAT_CORRIDOR_EDGE,
-  TACTICAL_THREAT_CORRIDOR_FILL,
   TACTICAL_TIMING_FONT,
   TACTICAL_TIMING_LABEL_BG,
   TACTICAL_TIMING_LABEL_FILL,
 } from "./visualStyle";
 
-const TACTICAL_PREFIX = "rt-tactical-";
+const TACTICAL_TRAJ_PREFIX = "rt-tactical-traj-";
 
 function tacticalTimingLabelOptions(alphaScale: number) {
   return {
@@ -94,7 +85,7 @@ export interface TacticalTrajectoryGeometry {
 function removeTacticalEntities(viewer: Viewer): void {
   const toRemove: Entity[] = [];
   viewer.entities.values.forEach((e) => {
-    if ((e.id ?? "").startsWith(TACTICAL_PREFIX)) toRemove.push(e);
+    if ((e.id ?? "").startsWith(TACTICAL_TRAJ_PREFIX)) toRemove.push(e);
   });
   for (const e of toRemove) viewer.entities.remove(e);
 }
@@ -226,40 +217,12 @@ function toCartesian(
 export interface TacticalTrajectorySyncOptions {
   showPath: boolean;
   showInterceptPoint: boolean;
-  showThreatCorridor?: boolean;
-  showTargetRanking?: boolean;
+  showTimingLabels?: boolean;
   tacticalState: TacticalStatePayload | null | undefined;
+  tacticalRecommendation?: TacticalRecommendationPayload | null | undefined;
   entities: MirrorEntity[];
   applyTerrainDisplay: boolean;
   stale?: boolean;
-}
-
-const THREAT_CORRIDOR_HALF_WIDTH_M = 14;
-
-function rankLabelStyle(rank: number, isSelectedTarget: boolean, alphaScale: number) {
-  const emphasis = isSelectedTarget || rank === 1;
-  return {
-    font: emphasis ? "11px sans-serif" : "10px sans-serif",
-    fillColor: Color.fromCssColorString(
-      isSelectedTarget
-        ? "rgba(254, 243, 199, 0.98)"
-        : rank === 1
-          ? "rgba(254, 226, 226, 0.95)"
-          : rank === 2
-            ? "rgba(253, 186, 116, 0.9)"
-            : "rgba(252, 165, 165, 0.82)",
-    ).withAlpha((emphasis ? 0.98 : 0.85) * alphaScale),
-    outlineColor: Color.BLACK,
-    outlineWidth: isSelectedTarget ? 2 : 1,
-    style: LabelStyle.FILL_AND_OUTLINE,
-    verticalOrigin: VerticalOrigin.CENTER,
-    showBackground: true,
-    backgroundColor: Color.fromCssColorString(
-      isSelectedTarget ? "rgba(69, 10, 10, 0.88)" : "rgba(15, 23, 42, 0.82)",
-    ).withAlpha(0.9 * alphaScale),
-    pixelOffset: new Cartesian2(isSelectedTarget ? 0 : 14, -28 - rank * 4),
-    disableDepthTestDistance: Number.POSITIVE_INFINITY,
-  };
 }
 
 export function syncTacticalTrajectoryLayer(
@@ -278,7 +241,7 @@ export function syncTacticalTrajectoryLayer(
   const alphaScale = options.stale ? 0.45 : 1;
   const timing = deriveTacticalTimingSeconds(
     options.tacticalState,
-    geometry.pathPoints,
+    options.tacticalRecommendation,
   );
   const timingText = formatTacticalTimingBlock(timing);
 
@@ -292,7 +255,7 @@ export function syncTacticalTrajectoryLayer(
     );
     viewer.entities.add(
       new Entity({
-        id: `${TACTICAL_PREFIX}path`,
+        id: `${TACTICAL_TRAJ_PREFIX}path`,
         polyline: {
           positions,
           width: geometry.pathMode === "telemetry" ? 3 : 2,
@@ -310,7 +273,7 @@ export function syncTacticalTrajectoryLayer(
       const mid = geometry.pathPoints[Math.floor(geometry.pathPoints.length / 2)];
       viewer.entities.add(
         new Entity({
-          id: `${TACTICAL_PREFIX}path-hint`,
+          id: `${TACTICAL_TRAJ_PREFIX}path-hint`,
           position: toCartesian(mid, options.applyTerrainDisplay),
           label: {
             text:
@@ -330,26 +293,13 @@ export function syncTacticalTrajectoryLayer(
         }),
       );
     }
-
-    if (timingText) {
-      const mid = geometry.pathPoints[Math.floor(geometry.pathPoints.length / 2)];
-      addTacticalTimingLabel(
-        viewer,
-        `${TACTICAL_PREFIX}path-timing`,
-        toCartesian(mid, options.applyTerrainDisplay),
-        timingText,
-        VerticalOrigin.CENTER,
-        new Cartesian2(56, -10),
-        alphaScale,
-      );
-    }
   }
 
   if (options.showInterceptPoint && geometry.interceptPose) {
     const ip = geometry.interceptPose;
     viewer.entities.add(
       new Entity({
-        id: `${TACTICAL_PREFIX}solution-point`,
+        id: `${TACTICAL_TRAJ_PREFIX}solution-point`,
         position: toCartesian(ip, options.applyTerrainDisplay),
         point: {
           pixelSize: options.tacticalState?.assigned_target_id ||
@@ -380,109 +330,21 @@ export function syncTacticalTrajectoryLayer(
         },
       }),
     );
+  }
 
-    if (timingText) {
-      addTacticalTimingLabel(
-        viewer,
-        `${TACTICAL_PREFIX}solution-timing`,
-        toCartesian(ip, options.applyTerrainDisplay),
-        timingText,
-        VerticalOrigin.TOP,
-        new Cartesian2(0, 42),
-        alphaScale,
-      );
-    }
-  } else if (options.showPath && timingText) {
-    const end = geometry.pathEndPose;
+  if (options.showTimingLabels && timingText) {
+    const anchor = geometry.interceptPose ?? geometry.pathEndPose;
     addTacticalTimingLabel(
       viewer,
-      `${TACTICAL_PREFIX}path-end-timing`,
-      toCartesian(end, options.applyTerrainDisplay),
+      `${TACTICAL_TRAJ_PREFIX}timing`,
+      toCartesian(anchor, options.applyTerrainDisplay),
       timingText,
-      VerticalOrigin.BOTTOM,
-      new Cartesian2(0, -36),
+      geometry.interceptPose ? VerticalOrigin.TOP : VerticalOrigin.BOTTOM,
+      geometry.interceptPose ? new Cartesian2(0, 42) : new Cartesian2(0, -36),
       alphaScale,
     );
   }
 
-  if (options.showThreatCorridor) {
-    const threat = deriveThreatCorridorGeometry(
-      options.tacticalState,
-      geometry,
-      options.entities,
-    );
-    if (threat && threat.corridorPoints.length >= 2) {
-      const corridorPositions = threat.corridorPoints.map((p) =>
-        toCartesian(p, options.applyTerrainDisplay),
-      );
-      const ribbon = buildCorridorRibbonPolygon(
-        threat.corridorPoints,
-        THREAT_CORRIDOR_HALF_WIDTH_M,
-      );
-      if (ribbon.length >= 3) {
-        viewer.entities.add(
-          new Entity({
-            id: `${TACTICAL_PREFIX}threat-fill`,
-            polygon: {
-              hierarchy: new PolygonHierarchy(
-                ribbon.map((p) => toCartesian(p, options.applyTerrainDisplay)),
-              ),
-              material: Color.fromCssColorString(TACTICAL_THREAT_CORRIDOR_FILL).withAlpha(
-                0.28 * alphaScale,
-              ),
-              outline: false,
-              perPositionHeight: true,
-            },
-          }),
-        );
-      }
-      viewer.entities.add(
-        new Entity({
-          id: `${TACTICAL_PREFIX}threat-edge`,
-          polyline: {
-            positions: corridorPositions,
-            width: 7,
-            material: Color.fromCssColorString(TACTICAL_THREAT_CORRIDOR_EDGE).withAlpha(
-              0.42 * alphaScale,
-            ),
-          },
-        }),
-      );
-      viewer.entities.add(
-        new Entity({
-          id: `${TACTICAL_PREFIX}threat-center`,
-          polyline: {
-            positions: corridorPositions,
-            width: 3,
-            material: Color.fromCssColorString(TACTICAL_THREAT_CORRIDOR_CENTER).withAlpha(
-              0.34 * alphaScale,
-            ),
-          },
-        }),
-      );
-    }
-  }
-
-  if (options.showTargetRanking) {
-    const { targetId } = resolveTacticalRoleIds(options.tacticalState);
-    const rankings = parseTacticalTargetRanking(options.tacticalState, targetId);
-    for (const entry of rankings) {
-      const ent = options.entities.find((e) => e.entity_id === entry.entityId);
-      const pose = entityPose(ent);
-      if (!pose) continue;
-      const isSelectedTarget = targetId === entry.entityId;
-      viewer.entities.add(
-        new Entity({
-          id: `${TACTICAL_PREFIX}rank-${entry.entityId}`,
-          position: toCartesian(pose, options.applyTerrainDisplay),
-          label: {
-            text: rankLabelFor(entry.rank),
-            ...rankLabelStyle(entry.rank, isSelectedTarget, alphaScale),
-          },
-        }),
-      );
-    }
-  }
 }
 
 export function clearTacticalTrajectoryLayer(
