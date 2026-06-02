@@ -37,6 +37,7 @@ import {
 import type { TerrainLayerVisibility } from "@/cesium/terrainLayers";
 import type { VisualLayerVisibility } from "@/cesium/visualLayerRegistry";
 import { CesiumRuntimePanel } from "@/components/CesiumRuntimePanel";
+import { ScenarioEvaluationPanel } from "@/components/ScenarioEvaluationPanel";
 import { WorldEditingGrid } from "@/components/WorldEditingGrid";
 import type { ApplyRuntimeStatus } from "@/components/WorldEditorApplyStatus";
 import type { EditHistoryEntry, EditCommandType } from "@/editing/editHistory";
@@ -457,6 +458,11 @@ export function AppWorkstationSlots(props: AppWorkstationSlotsProps) {
               onApplyToRuntime={onApplyToRuntime}
               applyToRuntimeDisabled={applyToRuntimeDisabled}
               applyRuntimeStatus={applyRuntimeStatus}
+            />
+            <ScenarioEvaluationPanel
+              entities={entities}
+              sessionId={sessionId}
+              disabled={!editingEnabled}
             />
             <EditingCognitionStrip
               lastCommand={lastCommand}
