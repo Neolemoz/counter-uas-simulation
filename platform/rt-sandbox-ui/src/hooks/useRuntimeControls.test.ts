@@ -1,4 +1,6 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi, beforeEach } from "vitest";
+import { resetSession } from "@/bridge/lifecycleCommands";
+import { pauseSim, resumeSim } from "@/bridge/runtimeCommands";
 import {
   resolveSelectedDefenderId,
   resolveSelectedTargetId,
@@ -24,5 +26,36 @@ describe("useRuntimeControls selection helpers", () => {
 
   it("uses selected drone when tactical target unset", () => {
     expect(resolveSelectedTargetId("t1", entities, null)).toBe("t1");
+  });
+});
+
+describe("useRuntimeControls lifecycle commands", () => {
+  beforeEach(() => {
+    vi.stubGlobal("fetch", vi.fn(async () => ({
+      ok: true,
+      json: async () => ({ ok: true, error_code: "OK" }),
+    })));
+    vi.stubGlobal("crypto", { randomUUID: () => "test-uuid" });
+  });
+
+  it("dispatches reset_session to the bridge", async () => {
+    await resetSession("session-1");
+    const body = JSON.parse(String((fetch as ReturnType<typeof vi.fn>).mock.calls[0][1]?.body));
+    expect(body.command_type).toBe("reset_session");
+    expect(body.session_id).toBe("session-1");
+  });
+
+  it("pause_sim and resume_sim command types unchanged", async () => {
+    await pauseSim("session-1");
+    const pauseBody = JSON.parse(
+      String((fetch as ReturnType<typeof vi.fn>).mock.calls[0][1]?.body),
+    );
+    expect(pauseBody.command_type).toBe("pause_sim");
+
+    await resumeSim("session-1");
+    const resumeBody = JSON.parse(
+      String((fetch as ReturnType<typeof vi.fn>).mock.calls[1][1]?.body),
+    );
+    expect(resumeBody.command_type).toBe("resume_sim");
   });
 });

@@ -1,4 +1,7 @@
 import { useState } from "react";
+import { lifecycleControlStates } from "@/lifecycle/lifecycleControlStates";
+import { ENTITY_CONTROL_GOVERNANCE } from "@/entity/entityControlStates";
+import { SCENARIO_CONTROL_GOVERNANCE } from "@/scenario/scenarioControlStates";
 import { DEFAULT_PULL_HZ, MAX_PULL_HZ } from "@/telemetry/constants";
 
 export function RefreshControls({
@@ -174,21 +177,183 @@ export function BridgeConnectionBar({
   );
 }
 
+export function LifecycleControlBar({
+  connected,
+  editingEnabled,
+  busy,
+  sessionState,
+  onPause,
+  onResume,
+  onReset,
+  onStopSession,
+}: {
+  connected: boolean;
+  editingEnabled: boolean;
+  busy: boolean;
+  sessionState: string;
+  onPause: () => void;
+  onResume: () => void;
+  onReset: () => void;
+  onStopSession: () => void;
+}) {
+  const baseDisabled = !connected || !editingEnabled || busy;
+  const states = lifecycleControlStates(sessionState);
+
+  return (
+    <div className="flex flex-wrap items-center gap-2 rounded-lg border border-slate-600/80 bg-slate-900/70 px-3 py-2">
+      <span className="text-xs font-semibold uppercase tracking-wide text-slate-400">
+        Lifecycle
+      </span>
+      <span className="text-xs text-slate-500">({sessionState})</span>
+      <button
+        type="button"
+        onClick={onPause}
+        disabled={baseDisabled || !states.pause}
+        className="rounded border border-amber-700/60 bg-amber-950/50 px-2.5 py-1 text-xs font-medium text-amber-100 hover:bg-amber-900/50 disabled:opacity-40"
+      >
+        Pause
+      </button>
+      <button
+        type="button"
+        onClick={onResume}
+        disabled={baseDisabled || !states.resume}
+        className="rounded border border-emerald-700/60 bg-emerald-950/50 px-2.5 py-1 text-xs font-medium text-emerald-100 hover:bg-emerald-900/50 disabled:opacity-40"
+      >
+        Resume
+      </button>
+      <button
+        type="button"
+        onClick={onReset}
+        disabled={baseDisabled || !states.reset}
+        className="rounded border border-sky-700/60 bg-sky-950/50 px-2.5 py-1 text-xs font-medium text-sky-100 hover:bg-sky-900/50 disabled:opacity-40"
+      >
+        Reset
+      </button>
+      <button
+        type="button"
+        onClick={onStopSession}
+        disabled={baseDisabled || !states.stopSession}
+        className="rounded border border-rose-700/60 bg-rose-950/50 px-2.5 py-1 text-xs font-medium text-rose-100 hover:bg-rose-900/50 disabled:opacity-40"
+      >
+        Stop session
+      </button>
+    </div>
+  );
+}
+
+export function ScenarioControlBar({
+  connected,
+  applyDisabled,
+  entityCount,
+  onApplyScenario,
+}: {
+  connected: boolean;
+  applyDisabled: boolean;
+  entityCount: number;
+  onApplyScenario: () => void;
+}) {
+  if (!connected) return null;
+
+  return (
+    <div
+      className="flex flex-col gap-2 rounded-lg border border-slate-600/80 bg-slate-900/70 px-3 py-2"
+      data-testid="scenario-control-bar"
+    >
+      <div className="flex flex-wrap items-center gap-2">
+        <span className="text-xs font-semibold uppercase tracking-wide text-slate-400">
+          Scenario
+        </span>
+        <button
+          type="button"
+          onClick={onApplyScenario}
+          disabled={applyDisabled}
+          data-testid="scenario-apply"
+          className="rounded border border-emerald-700/60 bg-emerald-950/50 px-2.5 py-1 text-xs font-medium text-emerald-100 hover:bg-emerald-900/50 disabled:opacity-40"
+        >
+          Apply scenario
+        </button>
+        {entityCount === 0 && connected && (
+          <span className="text-xs text-slate-500">Add entities in the world editor first</span>
+        )}
+      </div>
+      <p className="text-[11px] leading-snug text-slate-500">{SCENARIO_CONTROL_GOVERNANCE}</p>
+    </div>
+  );
+}
+
+export function EntityControlBar({
+  connected,
+  controlsDisabled,
+  deleteDisabled,
+  selectedEntityId,
+  onSpawnAttacker,
+  onSpawnDefender,
+  onDeleteSelected,
+}: {
+  connected: boolean;
+  controlsDisabled: boolean;
+  deleteDisabled: boolean;
+  selectedEntityId: string | null;
+  onSpawnAttacker: () => void;
+  onSpawnDefender: () => void;
+  onDeleteSelected: () => void;
+}) {
+  if (!connected) return null;
+
+  return (
+    <div
+      className="flex flex-col gap-2 rounded-lg border border-slate-600/80 bg-slate-900/70 px-3 py-2"
+      data-testid="entity-control-bar"
+    >
+      <div className="flex flex-wrap items-center gap-2">
+        <span className="text-xs font-semibold uppercase tracking-wide text-slate-400">
+          Entities
+        </span>
+        <button
+          type="button"
+          onClick={onSpawnAttacker}
+          disabled={controlsDisabled}
+          data-testid="entity-spawn-attacker"
+          className="rounded border border-orange-700/60 bg-orange-950/50 px-2.5 py-1 text-xs font-medium text-orange-100 hover:bg-orange-900/50 disabled:opacity-40"
+        >
+          Spawn attacker
+        </button>
+        <button
+          type="button"
+          onClick={onSpawnDefender}
+          disabled={controlsDisabled}
+          data-testid="entity-spawn-defender"
+          className="rounded border border-cyan-700/60 bg-cyan-950/50 px-2.5 py-1 text-xs font-medium text-cyan-100 hover:bg-cyan-900/50 disabled:opacity-40"
+        >
+          Spawn defender
+        </button>
+        <button
+          type="button"
+          onClick={onDeleteSelected}
+          disabled={deleteDisabled}
+          data-testid="entity-delete-selected"
+          className="rounded border border-rose-700/60 bg-rose-950/50 px-2.5 py-1 text-xs font-medium text-rose-100 hover:bg-rose-900/50 disabled:opacity-40"
+        >
+          Delete selected
+        </button>
+        {selectedEntityId && (
+          <span className="font-mono text-xs text-slate-500">{selectedEntityId}</span>
+        )}
+      </div>
+      <p className="text-[11px] leading-snug text-slate-500">{ENTITY_CONTROL_GOVERNANCE}</p>
+    </div>
+  );
+}
+
 export function RuntimeControlBar({
   connected,
   editingEnabled,
   busy,
-  simPaused,
-  onPauseSim,
-  onResumeSim,
   onSpawnDefender,
 }: {
   connected: boolean;
   editingEnabled: boolean;
   busy: boolean;
-  simPaused: boolean;
-  onPauseSim: () => void;
-  onResumeSim: () => void;
   onSpawnDefender: () => void;
 }) {
   const controlsDisabled = !connected || !editingEnabled || busy;
@@ -198,22 +363,6 @@ export function RuntimeControlBar({
       <span className="text-xs font-semibold uppercase tracking-wide text-slate-400">
         Runtime
       </span>
-      <button
-        type="button"
-        onClick={onPauseSim}
-        disabled={controlsDisabled || simPaused}
-        className="rounded border border-amber-700/60 bg-amber-950/50 px-2.5 py-1 text-xs font-medium text-amber-100 hover:bg-amber-900/50 disabled:opacity-40"
-      >
-        Pause
-      </button>
-      <button
-        type="button"
-        onClick={onResumeSim}
-        disabled={controlsDisabled || !simPaused}
-        className="rounded border border-emerald-700/60 bg-emerald-950/50 px-2.5 py-1 text-xs font-medium text-emerald-100 hover:bg-emerald-900/50 disabled:opacity-40"
-      >
-        Resume
-      </button>
       <button
         type="button"
         onClick={onSpawnDefender}

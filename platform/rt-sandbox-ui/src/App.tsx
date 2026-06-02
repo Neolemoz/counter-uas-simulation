@@ -23,6 +23,9 @@ import {
   useRuntimeControls,
 } from "@/hooks/useRuntimeControls";
 import { useTacticalState } from "@/hooks/useTacticalState";
+import { ENTITY_RAIL_SPAWN_XY } from "@/entity/entityControlStates";
+import { scenarioControlStates } from "@/scenario/scenarioControlStates";
+import { defaultPose } from "@/world/entityCatalog";
 import { sessionStateFromSnapshots } from "@/telemetry/channelIndex";
 import type { EntityType } from "@/world/entityCatalog";
 import {
@@ -305,12 +308,34 @@ export default function App() {
         pendingReconcile={pendingReconcile}
         onSelectEntity={handleSelectEntity}
         onSpawn={handleSpawn}
+        onSpawnAttacker={() =>
+          handleSpawn(defaultPose("drone", ENTITY_RAIL_SPAWN_XY.x, ENTITY_RAIL_SPAWN_XY.y), "drone")
+        }
+        onSpawnDefenderEntity={() =>
+          handleSpawn(
+            defaultPose("interceptor", ENTITY_RAIL_SPAWN_XY.x, ENTITY_RAIL_SPAWN_XY.y),
+            "interceptor",
+          )
+        }
+        onDeleteSelected={() => {
+          if (selectedEntityId) handleDelete(selectedEntityId);
+        }}
+        entityControlsDisabled={!editingEnabled}
+        entityDeleteDisabled={!editingEnabled || !selectedEntityId}
         onMove={handleMove}
         onDelete={handleDelete}
         onApplyToRuntime={() => void handleApplyScenario()}
         applyToRuntimeDisabled={
           !sessionId ||
           !editingEnabled ||
+          !scenarioControlStates(sessionState).applyScenario ||
+          entities.length === 0 ||
+          commandBusy
+        }
+        applyScenarioDisabled={
+          !sessionId ||
+          !editingEnabled ||
+          !scenarioControlStates(sessionState).applyScenario ||
           entities.length === 0 ||
           commandBusy
         }
@@ -335,6 +360,8 @@ export default function App() {
         selectedTargetId={selectedTargetId}
         onPauseSim={() => void runtime.pauseSim()}
         onResumeSim={() => void runtime.resumeSim()}
+        onResetSession={() => void runtime.resetSession()}
+        onStopSession={() => void runtime.stopSession()}
         onSpawnDefender={() => void runtime.spawnDefender()}
         onStartCapture={() => void capture.startCapture()}
         onStopCapture={() => void capture.stopCapture()}

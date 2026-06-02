@@ -1,4 +1,6 @@
 import { useCallback, useState } from "react";
+import { stopSession } from "@/bridge/client";
+import { resetSession } from "@/bridge/lifecycleCommands";
 import {
   assignTarget,
   cancelAssignment,
@@ -108,10 +110,22 @@ export function useRuntimeControls({
     );
   }, [sessionId, selectedDefenderId, runRuntimeCommand]);
 
+  const resetSessionCommand = useCallback(async () => {
+    if (!sessionId) return;
+    await runRuntimeCommand(() => resetSession(sessionId));
+  }, [sessionId, runRuntimeCommand]);
+
+  const stopSessionCommand = useCallback(async () => {
+    if (!sessionId) return;
+    await runRuntimeCommand(() => stopSession(sessionId));
+  }, [sessionId, runRuntimeCommand]);
+
   return {
     busy,
     pauseSim: pauseSimCommand,
     resumeSim: resumeSimCommand,
+    resetSession: resetSessionCommand,
+    stopSession: stopSessionCommand,
     spawnDefender: spawnDefenderCommand,
     assignTarget: assignTargetCommand,
     cancelAssignment: cancelAssignmentCommand,

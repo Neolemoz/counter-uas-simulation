@@ -12,8 +12,11 @@ import {
   BridgeConnectionBar,
   CaptureControlBar,
   CollapsibleUiDiagnostics,
+  EntityControlBar,
+  LifecycleControlBar,
   RefreshControls,
   RuntimeControlBar,
+  ScenarioControlBar,
 } from "@/components/RefreshControls";
 import { CaptureSummaryStrip } from "@/components/CaptureSummaryStrip";
 import {
@@ -118,10 +121,16 @@ export type AppWorkstationSlotsProps = {
   pendingReconcile: boolean;
   onSelectEntity: (id: string | null) => void;
   onSpawn: (pose: Pose, entityType?: EntityType) => void;
+  onSpawnAttacker: () => void;
+  onSpawnDefenderEntity: () => void;
+  onDeleteSelected: () => void;
+  entityControlsDisabled: boolean;
+  entityDeleteDisabled: boolean;
   onMove: (entityId: string, pose: Pose) => void;
   onDelete: (entityId: string) => void;
   onApplyToRuntime: () => void;
   applyToRuntimeDisabled: boolean;
+  applyScenarioDisabled: boolean;
   applyRuntimeStatus: ApplyRuntimeStatus;
   snapshots: Partial<Record<TelemetryChannel, ChannelSnapshot>>;
   experimentCompareActive: boolean;
@@ -147,6 +156,8 @@ export type AppWorkstationSlotsProps = {
   selectedTargetId: string | null;
   onPauseSim: () => void;
   onResumeSim: () => void;
+  onResetSession: () => void;
+  onStopSession: () => void;
   onSpawnDefender: () => void;
   onStartCapture: () => void;
   onStopCapture: () => void;
@@ -205,10 +216,16 @@ export function AppWorkstationSlots(props: AppWorkstationSlotsProps) {
     pendingReconcile,
     onSelectEntity,
     onSpawn,
+    onSpawnAttacker,
+    onSpawnDefenderEntity,
+    onDeleteSelected,
+    entityControlsDisabled,
+    entityDeleteDisabled,
     onMove,
     onDelete,
     onApplyToRuntime,
     applyToRuntimeDisabled,
+    applyScenarioDisabled,
     applyRuntimeStatus,
     snapshots,
     experimentCompareActive,
@@ -230,6 +247,8 @@ export function AppWorkstationSlots(props: AppWorkstationSlotsProps) {
     selectedTargetId,
     onPauseSim,
     onResumeSim,
+    onResetSession,
+    onStopSession,
     onSpawnDefender,
     onStartCapture,
     onStopCapture,
@@ -307,28 +326,37 @@ export function AppWorkstationSlots(props: AppWorkstationSlotsProps) {
             onConnect={onConnectNewSession}
             onDisconnect={onDisconnectSelected}
           />
-          <div className="flex flex-col gap-1">
-            <RuntimeControlBar
+          {connected && (
+            <LifecycleControlBar
               connected={connected}
               editingEnabled={editingEnabled}
               busy={busy || runtimeBusy}
-              simPaused={simPaused}
-              onPauseSim={onPauseSim}
-              onResumeSim={onResumeSim}
-              onSpawnDefender={onSpawnDefender}
+              sessionState={sessionState}
+              onPause={onPauseSim}
+              onResume={onResumeSim}
+              onReset={onResetSession}
+              onStopSession={onStopSession}
             />
-            <CaptureControlBar
+          )}
+          {connected && (
+            <ScenarioControlBar
               connected={connected}
-              editingEnabled={editingEnabled}
-              busy={busy || captureBusy}
-              captureActive={captureSummary.captureActive}
-              onStartCapture={onStartCapture}
-              onStopCapture={onStopCapture}
+              applyDisabled={applyScenarioDisabled}
+              entityCount={entities.length}
+              onApplyScenario={onApplyToRuntime}
             />
-            {connected && sessionId && (
-              <CaptureSummaryStrip summary={captureSummary} />
-            )}
-          </div>
+          )}
+          {connected && (
+            <EntityControlBar
+              connected={connected}
+              controlsDisabled={entityControlsDisabled}
+              deleteDisabled={entityDeleteDisabled}
+              selectedEntityId={selectedEntityId}
+              onSpawnAttacker={onSpawnAttacker}
+              onSpawnDefender={onSpawnDefenderEntity}
+              onDeleteSelected={onDeleteSelected}
+            />
+          )}
           <SessionTabBar
             slots={slotList}
             orderedSessionIds={workspaceSessionIds}
@@ -354,6 +382,25 @@ export function AppWorkstationSlots(props: AppWorkstationSlotsProps) {
               onRefresh={onRefresh}
             />
           )}
+          <div className="flex flex-col gap-1">
+            <RuntimeControlBar
+              connected={connected}
+              editingEnabled={editingEnabled}
+              busy={busy || runtimeBusy}
+              onSpawnDefender={onSpawnDefender}
+            />
+            <CaptureControlBar
+              connected={connected}
+              editingEnabled={editingEnabled}
+              busy={busy || captureBusy}
+              captureActive={captureSummary.captureActive}
+              onStartCapture={onStartCapture}
+              onStopCapture={onStopCapture}
+            />
+            {connected && sessionId && (
+              <CaptureSummaryStrip summary={captureSummary} />
+            )}
+          </div>
         </>
       }
       workflowStrip={
