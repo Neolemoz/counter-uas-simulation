@@ -164,8 +164,13 @@ def _load_tracking_module():  # noqa: ANN201
     if rclpy_mod is not None and not hasattr(rclpy_mod, 'time'):
         sys.modules.pop('rclpy', None)
         sys.modules.pop('rclpy.node', None)
-    if importlib.util.find_spec('rclpy') is None:
-        _install_tracking_ros_stubs()
+    if 'rclpy' not in sys.modules:
+        try:
+            rclpy_available = importlib.util.find_spec('rclpy') is not None
+        except ValueError:
+            rclpy_available = False
+        if not rclpy_available:
+            _install_tracking_ros_stubs()
     path = _REPO_ROOT / 'src' / 'tracking' / 'tracking' / 'tracking_node.py'
     assert path.is_file(), f'missing {path}'
     spec = importlib.util.spec_from_file_location('tracking_node_under_test', path)
