@@ -38,7 +38,14 @@ import {
   DEFAULT_SENSOR_DOME_ZONE_MODE,
   type SensorDomeZoneMode,
 } from "@/cesium/terrainLayers";
+import type { CameraLocationTarget, CameraPreset } from "@/cesium/cameraHelpers";
+import {
+  CESIUM_TERRAIN_PROVIDER_OPTIONS,
+  TERRAIN_PROVIDER_VISUAL_ONLY_COPY,
+  terrainProviderModeLabel,
+} from "@/cesium/terrainProviderConfig";
 import type { TerrainLayerVisibility } from "@/cesium/terrainLayers";
+import type { CesiumTerrainProviderMode } from "@/cesium/terrainProviderConfig";
 import type { VisualLayerVisibility } from "@/cesium/visualLayerRegistry";
 import { CesiumRuntimePanel } from "@/components/CesiumRuntimePanel";
 import { ScenarioEvaluationPanel } from "@/components/ScenarioEvaluationPanel";
@@ -83,6 +90,14 @@ import {
   type PlanningTool,
   type PlanningVertex,
 } from "@/cesium/planningDrawing";
+import {
+  DEFAULT_PLANNING_LOCATION_PRESET_ID,
+  PLANNING_LOCATION_GOVERNANCE_COPY,
+  PLANNING_LOCATION_PRESETS,
+  planningLocationPreset,
+  validatedPlanningCoordinates,
+  type PlanningLocationPresetId,
+} from "@/cesium/planningLocations";
 import { BackgroundDiagnostics } from "@/workstation/BackgroundDiagnostics";
 import { BackgroundDiagnosticsCompact } from "@/workstation/BackgroundDiagnosticsCompact";
 import { ConnectPlaceholder } from "@/workstation/ConnectPlaceholder";
@@ -159,6 +174,16 @@ export function PlanningModePanel({
   radars,
   coverage,
   coverageOptions,
+  terrainProviderMode,
+  locationPresetId,
+  customLatitude,
+  customLongitude,
+  onTerrainProviderModeChange,
+  onLocationPresetChange,
+  onCustomLatitudeChange,
+  onCustomLongitudeChange,
+  onApplyLocation,
+  onCameraPreset,
   onToolChange,
   onFinishPolygon,
   onCancelDrawing,
@@ -175,6 +200,16 @@ export function PlanningModePanel({
   radars: PlanningRadarState;
   coverage: PlanningCoverageEstimate;
   coverageOptions: PlanningCoverageLayerOptions;
+  terrainProviderMode: CesiumTerrainProviderMode;
+  locationPresetId: PlanningLocationPresetId;
+  customLatitude: string;
+  customLongitude: string;
+  onTerrainProviderModeChange: (mode: CesiumTerrainProviderMode) => void;
+  onLocationPresetChange: (presetId: PlanningLocationPresetId) => void;
+  onCustomLatitudeChange: (value: string) => void;
+  onCustomLongitudeChange: (value: string) => void;
+  onApplyLocation: () => void;
+  onCameraPreset: (preset: CameraPreset) => void;
   onToolChange: (tool: PlanningTool) => void;
   onFinishPolygon: () => void;
   onCancelDrawing: () => void;
@@ -191,6 +226,17 @@ export function PlanningModePanel({
   const hasCompleted = (polygon.completedVertices?.length ?? 0) > 0;
   const selectedRadar =
     radars.sites.find((site) => site.id === radars.selectedSiteId) ?? null;
+
+  const terrainProviderOn = terrainProviderMode === "cesium_world_terrain";
+  const selectedLocationPreset = planningLocationPreset(locationPresetId);
+  const customCoordinatesValid =
+    validatedPlanningCoordinates(customLatitude, customLongitude) !== null;
+  const cameraPresets: { preset: CameraPreset; label: string }[] = [
+    { preset: "terrainOverview", label: "Overview" },
+    { preset: "ridgeLine", label: "Ridge" },
+    { preset: "valleyFloor", label: "Valley" },
+    { preset: "sensorContext", label: "Sensor Context" },
+  ];
 
   const toolOptions: { tool: PlanningTool; label: string }[] = [
     { tool: "select", label: "Select" },
@@ -212,6 +258,123 @@ export function PlanningModePanel({
           runtime authority, are not validated sensing, and cause no simulation behavior
           change.
         </p>
+        <div className="mt-3 rounded border border-slate-800 bg-slate-950/55 p-2 text-xs" data-testid="planning-terrain-controls">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <div>
+              <p className="font-semibold uppercase tracking-wide text-slate-300">Terrain controls</p>
+              <p className="mt-1 text-slate-500">
+                Source {terrainProviderModeLabel(terrainProviderMode)} · status {terrainProviderOn ? "on" : "off"}
+              </p>
+            </div>
+            <button
+              type="button"
+              aria-pressed={terrainProviderOn}
+              onClick={() =>
+                onTerrainProviderModeChange(
+                  terrainProviderOn ? "ellipsoid" : "cesium_world_terrain",
+                )
+              }
+              className="rounded border border-slate-700 bg-slate-950 px-2.5 py-1.5 font-semibold text-slate-200"
+            >
+              Terrain {terrainProviderOn ? "On" : "Off"}
+            </button>
+          </div>
+          <label className="mt-2 grid gap-1 text-slate-400">
+            Terrain Source
+            <select
+              value={terrainProviderMode}
+              onChange={(event) =>
+                onTerrainProviderModeChange(
+                  event.currentTarget.value as CesiumTerrainProviderMode,
+                )
+              }
+              className="rounded border border-slate-700 bg-slate-950 px-2 py-1 text-slate-100"
+            >
+              {CESIUM_TERRAIN_PROVIDER_OPTIONS.map((option) => (
+                <option key={option.mode} value={option.mode}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+          </label>
+        </div>
+        <div className="mt-3 rounded border border-slate-800 bg-slate-950/55 p-2 text-xs" data-testid="planning-location-controls">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <div>
+              <p className="font-semibold uppercase tracking-wide text-slate-300">Location presets</p>
+              <p className="mt-1 text-slate-500">
+                Current {selectedLocationPreset.label}
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={onApplyLocation}
+              disabled={locationPresetId === "custom" && !customCoordinatesValid}
+              className="rounded border border-slate-700 bg-slate-950 px-2.5 py-1.5 font-semibold text-slate-200 disabled:cursor-not-allowed disabled:opacity-40"
+            >
+              Jump Camera
+            </button>
+          </div>
+          <label className="mt-2 grid gap-1 text-slate-400">
+            Location Preset
+            <select
+              value={locationPresetId}
+              onChange={(event) =>
+                onLocationPresetChange(event.currentTarget.value as PlanningLocationPresetId)
+              }
+              className="rounded border border-slate-700 bg-slate-950 px-2 py-1 text-slate-100"
+            >
+              {PLANNING_LOCATION_PRESETS.map((preset) => (
+                <option key={preset.id} value={preset.id}>
+                  {preset.label}
+                </option>
+              ))}
+            </select>
+          </label>
+          <div className="mt-2 grid grid-cols-2 gap-2">
+            <label className="grid gap-1 text-slate-400">
+              Latitude
+              <input
+                type="text"
+                value={customLatitude}
+                onChange={(event) => onCustomLatitudeChange(event.currentTarget.value)}
+                className="rounded border border-slate-700 bg-slate-950 px-2 py-1 text-slate-100"
+              />
+            </label>
+            <label className="grid gap-1 text-slate-400">
+              Longitude
+              <input
+                type="text"
+                value={customLongitude}
+                onChange={(event) => onCustomLongitudeChange(event.currentTarget.value)}
+                className="rounded border border-slate-700 bg-slate-950 px-2 py-1 text-slate-100"
+              />
+            </label>
+          </div>
+          <p className={`mt-2 text-[11px] `}>
+            {locationPresetId === "custom" && !customCoordinatesValid
+              ? "Custom coordinates must use latitude -90..90 and longitude -180..180."
+              : PLANNING_LOCATION_GOVERNANCE_COPY}
+          </p>
+        </div>
+        <div className="mt-3 rounded border border-slate-800 bg-slate-950/55 p-2 text-xs" data-testid="planning-camera-presets">
+          <p className="font-semibold uppercase tracking-wide text-slate-300">Camera presets</p>
+          <div className="mt-2 grid grid-cols-2 gap-2">
+            {cameraPresets.map((preset) => (
+              <button
+                key={preset.preset}
+                type="button"
+                onClick={() => onCameraPreset(preset.preset)}
+                className="rounded border border-slate-700 bg-slate-950 px-2.5 py-1.5 font-semibold text-slate-300 hover:border-cyan-700 hover:text-cyan-100"
+              >
+                {preset.label}
+              </button>
+            ))}
+          </div>
+        </div>
+        <div className="mt-3 rounded border border-amber-900/60 bg-amber-950/15 p-2 text-[11px] leading-relaxed text-amber-100/85" data-testid="planning-terrain-legend">
+          {TERRAIN_PROVIDER_VISUAL_ONLY_COPY} {PLANNING_LOCATION_GOVERNANCE_COPY} Terrain and location presets do not affect planning metrics. Planning polygon, radar sites, coverage overlay, and blind spot markers remain display overlays in both terrain modes.
+        </div>
         <div className="mt-3 grid grid-cols-1 gap-2">
           {toolOptions.map((option) => (
             <button
@@ -464,6 +627,8 @@ export type AppWorkstationSlotsProps = {
   layerVisibility: VisualLayerVisibility;
   terrainLayers: TerrainLayerVisibility;
   terrainLayersOn: boolean;
+  terrainProviderMode: CesiumTerrainProviderMode;
+  onTerrainProviderModeChange: (mode: CesiumTerrainProviderMode) => void;
   onLayerVisibilityChange: (next: VisualLayerVisibility) => void;
   entities: UiEntity[];
   selectedEntityId: string | null;
@@ -569,6 +734,8 @@ export function AppWorkstationSlots(props: AppWorkstationSlotsProps) {
     layerVisibility,
     terrainLayers,
     terrainLayersOn,
+    terrainProviderMode,
+    onTerrainProviderModeChange,
     onLayerVisibilityChange,
     entities,
     selectedEntityId,
@@ -650,6 +817,18 @@ export function AppWorkstationSlots(props: AppWorkstationSlotsProps) {
   );
   const [planningCoverageOptions, setPlanningCoverageOptions] =
     useState<PlanningCoverageLayerOptions>(DEFAULT_PLANNING_COVERAGE_OPTIONS);
+  const [planningCameraPresetRequest, setPlanningCameraPresetRequest] =
+    useState<{ id: number; preset: CameraPreset } | null>(null);
+  const [planningLocationRequest, setPlanningLocationRequest] =
+    useState<{ id: number; location: CameraLocationTarget } | null>(null);
+  const [planningLocationPresetId, setPlanningLocationPresetId] =
+    useState<PlanningLocationPresetId>(DEFAULT_PLANNING_LOCATION_PRESET_ID);
+  const [customPlanningLatitude, setCustomPlanningLatitude] = useState(
+    String(planningLocationPreset(DEFAULT_PLANNING_LOCATION_PRESET_ID).latitudeDeg),
+  );
+  const [customPlanningLongitude, setCustomPlanningLongitude] = useState(
+    String(planningLocationPreset(DEFAULT_PLANNING_LOCATION_PRESET_ID).longitudeDeg),
+  );
   const planningCoverage = useMemo(
     () => estimatePlanningCoverage(planningPolygon, planningRadars),
     [planningPolygon, planningRadars],
@@ -676,6 +855,45 @@ export function AppWorkstationSlots(props: AppWorkstationSlotsProps) {
     setWorkspaceMode(mode);
     if (mode === "grid") setPlanningTool("select");
   };
+  const handlePlanningCameraPreset = useCallback((preset: CameraPreset) => {
+    setPlanningCameraPresetRequest((current) => ({
+      id: (current?.id ?? 0) + 1,
+      preset,
+    }));
+  }, []);
+
+  const handlePlanningLocationPresetChange = useCallback(
+    (presetId: PlanningLocationPresetId) => {
+      setPlanningLocationPresetId(presetId);
+      if (presetId !== "custom") {
+        const preset = planningLocationPreset(presetId);
+        setCustomPlanningLatitude(String(preset.latitudeDeg));
+        setCustomPlanningLongitude(String(preset.longitudeDeg));
+      }
+    },
+    [],
+  );
+
+  const handlePlanningLocationJump = useCallback(() => {
+    const preset = planningLocationPreset(planningLocationPresetId);
+    const custom = validatedPlanningCoordinates(
+      customPlanningLatitude,
+      customPlanningLongitude,
+    );
+    const location =
+      planningLocationPresetId === "custom"
+        ? custom
+        : {
+            latitudeDeg: preset.latitudeDeg,
+            longitudeDeg: preset.longitudeDeg,
+          };
+    if (!location) return;
+    setPlanningLocationRequest((current) => ({
+      id: (current?.id ?? 0) + 1,
+      location: { ...location, label: preset.label },
+    }));
+  }, [planningLocationPresetId, customPlanningLatitude, customPlanningLongitude]);
+
   const handlePlanningMapClick = useCallback(
     (vertex: PlanningVertex) => {
       if (planningDrawingEnabled) {
@@ -955,6 +1173,16 @@ export function AppWorkstationSlots(props: AppWorkstationSlotsProps) {
                 radars={planningRadars}
                 coverage={planningCoverage}
                 coverageOptions={planningCoverageOptions}
+                terrainProviderMode={terrainProviderMode}
+                locationPresetId={planningLocationPresetId}
+                customLatitude={customPlanningLatitude}
+                customLongitude={customPlanningLongitude}
+                onTerrainProviderModeChange={onTerrainProviderModeChange}
+                onLocationPresetChange={handlePlanningLocationPresetChange}
+                onCustomLatitudeChange={setCustomPlanningLatitude}
+                onCustomLongitudeChange={setCustomPlanningLongitude}
+                onApplyLocation={handlePlanningLocationJump}
+                onCameraPreset={handlePlanningCameraPreset}
                 onToolChange={setPlanningTool}
                 onFinishPolygon={() =>
                   setPlanningPolygon((current) => finishPlanningPolygon(current))
@@ -1019,6 +1247,10 @@ export function AppWorkstationSlots(props: AppWorkstationSlotsProps) {
                   }
                 : null
             }
+            terrainProviderMode={terrainProviderMode}
+            onTerrainProviderModeChange={onTerrainProviderModeChange}
+            planningCameraPresetRequest={planningCameraPresetRequest}
+            planningLocationRequest={planningLocationRequest}
             planningDrawing={{
               enabled: planningCesiumClickEnabled,
               polygon: planningPolygon,

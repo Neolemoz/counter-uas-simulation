@@ -34,6 +34,12 @@ import { isViewerUsable } from "./cesiumEditing";
 import { worldToCartesian } from "./coordinates";
 import type { MirrorEntity } from "./entityMarkers";
 
+export interface CameraLocationTarget {
+  latitudeDeg: number;
+  longitudeDeg: number;
+  label?: string;
+}
+
 export type CameraPreset =
   | "bounds"
   | "tightBounds"
@@ -142,6 +148,22 @@ export function flyToTerrainOverview(viewer: Viewer | null | undefined): void {
     TERRAIN_OVERVIEW_CAMERA_HEIGHT_M,
     1.0,
     TERRAIN_OVERVIEW_PITCH_RAD,
+  );
+}
+
+export function flyToLocation(
+  viewer: Viewer | null | undefined,
+  location: CameraLocationTarget,
+): void {
+  if (!isViewerUsable(viewer)) return;
+  const center = Cartesian3.fromDegrees(location.longitudeDeg, location.latitudeDeg, 0);
+  flyToHeight(
+    viewer,
+    center,
+    TERRAIN_OVERVIEW_CAMERA_HEIGHT_M,
+    1.0,
+    TERRAIN_OVERVIEW_PITCH_RAD,
+    false,
   );
 }
 

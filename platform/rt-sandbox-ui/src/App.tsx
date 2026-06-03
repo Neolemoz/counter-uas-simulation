@@ -6,6 +6,10 @@ import {
   toTerrainLayerVisibility,
   type VisualLayerVisibility,
 } from "@/cesium/visualLayerRegistry";
+import {
+  DEFAULT_CESIUM_TERRAIN_PROVIDER_MODE,
+  type CesiumTerrainProviderMode,
+} from "@/cesium/terrainProviderConfig";
 import { hasUnsyncedLocalMirror } from "@/editing/sessionMirrorDirty";
 import type { AdvisoryExperimentRollup } from "@/handoff/advisoryTypes";
 import { useCaptureHandoffMirror } from "@/hooks/useCaptureHandoffMirror";
@@ -78,6 +82,8 @@ export default function App() {
   const [layerVisibility, setLayerVisibility] = useState<VisualLayerVisibility>(() =>
     defaultVisibilityFromRegistry(),
   );
+  const [terrainProviderMode, setTerrainProviderMode] =
+    useState<CesiumTerrainProviderMode>(DEFAULT_CESIUM_TERRAIN_PROVIDER_MODE);
 
   const handleSessionRuntimeProfileChange = useCallback(
     (profile: SessionRuntimeProfile) => {
@@ -314,6 +320,8 @@ export default function App() {
         layerVisibility={layerVisibility}
         terrainLayers={terrainLayers}
         terrainLayersOn={terrainLayersOn}
+        terrainProviderMode={terrainProviderMode}
+        onTerrainProviderModeChange={setTerrainProviderMode}
         onLayerVisibilityChange={handleLayerVisibilityChange}
         entities={entities}
         selectedEntityId={selectedEntityId}

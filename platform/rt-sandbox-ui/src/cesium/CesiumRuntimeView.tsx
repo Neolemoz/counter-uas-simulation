@@ -1,8 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
-  EllipsoidTerrainProvider,
   ImageryLayer,
-  Terrain,
   UrlTemplateImageryProvider,
   Viewer,
 } from "cesium";
@@ -71,6 +69,11 @@ import {
   type PlanningRadarState,
   type PlanningVertex,
 } from "./planningDrawing";
+import {
+  createCesiumTerrainProvider,
+  DEFAULT_CESIUM_TERRAIN_PROVIDER_MODE,
+  type CesiumTerrainProviderMode,
+} from "./terrainProviderConfig";
 
 export interface CesiumRuntimeViewProps {
   sessionId: string | null;
@@ -101,6 +104,7 @@ export interface CesiumRuntimeViewProps {
     coverageOptions: PlanningCoverageLayerOptions;
     onMapClick: (vertex: PlanningVertex) => void;
   };
+  terrainProviderMode?: CesiumTerrainProviderMode;
   onViewerReady?: (viewer: Viewer | null) => void;
   onSelectEntity: (id: string | null) => void;
   onSpawn: (pose: Pose) => void;
@@ -138,7 +142,10 @@ function addHillshadeOverlay(viewer: Viewer): void {
   viewer.imageryLayers.add(hillshade, 1);
 }
 
-function createViewer(container: HTMLDivElement): Viewer {
+function createViewer(
+  container: HTMLDivElement,
+  terrainProviderMode: CesiumTerrainProviderMode,
+): Viewer {
   const viewer = new Viewer(container, {
     animation: false,
     timeline: false,
@@ -151,9 +158,7 @@ function createViewer(container: HTMLDivElement): Viewer {
     infoBox: false,
     selectionIndicator: false,
     baseLayer: createTopoBaseLayer(),
-    terrain: new Terrain(
-      Promise.resolve(new EllipsoidTerrainProvider()),
-    ),
+    terrain: createCesiumTerrainProvider(terrainProviderMode),
   });
   addHillshadeOverlay(viewer);
   return viewer;
@@ -190,6 +195,7 @@ export function CesiumRuntimeView({
   tacticalCompare = null,
   mirrorSnapshot,
   planningDrawing,
+  terrainProviderMode = DEFAULT_CESIUM_TERRAIN_PROVIDER_MODE,
   onViewerReady,
   onSelectEntity,
   onSpawn,
@@ -229,7 +235,7 @@ export function CesiumRuntimeView({
   useEffect(() => {
     if (!containerRef.current || !sessionId) return;
 
-    const viewer = createViewer(containerRef.current);
+    const viewer = createViewer(containerRef.current, terrainProviderMode);
     tuneZoomInteraction(viewer);
     viewerRef.current = viewer;
     onViewerReady?.(viewer);
@@ -262,7 +268,7 @@ export function CesiumRuntimeView({
         viewer.destroy();
       }
     };
-  }, [sessionId, onViewerReady]);
+  }, [sessionId, terrainProviderMode, onViewerReady]);
 
   useEffect(() => {
     const viewer = viewerRef.current;

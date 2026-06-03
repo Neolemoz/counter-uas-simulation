@@ -10,6 +10,8 @@ import {
   flyToBounds,
   flyToEntity,
   flyToFitEntities,
+  flyToLocation,
+  flyToPreset,
   flyToCrestLine,
   flyToRidgeLine,
   flyToSensorContext,
@@ -17,6 +19,8 @@ import {
   flyToTightBounds,
   flyToValleyFloor,
   setFollowEntity,
+  type CameraLocationTarget,
+  type CameraPreset,
 } from "@/cesium/cameraHelpers";
 import type { DefenseZoneRenderOptions } from "@/cesium/defenseZoneConfig";
 import type { SensorDomeRenderOptions } from "@/cesium/sensorDomeLayer";
@@ -83,6 +87,13 @@ import type {
   PlanningRadarState,
   PlanningVertex,
 } from "@/cesium/planningDrawing";
+import {
+  CESIUM_TERRAIN_PROVIDER_OPTIONS,
+  DEFAULT_CESIUM_TERRAIN_PROVIDER_MODE,
+  TERRAIN_PROVIDER_VISUAL_ONLY_COPY,
+  terrainProviderModeLabel,
+  type CesiumTerrainProviderMode,
+} from "@/cesium/terrainProviderConfig";
 import { resolveTacticalCompareContext } from "@/workstation/tacticalCompareContext";
 
 const CESIUM_TOOL_BTN =
@@ -113,6 +124,10 @@ export function CesiumRuntimePanel({
   sensorDomeZoneMode,
   radarPreviewControls = null,
   planningDrawing,
+  planningCameraPresetRequest,
+  planningLocationRequest,
+  terrainProviderMode = DEFAULT_CESIUM_TERRAIN_PROVIDER_MODE,
+  onTerrainProviderModeChange = () => undefined,
   onLayerVisibilityChange,
   tacticalState = null,
   tacticalRecommendation = null,
@@ -154,6 +169,10 @@ export function CesiumRuntimePanel({
     coverageOptions: PlanningCoverageLayerOptions;
     onMapClick: (vertex: PlanningVertex) => void;
   };
+  planningCameraPresetRequest?: { id: number; preset: CameraPreset } | null;
+  planningLocationRequest?: { id: number; location: CameraLocationTarget } | null;
+  terrainProviderMode?: CesiumTerrainProviderMode;
+  onTerrainProviderModeChange?: (mode: CesiumTerrainProviderMode) => void;
   onLayerVisibilityChange: (layers: VisualLayerVisibility) => void;
   tacticalState?: TacticalStatePayload | null;
   tacticalRecommendation?: TacticalRecommendationPayload | null;
@@ -219,6 +238,7 @@ export function CesiumRuntimePanel({
   const selectedEntity =
     entities.find((e) => e.entity_id === selectedEntityId) ?? null;
   const layerMemoryLine = sessionLayerVisibilityMemoryLine(sessionId, true);
+  const terrainProviderOptional = terrainProviderMode === "cesium_world_terrain";
 
   const summary = cesiumViewSummary({
     pendingReconcile,
@@ -370,6 +390,32 @@ export function CesiumRuntimePanel({
   }, []);
 
   useEffect(() => {
+    if (!planningCameraPresetRequest) return;
+    const currentViewer = viewerRef.current;
+    if (!isViewerUsable(currentViewer)) return;
+    setFollowSelected(false);
+    setFollowEntity(currentViewer, null);
+    flyToPreset(currentViewer, planningCameraPresetRequest.preset, entities, {
+      selectedEntityId,
+      applyTerrainDisplay: terrainLayers.showTerrainMesh,
+    });
+  }, [
+    planningCameraPresetRequest,
+    entities,
+    selectedEntityId,
+    terrainLayers.showTerrainMesh,
+  ]);
+
+  useEffect(() => {
+    if (!planningLocationRequest) return;
+    const currentViewer = viewerRef.current;
+    if (!isViewerUsable(currentViewer)) return;
+    setFollowSelected(false);
+    setFollowEntity(currentViewer, null);
+    flyToLocation(currentViewer, planningLocationRequest.location);
+  }, [planningLocationRequest]);
+
+  useEffect(() => {
     const currentViewer = viewerRef.current;
     if (!isViewerUsable(currentViewer)) return;
     if (followSelected && selectedEntityId) {
@@ -398,6 +444,12 @@ export function CesiumRuntimePanel({
         <div className="flex flex-wrap items-center gap-2 text-xs">
           <span className="rounded-full border border-cyan-500/40 bg-cyan-950/40 px-2.5 py-1 font-medium text-cyan-100">
             {summary.entityCountLabel}
+          </span>
+          <span
+            className={`rounded-full border px-2.5 py-1 ${terrainProviderOptional ? "border-emerald-600/50 bg-emerald-950/35 text-emerald-100" : "border-slate-700 bg-slate-950/60 text-slate-400"}`}
+            data-testid="cesium-terrain-provider-status"
+          >
+            {terrainProviderModeLabel(terrainProviderMode)}
           </span>
           {mapStatus && (
             <span
@@ -434,6 +486,7 @@ export function CesiumRuntimePanel({
               {orderedSessionIds.length > 1 && (
                 <p className="text-slate-500">active globe — comparison surfaces are explanatory only</p>
               )}
+              <p className="text-[10px] text-amber-100/80">{TERRAIN_PROVIDER_VISUAL_ONLY_COPY} It does not affect planning metrics.</p>
               {terrainLayersOn && <p className="text-[10px] text-amber-100/80">{BANNER_TERRAIN}</p>}
               {(terrainLayers.showContourOverlays || terrainLayers.showVegetationMarkers) && (
                 <p className="text-[10px] text-amber-100/80">{BANNER_REALISM_F4}</p>
@@ -525,6 +578,33 @@ export function CesiumRuntimePanel({
           </div>
         </details>
         <details className="relative text-xs">
+          <summary className={CESIUM_TOOL_BTN}>Terrain source</summary>
+          <div className="absolute right-0 z-10 mt-1 w-64 rounded border border-slate-800 bg-slate-950 p-3 text-slate-300 shadow-xl shadow-black/30">
+            <label className="grid gap-1 text-[11px] font-semibold uppercase tracking-wide text-slate-400">
+              Provider
+              <select
+                value={terrainProviderMode}
+                onChange={(event) =>
+                  onTerrainProviderModeChange(
+                    event.currentTarget.value as CesiumTerrainProviderMode,
+                  )
+                }
+                className="rounded border border-slate-700 bg-slate-950 px-2 py-1.5 text-xs normal-case tracking-normal text-slate-100"
+                data-testid="cesium-terrain-provider-select"
+              >
+                {CESIUM_TERRAIN_PROVIDER_OPTIONS.map((option) => (
+                  <option key={option.mode} value={option.mode}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <p className="mt-2 text-[10px] leading-relaxed text-amber-100/80">
+              {TERRAIN_PROVIDER_VISUAL_ONLY_COPY} Terrain does not affect planning metrics.
+            </p>
+          </div>
+        </details>
+        <details className="relative text-xs">
           <summary className={CESIUM_TOOL_BTN}>Layers</summary>
           <div className="absolute right-0 z-10 mt-1 w-52 rounded border border-slate-800 bg-slate-950 p-2 shadow-xl shadow-black/30">
             <VisualLayerToggleRail
@@ -588,6 +668,7 @@ export function CesiumRuntimePanel({
           tacticalCompare={tacticalCompare}
           mirrorSnapshot={mirrorSnapshot}
           planningDrawing={planningDrawing}
+          terrainProviderMode={terrainProviderMode}
           onViewerReady={handleViewerReady}
           onSelectEntity={onSelectEntity}
           onSpawn={onSpawn}

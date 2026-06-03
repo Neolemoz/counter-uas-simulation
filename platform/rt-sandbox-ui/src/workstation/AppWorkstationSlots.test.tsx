@@ -23,6 +23,15 @@ import {
   type PlanningTool,
 } from "@/cesium/planningDrawing";
 import {
+  DEFAULT_CESIUM_TERRAIN_PROVIDER_MODE,
+  type CesiumTerrainProviderMode,
+} from "@/cesium/terrainProviderConfig";
+import {
+  DEFAULT_PLANNING_LOCATION_PRESET_ID,
+  planningLocationPreset,
+  type PlanningLocationPresetId,
+} from "@/cesium/planningLocations";
+import {
   DEFAULT_RUNTIME_WORKSPACE_MODE,
   PlanningModePanel,
   RuntimeWorkspaceModeSelector,
@@ -36,12 +45,20 @@ function renderPlanningPanel({
   radars = EMPTY_PLANNING_RADARS,
   coverage = estimatePlanningCoverage(polygon, radars),
   coverageOptions = DEFAULT_PLANNING_COVERAGE_OPTIONS,
+  terrainProviderMode = DEFAULT_CESIUM_TERRAIN_PROVIDER_MODE,
+  locationPresetId = DEFAULT_PLANNING_LOCATION_PRESET_ID,
+  customLatitude = String(planningLocationPreset(DEFAULT_PLANNING_LOCATION_PRESET_ID).latitudeDeg),
+  customLongitude = String(planningLocationPreset(DEFAULT_PLANNING_LOCATION_PRESET_ID).longitudeDeg),
 }: {
   tool?: PlanningTool;
   polygon?: PlanningPolygonState;
   radars?: PlanningRadarState;
   coverage?: PlanningCoverageEstimate;
   coverageOptions?: PlanningCoverageLayerOptions;
+  terrainProviderMode?: CesiumTerrainProviderMode;
+  locationPresetId?: PlanningLocationPresetId;
+  customLatitude?: string;
+  customLongitude?: string;
 } = {}) {
   return renderToStaticMarkup(
     <PlanningModePanel
@@ -50,6 +67,16 @@ function renderPlanningPanel({
       radars={radars}
       coverage={coverage}
       coverageOptions={coverageOptions}
+      terrainProviderMode={terrainProviderMode}
+      locationPresetId={locationPresetId}
+      customLatitude={customLatitude}
+      customLongitude={customLongitude}
+      onTerrainProviderModeChange={vi.fn()}
+      onLocationPresetChange={vi.fn()}
+      onCustomLatitudeChange={vi.fn()}
+      onCustomLongitudeChange={vi.fn()}
+      onApplyLocation={vi.fn()}
+      onCameraPreset={vi.fn()}
       onToolChange={vi.fn()}
       onFinishPolygon={vi.fn()}
       onCancelDrawing={vi.fn()}
@@ -107,6 +134,85 @@ describe("AppWorkstationSlots planning mode shell", () => {
     expect(markup).toContain("no simulation behavior change");
     expect(markup).toContain("no bridge commands");
     expect(markup).toContain("no apply_scenario path");
+  });
+
+  it("renders Planning terrain controls and default terrain-off status", () => {
+    const markup = renderPlanningPanel();
+
+    expect(markup).toContain('data-testid="planning-terrain-controls"');
+    expect(markup).toContain("Terrain controls");
+    expect(markup).toContain("Terrain Off");
+    expect(markup).toContain("Source Ellipsoid Terrain");
+    expect(markup).toContain("status off");
+    expect(markup).toContain("Terrain Source");
+    expect(markup).toContain("3D Terrain");
+  });
+
+  it("renders Planning terrain-on status when optional terrain is selected", () => {
+    const markup = renderPlanningPanel({ terrainProviderMode: "cesium_world_terrain" });
+
+    expect(markup).toContain("Terrain On");
+    expect(markup).toContain("Source 3D Terrain");
+    expect(markup).toContain("status on");
+  });
+
+  it("renders Planning location preset controls", () => {
+    const markup = renderPlanningPanel();
+
+    expect(markup).toContain('data-testid="planning-location-controls"');
+    expect(markup).toContain("Location presets");
+    expect(markup).toContain("Current Bangkok");
+    expect(markup).toContain("Bangkok");
+    expect(markup).toContain("Chiang Mai");
+    expect(markup).toContain("Phuket");
+    expect(markup).toContain("Custom Coordinates");
+    expect(markup).toContain("Jump Camera");
+    expect(markup).toContain("Latitude");
+    expect(markup).toContain("Longitude");
+  });
+
+  it("renders custom coordinate validation status", () => {
+    const invalidMarkup = renderPlanningPanel({
+      locationPresetId: "custom",
+      customLatitude: "91",
+      customLongitude: "100",
+    });
+    const validMarkup = renderPlanningPanel({
+      locationPresetId: "custom",
+      customLatitude: "13.7563",
+      customLongitude: "100.5018",
+    });
+
+    expect(invalidMarkup).toContain("Custom coordinates must use latitude -90..90 and longitude -180..180.");
+    expect(validMarkup).toContain("Real-world locations are presentation-only");
+  });
+
+  it("renders Planning camera preset controls", () => {
+    const markup = renderPlanningPanel();
+
+    expect(markup).toContain('data-testid="planning-camera-presets"');
+    expect(markup).toContain("Overview");
+    expect(markup).toContain("Ridge");
+    expect(markup).toContain("Valley");
+    expect(markup).toContain("Sensor Context");
+  });
+
+  it("renders terrain governance and overlay visibility copy", () => {
+    const markup = renderPlanningPanel();
+
+    expect(markup).toContain('data-testid="planning-terrain-legend"');
+    expect(markup).toContain("visual-only");
+    expect(markup).toContain("does not affect sensors");
+    expect(markup).toContain("LOS");
+    expect(markup).toContain("MC");
+    expect(markup).toContain("runtime simulation");
+    expect(markup).toContain("Real-world locations are presentation-only");
+    expect(markup).toContain("location presets do not affect planning metrics");
+    expect(markup).toContain("Planning polygon");
+    expect(markup).toContain("radar sites");
+    expect(markup).toContain("coverage overlay");
+    expect(markup).toContain("blind spot markers");
+    expect(markup).toContain("both terrain modes");
   });
 
   it("enters draw mode only while Planning Mode is active", () => {
