@@ -27,9 +27,129 @@ from __future__ import annotations
 import importlib.util
 import math
 import sys
+import types
 from pathlib import Path
 
 _REPO_ROOT = Path(__file__).resolve().parents[3]
+
+
+def _install_tracking_ros_stubs() -> None:
+    rclpy_mod = types.ModuleType('rclpy')
+    rclpy_node_mod = types.ModuleType('rclpy.node')
+
+    class _StubNode:
+        pass
+
+    rclpy_node_mod.Node = _StubNode  # type: ignore[attr-defined]
+
+    rclpy_qos_mod = types.ModuleType('rclpy.qos')
+
+    class _QoSProfile:
+        def __init__(self, *args, **kwargs) -> None:  # noqa: ANN002, ANN003
+            self.args = args
+            self.kwargs = kwargs
+
+    class _Policy:
+        BEST_EFFORT = object()
+        VOLATILE = object()
+        KEEP_LAST = object()
+
+    rclpy_qos_mod.QoSProfile = _QoSProfile  # type: ignore[attr-defined]
+    rclpy_qos_mod.ReliabilityPolicy = _Policy  # type: ignore[attr-defined]
+    rclpy_qos_mod.DurabilityPolicy = _Policy  # type: ignore[attr-defined]
+    rclpy_qos_mod.HistoryPolicy = _Policy  # type: ignore[attr-defined]
+
+    rclpy_time_mod = types.ModuleType('rclpy.time')
+
+    class _Time:
+        @staticmethod
+        def to_msg():  # noqa: ANN201
+            return types.SimpleNamespace(sec=0, nanosec=0)
+
+    rclpy_time_mod.Time = _Time  # type: ignore[attr-defined]
+    rclpy_mod.time = rclpy_time_mod  # type: ignore[attr-defined]
+    rclpy_mod.init = lambda args=None: None  # type: ignore[attr-defined]
+    rclpy_mod.spin = lambda node: None  # type: ignore[attr-defined]
+    rclpy_mod.shutdown = lambda: None  # type: ignore[attr-defined]
+
+    geom_msg = types.ModuleType('geometry_msgs.msg')
+
+    class _Point:
+        __slots__ = ('x', 'y', 'z')
+
+        def __init__(self) -> None:
+            self.x = 0.0
+            self.y = 0.0
+            self.z = 0.0
+
+    class _Quaternion:
+        __slots__ = ('x', 'y', 'z', 'w')
+
+        def __init__(self) -> None:
+            self.x = 0.0
+            self.y = 0.0
+            self.z = 0.0
+            self.w = 0.0
+
+    geom_msg.Point = _Point  # type: ignore[attr-defined]
+    geom_msg.PoseWithCovariance = object  # type: ignore[attr-defined]
+    geom_msg.TwistWithCovariance = object  # type: ignore[attr-defined]
+    geom_pkg = types.ModuleType('geometry_msgs')
+    geom_pkg.msg = geom_msg  # type: ignore[attr-defined]
+
+    nav_msg = types.ModuleType('nav_msgs.msg')
+
+    class _Header:
+        __slots__ = ('stamp', 'frame_id')
+
+        def __init__(self) -> None:
+            self.stamp = types.SimpleNamespace(sec=0, nanosec=0)
+            self.frame_id = ''
+
+    class _Pose:
+        __slots__ = ('position', 'orientation')
+
+        def __init__(self) -> None:
+            self.position = _Point()
+            self.orientation = _Quaternion()
+
+    class _Twist:
+        __slots__ = ('linear',)
+
+        def __init__(self) -> None:
+            self.linear = _Point()
+
+    class _Odometry:
+        def __init__(self) -> None:
+            self.header = _Header()
+            self.child_frame_id = ''
+            self.pose = types.SimpleNamespace(pose=_Pose(), covariance=[0.0] * 36)
+            self.twist = types.SimpleNamespace(twist=_Twist(), covariance=[0.0] * 36)
+
+    nav_msg.Odometry = _Odometry  # type: ignore[attr-defined]
+    nav_pkg = types.ModuleType('nav_msgs')
+    nav_pkg.msg = nav_msg  # type: ignore[attr-defined]
+
+    rosgraph_msg = types.ModuleType('rosgraph_msgs.msg')
+
+    class _Clock:
+        def __init__(self) -> None:
+            self.clock = types.SimpleNamespace(sec=0, nanosec=0)
+
+    rosgraph_msg.Clock = _Clock  # type: ignore[attr-defined]
+    rosgraph_pkg = types.ModuleType('rosgraph_msgs')
+    rosgraph_pkg.msg = rosgraph_msg  # type: ignore[attr-defined]
+
+    sys.modules['rclpy'] = rclpy_mod
+    sys.modules['rclpy.node'] = rclpy_node_mod
+    sys.modules['rclpy.qos'] = rclpy_qos_mod
+    sys.modules['rclpy.time'] = rclpy_time_mod
+    sys.modules['geometry_msgs'] = geom_pkg
+    sys.modules['geometry_msgs.msg'] = geom_msg
+    sys.modules['nav_msgs'] = nav_pkg
+    sys.modules['nav_msgs.msg'] = nav_msg
+    sys.modules['rosgraph_msgs'] = rosgraph_pkg
+    sys.modules['rosgraph_msgs.msg'] = rosgraph_msg
 
 
 def _load_tracking_module():  # noqa: ANN201
@@ -44,6 +164,8 @@ def _load_tracking_module():  # noqa: ANN201
     if rclpy_mod is not None and not hasattr(rclpy_mod, 'time'):
         sys.modules.pop('rclpy', None)
         sys.modules.pop('rclpy.node', None)
+    if importlib.util.find_spec('rclpy') is None:
+        _install_tracking_ros_stubs()
     path = _REPO_ROOT / 'src' / 'tracking' / 'tracking' / 'tracking_node.py'
     assert path.is_file(), f'missing {path}'
     spec = importlib.util.spec_from_file_location('tracking_node_under_test', path)
