@@ -45,6 +45,7 @@ import {
   terrainProviderModeLabel,
 } from "@/cesium/terrainProviderConfig";
 import type { TerrainLayerVisibility } from "@/cesium/terrainLayers";
+import { analyzePlanningCoverage, type PlanningCoverageAnalysis } from "@/cesium/planningCoverageAnalysis";
 import type { CesiumTerrainProviderMode } from "@/cesium/terrainProviderConfig";
 import type { VisualLayerVisibility } from "@/cesium/visualLayerRegistry";
 import { CesiumRuntimePanel } from "@/components/CesiumRuntimePanel";
@@ -174,6 +175,7 @@ export function PlanningModePanel({
   radars,
   coverage,
   coverageOptions,
+  coverageAnalysis,
   terrainProviderMode,
   locationPresetId,
   customLatitude,
@@ -200,6 +202,7 @@ export function PlanningModePanel({
   radars: PlanningRadarState;
   coverage: PlanningCoverageEstimate;
   coverageOptions: PlanningCoverageLayerOptions;
+  coverageAnalysis: PlanningCoverageAnalysis;
   terrainProviderMode: CesiumTerrainProviderMode;
   locationPresetId: PlanningLocationPresetId;
   customLatitude: string;
@@ -226,6 +229,8 @@ export function PlanningModePanel({
   const hasCompleted = (polygon.completedVertices?.length ?? 0) > 0;
   const selectedRadar =
     radars.sites.find((site) => site.id === radars.selectedSiteId) ?? null;
+  const overlapPercent = coverageAnalysis.overlapPercent;
+  const redundancyPercent = coverageAnalysis.redundancyPercent;
 
   const terrainProviderOn = terrainProviderMode === "cesium_world_terrain";
   const selectedLocationPreset = planningLocationPreset(locationPresetId);
@@ -523,6 +528,29 @@ export function PlanningModePanel({
             <span>Covered {formatAreaM2(coverage.estimatedCoveredAreaM2)}</span>
             <span>Uncovered {formatAreaM2(coverage.estimatedUncoveredAreaM2)}</span>
             <span>Blind hints {coverage.blindSpotHints.length}</span>
+          </div>
+          <div className="mt-3 rounded border border-slate-800 bg-slate-950/70 p-2" data-testid="planning-analytics-v2">
+            <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-300">
+              Planning analytics
+            </p>
+            <p className="mt-1 text-[11px] text-slate-500">Planning heuristic only.</p>
+            <div className="mt-2 grid grid-cols-3 gap-2 text-slate-300">
+              <span>Coverage % {coverage.coveragePercent.toFixed(1)}%</span>
+              <span>Overlap % {overlapPercent.toFixed(1)}%</span>
+              <span>Redundancy % {redundancyPercent.toFixed(1)}%</span>
+            </div>
+          </div>
+          <div className="mt-3 rounded border border-slate-800 bg-slate-950/70 p-2" data-testid="planning-advisory-v2">
+            <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-300">
+              Planning advisory
+            </p>
+            <p className="mt-1 text-[11px] text-slate-500">Advisory planning heuristic only.</p>
+            <div className="mt-2 grid gap-1 text-slate-300">
+              <span>Blind Spot Summary {coverageAnalysis.blindSpotV2.summary}</span>
+              <span>Suggested Radar {coverageAnalysis.radarRecommendation ? coverageAnalysis.radarRecommendation.recommendedPresetLabel : "No additional planning radar suggested."}</span>
+              <span>Suggested Position {coverageAnalysis.radarRecommendation ? `${Math.round(coverageAnalysis.radarRecommendation.approximatePlacement.x)}, ${Math.round(coverageAnalysis.radarRecommendation.approximatePlacement.y)}` : "None"}</span>
+              <span>Reason {coverageAnalysis.radarRecommendation ? coverageAnalysis.radarRecommendation.reason : "Sampled planning cells are covered."}</span>
+            </div>
           </div>
         </div>
         <div className="mt-3 grid gap-2 text-xs" data-testid="planning-radar-editor">
@@ -831,6 +859,10 @@ export function AppWorkstationSlots(props: AppWorkstationSlotsProps) {
   );
   const planningCoverage = useMemo(
     () => estimatePlanningCoverage(planningPolygon, planningRadars),
+    [planningPolygon, planningRadars],
+  );
+  const planningCoverageAnalysis = useMemo(
+    () => analyzePlanningCoverage(planningPolygon, planningRadars, undefined, { radarPresets: PLANNING_RADAR_PRESETS }),
     [planningPolygon, planningRadars],
   );
   const planningModeActive = workspaceModeShowsPlanningPlaceholder(workspaceMode);
@@ -1173,6 +1205,7 @@ export function AppWorkstationSlots(props: AppWorkstationSlotsProps) {
                 radars={planningRadars}
                 coverage={planningCoverage}
                 coverageOptions={planningCoverageOptions}
+                coverageAnalysis={planningCoverageAnalysis}
                 terrainProviderMode={terrainProviderMode}
                 locationPresetId={planningLocationPresetId}
                 customLatitude={customPlanningLatitude}

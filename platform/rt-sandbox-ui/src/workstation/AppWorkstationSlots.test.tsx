@@ -4,6 +4,7 @@ import {
   DEFAULT_PLANNING_COVERAGE_OPTIONS,
   EMPTY_PLANNING_POLYGON,
   EMPTY_PLANNING_RADARS,
+  PLANNING_RADAR_PRESETS,
   addPlanningRadarSite,
   addPlanningVertex,
   cancelPlanningDrawing,
@@ -22,6 +23,7 @@ import {
   type PlanningRadarState,
   type PlanningTool,
 } from "@/cesium/planningDrawing";
+import { analyzePlanningCoverage, type PlanningCoverageAnalysis } from "@/cesium/planningCoverageAnalysis";
 import {
   DEFAULT_CESIUM_TERRAIN_PROVIDER_MODE,
   type CesiumTerrainProviderMode,
@@ -45,6 +47,7 @@ function renderPlanningPanel({
   radars = EMPTY_PLANNING_RADARS,
   coverage = estimatePlanningCoverage(polygon, radars),
   coverageOptions = DEFAULT_PLANNING_COVERAGE_OPTIONS,
+  coverageAnalysis = analyzePlanningCoverage(polygon, radars, undefined, { radarPresets: PLANNING_RADAR_PRESETS }),
   terrainProviderMode = DEFAULT_CESIUM_TERRAIN_PROVIDER_MODE,
   locationPresetId = DEFAULT_PLANNING_LOCATION_PRESET_ID,
   customLatitude = String(planningLocationPreset(DEFAULT_PLANNING_LOCATION_PRESET_ID).latitudeDeg),
@@ -55,6 +58,7 @@ function renderPlanningPanel({
   radars?: PlanningRadarState;
   coverage?: PlanningCoverageEstimate;
   coverageOptions?: PlanningCoverageLayerOptions;
+  coverageAnalysis?: PlanningCoverageAnalysis;
   terrainProviderMode?: CesiumTerrainProviderMode;
   locationPresetId?: PlanningLocationPresetId;
   customLatitude?: string;
@@ -67,6 +71,7 @@ function renderPlanningPanel({
       radars={radars}
       coverage={coverage}
       coverageOptions={coverageOptions}
+      coverageAnalysis={coverageAnalysis}
       terrainProviderMode={terrainProviderMode}
       locationPresetId={locationPresetId}
       customLatitude={customLatitude}
@@ -473,6 +478,75 @@ describe("AppWorkstationSlots planning mode shell", () => {
     expect(markup).toContain("heuristic");
     expect(markup).toContain("visual estimate");
     expect(markup).toContain("not validated sensing");
+  });
+
+  it("renders Planning overlap and redundancy analytics", () => {
+    const polygon: PlanningPolygonState = {
+      draftVertices: [],
+      completedVertices: [
+        { x: 0, y: 0 },
+        { x: 1000, y: 0 },
+        { x: 1000, y: 1000 },
+        { x: 0, y: 1000 },
+      ],
+    };
+    const radars: PlanningRadarState = {
+      ...EMPTY_PLANNING_RADARS,
+      sites: [
+        {
+          id: "planning-radar-1",
+          position: { x: 450, y: 500 },
+          radar_type: "Medium Radar",
+          detection_range_m: 900,
+        },
+        {
+          id: "planning-radar-2",
+          position: { x: 550, y: 500 },
+          radar_type: "Medium Radar",
+          detection_range_m: 900,
+        },
+      ],
+    };
+    const coverage = estimatePlanningCoverage(polygon, radars, 4);
+    const coverageAnalysis = analyzePlanningCoverage(polygon, radars, 4);
+
+    const markup = renderPlanningPanel({ polygon, radars, coverage, coverageAnalysis });
+
+    expect(markup).toContain('data-testid="planning-analytics-v2"');
+    expect(markup).toContain("Planning heuristic only.");
+    expect(markup).toContain("Coverage % 100.0%");
+    expect(markup).toContain("Overlap % 100.0%");
+    expect(markup).toContain("Redundancy % 100.0%");
+  });
+
+
+
+  it("renders Planning advisory recommendations", () => {
+    const polygon: PlanningPolygonState = {
+      draftVertices: [],
+      completedVertices: [
+        { x: 0, y: 0 },
+        { x: 1000, y: 0 },
+        { x: 1000, y: 1000 },
+        { x: 0, y: 1000 },
+      ],
+    };
+    const coverage = estimatePlanningCoverage(polygon, EMPTY_PLANNING_RADARS, 4);
+    const coverageAnalysis = analyzePlanningCoverage(
+      polygon,
+      EMPTY_PLANNING_RADARS,
+      4,
+      { radarPresets: PLANNING_RADAR_PRESETS },
+    );
+
+    const markup = renderPlanningPanel({ polygon, coverage, coverageAnalysis });
+
+    expect(markup).toContain("data-testid=\"planning-advisory-v2\"");
+    expect(markup).toContain("Advisory planning heuristic only.");
+    expect(markup).toContain("Blind Spot Summary 100.0% uncovered");
+    expect(markup).toContain("Suggested Radar Long Range");
+    expect(markup).toContain("Suggested Position");
+    expect(markup).toContain("Reason Add Long Range near NE uncovered sector.");
   });
 
   it("isolates coverage overlays from Grid Mode", () => {

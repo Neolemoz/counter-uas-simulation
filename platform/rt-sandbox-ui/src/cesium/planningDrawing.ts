@@ -13,6 +13,11 @@ import { cartographicToWorld, worldToCartesian } from "./coordinates";
 import { isViewerUsable } from "./cesiumEditing";
 import { sampleTerrainHeight } from "./rtFictionalTerrain";
 import { ZONE_SURFACE_LIFT_M } from "./terrainGrounding";
+import {
+  analyzePlanningCoverage,
+  estimatePlanningCoverageFromAnalysis,
+  type PlanningCoverageAnalysis,
+} from "./planningCoverageAnalysis";
 
 export type PlanningTool = "select" | "draw_defense_area" | "place_radar_site";
 
@@ -109,10 +114,6 @@ export const DEFAULT_PLANNING_COVERAGE_OPTIONS: PlanningCoverageLayerOptions = {
   showBlindSpots: true,
 };
 
-
-const COVERAGE_SAMPLE_STEPS = 28;
-const MAX_RENDERED_COVERAGE_CELLS = 320;
-const MAX_BLIND_SPOT_HINTS = 6;
 
 const PLANNING_PREFIX = "rt-planning-defense-area-";
 
@@ -249,160 +250,12 @@ export function clearPlanningRadarSites(state: PlanningRadarState): PlanningRada
   };
 }
 
-function polygonArea(vertices: PlanningVertex[]): number {
-  if (vertices.length < 3) return 0;
-  let sum = 0;
-  for (let index = 0; index < vertices.length; index += 1) {
-    const current = vertices[index];
-    const next = vertices[(index + 1) % vertices.length];
-    sum += current.x * next.y - next.x * current.y;
-  }
-  return Math.abs(sum) / 2;
-}
-
-function pointInPolygon(point: PlanningVertex, vertices: PlanningVertex[]): boolean {
-  if (vertices.length < 3) return false;
-  let inside = false;
-  for (let index = 0, previous = vertices.length - 1; index < vertices.length; previous = index++) {
-    const currentVertex = vertices[index];
-    const previousVertex = vertices[previous];
-    const crosses =
-      currentVertex.y > point.y !== previousVertex.y > point.y &&
-      point.x <
-        ((previousVertex.x - currentVertex.x) * (point.y - currentVertex.y)) /
-          (previousVertex.y - currentVertex.y) +
-          currentVertex.x;
-    if (crosses) inside = !inside;
-  }
-  return inside;
-}
-
-function distanceM(a: PlanningVertex, b: PlanningVertex): number {
-  return Math.hypot(a.x - b.x, a.y - b.y);
-}
-
-function isCoveredByRadar(point: PlanningVertex, radars: PlanningRadarSite[]): boolean {
-  return radars.some((site) => distanceM(point, site.position) <= site.detection_range_m);
-}
-
-function boundsForPolygon(vertices: PlanningVertex[]) {
-  return vertices.reduce(
-    (bounds, vertex) => ({
-      minX: Math.min(bounds.minX, vertex.x),
-      maxX: Math.max(bounds.maxX, vertex.x),
-      minY: Math.min(bounds.minY, vertex.y),
-      maxY: Math.max(bounds.maxY, vertex.y),
-    }),
-    {
-      minX: Number.POSITIVE_INFINITY,
-      maxX: Number.NEGATIVE_INFINITY,
-      minY: Number.POSITIVE_INFINITY,
-      maxY: Number.NEGATIVE_INFINITY,
-    },
-  );
-}
-
-function limitCoverageCells(cells: PlanningCoverageCell[]): PlanningCoverageCell[] {
-  if (cells.length <= MAX_RENDERED_COVERAGE_CELLS) return cells;
-  const stride = Math.ceil(cells.length / MAX_RENDERED_COVERAGE_CELLS);
-  return cells.filter((_, index) => index % stride === 0).slice(0, MAX_RENDERED_COVERAGE_CELLS);
-}
-
-function rankBlindSpotHints(
-  uncoveredCells: PlanningCoverageCell[],
-  radars: PlanningRadarSite[],
-): PlanningCoverageCell[] {
-  return [...uncoveredCells]
-    .sort((a, b) => {
-      const nearestA = radars.length
-        ? Math.min(...radars.map((site) => distanceM(a.center, site.position)))
-        : Number.POSITIVE_INFINITY;
-      const nearestB = radars.length
-        ? Math.min(...radars.map((site) => distanceM(b.center, site.position)))
-        : Number.POSITIVE_INFINITY;
-      return nearestB - nearestA;
-    })
-    .slice(0, MAX_BLIND_SPOT_HINTS);
-}
-
 export function estimatePlanningCoverage(
   polygon: PlanningPolygonState,
   radars: PlanningRadarState,
-  sampleSteps = COVERAGE_SAMPLE_STEPS,
+  sampleSteps?: number,
 ): PlanningCoverageEstimate {
-  const vertices = polygon.completedVertices ?? [];
-  const totalPolygonAreaM2 = polygonArea(vertices);
-  if (vertices.length < 3 || totalPolygonAreaM2 <= 0) {
-    return {
-      radarCount: radars.sites.length,
-      totalPolygonAreaM2: 0,
-      estimatedCoveredAreaM2: 0,
-      estimatedUncoveredAreaM2: 0,
-      coveragePercent: 0,
-      coveredCells: [],
-      uncoveredCells: [],
-      blindSpotHints: [],
-    };
-  }
-
-  const bounds = boundsForPolygon(vertices);
-  const stepCount = Math.max(4, sampleSteps);
-  const cellWidth = (bounds.maxX - bounds.minX) / stepCount;
-  const cellHeight = (bounds.maxY - bounds.minY) / stepCount;
-  if (cellWidth <= 0 || cellHeight <= 0) {
-    return {
-      radarCount: radars.sites.length,
-      totalPolygonAreaM2,
-      estimatedCoveredAreaM2: 0,
-      estimatedUncoveredAreaM2: totalPolygonAreaM2,
-      coveragePercent: 0,
-      coveredCells: [],
-      uncoveredCells: [],
-      blindSpotHints: [],
-    };
-  }
-
-  const coveredCells: PlanningCoverageCell[] = [];
-  const uncoveredCells: PlanningCoverageCell[] = [];
-  for (let xIndex = 0; xIndex < stepCount; xIndex += 1) {
-    for (let yIndex = 0; yIndex < stepCount; yIndex += 1) {
-      const center = {
-        x: bounds.minX + cellWidth * (xIndex + 0.5),
-        y: bounds.minY + cellHeight * (yIndex + 0.5),
-      };
-      if (!pointInPolygon(center, vertices)) continue;
-      const cell: PlanningCoverageCell = {
-        center,
-        sizeM: Math.min(cellWidth, cellHeight),
-        areaM2: 0,
-      };
-      if (isCoveredByRadar(center, radars.sites)) coveredCells.push(cell);
-      else uncoveredCells.push(cell);
-    }
-  }
-
-  const sampledInsideCount = coveredCells.length + uncoveredCells.length;
-  const cellAreaM2 = sampledInsideCount > 0 ? totalPolygonAreaM2 / sampledInsideCount : 0;
-  const estimatedCoveredAreaM2 = coveredCells.length * cellAreaM2;
-  const estimatedUncoveredAreaM2 = Math.max(0, totalPolygonAreaM2 - estimatedCoveredAreaM2);
-  const withArea = (cell: PlanningCoverageCell): PlanningCoverageCell => ({
-    ...cell,
-    areaM2: cellAreaM2,
-  });
-  const coveredWithArea = coveredCells.map(withArea);
-  const uncoveredWithArea = uncoveredCells.map(withArea);
-
-  return {
-    radarCount: radars.sites.length,
-    totalPolygonAreaM2,
-    estimatedCoveredAreaM2,
-    estimatedUncoveredAreaM2,
-    coveragePercent:
-      totalPolygonAreaM2 > 0 ? (estimatedCoveredAreaM2 / totalPolygonAreaM2) * 100 : 0,
-    coveredCells: limitCoverageCells(coveredWithArea),
-    uncoveredCells: limitCoverageCells(uncoveredWithArea),
-    blindSpotHints: rankBlindSpotHints(uncoveredWithArea, radars.sites),
-  };
+  return estimatePlanningCoverageFromAnalysis(polygon, radars, sampleSteps);
 }
 
 function removePlanningEntities(viewer: Viewer): void {
@@ -538,6 +391,90 @@ function addBlindSpotHints(viewer: Viewer, hints: PlanningCoverageCell[]): void 
   });
 }
 
+function addAdvisoryBlindSpotVisualization(
+  viewer: Viewer,
+  analysis: PlanningCoverageAnalysis,
+): void {
+  analysis.blindSpotV2.farthestUncoveredClusterHints.forEach((cell, index) => {
+    viewer.entities.add(
+      new Entity({
+        id: `${PLANNING_PREFIX}advisory-blind-sector-${index}`,
+        polygon: {
+          hierarchy: new PolygonHierarchy(cellToPolygon(cell).map(vertexToCartesian)),
+          perPositionHeight: true,
+          material: Color.fromCssColorString("rgba(245, 158, 11, 0.28)"),
+          outline: true,
+          outlineColor: Color.fromCssColorString("rgba(251, 191, 36, 0.74)"),
+        },
+      }),
+    );
+  });
+
+  analysis.blindSpotV2.majorUncoveredSectors.forEach((sector, index) => {
+    viewer.entities.add(
+      new Entity({
+        id: `${PLANNING_PREFIX}advisory-blind-sector-label-${index}`,
+        position: vertexToCartesian(sector.centroid),
+        point: new PointGraphics({
+          pixelSize: 9,
+          color: Color.fromCssColorString("rgba(245, 158, 11, 0.9)"),
+          outlineColor: Color.fromCssColorString("rgba(120, 53, 15, 0.98)"),
+          outlineWidth: 2,
+          disableDepthTestDistance: Number.POSITIVE_INFINITY,
+        }),
+        label: {
+          text: `${sector.sector} advisory gap`,
+          font: "bold 10px sans-serif",
+          fillColor: Color.WHITE,
+          outlineColor: Color.BLACK,
+          outlineWidth: 2,
+          style: LabelStyle.FILL_AND_OUTLINE,
+          pixelOffset: new Cartesian2(0, -20),
+          disableDepthTestDistance: Number.POSITIVE_INFINITY,
+        },
+      }),
+    );
+  });
+}
+
+function addRecommendedRadarPlacement(
+  viewer: Viewer,
+  analysis: PlanningCoverageAnalysis,
+): void {
+  const recommendation = analysis.radarRecommendation;
+  if (!recommendation) return;
+  const preset = getPlanningRadarPreset(recommendation.recommendedPresetId as PlanningRadarPresetId);
+  addPlanningPolyline(
+    viewer,
+    `${PLANNING_PREFIX}advisory-radar-range`,
+    circleVertices(recommendation.approximatePlacement, preset.detection_range_m),
+    true,
+  );
+  viewer.entities.add(
+    new Entity({
+      id: `${PLANNING_PREFIX}advisory-radar-marker`,
+      position: vertexToCartesian(recommendation.approximatePlacement),
+      point: new PointGraphics({
+        pixelSize: 15,
+        color: Color.fromCssColorString("rgba(168, 85, 247, 0.94)"),
+        outlineColor: Color.fromCssColorString("rgba(59, 7, 100, 0.98)"),
+        outlineWidth: 3,
+        disableDepthTestDistance: Number.POSITIVE_INFINITY,
+      }),
+      label: {
+        text: `advisory radar ${recommendation.recommendedPresetLabel}`,
+        font: "bold 11px sans-serif",
+        fillColor: Color.WHITE,
+        outlineColor: Color.BLACK,
+        outlineWidth: 2,
+        style: LabelStyle.FILL_AND_OUTLINE,
+        pixelOffset: new Cartesian2(0, -26),
+        disableDepthTestDistance: Number.POSITIVE_INFINITY,
+      },
+    }),
+  );
+}
+
 function addCoverageLayer(
   viewer: Viewer,
   coverage: PlanningCoverageEstimate,
@@ -625,7 +562,14 @@ export function syncPlanningDefenseAreaLayer(
   addPlanningPolyline(viewer, `${PLANNING_PREFIX}draft-edge`, state?.draftVertices ?? [], false);
 
   if (state && radars && coverageOptions) {
-    addCoverageLayer(viewer, estimatePlanningCoverage(state, radars), coverageOptions);
+    const analysis = analyzePlanningCoverage(state, radars, undefined, {
+      radarPresets: PLANNING_RADAR_PRESETS,
+    });
+    addCoverageLayer(viewer, analysis.estimate, coverageOptions);
+    if (coverageOptions.showBlindSpots) {
+      addAdvisoryBlindSpotVisualization(viewer, analysis);
+      addRecommendedRadarPlacement(viewer, analysis);
+    }
   }
 
   radars?.sites.forEach((site) => {
