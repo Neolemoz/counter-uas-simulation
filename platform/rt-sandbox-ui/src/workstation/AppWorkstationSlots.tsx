@@ -99,6 +99,24 @@ import {
   validatedPlanningCoordinates,
   type PlanningLocationPresetId,
 } from "@/cesium/planningLocations";
+import {
+  buildPlanningMcSnapshot,
+  planningGeometryFingerprint,
+} from "@/layout/planningMcSnapshot";
+import {
+  buildPlanningMcPackage,
+  copyPlanningMcPackage,
+  downloadPlanningMcPackage,
+  type PlanningMcPackageV1,
+} from "@/layout/planningMcPackage";
+import {
+  buildMockPlanningMcResultRef,
+  buildPlanningResultLink,
+  buildPlanningResultLinkPreview,
+  parsePlanningMcResultRefJson,
+  type PlanningMcResultRefV1,
+  type PlanningResultLinkV1,
+} from "@/layout/planningMcResultLink";
 import { BackgroundDiagnostics } from "@/workstation/BackgroundDiagnostics";
 import { BackgroundDiagnosticsCompact } from "@/workstation/BackgroundDiagnosticsCompact";
 import { ConnectPlaceholder } from "@/workstation/ConnectPlaceholder";
@@ -176,6 +194,12 @@ export function PlanningModePanel({
   coverage,
   coverageOptions,
   coverageAnalysis,
+  planningMcPackage,
+  planningMcPackageStale,
+  planningResultLink,
+  planningResultLinkPreview,
+  planningResultImportText,
+  planningResultImportError,
   terrainProviderMode,
   locationPresetId,
   customLatitude,
@@ -196,6 +220,13 @@ export function PlanningModePanel({
   onClearRadarSites,
   onCoverageOptionsChange,
   onResetCoverageState,
+  onGeneratePlanningMcPackage,
+  onCopyPlanningMcPackage,
+  onDownloadPlanningMcPackage,
+  onPlanningResultImportTextChange,
+  onImportPlanningResultMetadata,
+  onImportMockPlanningResultRef,
+  onClearPlanningResultImport,
 }: {
   tool: PlanningTool;
   polygon: PlanningPolygonState;
@@ -203,6 +234,12 @@ export function PlanningModePanel({
   coverage: PlanningCoverageEstimate;
   coverageOptions: PlanningCoverageLayerOptions;
   coverageAnalysis: PlanningCoverageAnalysis;
+  planningMcPackage: PlanningMcPackageV1 | null;
+  planningMcPackageStale: boolean;
+  planningResultLink: PlanningResultLinkV1 | null;
+  planningResultLinkPreview: ReturnType<typeof buildPlanningResultLinkPreview>;
+  planningResultImportText: string;
+  planningResultImportError: string | null;
   terrainProviderMode: CesiumTerrainProviderMode;
   locationPresetId: PlanningLocationPresetId;
   customLatitude: string;
@@ -223,6 +260,13 @@ export function PlanningModePanel({
   onClearRadarSites: () => void;
   onCoverageOptionsChange: (options: PlanningCoverageLayerOptions) => void;
   onResetCoverageState: () => void;
+  onGeneratePlanningMcPackage: () => void;
+  onCopyPlanningMcPackage: () => void;
+  onDownloadPlanningMcPackage: () => void;
+  onPlanningResultImportTextChange: (value: string) => void;
+  onImportPlanningResultMetadata: () => void;
+  onImportMockPlanningResultRef: () => void;
+  onClearPlanningResultImport: () => void;
 }) {
   const canFinish = canFinishPlanningPolygon(polygon);
   const hasDraft = polygon.draftVertices.length > 0;
@@ -552,6 +596,132 @@ export function PlanningModePanel({
               <span>Reason {coverageAnalysis.radarRecommendation ? coverageAnalysis.radarRecommendation.reason : "Sampled planning cells are covered."}</span>
             </div>
           </div>
+          <div className="mt-3 rounded border border-violet-900/60 bg-violet-950/20 p-2" data-testid="planning-mc-package-preview">
+            <p className="text-[11px] font-semibold uppercase tracking-wide text-violet-200">
+              Planning MC package preview
+            </p>
+            <p className="mt-1 text-[11px] text-slate-500">
+              Read-only package preview; no MC execution, no job creation, no runtime or bridge changes.
+            </p>
+            {planningMcPackageStale && (
+              <p className="mt-2 rounded border border-amber-700/60 bg-amber-950/35 px-2 py-1 text-[11px] text-amber-100" role="alert">
+                Package may be stale. Regenerate.
+              </p>
+            )}
+            {planningMcPackage ? (
+              <div className="mt-2 grid gap-1 text-slate-300">
+                <span>planning_snapshot_id {planningMcPackage.planning_snapshot_id}</span>
+                <span>planning_geometry_id {planningMcPackage.planning_geometry_id}</span>
+                <span>Radar count {planningMcPackage.planning_summary.radar_count}</span>
+                <span>Coverage summary {planningMcPackage.planning_summary.coverage_summary.coverage_percent.toFixed(1)}%</span>
+                <span>Overlap summary {planningMcPackage.planning_summary.overlap_summary.overlap_percent.toFixed(1)}%</span>
+                <span>Redundancy summary {planningMcPackage.planning_summary.redundancy_summary.redundancy_percent.toFixed(1)}%</span>
+                <span>Suggested MC settings {planningMcPackage.mc_preparation.scenario_label} · {planningMcPackage.mc_preparation.suggested_run_count} runs · seed {planningMcPackage.mc_preparation.suggested_seed_base}</span>
+              </div>
+            ) : (
+              <p className="mt-2 text-[11px] text-slate-500">No Planning MC package generated.</p>
+            )}
+            <div className="mt-2 flex flex-wrap gap-2">
+              <button
+                type="button"
+                onClick={onGeneratePlanningMcPackage}
+                className="rounded border border-violet-700/60 bg-violet-950/45 px-2 py-1 text-[10px] font-semibold uppercase text-violet-100"
+              >
+                Generate package
+              </button>
+              <button
+                type="button"
+                disabled={!planningMcPackage}
+                onClick={onCopyPlanningMcPackage}
+                className="rounded border border-slate-700 bg-slate-950 px-2 py-1 text-[10px] font-semibold uppercase text-slate-200 disabled:opacity-40"
+              >
+                Copy package JSON
+              </button>
+              <button
+                type="button"
+                disabled={!planningMcPackage}
+                onClick={onDownloadPlanningMcPackage}
+                className="rounded border border-slate-700 bg-slate-950 px-2 py-1 text-[10px] font-semibold uppercase text-slate-200 disabled:opacity-40"
+              >
+                Download package JSON
+              </button>
+            </div>
+          </div>
+          <div
+            className="mt-3 rounded border border-emerald-900/60 bg-emerald-950/20 p-2"
+            data-testid="planning-mc-result-link-preview"
+          >
+            <p className="text-[11px] font-semibold uppercase tracking-wide text-emerald-200">
+              Planning MC result linkage
+            </p>
+            <p className="mt-1 text-[11px] text-slate-500">
+              Read-only metadata import and linkage preview; no MC execution, no filesystem reads.
+            </p>
+            <div className="mt-2 grid gap-1 text-slate-300">
+              <span>Linkage status {planningResultLinkPreview.statusLabel}</span>
+              <span>Result link {planningResultLink ? `${planningResultLink.schema_version} · ${planningResultLink.status}` : "unlinked"}</span>
+              {planningResultLinkPreview.mcResultId ? (
+                <span>mc_result_id {planningResultLinkPreview.mcResultId}</span>
+              ) : null}
+              {planningResultLinkPreview.mcRunLabel ? (
+                <span>mc_run_label {planningResultLinkPreview.mcRunLabel}</span>
+              ) : null}
+              {planningResultLinkPreview.importedUtc ? (
+                <span>imported_utc {planningResultLinkPreview.importedUtc}</span>
+              ) : null}
+              {planningResultLinkPreview.successRate !== null ? (
+                <span>success_rate {(planningResultLinkPreview.successRate * 100).toFixed(1)}%</span>
+              ) : null}
+              {planningResultLinkPreview.missDistanceP95 !== null ? (
+                <span>miss_distance_p95 {planningResultLinkPreview.missDistanceP95.toFixed(1)} m</span>
+              ) : null}
+              {planningResultLinkPreview.interceptTimeMean !== null ? (
+                <span>intercept_time_mean {planningResultLinkPreview.interceptTimeMean.toFixed(1)} s</span>
+              ) : null}
+            </div>
+            {planningResultImportError ? (
+              <p className="mt-2 rounded border border-rose-700/60 bg-rose-950/35 px-2 py-1 text-[11px] text-rose-100" role="alert">
+                {planningResultImportError}
+              </p>
+            ) : null}
+            <label className="mt-2 grid gap-1 text-[11px] text-slate-400">
+              Paste MC result metadata JSON
+              <textarea
+                value={planningResultImportText}
+                onChange={(event) => onPlanningResultImportTextChange(event.currentTarget.value)}
+                disabled={!planningMcPackage}
+                rows={3}
+                className="rounded border border-slate-800 bg-slate-950 px-2 py-1 font-mono text-[10px] text-slate-200 disabled:opacity-40"
+                placeholder='{"schema_version":"rt_planning_mc_result_ref_v1",...}'
+              />
+            </label>
+            <div className="mt-2 flex flex-wrap gap-2">
+              <button
+                type="button"
+                disabled={!planningMcPackage || planningResultImportText.trim().length === 0}
+                onClick={onImportPlanningResultMetadata}
+                className="rounded border border-emerald-700/60 bg-emerald-950/45 px-2 py-1 text-[10px] font-semibold uppercase text-emerald-100 disabled:opacity-40"
+              >
+                Import metadata
+              </button>
+              <button
+                type="button"
+                disabled={!planningMcPackage}
+                onClick={onImportMockPlanningResultRef}
+                className="rounded border border-slate-700 bg-slate-950 px-2 py-1 text-[10px] font-semibold uppercase text-slate-200 disabled:opacity-40"
+              >
+                Import mock result ref
+              </button>
+              <button
+                type="button"
+                disabled={!planningResultLink?.result_ref}
+                onClick={onClearPlanningResultImport}
+                className="rounded border border-slate-700 bg-slate-950 px-2 py-1 text-[10px] font-semibold uppercase text-slate-200 disabled:opacity-40"
+              >
+                Clear import
+              </button>
+            </div>
+          </div>
         </div>
         <div className="mt-3 grid gap-2 text-xs" data-testid="planning-radar-editor">
           <label className="grid gap-1 text-slate-300">
@@ -865,6 +1035,36 @@ export function AppWorkstationSlots(props: AppWorkstationSlotsProps) {
     () => analyzePlanningCoverage(planningPolygon, planningRadars, undefined, { radarPresets: PLANNING_RADAR_PRESETS }),
     [planningPolygon, planningRadars],
   );
+  const [planningMcPackage, setPlanningMcPackage] =
+    useState<PlanningMcPackageV1 | null>(null);
+  const [planningResultRef, setPlanningResultRef] =
+    useState<PlanningMcResultRefV1 | null>(null);
+  const [planningResultImportText, setPlanningResultImportText] = useState("");
+  const [planningResultImportError, setPlanningResultImportError] = useState<string | null>(
+    null,
+  );
+  const currentPlanningGeometryId = useMemo(
+    () => planningGeometryFingerprint(planningPolygon, planningRadars),
+    [planningPolygon, planningRadars],
+  );
+  const planningMcPackageStale =
+    planningMcPackage !== null &&
+    planningMcPackage.planning_geometry_id !== currentPlanningGeometryId;
+  const planningResultLink = useMemo(
+    () =>
+      planningMcPackage
+        ? buildPlanningResultLink(
+            planningMcPackage,
+            planningResultRef,
+            currentPlanningGeometryId,
+          )
+        : null,
+    [planningMcPackage, planningResultRef, currentPlanningGeometryId],
+  );
+  const planningResultLinkPreview = useMemo(
+    () => buildPlanningResultLinkPreview(planningResultLink),
+    [planningResultLink],
+  );
   const planningModeActive = workspaceModeShowsPlanningPlaceholder(workspaceMode);
   const planningDrawingEnabled = planningToolAllowsDrawing(
     planningModeActive,
@@ -925,6 +1125,73 @@ export function AppWorkstationSlots(props: AppWorkstationSlotsProps) {
       location: { ...location, label: preset.label },
     }));
   }, [planningLocationPresetId, customPlanningLatitude, customPlanningLongitude]);
+
+  const handleGeneratePlanningMcPackage = useCallback(() => {
+    const snapshot = buildPlanningMcSnapshot(
+      planningPolygon,
+      planningRadars,
+      planningCoverageAnalysis,
+      {
+        terrainMode: terrainProviderMode,
+        selectedLocationPreset: planningLocationPresetId,
+      },
+    );
+    setPlanningMcPackage(buildPlanningMcPackage(snapshot));
+    setPlanningResultRef(null);
+    setPlanningResultImportText("");
+    setPlanningResultImportError(null);
+  }, [
+    planningPolygon,
+    planningRadars,
+    planningCoverageAnalysis,
+    terrainProviderMode,
+    planningLocationPresetId,
+  ]);
+
+  const handleCopyPlanningMcPackage = useCallback(() => {
+    if (planningMcPackage) void copyPlanningMcPackage(planningMcPackage);
+  }, [planningMcPackage]);
+
+  const handleDownloadPlanningMcPackage = useCallback(() => {
+    if (planningMcPackage) downloadPlanningMcPackage(planningMcPackage);
+  }, [planningMcPackage]);
+
+  const handlePlanningResultImportTextChange = useCallback((value: string) => {
+    setPlanningResultImportText(value);
+    setPlanningResultImportError(null);
+  }, []);
+
+  const handleImportPlanningResultMetadata = useCallback(() => {
+    if (!planningMcPackage) return;
+    const parsed = parsePlanningMcResultRefJson(planningResultImportText);
+    if (!parsed.ok) {
+      setPlanningResultImportError(parsed.error);
+      return;
+    }
+    setPlanningResultRef(parsed.ref);
+    setPlanningResultImportError(null);
+  }, [planningMcPackage, planningResultImportText]);
+
+  const handleImportMockPlanningResultRef = useCallback(() => {
+    if (!planningMcPackage) return;
+    setPlanningResultRef(
+      buildMockPlanningMcResultRef(planningMcPackage, {
+        importedUtc: "2026-06-04T12:00:00Z",
+        summary: {
+          success_rate: 0.82,
+          miss_distance_p95: 42.5,
+          intercept_time_mean: 18.3,
+        },
+      }),
+    );
+    setPlanningResultImportError(null);
+  }, [planningMcPackage]);
+
+  const handleClearPlanningResultImport = useCallback(() => {
+    setPlanningResultRef(null);
+    setPlanningResultImportText("");
+    setPlanningResultImportError(null);
+  }, []);
 
   const handlePlanningMapClick = useCallback(
     (vertex: PlanningVertex) => {
@@ -1206,6 +1473,12 @@ export function AppWorkstationSlots(props: AppWorkstationSlotsProps) {
                 coverage={planningCoverage}
                 coverageOptions={planningCoverageOptions}
                 coverageAnalysis={planningCoverageAnalysis}
+                planningMcPackage={planningMcPackage}
+                planningMcPackageStale={planningMcPackageStale}
+                planningResultLink={planningResultLink}
+                planningResultLinkPreview={planningResultLinkPreview}
+                planningResultImportText={planningResultImportText}
+                planningResultImportError={planningResultImportError}
                 terrainProviderMode={terrainProviderMode}
                 locationPresetId={planningLocationPresetId}
                 customLatitude={customPlanningLatitude}
@@ -1244,6 +1517,13 @@ export function AppWorkstationSlots(props: AppWorkstationSlotsProps) {
                 onResetCoverageState={() =>
                   setPlanningCoverageOptions(DEFAULT_PLANNING_COVERAGE_OPTIONS)
                 }
+                onGeneratePlanningMcPackage={handleGeneratePlanningMcPackage}
+                onCopyPlanningMcPackage={handleCopyPlanningMcPackage}
+                onDownloadPlanningMcPackage={handleDownloadPlanningMcPackage}
+                onPlanningResultImportTextChange={handlePlanningResultImportTextChange}
+                onImportPlanningResultMetadata={handleImportPlanningResultMetadata}
+                onImportMockPlanningResultRef={handleImportMockPlanningResultRef}
+                onClearPlanningResultImport={handleClearPlanningResultImport}
               />
             )}
           </div>

@@ -1,0 +1,76 @@
+{
+  "schema_version": "planning_mc_result_link_golden_v1",
+  "fixture_utc": "2026-06-04T00:00:00Z",
+  "description": "Stable linked example for Planning MC Integration V2 (canonical test polygon + single Short Range radar).",
+  "planning_snapshot_id": "rt_planning_snapshot:sha256:2a52abfa1744b803",
+  "planning_geometry_id": "rt_planning:sha256:b4b557ab7147c3d3",
+  "package": {
+    "schema_version": "rt_planning_mc_package_v1",
+    "planning_snapshot_id": "rt_planning_snapshot:sha256:2a52abfa1744b803",
+    "planning_geometry_id": "rt_planning:sha256:b4b557ab7147c3d3",
+    "source_layout_id": "rt_layout_source",
+    "source_geometry_id": "rt_layout:sha256:source",
+    "planning_summary": {
+      "radar_count": 1,
+      "coverage_summary": {
+        "coverage_percent": 37.5,
+        "blind_spot_summary": "62.5% uncovered, largest gap in NE uncovered sector."
+      },
+      "overlap_summary": {
+        "overlap_percent": 0
+      },
+      "redundancy_summary": {
+        "redundancy_percent": 0
+      }
+    },
+    "mc_preparation": {
+      "scenario_label": "planning-analysis",
+      "suggested_run_count": 50,
+      "suggested_seed_base": 1
+    },
+    "metadata": {
+      "created_utc": "2026-06-04T00:00:00Z",
+      "package_version": "1"
+    }
+  },
+  "result_ref": {
+    "schema_version": "rt_planning_mc_result_ref_v1",
+    "linked_package_id": "rt_planning_package:rt_planning_snapshot:sha256:2a52abfa1744b803",
+    "linked_planning_geometry_id": "rt_planning:sha256:b4b557ab7147c3d3",
+    "mc_run_label": "planning-analysis",
+    "mc_result_id": "rt_mc_result:mock:planning-ui",
+    "imported_utc": "2026-06-04T12:00:00Z",
+    "summary": {
+      "success_rate": 0.82,
+      "miss_distance_p95": 42.5,
+      "intercept_time_mean": 18.3
+    }
+  },
+  "planning_result_link": {
+    "schema_version": "planning_result_link_v1",
+    "linked_package_id": "rt_planning_package:rt_planning_snapshot:sha256:2a52abfa1744b803",
+    "linked_planning_snapshot_id": "rt_planning_snapshot:sha256:2a52abfa1744b803",
+    "linked_planning_geometry_id": "rt_planning:sha256:b4b557ab7147c3d3",
+    "linked_source_layout_id": "rt_layout_source",
+    "linked_source_geometry_id": "rt_layout:sha256:source",
+    "result_ref": {
+      "schema_version": "rt_planning_mc_result_ref_v1",
+      "linked_package_id": "rt_planning_package:rt_planning_snapshot:sha256:2a52abfa1744b803",
+      "linked_planning_geometry_id": "rt_planning:sha256:b4b557ab7147c3d3",
+      "mc_run_label": "planning-analysis",
+      "mc_result_id": "rt_mc_result:mock:planning-ui",
+      "imported_utc": "2026-06-04T12:00:00Z",
+      "summary": {
+        "success_rate": 0.82,
+        "miss_distance_p95": 42.5,
+        "intercept_time_mean": 18.3
+      }
+    },
+    "status": "linked"
+  },
+  "validation_state_examples": {
+    "unlinked": "result_ref null",
+    "stale": "result_ref matches package but current planning_geometry_id drifted",
+    "mismatch": "result_ref linked_package_id or linked_planning_geometry_id differs from package"
+  }
+}

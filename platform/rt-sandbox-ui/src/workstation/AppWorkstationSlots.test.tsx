@@ -24,6 +24,13 @@ import {
   type PlanningTool,
 } from "@/cesium/planningDrawing";
 import { analyzePlanningCoverage, type PlanningCoverageAnalysis } from "@/cesium/planningCoverageAnalysis";
+import { buildPlanningMcSnapshot } from "@/layout/planningMcSnapshot";
+import { buildPlanningMcPackage, type PlanningMcPackageV1 } from "@/layout/planningMcPackage";
+import {
+  buildEmptyPlanningResultLink,
+  buildPlanningResultLinkPreview,
+  type PlanningResultLinkV1,
+} from "@/layout/planningMcResultLink";
 import {
   DEFAULT_CESIUM_TERRAIN_PROVIDER_MODE,
   type CesiumTerrainProviderMode,
@@ -48,6 +55,12 @@ function renderPlanningPanel({
   coverage = estimatePlanningCoverage(polygon, radars),
   coverageOptions = DEFAULT_PLANNING_COVERAGE_OPTIONS,
   coverageAnalysis = analyzePlanningCoverage(polygon, radars, undefined, { radarPresets: PLANNING_RADAR_PRESETS }),
+  planningMcPackage = null,
+  planningMcPackageStale = false,
+  planningResultLink = planningMcPackage ? buildEmptyPlanningResultLink(planningMcPackage) : null,
+  planningResultLinkPreview = buildPlanningResultLinkPreview(planningResultLink),
+  planningResultImportText = "",
+  planningResultImportError = null,
   terrainProviderMode = DEFAULT_CESIUM_TERRAIN_PROVIDER_MODE,
   locationPresetId = DEFAULT_PLANNING_LOCATION_PRESET_ID,
   customLatitude = String(planningLocationPreset(DEFAULT_PLANNING_LOCATION_PRESET_ID).latitudeDeg),
@@ -59,6 +72,12 @@ function renderPlanningPanel({
   coverage?: PlanningCoverageEstimate;
   coverageOptions?: PlanningCoverageLayerOptions;
   coverageAnalysis?: PlanningCoverageAnalysis;
+  planningMcPackage?: PlanningMcPackageV1 | null;
+  planningMcPackageStale?: boolean;
+  planningResultLink?: PlanningResultLinkV1 | null;
+  planningResultLinkPreview?: ReturnType<typeof buildPlanningResultLinkPreview>;
+  planningResultImportText?: string;
+  planningResultImportError?: string | null;
   terrainProviderMode?: CesiumTerrainProviderMode;
   locationPresetId?: PlanningLocationPresetId;
   customLatitude?: string;
@@ -72,6 +91,12 @@ function renderPlanningPanel({
       coverage={coverage}
       coverageOptions={coverageOptions}
       coverageAnalysis={coverageAnalysis}
+      planningMcPackage={planningMcPackage}
+      planningMcPackageStale={planningMcPackageStale}
+      planningResultLink={planningResultLink}
+      planningResultLinkPreview={planningResultLinkPreview}
+      planningResultImportText={planningResultImportText}
+      planningResultImportError={planningResultImportError}
       terrainProviderMode={terrainProviderMode}
       locationPresetId={locationPresetId}
       customLatitude={customLatitude}
@@ -92,6 +117,13 @@ function renderPlanningPanel({
       onClearRadarSites={vi.fn()}
       onCoverageOptionsChange={vi.fn()}
       onResetCoverageState={vi.fn()}
+      onGeneratePlanningMcPackage={vi.fn()}
+      onCopyPlanningMcPackage={vi.fn()}
+      onDownloadPlanningMcPackage={vi.fn()}
+      onPlanningResultImportTextChange={vi.fn()}
+      onImportPlanningResultMetadata={vi.fn()}
+      onImportMockPlanningResultRef={vi.fn()}
+      onClearPlanningResultImport={vi.fn()}
     />,
   );
 }
@@ -547,6 +579,97 @@ describe("AppWorkstationSlots planning mode shell", () => {
     expect(markup).toContain("Suggested Radar Long Range");
     expect(markup).toContain("Suggested Position");
     expect(markup).toContain("Reason Add Long Range near NE uncovered sector.");
+  });
+
+
+  it("renders Planning MC package preview and identifier linkage", () => {
+    const polygon: PlanningPolygonState = {
+      draftVertices: [],
+      completedVertices: [
+        { x: 0, y: 0 },
+        { x: 1000, y: 0 },
+        { x: 1000, y: 1000 },
+        { x: 0, y: 1000 },
+      ],
+    };
+    const radars: PlanningRadarState = {
+      ...EMPTY_PLANNING_RADARS,
+      sites: [
+        {
+          id: "planning-radar-1",
+          position: { x: 150, y: 150 },
+          radar_type: "Short Range",
+          detection_range_m: 500,
+        },
+      ],
+    };
+    const coverage = estimatePlanningCoverage(polygon, radars, 4);
+    const coverageAnalysis = analyzePlanningCoverage(polygon, radars, 4, {
+      radarPresets: PLANNING_RADAR_PRESETS,
+    });
+    const snapshot = buildPlanningMcSnapshot(polygon, radars, coverageAnalysis, {
+      createdUtc: "2026-06-04T00:00:00Z",
+      terrainMode: "ellipsoid",
+      selectedLocationPreset: "bangkok",
+      sourceLayoutId: "rt_layout_source",
+      sourceGeometryId: "rt_layout:sha256:source",
+    });
+    const planningMcPackage = buildPlanningMcPackage(snapshot, {
+      scenarioLabel: "planning-analysis",
+      suggestedRunCount: 25,
+      suggestedSeedBase: 7001,
+    });
+
+    const markup = renderPlanningPanel({
+      polygon,
+      radars,
+      coverage,
+      coverageAnalysis,
+      planningMcPackage,
+    });
+
+    expect(markup).toContain('data-testid="planning-mc-package-preview"');
+    expect(markup).toContain("Planning MC package preview");
+    expect(markup).toContain("planning_snapshot_id rt_planning_snapshot:sha256:");
+    expect(markup).toContain("planning_geometry_id rt_planning:sha256:");
+    expect(markup).toContain("Radar count 1");
+    expect(markup).toContain("Coverage summary");
+    expect(markup).toContain("Overlap summary");
+    expect(markup).toContain("Redundancy summary");
+    expect(markup).toContain("Suggested MC settings planning-analysis · 25 runs · seed 7001");
+    expect(markup).toContain('data-testid="planning-mc-result-link-preview"');
+    expect(markup).toContain("Planning MC result linkage");
+    expect(markup).toContain("Linkage status Unlinked");
+    expect(markup).toContain("Result link planning_result_link_v1 · unlinked");
+    expect(markup).toContain("Import metadata");
+    expect(markup).toContain("Import mock result ref");
+    expect(markup).toContain("Copy package JSON");
+    expect(markup).toContain("Download package JSON");
+  });
+
+  it("renders Planning MC package stale advisory", () => {
+    const markup = renderPlanningPanel({
+      planningMcPackage: {
+        schema_version: "rt_planning_mc_package_v1",
+        planning_snapshot_id: "rt_planning_snapshot:sha256:old",
+        planning_geometry_id: "rt_planning:sha256:old",
+        planning_summary: {
+          radar_count: 0,
+          coverage_summary: { coverage_percent: 0, blind_spot_summary: "none" },
+          overlap_summary: { overlap_percent: 0 },
+          redundancy_summary: { redundancy_percent: 0 },
+        },
+        mc_preparation: {
+          scenario_label: "planning-analysis",
+          suggested_run_count: 50,
+          suggested_seed_base: 1,
+        },
+        metadata: { created_utc: "2026-06-04T00:00:00Z", package_version: "1" },
+      },
+      planningMcPackageStale: true,
+    });
+
+    expect(markup).toContain("Package may be stale. Regenerate.");
   });
 
   it("isolates coverage overlays from Grid Mode", () => {
