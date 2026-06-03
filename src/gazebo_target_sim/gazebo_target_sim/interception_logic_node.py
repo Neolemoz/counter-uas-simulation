@@ -2004,6 +2004,7 @@ class InterceptionLogicNode(Node):
         if self._publish_hit_markers:
             self._pub_hit_viz = self.create_publisher(Marker, self._hit_marker_topic, qos_marker)
         self._stop_repeat_timer = None
+        self._pause_world_timer = None
         self._stop_repeat_deadline: Time | None = None
         self._stop_repeat_pending_label: str | None = None
         _tm = self._cuas_trail_max_points
@@ -3340,7 +3341,10 @@ class InterceptionLogicNode(Node):
         self._hit = False
         self._gz_pause_sent = False
         self._dome_hyst_initialized = False
+        self._cancel_pause_world_timer()
         self._clear_assignments()
+        self._target = None
+        self._target_filter_velocity = None
         self._locked_selected_id = None
         self._current_selected_id = None
         self._committed_since = None
@@ -3430,6 +3434,11 @@ class InterceptionLogicNode(Node):
             self._stop_repeat_timer = None
         self._stop_repeat_deadline = None
         self._stop_repeat_pending_label = None
+
+    def _cancel_pause_world_timer(self) -> None:
+        if self._pause_world_timer is not None:
+            self.destroy_timer(self._pause_world_timer)
+            self._pause_world_timer = None
 
     def _schedule_stop_signal_repeats(self, target_label: str | None) -> None:
         """Burst ``/target/stop`` VOLATILE publishes until ``target_controller`` arms (and beyond)."""
@@ -3739,6 +3748,7 @@ class InterceptionLogicNode(Node):
         self._print_miss_distance_lines()
 
     def _pause_gazebo_world(self) -> None:
+        self._cancel_pause_world_timer()
         if self._gz_pause_sent or not self._pause_gz_on_hit:
             return
         gz = shutil.which('gz')
@@ -3947,6 +3957,8 @@ class InterceptionLogicNode(Node):
             self._guidance_mode[iid] = 'pursuit'
             self._valid_streak[iid] = 0
             self._invalid_streak[iid] = 0
+            self._t_go_filtered[iid] = None
+            self._guidance_unit_prev.pop(iid, None)
         self._last_hit_range = {i: None for i in self._ids}
         self._feasible_at_engagement_start_by_pair.clear()
         self._feas_eng_latch_assign.clear()
@@ -4460,7 +4472,8 @@ class InterceptionLogicNode(Node):
             self._publish_all({i: zero for i in self._ids}, immediate=True)
             # Delay pause so target_controller has time to receive stop signal,
             # remove target model, and spawn explosion visual before world freezes.
-            self.create_timer(3.5, self._pause_gazebo_world)
+            self._cancel_pause_world_timer()
+            self._pause_world_timer = self.create_timer(3.5, self._pause_gazebo_world)
             return
         if (
             range_plausible

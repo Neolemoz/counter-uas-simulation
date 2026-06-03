@@ -7,7 +7,9 @@ on each confirmed track (state [x,y,z,vx,vy,vz], covariance P).
 from __future__ import annotations
 
 import math
+import time
 from collections import deque
+from collections.abc import Callable
 from dataclasses import dataclass, field
 
 import numpy as np
@@ -15,6 +17,8 @@ import rclpy
 from geometry_msgs.msg import Point
 from nav_msgs.msg import Odometry
 from rclpy.node import Node
+from rclpy.qos import DurabilityPolicy, HistoryPolicy, QoSProfile, ReliabilityPolicy
+from rosgraph_msgs.msg import Clock
 
 # --- Track association — dual gating (meters), now ROS-tunable ---
 # A pair (track, detection) is valid only if BOTH are true:
@@ -81,6 +85,41 @@ def _build_Q(dt: float) -> np.ndarray:
 
 def _build_R() -> np.ndarray:
     return np.eye(3, dtype=float) * _R_MEAS_VAR
+
+
+def _subscribe_sim_time_reset(
+    node: Node,
+    on_reset: Callable[[], None],
+    *,
+    min_backward_ns: int = 900_000_000,
+) -> None:
+    """Call *on_reset* when bridged Gazebo sim time rewinds after GUI reset."""
+    peak_ns = [0]
+    last_on_reset_wall_s = [0.0]
+    debounce_wall_s = 0.6
+
+    def _cb(msg: Clock) -> None:
+        t_ns = int(msg.clock.sec) * 1_000_000_000 + int(msg.clock.nanosec)
+        if t_ns > peak_ns[0]:
+            peak_ns[0] = t_ns
+        rollback = peak_ns[0] - t_ns
+        if rollback > min_backward_ns:
+            near_zero = t_ns < int(300_000_000)
+            big_jump = rollback >= max(min_backward_ns, int(5_000_000_000))
+            if near_zero or big_jump:
+                now_wall = time.monotonic()
+                if now_wall - last_on_reset_wall_s[0] >= debounce_wall_s:
+                    last_on_reset_wall_s[0] = now_wall
+                    on_reset()
+                    peak_ns[0] = t_ns
+
+    qos = QoSProfile(
+        depth=20,
+        reliability=ReliabilityPolicy.BEST_EFFORT,
+        durability=DurabilityPolicy.VOLATILE,
+        history=HistoryPolicy.KEEP_LAST,
+    )
+    node.create_subscription(Clock, '/clock', _cb, qos)
 
 
 def _build_Q_miss() -> np.ndarray:
@@ -346,6 +385,7 @@ class TrackingNode(Node):
         # Topic / frames default to a sibling stream so legacy ``/tracks`` (Point) keeps working.
         self.declare_parameter('tracks_state_topic', '/tracks/state')
         self.declare_parameter('tracks_state_frame_id', 'map')
+        self.declare_parameter('reset_on_sim_clock_rewind', True)
         self._tracks_state_topic = str(self.get_parameter('tracks_state_topic').value).strip() or '/tracks/state'
         self._tracks_state_frame_id = str(self.get_parameter('tracks_state_frame_id').value).strip() or 'map'
         self._tracks: list[Track] = []
@@ -367,11 +407,21 @@ class TrackingNode(Node):
         # Input changed: use fused detections (radar + camera)
         self.create_subscription(Point, '/fused_detections', self._on_detection, 10)
         self._timer = self.create_timer(CYCLE_PERIOD_S, self._on_cycle_timer)
+        if bool(self.get_parameter('reset_on_sim_clock_rewind').value):
+            _subscribe_sim_time_reset(self, self._on_gz_sim_reset)
         self.get_logger().info(
             f'Tracking using fused detections (CV Kalman per track); '
             f'/tracks publish mode={self._tracks_publish_mode!r}; '
             f'state topic={self._tracks_state_topic!r} frame={self._tracks_state_frame_id!r}',
         )
+
+    def _on_gz_sim_reset(self) -> None:
+        """Clear stale tracks/candidates when Gazebo rewinds to a new engagement."""
+        self.get_logger().info('Sim reset (/clock rewind): clearing tracking state.')
+        self._tracks.clear()
+        self._candidates.clear()
+        self._detection_buffer.clear()
+        self._next_id = 1
 
     def _on_detection(self, msg: Point) -> None:
         p = Point()

@@ -221,3 +221,27 @@ def test_tracks_state_odometry_carries_finite_position_velocity_and_covariance()
     assert all(math.isfinite(float(v)) for v in vals)
     assert msg.pose.covariance[0] > 0.0
     assert msg.twist.covariance[0] > 0.0
+
+
+def test_sim_reset_clears_stale_tracks_candidates_and_buffer() -> None:
+    """Gazebo reset must not leave pre-reset tracks publishing ghost /tracks/state."""
+    mod = _load_tracking_module()
+
+    class _Logger:
+        @staticmethod
+        def info(_msg: str) -> None:
+            return None
+
+    node = object.__new__(mod.TrackingNode)
+    node.get_logger = lambda: _Logger()  # type: ignore[method-assign]
+    node._tracks = [mod.Track.new_from_position(3, 1000.0, 0.0, 200.0, vx=-40.0)]
+    node._candidates = [mod.Candidate(x=999.0, y=1.0, z=200.0, hit_count=2)]
+    node._detection_buffer = [_make_point(mod, 1001.0, 0.0, 200.0)]
+    node._next_id = 4
+
+    node._on_gz_sim_reset()
+
+    assert node._tracks == []
+    assert node._candidates == []
+    assert node._detection_buffer == []
+    assert node._next_id == 1
