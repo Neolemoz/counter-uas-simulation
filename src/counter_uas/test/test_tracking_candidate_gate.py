@@ -56,7 +56,10 @@ def _install_ros_free_tracking_stubs() -> None:
             self.header = types.SimpleNamespace(stamp=None, frame_id='')
             self.child_frame_id = ''
             self.pose = types.SimpleNamespace(
-                pose=types.SimpleNamespace(position=_Point()),
+                pose=types.SimpleNamespace(
+                    position=_Point(),
+                    orientation=types.SimpleNamespace(x=0.0, y=0.0, z=0.0, w=0.0),
+                ),
                 covariance=[0.0] * 36,
             )
             self.twist = types.SimpleNamespace(
