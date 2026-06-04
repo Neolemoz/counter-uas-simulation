@@ -52,6 +52,7 @@ import {
   clearTacticalSelectionEmphasisLayer,
   syncTacticalSelectionEmphasisLayer,
 } from "./tacticalSelectionEmphasisLayer";
+import { resolveTacticalTargetEntityId } from "./tacticalPreset";
 import type { TacticalCompareContext } from "@/workstation/tacticalCompareContext";
 import type { VisualLayerVisibility } from "./visualLayerRegistry";
 import { clearVisibilityOverlayV4, syncVisibilityOverlayV4 } from "./visibilityOverlayV4";
@@ -446,6 +447,7 @@ export function CesiumRuntimeView({
       applyTerrainDisplay: shouldApplyTerrainGrounding(terrainLayers),
       markerEmphasis,
       runtimeTelemetryByEntityId,
+      tacticalTargetEntityId: resolveTacticalTargetEntityId(tacticalState),
     });
   }, [
     sessionId,

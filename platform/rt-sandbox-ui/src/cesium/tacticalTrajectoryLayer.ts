@@ -11,28 +11,45 @@ import type {
   TacticalRecommendationPayload,
   TacticalStatePayload,
 } from "@/bridge/tacticalCommands";
+import { cameraHeightM } from "./cameraHelpers";
 import { isViewerUsable } from "./cesiumEditing";
 import { worldToCartesian } from "./coordinates";
 import type { MirrorEntity } from "./entityMarkers";
 import { applyTerrainDisplayOffset } from "./rtFictionalTerrain";
 import {
+  deriveDisplayInterceptPose,
+  parseEnuPoseRecord,
+  parsePredictedPathTelemetry,
+  type EnuPoint,
+} from "./tacticalGeometry";
+import {
+  decimateEnuPathForRender,
+  tacticalDashLengthPx,
+  tacticalLabelFontCss,
+  tacticalTrajectoryWidthPx,
+} from "./tacticalVisualScale";
+import {
   deriveTacticalTimingSeconds,
   formatTacticalTimingBlock,
+  pathLengthM,
+  tacticalTimingLabelPixelOffset,
 } from "./tacticalTimingLabels";
 import {
+  distanceScaleFromHeight,
   TACTICAL_INTERCEPT_POINT_COLOR,
   TACTICAL_PATH_COLOR,
   TACTICAL_PATH_HEURISTIC_COLOR,
-  TACTICAL_TIMING_FONT,
   TACTICAL_TIMING_LABEL_BG,
   TACTICAL_TIMING_LABEL_FILL,
 } from "./visualStyle";
 
+export type { EnuPoint };
+
 const TACTICAL_TRAJ_PREFIX = "rt-tactical-traj-";
 
-function tacticalTimingLabelOptions(alphaScale: number) {
+function tacticalTimingLabelOptions(alphaScale: number, cameraHeight: number) {
   return {
-    font: TACTICAL_TIMING_FONT,
+    font: tacticalLabelFontCss(cameraHeight),
     fillColor: Color.fromCssColorString(TACTICAL_TIMING_LABEL_FILL).withAlpha(
       0.96 * alphaScale,
     ),
@@ -55,6 +72,7 @@ function addTacticalTimingLabel(
   verticalOrigin: VerticalOrigin,
   pixelOffset: Cartesian2,
   alphaScale: number,
+  cameraHeight: number,
 ): void {
   viewer.entities.add(
     new Entity({
@@ -62,15 +80,13 @@ function addTacticalTimingLabel(
       position,
       label: {
         text,
-        ...tacticalTimingLabelOptions(alphaScale),
+        ...tacticalTimingLabelOptions(alphaScale, cameraHeight),
         verticalOrigin,
         pixelOffset,
       },
     }),
   );
 }
-
-export type EnuPoint = { x: number; y: number; z: number };
 
 export type TacticalPathMode = "telemetry" | "heuristic_intercept" | "heuristic_target";
 
@@ -90,21 +106,8 @@ function removeTacticalEntities(viewer: Viewer): void {
   for (const e of toRemove) viewer.entities.remove(e);
 }
 
-function poseFromRecord(
-  pose: Record<string, unknown> | undefined,
-): EnuPoint | null {
-  if (!pose) return null;
-  const x = Number(pose.x);
-  const y = Number(pose.y);
-  const z = Number(pose.z);
-  if (!Number.isFinite(x) || !Number.isFinite(y) || !Number.isFinite(z)) {
-    return null;
-  }
-  return { x, y, z };
-}
-
 function entityPose(entity: MirrorEntity | undefined): EnuPoint | null {
-  return poseFromRecord(entity?.pose);
+  return parseEnuPoseRecord(entity?.pose);
 }
 
 export function resolveTacticalRoleIds(
@@ -121,26 +124,6 @@ export function resolveTacticalRoleIds(
   };
 }
 
-function parsePredictedPathTelemetry(
-  state: TacticalStatePayload | null | undefined,
-): EnuPoint[] | null {
-  if (!state) return null;
-  const raw = (state as Record<string, unknown>).predicted_path_enu_m;
-  if (!Array.isArray(raw) || raw.length < 2) return null;
-  const points: EnuPoint[] = [];
-  for (const item of raw) {
-    if (!Array.isArray(item) || item.length < 3) return null;
-    const x = Number(item[0]);
-    const y = Number(item[1]);
-    const z = Number(item[2]);
-    if (!Number.isFinite(x) || !Number.isFinite(y) || !Number.isFinite(z)) {
-      return null;
-    }
-    points.push({ x, y, z });
-  }
-  return points.length >= 2 ? points : null;
-}
-
 export function deriveTacticalTrajectoryGeometry(
   state: TacticalStatePayload | null | undefined,
   entities: MirrorEntity[],
@@ -155,11 +138,9 @@ export function deriveTacticalTrajectoryGeometry(
   const interceptorPose = entityPose(interceptor);
   if (!interceptorPose) return null;
 
-  const interceptPose = poseFromRecord(
-    state?.last_intercept_pose ?? undefined,
-  );
   const targetPose = entityPose(target);
   const telemetryPath = parsePredictedPathTelemetry(state);
+  const interceptPose = deriveDisplayInterceptPose(state, telemetryPath);
 
   if (telemetryPath) {
     return {
@@ -239,18 +220,31 @@ export function syncTacticalTrajectoryLayer(
   if (!geometry) return;
 
   const alphaScale = options.stale ? 0.45 : 1;
+  const cameraHeight = cameraHeightM(viewer);
+  const renderPathPoints = decimateEnuPathForRender(geometry.pathPoints);
+  const legLengthM = pathLengthM(renderPathPoints);
   const timing = deriveTacticalTimingSeconds(
     options.tacticalState,
     options.tacticalRecommendation,
   );
   const timingText = formatTacticalTimingBlock(timing);
 
-  if (options.showPath && geometry.pathPoints.length >= 2) {
+  if (options.showPath && renderPathPoints.length >= 2) {
     const pathColor =
       geometry.pathMode === "telemetry"
         ? TACTICAL_PATH_COLOR
         : TACTICAL_PATH_HEURISTIC_COLOR;
-    const positions = geometry.pathPoints.map((p) =>
+    const pathWidth = tacticalTrajectoryWidthPx(
+      geometry.pathMode,
+      cameraHeight,
+      renderPathPoints,
+    );
+    const dashLength = tacticalDashLengthPx(
+      geometry.pathMode,
+      cameraHeight,
+      legLengthM,
+    );
+    const positions = renderPathPoints.map((p) =>
       toCartesian(p, options.applyTerrainDisplay),
     );
     viewer.entities.add(
@@ -258,19 +252,20 @@ export function syncTacticalTrajectoryLayer(
         id: `${TACTICAL_TRAJ_PREFIX}path`,
         polyline: {
           positions,
-          width: geometry.pathMode === "telemetry" ? 3 : 2,
+          width: pathWidth,
           material: new PolylineDashMaterialProperty({
             color: Color.fromCssColorString(pathColor).withAlpha(
               (geometry.pathMode === "telemetry" ? 0.85 : 0.65) * alphaScale,
             ),
-            dashLength: geometry.pathMode === "telemetry" ? 12 : 8,
+            dashLength,
           }),
         },
       }),
     );
 
     if (geometry.pathMode !== "telemetry") {
-      const mid = geometry.pathPoints[Math.floor(geometry.pathPoints.length / 2)];
+      const mid = renderPathPoints[Math.floor(renderPathPoints.length / 2)];
+      const hintOffset = tacticalTimingLabelPixelOffset(cameraHeight, "path_bottom");
       viewer.entities.add(
         new Entity({
           id: `${TACTICAL_TRAJ_PREFIX}path-hint`,
@@ -280,13 +275,13 @@ export function syncTacticalTrajectoryLayer(
               geometry.pathMode === "heuristic_intercept"
                 ? "heuristic path · display only"
                 : "provisional leg · display only",
-            font: TACTICAL_TIMING_FONT,
+            font: tacticalLabelFontCss(cameraHeight),
             fillColor: Color.fromCssColorString("rgba(251, 191, 36, 0.9)"),
             outlineColor: Color.BLACK,
             outlineWidth: 1,
             style: LabelStyle.FILL_AND_OUTLINE,
             verticalOrigin: VerticalOrigin.BOTTOM,
-            pixelOffset: new Cartesian2(-52, -6),
+            pixelOffset: new Cartesian2(-52, hintOffset.y + 30),
             showBackground: true,
             backgroundColor: Color.fromCssColorString("rgba(15, 23, 42, 0.72)"),
           },
@@ -318,13 +313,16 @@ export function syncTacticalTrajectoryLayer(
         },
         label: {
           text: "solution point · display only",
-          font: TACTICAL_TIMING_FONT,
+          font: tacticalLabelFontCss(cameraHeight),
           fillColor: Color.fromCssColorString("rgba(254, 226, 226, 0.95)"),
           outlineColor: Color.BLACK,
           outlineWidth: 1,
           style: LabelStyle.FILL_AND_OUTLINE,
           verticalOrigin: VerticalOrigin.TOP,
-          pixelOffset: new Cartesian2(0, 10),
+          pixelOffset: new Cartesian2(
+            0,
+            Math.round(10 * distanceScaleFromHeight(cameraHeight)),
+          ),
           showBackground: true,
           backgroundColor: Color.fromCssColorString("rgba(15, 23, 42, 0.78)"),
         },
@@ -334,14 +332,17 @@ export function syncTacticalTrajectoryLayer(
 
   if (options.showTimingLabels && timingText) {
     const anchor = geometry.interceptPose ?? geometry.pathEndPose;
+    const placement = geometry.interceptPose ? "intercept_top" : "path_bottom";
+    const timingOffset = tacticalTimingLabelPixelOffset(cameraHeight, placement);
     addTacticalTimingLabel(
       viewer,
       `${TACTICAL_TRAJ_PREFIX}timing`,
       toCartesian(anchor, options.applyTerrainDisplay),
       timingText,
       geometry.interceptPose ? VerticalOrigin.TOP : VerticalOrigin.BOTTOM,
-      geometry.interceptPose ? new Cartesian2(0, 42) : new Cartesian2(0, -36),
+      new Cartesian2(timingOffset.x, timingOffset.y),
       alphaScale,
+      cameraHeight,
     );
   }
 

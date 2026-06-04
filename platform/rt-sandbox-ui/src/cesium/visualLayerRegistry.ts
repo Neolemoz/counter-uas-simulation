@@ -309,6 +309,10 @@ const V4_P1_LAYERS: VisualLayerDescriptor[] = [
   },
 ];
 
+/** Unified ±7 km tactical overlay governance — display-only, no command or engagement authority. */
+export const TACTICAL_VISUALIZATION_GOVERNANCE_COPY =
+  "Tactical visualization overlays are display-only — no command authority, no intercept assignment authority, and no autonomous engagement authority.";
+
 const TACTICAL_LAYERS: VisualLayerDescriptor[] = [
   {
     layer_id: "tactical_predicted_path",
@@ -324,7 +328,7 @@ const TACTICAL_LAYERS: VisualLayerDescriptor[] = [
     density_group: "entity_context",
     display_only: true,
     disclaimer:
-      "Tactical predicted path is display-only — heuristic straight segment until path telemetry exists",
+      "Tactical predicted path is display-only for the unified ±7 km world — not command authority or autonomous engagement",
   },
   {
     layer_id: "tactical_intercept_point",
@@ -340,7 +344,7 @@ const TACTICAL_LAYERS: VisualLayerDescriptor[] = [
     density_group: "entity_context",
     display_only: true,
     disclaimer:
-      "Solution point marker is explanatory telemetry — not assignment or command authority",
+      "Solution point marker is explanatory telemetry only — not assignment, command, or autonomous engagement authority",
   },
   {
     layer_id: "tactical_threat_corridor",
@@ -356,7 +360,7 @@ const TACTICAL_LAYERS: VisualLayerDescriptor[] = [
     density_group: "entity_context",
     display_only: true,
     disclaimer:
-      "Threat corridor is display-only attacker-to-solution emphasis — not weapon engagement geometry",
+      "Threat corridor is display-only attacker-to-solution emphasis — not weapon engagement or autonomous intercept authority",
   },
   {
     layer_id: "tactical_ranking_cues",
@@ -372,7 +376,7 @@ const TACTICAL_LAYERS: VisualLayerDescriptor[] = [
     density_group: "entity_context",
     display_only: true,
     disclaimer:
-      "Ranking cues are explanatory — recommendation-only when no ranked list exists; not command authority",
+      "Ranking cues are explanatory display only — not command authority, operational prioritization, or autonomous engagement",
   },
   {
     layer_id: "tactical_timing_labels",
@@ -388,7 +392,7 @@ const TACTICAL_LAYERS: VisualLayerDescriptor[] = [
     density_group: "entity_context",
     display_only: true,
     disclaimer:
-      "TTI/ETA labels are explanatory tactical telemetry - not command authority",
+      "TTI/ETA labels are explanatory tactical telemetry — not command authority or autonomous engagement timing",
   },
   {
     layer_id: "tactical_selection_emphasis",
@@ -404,7 +408,7 @@ const TACTICAL_LAYERS: VisualLayerDescriptor[] = [
     density_group: "entity_context",
     display_only: true,
     disclaimer:
-      "Tactical target emphasis is visual only - edit selection remains command priority",
+      "Tactical target emphasis is visual only — edit selection remains command priority; no autonomous engagement",
   },
   {
     layer_id: "tactical_compare_overlay",
@@ -421,7 +425,7 @@ const TACTICAL_LAYERS: VisualLayerDescriptor[] = [
     comparison_role: "comparison",
     display_only: true,
     disclaimer:
-      "Tactical compare ghosts are display-only — background session path/solution; not command or outcome authority",
+      "Tactical compare ghosts are display-only — not command, outcome, or autonomous engagement authority",
   },
 ];
 

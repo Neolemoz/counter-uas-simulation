@@ -1,9 +1,16 @@
 import { Cartesian2, Color, Entity, LabelStyle, VerticalOrigin, Viewer } from "cesium";
 import type { TacticalStatePayload } from "@/bridge/tacticalCommands";
+import { cameraHeightM } from "./cameraHelpers";
 import { isViewerUsable } from "./cesiumEditing";
 import { worldToCartesian } from "./coordinates";
 import type { MirrorEntity } from "./entityMarkers";
 import { applyTerrainDisplayOffset } from "./rtFictionalTerrain";
+import {
+  tacticalLabelFontCss,
+  tacticalSelectionHaloPixelSize,
+  tacticalSelectionLabelOffset,
+  tacticalSelectionOutlineWidth,
+} from "./tacticalVisualScale";
 import { shortEntityId } from "./visualStyle";
 
 const TACTICAL_SELECTION_PREFIX = "rt-tactical-selection-";
@@ -61,6 +68,10 @@ export function syncTacticalSelectionEmphasisLayer(
     ? applyTerrainDisplayOffset(pose.x, pose.y, pose.z)
     : pose.z;
   const alpha = options.stale ? 0.48 : 1;
+  const cameraHeight = cameraHeightM(viewer);
+  const haloSize = tacticalSelectionHaloPixelSize(cameraHeight);
+  const outlineWidth = tacticalSelectionOutlineWidth(cameraHeight);
+  const labelOffset = tacticalSelectionLabelOffset(cameraHeight);
   const position = worldToCartesian(pose.x, pose.y, displayZ);
 
   viewer.entities.add(
@@ -68,19 +79,19 @@ export function syncTacticalSelectionEmphasisLayer(
       id: `${TACTICAL_SELECTION_PREFIX}target-halo`,
       position,
       point: {
-        pixelSize: 32,
+        pixelSize: haloSize,
         color: Color.fromCssColorString("rgba(248, 113, 113, 0.22)").withAlpha(
           0.22 * alpha,
         ),
         outlineColor: Color.fromCssColorString("rgba(254, 226, 226, 0.95)").withAlpha(
           0.95 * alpha,
         ),
-        outlineWidth: 3,
+        outlineWidth,
         disableDepthTestDistance: Number.POSITIVE_INFINITY,
       },
       label: {
         text: `tactical target ${shortEntityId(targetId)}`,
-        font: "11px sans-serif",
+        font: tacticalLabelFontCss(cameraHeight, true),
         fillColor: Color.fromCssColorString("rgba(254, 243, 199, 0.98)").withAlpha(
           0.98 * alpha,
         ),
@@ -88,7 +99,7 @@ export function syncTacticalSelectionEmphasisLayer(
         outlineWidth: 2,
         style: LabelStyle.FILL_AND_OUTLINE,
         verticalOrigin: VerticalOrigin.BOTTOM,
-        pixelOffset: new Cartesian2(0, -30),
+        pixelOffset: new Cartesian2(labelOffset.x, labelOffset.y),
         showBackground: true,
         backgroundColor: Color.fromCssColorString("rgba(69, 10, 10, 0.82)").withAlpha(
           0.82 * alpha,

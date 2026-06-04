@@ -38,6 +38,57 @@ describe("tacticalThreatCorridor", () => {
     expect(threat?.corridorPoints.length).toBeGreaterThanOrEqual(3);
   });
 
+  it("uses bridge dict threat_path_enu_m when provided", () => {
+    const state = {
+      assigned_interceptor_id: "int-1",
+      assigned_target_id: "tgt-1",
+      last_intercept_pose: { x: 120, y: 30, z: 35 },
+      threat_path_enu_m: [
+        { x: 200, y: 50, z: 40 },
+        { x: 160, y: 40, z: 38 },
+        { x: 120, y: 30, z: 35 },
+      ],
+    } as TacticalStatePayload & {
+      threat_path_enu_m: { x: number; y: number; z: number }[];
+    };
+    const geom = deriveTacticalTrajectoryGeometry(state, entities);
+    const threat = deriveThreatCorridorGeometry(state, geom!, entities);
+    expect(threat?.mode).toBe("telemetry_path");
+    expect(threat?.corridorPoints[0]).toEqual({ x: 200, y: 50, z: 40 });
+  });
+
+  it("builds 7km direct_fallback corridor from derived intercept endpoint", () => {
+    const longRangeEntities: MirrorEntity[] = [
+      {
+        entity_id: "int-1",
+        entity_type: "interceptor",
+        pose: { x: 0, y: 0, z: 20 },
+      },
+      {
+        entity_id: "tgt-1",
+        entity_type: "drone",
+        pose: { x: 6000, y: 4000, z: 40 },
+      },
+    ];
+    const state = {
+      assigned_interceptor_id: "int-1",
+      assigned_target_id: "tgt-1",
+      predicted_path_enu_m: [
+        { x: 0, y: 0, z: 20 },
+        { x: 6000, y: 4000, z: 35 },
+      ],
+    } as TacticalStatePayload & {
+      predicted_path_enu_m: { x: number; y: number; z: number }[];
+    };
+    const geom = deriveTacticalTrajectoryGeometry(state, longRangeEntities);
+    const threat = deriveThreatCorridorGeometry(state, geom!, longRangeEntities);
+    expect(threat?.mode).toBe("direct_fallback");
+    expect(threat?.corridorPoints).toEqual([
+      { x: 6000, y: 4000, z: 40 },
+      { x: 6000, y: 4000, z: 35 },
+    ]);
+  });
+
   it("falls back to attacker → solution segment", () => {
     const state: TacticalStatePayload = {
       assigned_interceptor_id: "int-1",

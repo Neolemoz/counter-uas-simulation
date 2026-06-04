@@ -9,10 +9,12 @@ import {
   Cartesian2,
 } from "cesium";
 import type { TacticalStatePayload } from "@/bridge/tacticalCommands";
+import { cameraHeightM } from "./cameraHelpers";
 import { isViewerUsable } from "./cesiumEditing";
 import { worldToCartesian } from "./coordinates";
 import type { MirrorEntity } from "./entityMarkers";
 import { applyTerrainDisplayOffset } from "./rtFictionalTerrain";
+import { pathLengthM } from "./tacticalTimingLabels";
 import {
   buildCorridorRibbonPolygon,
   deriveThreatCorridorGeometry,
@@ -23,18 +25,22 @@ import {
   type EnuPoint,
 } from "./tacticalTrajectoryLayer";
 import {
+  corridorHalfWidthM,
+  corridorPolylineWidths,
+  decimateEnuPathForRender,
+  tacticalLabelFontCss,
+  tacticalTimingLabelPixelOffset,
+} from "./tacticalVisualScale";
+import {
   TACTICAL_THREAT_CORRIDOR_CENTER,
   TACTICAL_THREAT_CORRIDOR_EDGE,
   TACTICAL_THREAT_CORRIDOR_FILL,
-  TACTICAL_TIMING_FONT,
 } from "./visualStyle";
 
 const TACTICAL_CORRIDOR_PREFIX = "rt-tactical-corridor-";
 
 /** Caps ribbon/polyline complexity for Cesium decor entity budget. */
 export const MAX_THREAT_CORRIDOR_POLYLINE_POINTS = 48;
-
-const THREAT_CORRIDOR_HALF_WIDTH_M = 14;
 
 function removeTacticalCorridorEntities(viewer: Viewer): void {
   const toRemove: Entity[] = [];
@@ -65,25 +71,7 @@ export function clampCorridorPoints(
   points: EnuPoint[],
   maxPoints: number = MAX_THREAT_CORRIDOR_POLYLINE_POINTS,
 ): EnuPoint[] {
-  if (points.length <= maxPoints) return points;
-  if (maxPoints < 2) return points.slice(0, maxPoints);
-  const step = (points.length - 1) / (maxPoints - 1);
-  const sampled: EnuPoint[] = [];
-  for (let i = 0; i < maxPoints; i += 1) {
-    const idx = Math.min(points.length - 1, Math.round(i * step));
-    const point = points[idx];
-    const prev = sampled[sampled.length - 1];
-    if (
-      prev &&
-      prev.x === point.x &&
-      prev.y === point.y &&
-      prev.z === point.z
-    ) {
-      continue;
-    }
-    sampled.push(point);
-  }
-  return sampled.length >= 2 ? sampled : points.slice(0, 2);
+  return decimateEnuPathForRender(points, maxPoints);
 }
 
 export function resolveThreatCorridorForRender(
@@ -123,12 +111,20 @@ export function syncTacticalCorridorLayer(
   if (!threat) return;
 
   const alphaScale = options.stale ? 0.45 : 1;
+  const cameraHeight = cameraHeightM(viewer);
+  const legLengthM = pathLengthM(threat.corridorPoints);
+  const halfWidthM = corridorHalfWidthM(cameraHeight, threat.corridorPoints);
+  const { edgeWidth, centerWidth } = corridorPolylineWidths(
+    cameraHeight,
+    legLengthM,
+  );
+  const hintOffset = tacticalTimingLabelPixelOffset(cameraHeight, "path_bottom");
   const corridorPositions = threat.corridorPoints.map((p) =>
     toCartesian(p, options.applyTerrainDisplay),
   );
   const ribbon = buildCorridorRibbonPolygon(
     threat.corridorPoints,
-    THREAT_CORRIDOR_HALF_WIDTH_M,
+    halfWidthM,
   );
   if (ribbon.length >= 3) {
     viewer.entities.add(
@@ -152,7 +148,7 @@ export function syncTacticalCorridorLayer(
       id: `${TACTICAL_CORRIDOR_PREFIX}edge`,
       polyline: {
         positions: corridorPositions,
-        width: 7,
+        width: edgeWidth,
         material: new PolylineDashMaterialProperty({
           color: Color.fromCssColorString(TACTICAL_THREAT_CORRIDOR_EDGE).withAlpha(
             0.42 * alphaScale,
@@ -167,7 +163,7 @@ export function syncTacticalCorridorLayer(
       id: `${TACTICAL_CORRIDOR_PREFIX}center`,
       polyline: {
         positions: corridorPositions,
-        width: 2,
+        width: centerWidth,
         material: Color.fromCssColorString(TACTICAL_THREAT_CORRIDOR_CENTER).withAlpha(
           0.34 * alphaScale,
         ),
@@ -185,7 +181,7 @@ export function syncTacticalCorridorLayer(
           threat.mode === "telemetry_path"
             ? "threat corridor · telemetry path · display only"
             : "threat corridor · heuristic · display only",
-        font: TACTICAL_TIMING_FONT,
+        font: tacticalLabelFontCss(cameraHeight),
         fillColor: Color.fromCssColorString("rgba(254, 215, 170, 0.92)").withAlpha(
           0.92 * alphaScale,
         ),
@@ -193,7 +189,7 @@ export function syncTacticalCorridorLayer(
         outlineWidth: 1,
         style: LabelStyle.FILL_AND_OUTLINE,
         verticalOrigin: VerticalOrigin.BOTTOM,
-        pixelOffset: new Cartesian2(0, -8),
+        pixelOffset: new Cartesian2(hintOffset.x, hintOffset.y),
         showBackground: true,
         backgroundColor: Color.fromCssColorString("rgba(69, 10, 10, 0.78)").withAlpha(
           0.78 * alphaScale,

@@ -74,6 +74,71 @@ describe("tacticalTrajectoryLayer", () => {
     expect(geom?.pathPoints).toHaveLength(3);
   });
 
+  it("uses bridge dict predicted_path_enu_m for telemetry path mode", () => {
+    const state = {
+      assigned_interceptor_id: "int-1",
+      assigned_target_id: "tgt-1",
+      predicted_path_enu_m: [
+        { x: 0, y: 0, z: 20 },
+        { x: 120, y: 30, z: 35 },
+      ],
+    } as TacticalStatePayload & {
+      predicted_path_enu_m: { x: number; y: number; z: number }[];
+    };
+    const geom = deriveTacticalTrajectoryGeometry(state, entities);
+    expect(geom?.pathMode).toBe("telemetry");
+    expect(geom?.pathPoints).toEqual([
+      { x: 0, y: 0, z: 20 },
+      { x: 120, y: 30, z: 35 },
+    ]);
+  });
+
+  it("derives intercept pose from path endpoint when last_intercept_pose is absent", () => {
+    const state = {
+      selected_interceptor_id: "int-1",
+      selected_target_id: "tgt-1",
+      predicted_path_enu_m: [
+        { x: 0, y: 0, z: 20 },
+        { x: 120, y: 30, z: 35 },
+      ],
+    } as TacticalStatePayload & {
+      predicted_path_enu_m: { x: number; y: number; z: number }[];
+    };
+    const geom = deriveTacticalTrajectoryGeometry(state, entities);
+    expect(geom?.pathMode).toBe("telemetry");
+    expect(geom?.interceptPose).toEqual({ x: 120, y: 30, z: 35 });
+  });
+
+  it("renders 7km telemetry path from bridge dict format", () => {
+    const longRangeEntities: MirrorEntity[] = [
+      {
+        entity_id: "int-1",
+        entity_type: "interceptor",
+        pose: { x: 0, y: 0, z: 20 },
+      },
+      {
+        entity_id: "tgt-1",
+        entity_type: "drone",
+        pose: { x: 6000, y: 4000, z: 40 },
+      },
+    ];
+    const state = {
+      assigned_interceptor_id: "int-1",
+      assigned_target_id: "tgt-1",
+      predicted_path_enu_m: [
+        { x: 0, y: 0, z: 20 },
+        { x: 6000, y: 4000, z: 35 },
+      ],
+    } as TacticalStatePayload & {
+      predicted_path_enu_m: { x: number; y: number; z: number }[];
+    };
+    const geom = deriveTacticalTrajectoryGeometry(state, longRangeEntities);
+    expect(geom?.pathMode).toBe("telemetry");
+    expect(geom?.pathEndPose).toEqual({ x: 6000, y: 4000, z: 35 });
+    expect(geom?.interceptPose).toEqual({ x: 6000, y: 4000, z: 35 });
+    expect(geom?.pathPoints).toHaveLength(2);
+  });
+
   it("returns null when interceptor pose is unavailable", () => {
     const state: TacticalStatePayload = {
       assigned_interceptor_id: "missing",

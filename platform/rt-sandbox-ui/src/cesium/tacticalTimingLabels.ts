@@ -2,7 +2,14 @@ import type {
   TacticalRecommendationPayload,
   TacticalStatePayload,
 } from "@/bridge/tacticalCommands";
-import type { EnuPoint } from "./tacticalTrajectoryLayer";
+import type { EnuPoint } from "./tacticalGeometry";
+
+export type {
+  TacticalTimingLabelPlacement,
+} from "./tacticalVisualScale";
+export {
+  tacticalTimingLabelPixelOffset,
+} from "./tacticalVisualScale";
 
 export const DEFAULT_INTERCEPTOR_SPEED_CAP_M_S = 25;
 

@@ -1,55 +1,15 @@
 import type { TacticalStatePayload } from "@/bridge/tacticalCommands";
 import type { MirrorEntity } from "./entityMarkers";
-import type { EnuPoint, TacticalTrajectoryGeometry } from "./tacticalTrajectoryLayer";
+import {
+  parseEnuPoseRecord,
+  parseThreatPathTelemetry,
+  type EnuPoint,
+} from "./tacticalGeometry";
+import type { TacticalTrajectoryGeometry } from "./tacticalTrajectoryLayer";
 import { resolveTacticalRoleIds } from "./tacticalTrajectoryLayer";
 
-function poseFromRecord(
-  pose: Record<string, unknown> | undefined,
-): EnuPoint | null {
-  if (!pose) return null;
-  const x = Number(pose.x);
-  const y = Number(pose.y);
-  const z = Number(pose.z);
-  if (!Number.isFinite(x) || !Number.isFinite(y) || !Number.isFinite(z)) {
-    return null;
-  }
-  return { x, y, z };
-}
-
 function entityPose(entity: MirrorEntity | undefined): EnuPoint | null {
-  return poseFromRecord(entity?.pose);
-}
-
-function parseThreatPathTelemetry(
-  state: TacticalStatePayload | null | undefined,
-): EnuPoint[] | null {
-  if (!state) return null;
-  const rawState = state as Record<string, unknown>;
-  for (const key of [
-    "threat_path_enu_m",
-    "attacker_path_enu_m",
-    "target_path_enu_m",
-  ]) {
-    const raw = rawState[key];
-    if (!Array.isArray(raw) || raw.length < 2) continue;
-    const points: EnuPoint[] = [];
-    for (const item of raw) {
-      if (!Array.isArray(item) || item.length < 3) {
-        points.length = 0;
-        break;
-      }
-      const x = Number(item[0]);
-      const y = Number(item[1]);
-      const z = Number(item[2]);
-      if (!Number.isFinite(x) || !Number.isFinite(y) || !Number.isFinite(z)) {
-        points.length = 0;
-        break;
-      }
-      points.push({ x, y, z });
-    }
-    if (points.length >= 2) return points;
-  }
-  return null;
+  return parseEnuPoseRecord(entity?.pose);
 }
 
 export interface ThreatCorridorGeometry {

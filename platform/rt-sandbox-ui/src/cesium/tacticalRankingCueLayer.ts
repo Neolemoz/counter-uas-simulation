@@ -11,9 +11,14 @@ import type {
   TacticalStatePayload,
 } from "@/bridge/tacticalCommands";
 import { isViewerUsable } from "./cesiumEditing";
+import { cameraHeightM } from "./cameraHelpers";
 import { worldToCartesian } from "./coordinates";
 import type { MirrorEntity } from "./entityMarkers";
 import { applyTerrainDisplayOffset } from "./rtFictionalTerrain";
+import {
+  tacticalLabelFontCss,
+  tacticalRankingCuePixelOffset,
+} from "./tacticalVisualScale";
 import {
   parseTacticalTargetRanking,
   rankLabelFor,
@@ -172,11 +177,13 @@ function rankCueLabelStyle(
   mode: TacticalRankingCueMode,
   dimmed: boolean,
   alphaScale: number,
+  cameraHeight: number,
 ) {
   const emphasis = rank === 1;
   const alpha = (dimmed ? 0.52 : emphasis ? 0.98 : 0.82) * alphaScale;
+  const offset = tacticalRankingCuePixelOffset(cameraHeight, rank);
   return {
-    font: emphasis ? "11px sans-serif" : "10px sans-serif",
+    font: tacticalLabelFontCss(cameraHeight, emphasis),
     fillColor: Color.fromCssColorString(
       mode === "recommendation_only"
         ? "rgba(167, 243, 208, 0.96)"
@@ -196,7 +203,7 @@ function rankCueLabelStyle(
         ? "rgba(6, 78, 59, 0.86)"
         : "rgba(30, 27, 75, 0.84)",
     ).withAlpha((dimmed ? 0.65 : 0.88) * alphaScale),
-    pixelOffset: new Cartesian2(0, -34 - rank * 5),
+    pixelOffset: new Cartesian2(offset.x, offset.y),
     disableDepthTestDistance: Number.POSITIVE_INFINITY,
   };
 }
@@ -226,6 +233,7 @@ export function syncTacticalRankingCueLayer(
   if (resolution.cues.length === 0) return;
 
   const alphaScale = options.stale ? 0.45 : 1;
+  const cameraHeight = cameraHeightM(viewer);
   const editSelectionActive = Boolean(options.selectedEntityId);
 
   for (const entry of resolution.cues) {
@@ -250,7 +258,13 @@ export function syncTacticalRankingCueLayer(
         position: worldToCartesian(pose.x, pose.y, displayZ),
         label: {
           text: entry.label,
-          ...rankCueLabelStyle(entry.rank, resolution.mode, dimmed, alphaScale),
+          ...rankCueLabelStyle(
+            entry.rank,
+            resolution.mode,
+            dimmed,
+            alphaScale,
+            cameraHeight,
+          ),
         },
       }),
     );

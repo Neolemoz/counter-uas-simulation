@@ -1,0 +1,117 @@
+{
+  "schema": "rt_tactical_view_7km_golden_v1",
+  "fixture_id": "tactical_view_7km_golden_v1",
+  "description": "Golden integration fixture for unified ±7000 m tactical visualization — display-only validation artifact, not bridge or runtime authority.",
+  "world": {
+    "bounds_half_extent_m": 7000,
+    "operational_rings_m": {
+      "city": 1000,
+      "defense": 3000,
+      "warning": 5000,
+      "spawn_inner": 5000,
+      "spawn_outer": 7000
+    }
+  },
+  "governance": {
+    "display_only": true,
+    "no_command_authority": true,
+    "no_autonomous_engagement_authority": true,
+    "copy": "Tactical visualization overlays are display-only — no command authority, no intercept assignment authority, and no autonomous engagement authority."
+  },
+  "entities": [
+    {
+      "entity_id": "int-defender-1",
+      "entity_type": "interceptor",
+      "role": "defender",
+      "pose": { "x": 400, "y": -200, "z": 25 },
+      "operational_context": "inside defense ring (3000 m)"
+    },
+    {
+      "entity_id": "tgt-attacker-1",
+      "entity_type": "drone",
+      "role": "attacker",
+      "pose": { "x": 6000, "y": 3500, "z": 45 },
+      "operational_context": "spawn band (5000–7000 m)"
+    }
+  ],
+  "tactical_state": {
+    "schema": "rt_tactical_state_v1",
+    "tactical_mode": "manual",
+    "assigned_interceptor_id": "int-defender-1",
+    "assigned_target_id": "tgt-attacker-1",
+    "selected_interceptor_id": "int-defender-1",
+    "selected_target_id": "tgt-attacker-1",
+    "tti_s": 142.5,
+    "eta_s": 142.5,
+    "last_intercept_pose": { "x": 2800, "y": 1800, "z": 38 },
+    "predicted_path_enu_m": [
+      { "x": 400, "y": -200, "z": 25 },
+      { "x": 2800, "y": 1800, "z": 38 }
+    ],
+    "ranked_candidates": [
+      { "entity_id": "tgt-attacker-1", "rank": 1 }
+    ],
+    "tactical_health": {
+      "feasible": true,
+      "summary": "feasible",
+      "stale": false
+    }
+  },
+  "expected_geometry": {
+    "path_mode": "telemetry",
+    "path_length_m": 3124.1,
+    "intercept_pose": { "x": 2800, "y": 1800, "z": 38 },
+    "path_end_pose": { "x": 2800, "y": 1800, "z": 38 },
+    "corridor_mode": "direct_fallback",
+    "corridor_length_m": 3623.5,
+    "corridor_points": [
+      { "x": 6000, "y": 3500, "z": 45 },
+      { "x": 2800, "y": 1800, "z": 38 }
+    ],
+    "timing_labels": {
+      "tti_s": 142.5,
+      "eta_s": 142.5,
+      "display_block": "TTI 142.5s\nETA 142.5s"
+    },
+    "ranking": {
+      "mode": "ranked_list",
+      "primary_target_id": "tgt-attacker-1",
+      "rank": 1
+    }
+  },
+  "camera_validation": {
+    "world_fit": {
+      "camera_height_m": 10150,
+      "camera_preset": "bounds",
+      "expected_scaling": {
+        "corridor_half_width_m": 163.1,
+        "trajectory_width_px": 6,
+        "timing_label_offset_y": 56,
+        "selection_halo_pixel_size": 40,
+        "ranking_cue_offset_y_rank_1": -41
+      }
+    },
+    "city_core": {
+      "camera_height_m": 2200,
+      "camera_preset": "tightBounds",
+      "expected_scaling": {
+        "corridor_half_width_m": 114.6,
+        "trajectory_width_px": 5,
+        "timing_label_offset_y": 46,
+        "selection_halo_pixel_size": 35,
+        "ranking_cue_offset_y_rank_1": -40
+      }
+    }
+  },
+  "preset_layers": [
+    "tactical_predicted_path",
+    "tactical_intercept_point",
+    "tactical_timing_labels",
+    "tactical_threat_corridor",
+    "tactical_selection_emphasis",
+    "tactical_ranking_cues"
+  ],
+  "preset_excludes": [
+    "tactical_compare_overlay"
+  ]
+}

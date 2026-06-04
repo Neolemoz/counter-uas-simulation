@@ -8,6 +8,7 @@ import {
   Cartesian2,
 } from "cesium";
 import type { TacticalStatePayload } from "@/bridge/tacticalCommands";
+import { cameraHeightM } from "./cameraHelpers";
 import { isViewerUsable } from "./cesiumEditing";
 import {
   deriveTacticalCompareDeltaLabels,
@@ -22,10 +23,18 @@ import type { MirrorEntity } from "./entityMarkers";
 import { applyTerrainDisplayOffset } from "./rtFictionalTerrain";
 import { worldToCartesian } from "./coordinates";
 import type { TacticalCompareSource } from "@/workstation/tacticalCompareContext";
+import { pathLengthM } from "./tacticalTimingLabels";
+import {
+  decimateEnuPathForRender,
+  tacticalCompareHintLabelOffset,
+  tacticalComparePathWidthPx,
+  tacticalCompareSolutionPixelSize,
+  tacticalDashLengthPx,
+  tacticalLabelFontCss,
+} from "./tacticalVisualScale";
 import {
   TACTICAL_COMPARE_PATH_COLOR,
   TACTICAL_COMPARE_SOLUTION_COLOR,
-  TACTICAL_TIMING_FONT,
   TACTICAL_TIMING_LABEL_BG,
 } from "./visualStyle";
 
@@ -56,9 +65,9 @@ function toCartesian(point: EnuPoint, applyTerrainDisplay: boolean) {
   );
 }
 
-function compareLabelOptions(alphaScale: number) {
+function compareLabelOptions(alphaScale: number, cameraHeight: number) {
   return {
-    font: TACTICAL_TIMING_FONT,
+    font: tacticalLabelFontCss(cameraHeight),
     fillColor: Color.fromCssColorString("rgba(203, 213, 225, 0.92)").withAlpha(
       0.9 * alphaScale,
     ),
@@ -122,6 +131,7 @@ export function syncTacticalCompareOverlay(
     options.compareState,
   );
   const alphaScale = (options.stale ? 0.45 : 1) * 0.55;
+  const cameraHeight = cameraHeightM(viewer);
   const sourceTag =
     options.compareSource === "session"
       ? "background session"
@@ -132,7 +142,12 @@ export function syncTacticalCompareOverlay(
           : "compare";
 
   if (geometry && geometry.pathPoints.length >= 2) {
-    const positions = geometry.pathPoints.map((p) =>
+    const renderPathPoints = decimateEnuPathForRender(geometry.pathPoints);
+    const legLengthM = pathLengthM(renderPathPoints);
+    const pathWidth = tacticalComparePathWidthPx(cameraHeight, renderPathPoints);
+    const dashLength = tacticalDashLengthPx("telemetry", cameraHeight, legLengthM);
+    const pathHintOffset = tacticalCompareHintLabelOffset(cameraHeight, "path");
+    const positions = renderPathPoints.map((p) =>
       toCartesian(p, options.applyTerrainDisplay),
     );
     viewer.entities.add(
@@ -140,26 +155,26 @@ export function syncTacticalCompareOverlay(
         id: `${COMPARE_PREFIX}path`,
         polyline: {
           positions,
-          width: 2,
+          width: pathWidth,
           material: new PolylineDashMaterialProperty({
             color: Color.fromCssColorString(TACTICAL_COMPARE_PATH_COLOR).withAlpha(
               0.5 * alphaScale,
             ),
-            dashLength: 5,
+            dashLength: Math.max(4, Math.round(dashLength * 0.45)),
             gapColor: Color.TRANSPARENT,
           }),
         },
       }),
     );
 
-    const pathMid = geometry.pathPoints[Math.floor(geometry.pathPoints.length / 2)];
+    const pathMid = renderPathPoints[Math.floor(renderPathPoints.length / 2)];
     viewer.entities.add(
       new Entity({
         id: `${COMPARE_PREFIX}path-hint`,
         position: toCartesian(pathMid, options.applyTerrainDisplay),
         label: {
           text: `compare path · ${sourceTag} · display only`,
-          font: "9px sans-serif",
+          font: tacticalLabelFontCss(cameraHeight),
           fillColor: Color.fromCssColorString("rgba(148, 163, 184, 0.9)").withAlpha(
             0.9 * alphaScale,
           ),
@@ -167,7 +182,7 @@ export function syncTacticalCompareOverlay(
           outlineWidth: 1,
           style: LabelStyle.FILL_AND_OUTLINE,
           verticalOrigin: VerticalOrigin.BOTTOM,
-          pixelOffset: new Cartesian2(-64, -6),
+          pixelOffset: new Cartesian2(pathHintOffset.x, pathHintOffset.y),
           showBackground: true,
           backgroundColor: Color.fromCssColorString("rgba(15, 23, 42, 0.75)"),
           disableDepthTestDistance: Number.POSITIVE_INFINITY,
@@ -180,22 +195,25 @@ export function syncTacticalCompareOverlay(
     geometry?.interceptPose ??
     (geometry?.pathEndPose ? geometry.pathEndPose : null);
   if (solution) {
+    const legLengthM = geometry ? pathLengthM(geometry.pathPoints) : 0;
+    const solutionSize = tacticalCompareSolutionPixelSize(cameraHeight, legLengthM);
+    const solutionOffset = tacticalCompareHintLabelOffset(cameraHeight, "solution");
     viewer.entities.add(
       new Entity({
         id: `${COMPARE_PREFIX}solution-point`,
         position: toCartesian(solution, options.applyTerrainDisplay),
         point: {
-          pixelSize: 8,
+          pixelSize: solutionSize,
           color: Color.fromCssColorString(TACTICAL_COMPARE_SOLUTION_COLOR).withAlpha(
             0.55 * alphaScale,
           ),
           outlineColor: Color.fromCssColorString("rgba(100, 116, 139, 0.8)"),
-          outlineWidth: 1,
+          outlineWidth: Math.max(1, Math.round(solutionSize / 6)),
           disableDepthTestDistance: Number.POSITIVE_INFINITY,
         },
         label: {
           text: "compare solution · display only",
-          font: "9px sans-serif",
+          font: tacticalLabelFontCss(cameraHeight),
           fillColor: Color.fromCssColorString("rgba(203, 213, 225, 0.9)").withAlpha(
             0.9 * alphaScale,
           ),
@@ -203,7 +221,7 @@ export function syncTacticalCompareOverlay(
           outlineWidth: 1,
           style: LabelStyle.FILL_AND_OUTLINE,
           verticalOrigin: VerticalOrigin.TOP,
-          pixelOffset: new Cartesian2(0, 8),
+          pixelOffset: new Cartesian2(solutionOffset.x, solutionOffset.y),
           showBackground: true,
           backgroundColor: Color.fromCssColorString("rgba(15, 23, 42, 0.72)"),
           disableDepthTestDistance: Number.POSITIVE_INFINITY,
@@ -214,15 +232,16 @@ export function syncTacticalCompareOverlay(
 
   const deltaAnchor = compareDeltaAnchor(geometry);
   if (deltas.block && deltaAnchor) {
+    const deltaOffset = tacticalCompareHintLabelOffset(cameraHeight, "delta");
     viewer.entities.add(
       new Entity({
         id: `${COMPARE_PREFIX}delta`,
         position: toCartesian(deltaAnchor, options.applyTerrainDisplay),
         label: {
           text: `${deltas.block}\ncompare summary · display only`,
-          ...compareLabelOptions(alphaScale),
+          ...compareLabelOptions(alphaScale, cameraHeight),
           verticalOrigin: VerticalOrigin.CENTER,
-          pixelOffset: new Cartesian2(58, 18),
+          pixelOffset: new Cartesian2(deltaOffset.x, deltaOffset.y),
         },
       }),
     );
@@ -238,19 +257,20 @@ export function syncTacticalCompareOverlay(
       const y = Number(pose.y);
       const z = Number(pose.z);
       if (Number.isFinite(x) && Number.isFinite(y) && Number.isFinite(z)) {
+        const targetOffset = tacticalCompareHintLabelOffset(cameraHeight, "target");
         viewer.entities.add(
           new Entity({
             id: `${COMPARE_PREFIX}target-hint`,
             position: toCartesian({ x, y, z }, options.applyTerrainDisplay),
             label: {
               text: "compare target · display only",
-              font: "9px sans-serif",
+              font: tacticalLabelFontCss(cameraHeight),
               fillColor: Color.fromCssColorString("rgba(148, 163, 184, 0.88)"),
               outlineColor: Color.BLACK,
               outlineWidth: 1,
               style: LabelStyle.FILL_AND_OUTLINE,
               verticalOrigin: VerticalOrigin.BOTTOM,
-              pixelOffset: new Cartesian2(0, -20),
+              pixelOffset: new Cartesian2(targetOffset.x, targetOffset.y),
               showBackground: true,
               backgroundColor: Color.fromCssColorString("rgba(15, 23, 42, 0.72)"),
               disableDepthTestDistance: Number.POSITIVE_INFINITY,

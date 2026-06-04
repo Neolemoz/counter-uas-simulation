@@ -98,6 +98,12 @@ import {
   type CesiumTerrainProviderMode,
 } from "@/cesium/terrainProviderConfig";
 import { resolveTacticalCompareContext } from "@/workstation/tacticalCompareContext";
+import {
+  anyTacticalViewLayerActive,
+  enableTacticalViewPreset,
+  isTacticalViewPresetActive,
+  TACTICAL_VIEW_GOVERNANCE_COPY,
+} from "@/cesium/tacticalPreset";
 
 const CESIUM_TOOL_BTN =
   "rounded border border-cyan-700/60 bg-cyan-950/40 px-3 py-1.5 text-xs font-medium text-cyan-100 transition-colors duration-150 hover:bg-cyan-900/50 disabled:opacity-40";
@@ -240,6 +246,8 @@ export function CesiumRuntimePanel({
       ),
     });
   }, [tacticalCompareOn, tacticalCompare, tacticalState]);
+  const tacticalViewPresetActive = isTacticalViewPresetActive(layerVisibility);
+  const tacticalViewLayersActive = anyTacticalViewLayerActive(layerVisibility);
   const fidelityContext = extractFidelityContext(worldSummary);
   const fidelityOn = isFidelityCouplingOn(fidelityContext);
   const selectedEntity =
@@ -531,6 +539,9 @@ export function CesiumRuntimePanel({
               {tacticalCompareOn && (
                 <p className="text-[10px] text-amber-100/80">{BANNER_TACTICAL_COMPARE}</p>
               )}
+              {tacticalViewLayersActive && (
+                <p className="text-[10px] text-amber-100/80">{TACTICAL_VIEW_GOVERNANCE_COPY}</p>
+              )}
             </div>
           </div>
         </details>
@@ -585,6 +596,16 @@ export function CesiumRuntimePanel({
           onClick={handleTerrainOverview}
         >
           Terrain
+        </button>
+        <button
+          type="button"
+          className={`${CESIUM_TOOL_BTN}${tacticalViewPresetActive ? " border-amber-600/50 bg-amber-950/40 text-amber-100" : ""}`}
+          onClick={() =>
+            onLayerVisibilityChange(enableTacticalViewPreset(layerVisibility))
+          }
+          data-testid="enable-tactical-view"
+        >
+          {tacticalViewPresetActive ? "Tactical View on" : "Enable Tactical View"}
         </button>
         <details className="relative text-xs">
           <summary className={CESIUM_MENU_BTN}>
@@ -650,6 +671,15 @@ export function CesiumRuntimePanel({
           </div>
         </details>
       </div>
+
+      {tacticalViewLayersActive && (
+        <p
+          className="mb-2 rounded border border-amber-700/50 bg-amber-950/35 px-2.5 py-1.5 text-[10px] text-amber-100/90"
+          data-testid="tactical-view-governance"
+        >
+          {TACTICAL_VIEW_GOVERNANCE_COPY}
+        </p>
+      )}
 
       {tacticalRankingSummary && (
         <p
