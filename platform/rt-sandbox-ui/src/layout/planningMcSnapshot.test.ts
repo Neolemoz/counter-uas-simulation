@@ -97,9 +97,17 @@ describe("planningMcSnapshot", () => {
       detection_range_m: 500,
     });
     expect(first.planning_extent).toEqual({
-      planning_extent_id: "planning_10km",
-      planning_extent_radius_m: 10000,
-      planning_extent_label: "10 km Planning World",
+      planning_extent_id: "planning_unified_7km",
+      planning_extent_radius_m: 7000,
+      planning_extent_label: "Unified 7 km World",
+    });
+    expect(first.world_bounds_m).toEqual({
+      x_min_m: -7000,
+      x_max_m: 7000,
+      y_min_m: -7000,
+      y_max_m: 7000,
+      z_min_m: 0,
+      z_max_m: 200,
     });
     expect(first.presentation).toEqual({
       terrain_mode: "ellipsoid",
@@ -127,7 +135,7 @@ describe("planningMcSnapshot", () => {
     expect(row.planning_extent).toEqual({
       planning_extent_id: "planning_20km",
       planning_extent_radius_m: 20000,
-      planning_extent_label: "20 km Planning World",
+      planning_extent_label: "20 km Planning World (legacy)",
     });
   });
 

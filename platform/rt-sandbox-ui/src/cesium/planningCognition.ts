@@ -1,11 +1,9 @@
 import type { PlanningPolygonState, PlanningRadarState } from "./planningDrawing";
 import type { PlanningMeasurementState } from "./planningMeasurements";
-import {
-  PLANNING_EXTENTS,
-  type PlanningExtent,
-  type PlanningExtentId,
-} from "./planningWorld";
-import { isInsidePlanningExtent } from "./planningExtentLayer";
+import { OPERATIONAL_RING_RADII_M } from "./operationalRingLayer";
+import { UNIFIED_PLANNING_WORLD, type PlanningExtent } from "./planningWorld";
+import { isInsideWorldBounds } from "./planningExtentLayer";
+import { WORLD_FIT_CAMERA_HEIGHT_M } from "@/world/bounds";
 
 export const PLANNING_COGNITION_GOVERNANCE_COPY =
   "Planning cognition summary is UI-local and non-authoritative; it does not affect runtime, bridge, or MC execution.";
@@ -15,30 +13,50 @@ export type PlanningWarningId =
   | "no_radar_sites"
   | "measurement_incomplete"
   | "polygon_draft_in_progress"
-  | "coordinates_outside_planning_extent";
+  | "coordinates_outside_world_bounds";
 
 export interface PlanningWarning {
   warning_id: PlanningWarningId;
   message: string;
 }
 
+export interface OperationalRingSummary {
+  city_radius_m: number;
+  defense_radius_m: number;
+  warning_radius_m: number;
+  spawn_band_inner_m: number;
+  spawn_band_outer_m: number;
+}
+
 export interface PlanningSummary {
-  extent_label: string;
-  extent_radius_m: number;
+  world_label: string;
+  world_half_extent_m: number;
+  operational_rings: OperationalRingSummary;
   polygon_count: number;
   radar_count: number;
   measurement_count: number;
 }
 
-export interface PlanningExtentValidation {
-  planning_extent_id: PlanningExtentId;
-  planning_extent_label: string;
+export interface UnifiedPlanningWorldValidation {
+  world_label: string;
+  world_half_extent_m: number;
   overlay_readable: boolean;
   polygon_drawing_usable: boolean;
   radar_placement_usable: boolean;
   measurement_tools_usable: boolean;
   camera_fit_height_m: number;
   guidance: string;
+  operational_rings: OperationalRingSummary;
+}
+
+export function operationalRingSummary(): OperationalRingSummary {
+  return {
+    city_radius_m: OPERATIONAL_RING_RADII_M.cityM,
+    defense_radius_m: OPERATIONAL_RING_RADII_M.defenseM,
+    warning_radius_m: OPERATIONAL_RING_RADII_M.warningM,
+    spawn_band_inner_m: OPERATIONAL_RING_RADII_M.spawnInnerM,
+    spawn_band_outer_m: OPERATIONAL_RING_RADII_M.spawnOuterM,
+  };
 }
 
 export function planningCompletedPolygonCount(polygon: PlanningPolygonState): number {
@@ -53,14 +71,14 @@ export function planningCompletedMeasurementCount(
 }
 
 export function buildPlanningSummary(input: {
-  planningExtent: PlanningExtent;
   polygon: PlanningPolygonState;
   radars: PlanningRadarState;
   measurements: PlanningMeasurementState;
 }): PlanningSummary {
   return {
-    extent_label: input.planningExtent.planning_extent_label,
-    extent_radius_m: input.planningExtent.planning_extent_radius_m,
+    world_label: UNIFIED_PLANNING_WORLD.planning_extent_label,
+    world_half_extent_m: UNIFIED_PLANNING_WORLD.planning_extent_radius_m,
+    operational_rings: operationalRingSummary(),
     polygon_count: planningCompletedPolygonCount(input.polygon),
     radar_count: input.radars.sites.length,
     measurement_count: planningCompletedMeasurementCount(input.measurements),
@@ -68,7 +86,6 @@ export function buildPlanningSummary(input: {
 }
 
 export function buildPlanningWarnings(input: {
-  planningExtent: PlanningExtent;
   polygon: PlanningPolygonState;
   radars: PlanningRadarState;
   measurements: PlanningMeasurementState;
@@ -110,56 +127,53 @@ export function buildPlanningWarnings(input: {
     });
   }
 
-  const outsideExtent = [
+  const outsideWorld = [
     ...(input.polygon.completedVertices ?? []),
     ...input.polygon.draftVertices,
     ...input.radars.sites.map((site) => site.position),
     ...input.measurements.distancePoints,
-  ].filter((vertex) => !isInsidePlanningExtent(vertex, input.planningExtent));
+  ].filter((vertex) => !isInsideWorldBounds(vertex));
 
-  if (outsideExtent.length > 0) {
+  if (outsideWorld.length > 0) {
     warnings.push({
-      warning_id: "coordinates_outside_planning_extent",
-      message: `${outsideExtent.length} coordinate${outsideExtent.length === 1 ? "" : "s"} outside ${input.planningExtent.planning_extent_label}. Re-draw inside the Planning extent boundary (planning-only).`,
+      warning_id: "coordinates_outside_world_bounds",
+      message: `${outsideWorld.length} coordinate${outsideWorld.length === 1 ? "" : "s"} outside the unified 7 km world (±${UNIFIED_PLANNING_WORLD.planning_extent_radius_m} m). Re-draw inside world bounds (planning-only).`,
     });
   }
 
   return warnings;
 }
 
-export function planningCameraFitHeightM(extent: PlanningExtent): number {
-  return Math.max(1_200, extent.planning_extent_radius_m * 1.45);
-}
-
-export function validatePlanningExtentCapabilities(
-  extent: PlanningExtent,
-): PlanningExtentValidation {
-  const camera_fit_height_m = planningCameraFitHeightM(extent);
-  const guidanceByExtent: Record<PlanningExtentId, string> = {
-    planning_5km:
-      "Compact Planning World: extent ring, polygon drawing, radar markers, and measurement overlays remain readable at neighborhood scale (planning-only).",
-    planning_10km:
-      "Standard Planning World: default large-area map planner extent with balanced overlay density (planning-only).",
-    planning_20km:
-      "Wide Planning World: use Fit Planning World for overview; polygon, radar, and measurement tools remain usable across the full extent (planning-only).",
-  };
-
+export function validateUnifiedPlanningWorld(): UnifiedPlanningWorldValidation {
   return {
-    planning_extent_id: extent.planning_extent_id,
-    planning_extent_label: extent.planning_extent_label,
+    world_label: UNIFIED_PLANNING_WORLD.planning_extent_label,
+    world_half_extent_m: UNIFIED_PLANNING_WORLD.planning_extent_radius_m,
     overlay_readable: true,
     polygon_drawing_usable: true,
     radar_placement_usable: true,
     measurement_tools_usable: true,
-    camera_fit_height_m,
-    guidance: guidanceByExtent[extent.planning_extent_id],
+    camera_fit_height_m: WORLD_FIT_CAMERA_HEIGHT_M,
+    operational_rings: operationalRingSummary(),
+    guidance:
+      "Unified 7 km world: use Fit Unified World for overview; operational rings (city 1000 m, defense 3000 m, warning 5000 m, spawn band 5000–7000 m) are display-only (planning-only).",
   };
 }
 
-export function validateAllPlanningExtents(): PlanningExtentValidation[] {
-  return PLANNING_EXTENTS.map((extent) => validatePlanningExtentCapabilities(extent));
+/** @deprecated Use validateUnifiedPlanningWorld. */
+export function validatePlanningExtentCapabilities(
+  _extent?: PlanningExtent,
+): UnifiedPlanningWorldValidation {
+  return validateUnifiedPlanningWorld();
 }
 
-export function planningCognitionPreservesRuntimeBounds(): boolean {
+/** @deprecated Legacy extents collapsed — returns unified world validation only. */
+export function validateAllPlanningExtents(): UnifiedPlanningWorldValidation[] {
+  return [validateUnifiedPlanningWorld()];
+}
+
+export function planningCognitionPreservesWorldBounds(): boolean {
   return true;
 }
+
+/** @deprecated Use planningCognitionPreservesWorldBounds. */
+export const planningCognitionPreservesRuntimeBounds = planningCognitionPreservesWorldBounds;

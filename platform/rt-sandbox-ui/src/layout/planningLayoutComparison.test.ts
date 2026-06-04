@@ -63,7 +63,7 @@ const ALT_RADARS: PlanningRadarState = {
 
 function snapshotFor(
   radars: PlanningRadarState,
-  extentId: "planning_5km" | "planning_10km" | "planning_20km" = "planning_10km",
+  extentId?: "planning_unified_7km" | "planning_5km" | "planning_10km" | "planning_20km",
   createdUtc = "2026-06-04T00:00:00Z",
 ) {
   const polygon = POLYGON;
@@ -75,7 +75,7 @@ function snapshotFor(
       createdUtc,
       terrainMode: "ellipsoid",
       selectedLocationPreset: "bangkok",
-      planningExtent: planningExtentById(extentId),
+      ...(extentId ? { planningExtent: planningExtentById(extentId) } : {}),
     },
   );
 }
@@ -98,7 +98,7 @@ describe("planningLayoutComparison", () => {
       slot_label: "A",
       planning_snapshot_id: snapA.planning_snapshot_id,
       planning_geometry_id: snapA.planning_geometry_id,
-      planning_extent_id: "planning_10km",
+      planning_extent_id: "planning_unified_7km",
       radar_count: 1,
       coverage_percent: snapA.analytics_summary.coverage_percent,
       overlap_percent: snapA.analytics_summary.overlap_percent,
@@ -167,7 +167,7 @@ describe("planningLayoutComparison", () => {
       {
         warning_id: "extent_mismatch",
         message:
-          "slots A and B use different planning_extent_id values (planning_20km (slot B); planning_5km (slot A)). Metrics remain heuristic and are not directly comparable across Planning World extents.",
+          "slots A and B use different planning_extent_id values (planning_20km (slot B); planning_5km (slot A)). Metrics remain heuristic and are not directly comparable across world metadata variants.",
         slot_labels: ["A", "B"],
       },
     ]);

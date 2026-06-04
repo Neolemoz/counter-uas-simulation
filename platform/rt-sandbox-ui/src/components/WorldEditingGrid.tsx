@@ -22,7 +22,7 @@ import {
   cellCenterWorld,
   entityCell,
 } from "@/world/gridCoords";
-import { clampPose, type Pose } from "@/world/bounds";
+import { clampPose, CORE_GRID_LOCAL_COPY, type Pose } from "@/world/bounds";
 import type { UiEntity } from "@/editing/localEntityMirror";
 import type { ChannelSnapshot } from "@/telemetry/channelIndex";
 import { entitiesFromSnapshot } from "@/telemetry/channelIndex";
@@ -550,11 +550,17 @@ export function WorldEditingGrid({
 
   return (
     <PanelShell
-      title="World editor"
+      title="Core grid (local)"
       icon={MapIcon}
       className="col-span-full !p-3 [&>h2]:mb-2"
     >
       <BoundsIndicator worldSummary={worldSummary} />
+      <p
+        className="mt-2 rounded border border-slate-800 bg-slate-950/60 px-3 py-2 text-[11px] leading-relaxed text-slate-400"
+        data-testid="core-grid-local-notice"
+      >
+        {CORE_GRID_LOCAL_COPY}
+      </p>
       {onApplyToRuntime && (
         <div
           className="mt-2 flex flex-wrap items-center justify-between gap-2 rounded border border-slate-800 bg-slate-950/60 px-3 py-2"

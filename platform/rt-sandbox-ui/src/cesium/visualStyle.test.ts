@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { labelFontSizePx, labelText, markerPixelSize, shortEntityId } from "@/cesium/visualStyle";
+import { labelFontSizePx, labelText, markerPixelSize, shortEntityId, boundsGroundLabel } from "@/cesium/visualStyle";
 
 describe("visualStyle", () => {
   it("shortens entity ids", () => {
@@ -18,5 +18,9 @@ describe("visualStyle", () => {
 
   it("scales label font with camera distance", () => {
     expect(labelFontSizePx(5000, false, false)).toBeLessThan(labelFontSizePx(600, true, false));
+  });
+
+  it("derives bounds label from unified world constants", () => {
+    expect(boundsGroundLabel()).toBe("±7000m");
   });
 });

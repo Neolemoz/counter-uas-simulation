@@ -64,6 +64,7 @@ import type { LiveCaptureSummary } from "@/telemetry/captureSummary";
 import type { TelemetryChannel } from "@/telemetry/constants";
 import type { EntityType } from "@/world/entityCatalog";
 import type { Pose } from "@/world/bounds";
+import { unifiedWorldCopy } from "@/world/bounds";
 import {
   DEFAULT_PLANNING_COVERAGE_OPTIONS,
   EMPTY_PLANNING_POLYGON,
@@ -100,19 +101,11 @@ import {
   type PlanningLocationPresetId,
 } from "@/cesium/planningLocations";
 import {
-  DEFAULT_PLANNING_EXTENT_ID,
   PLANNING_EXTENT_GOVERNANCE_COPY,
-  PLANNING_EXTENTS,
-  planningExtentById,
-  type PlanningExtent,
-  type PlanningExtentId,
+  UNIFIED_PLANNING_WORLD,
+  unifiedPlanningWorld,
 } from "@/cesium/planningWorld";
-import {
-  PLANNING_EXTENT_LAYER_COPY,
-  isInsidePlanningExtent,
-  isInsideRuntimeBounds,
-  planningExtentAreaKm2,
-} from "@/cesium/planningExtentLayer";
+import { isInsideWorldBounds } from "@/cesium/planningExtentLayer";
 import {
   DEFAULT_PLANNING_MEASUREMENT_STATE,
   PLANNING_MEASUREMENT_GOVERNANCE_COPY,
@@ -128,7 +121,8 @@ import {
   PLANNING_COGNITION_GOVERNANCE_COPY,
   buildPlanningSummary,
   buildPlanningWarnings,
-  validatePlanningExtentCapabilities,
+  operationalRingSummary,
+  validateUnifiedPlanningWorld,
 } from "@/cesium/planningCognition";
 import {
   buildPlanningMcSnapshot,
@@ -198,7 +192,7 @@ export function RuntimeWorkspaceModeSelector({
   onModeChange: (mode: RuntimeWorkspaceMode) => void;
 }) {
   const options: { mode: RuntimeWorkspaceMode; label: string }[] = [
-    { mode: "grid", label: "Grid Mode" },
+    { mode: "grid", label: "Core Grid (local)" },
     { mode: "planning", label: "Planning Mode" },
   ];
   return (
@@ -239,7 +233,6 @@ export function PlanningModePanel({
   coverage,
   coverageOptions,
   coverageAnalysis,
-  planningExtent,
   planningMeasurements,
   planningMcPackage,
   planningMcPackageStale,
@@ -257,8 +250,7 @@ export function PlanningModePanel({
   onCustomLongitudeChange,
   onApplyLocation,
   onCameraPreset,
-  onPlanningExtentChange,
-  onPlanningExtentCameraFit,
+  onPlanningWorldCameraFit,
   onPlanningRadiusChange,
   onClearPlanningMeasurements,
   onToolChange,
@@ -297,7 +289,6 @@ export function PlanningModePanel({
   coverage: PlanningCoverageEstimate;
   coverageOptions: PlanningCoverageLayerOptions;
   coverageAnalysis: PlanningCoverageAnalysis;
-  planningExtent: PlanningExtent;
   planningMeasurements: PlanningMeasurementState;
   planningMcPackage: PlanningMcPackageV1 | null;
   planningMcPackageStale: boolean;
@@ -315,8 +306,7 @@ export function PlanningModePanel({
   onCustomLongitudeChange: (value: string) => void;
   onApplyLocation: () => void;
   onCameraPreset: (preset: CameraPreset) => void;
-  onPlanningExtentChange: (extentId: PlanningExtentId) => void;
-  onPlanningExtentCameraFit: () => void;
+  onPlanningWorldCameraFit: () => void;
   onPlanningRadiusChange: (radiusMeters: PlanningRadiusMeters) => void;
   onClearPlanningMeasurements: () => void;
   onToolChange: (tool: PlanningTool) => void;
@@ -375,30 +365,28 @@ export function PlanningModePanel({
     { tool: "measure_distance", label: "Measure" },
   ];
 
-  const planningAreaKm2 = planningExtentAreaKm2(planningExtent);
   const planningCoordinates = [
     ...(polygon.completedVertices ?? []),
     ...polygon.draftVertices,
     ...radars.sites.map((site) => site.position),
   ];
-  const planningOnlyCoordinateCount = planningCoordinates.filter(
-    (vertex) => !isInsideRuntimeBounds(vertex) && isInsidePlanningExtent(vertex, planningExtent),
+  const worldInvalidCoordinateCount = planningCoordinates.filter(
+    (vertex) => !isInsideWorldBounds(vertex),
   ).length;
+  const operationalRings = operationalRingSummary();
   const measurementSummary = planningMeasurementSummary(planningMeasurements);
   const planningSummary = buildPlanningSummary({
-    planningExtent,
     polygon,
     radars,
     measurements: planningMeasurements,
   });
   const planningWarnings = buildPlanningWarnings({
-    planningExtent,
     polygon,
     radars,
     measurements: planningMeasurements,
     activeTool: tool,
   });
-  const extentValidation = validatePlanningExtentCapabilities(planningExtent);
+  const worldValidation = validateUnifiedPlanningWorld();
 
   return (
     <div className="space-y-3" data-testid="planning-mode-placeholder">
@@ -419,42 +407,25 @@ export function PlanningModePanel({
             <div>
               <p className="font-semibold uppercase tracking-wide text-slate-300">Planning World</p>
               <p className="mt-1 text-slate-500">
-                {planningExtent.planning_extent_label} - radius {planningExtent.planning_extent_radius_m.toLocaleString()}m
+                {UNIFIED_PLANNING_WORLD.planning_extent_label} — {unifiedWorldCopy()}
               </p>
-              <p className="mt-1 text-slate-500">Approx. area {planningAreaKm2.toFixed(1)} km^2</p>
             </div>
             <button
               type="button"
-              onClick={onPlanningExtentCameraFit}
+              onClick={onPlanningWorldCameraFit}
               className="rounded border border-cyan-700/60 bg-cyan-950/45 px-2.5 py-1.5 font-semibold text-cyan-100"
             >
-              Fit Planning World
+              Fit Unified World
             </button>
           </div>
-          <label className="mt-2 grid gap-1 text-slate-400">
-            Planning Extent
-            <select
-              value={planningExtent.planning_extent_id}
-              onChange={(event) =>
-                onPlanningExtentChange(event.currentTarget.value as PlanningExtentId)
-              }
-              className="rounded border border-slate-700 bg-slate-950 px-2 py-1 text-slate-100"
-            >
-              {PLANNING_EXTENTS.map((extent) => (
-                <option key={extent.planning_extent_id} value={extent.planning_extent_id}>
-                  {extent.planning_extent_label}
-                </option>
-              ))}
-            </select>
-          </label>
           <p className="mt-2 text-[11px] leading-relaxed text-cyan-100/80">
             {PLANNING_EXTENT_GOVERNANCE_COPY}
           </p>
-          <p className="mt-1 text-[11px] leading-relaxed text-slate-400">Runtime bounds remain the ±500m sandbox; Planning extent is the large-area map planner boundary.</p>
-          <p className="mt-1 text-[11px] leading-relaxed text-cyan-100/80">{PLANNING_EXTENT_LAYER_COPY}</p>
-          {planningOnlyCoordinateCount > 0 && (
-            <p className="mt-2 rounded border border-amber-700/60 bg-amber-950/35 px-2 py-1 text-[11px] text-amber-100" data-testid="planning-runtime-guardrail">
-              Outside runtime sandbox; valid for planning only. {planningOnlyCoordinateCount} planning coordinate{planningOnlyCoordinateCount === 1 ? "" : "s"} outside runtime bounds remain inside {planningExtent.planning_extent_label}.
+          {worldInvalidCoordinateCount > 0 && (
+            <p className="mt-2 rounded border border-amber-700/60 bg-amber-950/35 px-2 py-1 text-[11px] text-amber-100" data-testid="planning-world-guardrail">
+              World-invalid coordinates: {worldInvalidCoordinateCount} planning coordinate
+              {worldInvalidCoordinateCount === 1 ? "" : "s"} outside {unifiedWorldCopy()}.
+              Re-draw inside world bounds.
             </p>
           )}
         </div>
@@ -684,10 +655,10 @@ export function PlanningModePanel({
           </p>
           <div className="mt-2 grid grid-cols-2 gap-2 text-slate-300" data-testid="planning-summary">
             <span className="rounded border border-slate-800 bg-slate-950 px-2 py-1">
-              Extent {planningSummary.extent_label}
+              World {planningSummary.world_label}
             </span>
             <span className="rounded border border-slate-800 bg-slate-950 px-2 py-1">
-              Radius {planningSummary.extent_radius_m.toLocaleString()}m
+              Half-extent ±{planningSummary.world_half_extent_m.toLocaleString()}m
             </span>
             <span className="rounded border border-slate-800 bg-slate-950 px-2 py-1">
               Polygons {planningSummary.polygon_count}
@@ -699,8 +670,26 @@ export function PlanningModePanel({
               Measurements {planningSummary.measurement_count}
             </span>
           </div>
-          <p className="mt-2 text-[11px] text-slate-500" data-testid="planning-extent-guidance">
-            {extentValidation.guidance}
+          <div
+            className="mt-2 grid grid-cols-2 gap-2 text-[11px] text-slate-400"
+            data-testid="planning-operational-rings"
+          >
+            <span className="rounded border border-slate-800/80 bg-slate-950/80 px-2 py-1">
+              City radius {operationalRings.city_radius_m.toLocaleString()} m
+            </span>
+            <span className="rounded border border-slate-800/80 bg-slate-950/80 px-2 py-1">
+              Defense radius {operationalRings.defense_radius_m.toLocaleString()} m
+            </span>
+            <span className="rounded border border-slate-800/80 bg-slate-950/80 px-2 py-1">
+              Warning radius {operationalRings.warning_radius_m.toLocaleString()} m
+            </span>
+            <span className="rounded border border-slate-800/80 bg-slate-950/80 px-2 py-1">
+              Spawn band {operationalRings.spawn_band_inner_m.toLocaleString()}–
+              {operationalRings.spawn_band_outer_m.toLocaleString()} m
+            </span>
+          </div>
+          <p className="mt-2 text-[11px] text-slate-500" data-testid="planning-world-guidance">
+            {worldValidation.guidance}
           </p>
           {planningWarnings.length > 0 && (
             <ul
@@ -1272,14 +1261,13 @@ export function AppWorkstationSlots(props: AppWorkstationSlotsProps) {
     useState<PlanningCoverageLayerOptions>(DEFAULT_PLANNING_COVERAGE_OPTIONS);
   const [planningCameraPresetRequest, setPlanningCameraPresetRequest] =
     useState<{ id: number; preset: CameraPreset } | null>(null);
-  const [planningExtentCameraRequest, setPlanningExtentCameraRequest] =
-    useState<{ id: number; extent: PlanningExtent } | null>(null);
+  const [planningWorldFitCameraRequest, setPlanningWorldFitCameraRequest] =
+    useState<{ id: number } | null>(null);
   const [planningLocationRequest, setPlanningLocationRequest] =
     useState<{ id: number; location: CameraLocationTarget } | null>(null);
   const [planningLocationPresetId, setPlanningLocationPresetId] =
     useState<PlanningLocationPresetId>(DEFAULT_PLANNING_LOCATION_PRESET_ID);
-  const [planningExtentId, setPlanningExtentId] =
-    useState<PlanningExtentId>(DEFAULT_PLANNING_EXTENT_ID);
+  const planningExtent = unifiedPlanningWorld();
   const [planningMeasurements, setPlanningMeasurements] =
     useState<PlanningMeasurementState>(DEFAULT_PLANNING_MEASUREMENT_STATE);
   const [customPlanningLatitude, setCustomPlanningLatitude] = useState(
@@ -1295,10 +1283,6 @@ export function AppWorkstationSlots(props: AppWorkstationSlotsProps) {
   const planningCoverageAnalysis = useMemo(
     () => analyzePlanningCoverage(planningPolygon, planningRadars, undefined, { radarPresets: PLANNING_RADAR_PRESETS }),
     [planningPolygon, planningRadars],
-  );
-  const planningExtent = useMemo(
-    () => planningExtentById(planningExtentId),
-    [planningExtentId],
   );
   const [planningMcPackage, setPlanningMcPackage] =
     useState<PlanningMcPackageV1 | null>(null);
@@ -1376,12 +1360,11 @@ export function AppWorkstationSlots(props: AppWorkstationSlotsProps) {
     }));
   }, []);
 
-  const handlePlanningExtentCameraFit = useCallback(() => {
-    setPlanningExtentCameraRequest((current) => ({
+  const handlePlanningWorldCameraFit = useCallback(() => {
+    setPlanningWorldFitCameraRequest((current) => ({
       id: (current?.id ?? 0) + 1,
-      extent: planningExtent,
     }));
-  }, [planningExtent]);
+  }, []);
 
   const handlePlanningRadiusChange = useCallback((radiusMeters: PlanningRadiusMeters) => {
     setPlanningMeasurements((current) => setPlanningRadiusMeters(current, radiusMeters));
@@ -1855,7 +1838,6 @@ export function AppWorkstationSlots(props: AppWorkstationSlotsProps) {
                 coverage={planningCoverage}
                 coverageOptions={planningCoverageOptions}
                 coverageAnalysis={planningCoverageAnalysis}
-                planningExtent={planningExtent}
                 planningMeasurements={planningMeasurements}
                 planningMcPackage={planningMcPackage}
                 planningMcPackageStale={planningMcPackageStale}
@@ -1873,8 +1855,7 @@ export function AppWorkstationSlots(props: AppWorkstationSlotsProps) {
                 onCustomLongitudeChange={setCustomPlanningLongitude}
                 onApplyLocation={handlePlanningLocationJump}
                 onCameraPreset={handlePlanningCameraPreset}
-                onPlanningExtentChange={setPlanningExtentId}
-                onPlanningExtentCameraFit={handlePlanningExtentCameraFit}
+                onPlanningWorldCameraFit={handlePlanningWorldCameraFit}
                 onPlanningRadiusChange={handlePlanningRadiusChange}
                 onClearPlanningMeasurements={handleClearPlanningMeasurements}
                 onToolChange={setPlanningTool}
@@ -1967,7 +1948,7 @@ export function AppWorkstationSlots(props: AppWorkstationSlotsProps) {
             terrainProviderMode={terrainProviderMode}
             onTerrainProviderModeChange={onTerrainProviderModeChange}
             planningCameraPresetRequest={planningCameraPresetRequest}
-            planningExtentCameraRequest={planningExtentCameraRequest}
+            planningWorldFitCameraRequest={planningWorldFitCameraRequest}
             planningLocationRequest={planningLocationRequest}
             planningDrawing={{
               enabled: planningCesiumClickEnabled,

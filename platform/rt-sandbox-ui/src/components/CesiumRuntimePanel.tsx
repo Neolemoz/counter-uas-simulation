@@ -11,7 +11,6 @@ import {
   flyToEntity,
   flyToFitEntities,
   flyToLocation,
-  flyToPlanningExtent,
   flyToPreset,
   flyToCrestLine,
   flyToRidgeLine,
@@ -75,6 +74,7 @@ import { feedbackEntityRows } from "@/sync/cognition";
 import type { MirrorEntity } from "@/cesium/entityMarkers";
 import type { EntityType } from "@/world/entityCatalog";
 import type { Pose } from "@/world/bounds";
+import { CESIUM_PRIMARY_EDITING_COPY } from "@/world/bounds";
 import type { Viewer } from "cesium";
 import type {
   TacticalRecommendationPayload,
@@ -128,7 +128,7 @@ export function CesiumRuntimePanel({
   radarPreviewControls = null,
   planningDrawing,
   planningCameraPresetRequest,
-  planningExtentCameraRequest,
+  planningWorldFitCameraRequest,
   planningLocationRequest,
   terrainProviderMode = DEFAULT_CESIUM_TERRAIN_PROVIDER_MODE,
   onTerrainProviderModeChange = () => undefined,
@@ -176,7 +176,7 @@ export function CesiumRuntimePanel({
     onMapClick: (vertex: PlanningVertex) => void;
   };
   planningCameraPresetRequest?: { id: number; preset: CameraPreset } | null;
-  planningExtentCameraRequest?: { id: number; extent: PlanningExtent } | null;
+  planningWorldFitCameraRequest?: { id: number } | null;
   planningLocationRequest?: { id: number; location: CameraLocationTarget } | null;
   terrainProviderMode?: CesiumTerrainProviderMode;
   onTerrainProviderModeChange?: (mode: CesiumTerrainProviderMode) => void;
@@ -414,13 +414,13 @@ export function CesiumRuntimePanel({
   ]);
 
   useEffect(() => {
-    if (!planningExtentCameraRequest) return;
+    if (!planningWorldFitCameraRequest) return;
     const currentViewer = viewerRef.current;
     if (!isViewerUsable(currentViewer)) return;
     setFollowSelected(false);
     setFollowEntity(currentViewer, null);
-    flyToPlanningExtent(currentViewer, planningExtentCameraRequest.extent);
-  }, [planningExtentCameraRequest]);
+    flyToBounds(currentViewer);
+  }, [planningWorldFitCameraRequest]);
 
   useEffect(() => {
     if (!planningLocationRequest) return;
@@ -456,6 +456,14 @@ export function CesiumRuntimePanel({
 
   return (
     <PanelShell title="Cesium runtime view" icon={Globe2} variant="primary">
+      {editingEnabled && (
+        <p
+          className="mb-3 rounded border border-cyan-800/60 bg-cyan-950/25 px-3 py-2 text-[11px] leading-relaxed text-cyan-100/90"
+          data-testid="cesium-primary-editing-notice"
+        >
+          {CESIUM_PRIMARY_EDITING_COPY}
+        </p>
+      )}
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
         <div className="flex flex-wrap items-center gap-2 text-xs">
           <span className="rounded-full border border-cyan-500/40 bg-cyan-950/40 px-2.5 py-1 font-medium text-cyan-100">

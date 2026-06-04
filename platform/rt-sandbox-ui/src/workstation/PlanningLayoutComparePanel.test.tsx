@@ -9,8 +9,7 @@ import {
   type PlanningRadarState,
 } from "@/cesium/planningDrawing";
 import { analyzePlanningCoverage } from "@/cesium/planningCoverageAnalysis";
-import { planningExtentById } from "@/cesium/planningWorld";
-import {
+import { unifiedPlanningWorld } from "@/cesium/planningWorld";import {
   buildPlanningLayoutCompareSlot,
   derivePlanningLayoutCompareAnalytics,
 } from "@/layout/planningLayoutComparison";
@@ -71,7 +70,6 @@ function snapshotFor(
       createdUtc,
       terrainMode: "ellipsoid",
       selectedLocationPreset: "bangkok",
-      planningExtent: planningExtentById("planning_10km"),
     },
   );
 }
@@ -149,7 +147,7 @@ describe("PlanningLayoutComparePanel", () => {
     expect(markup).toContain('data-testid="planning-layout-compare-row-A"');
     expect(markup).toContain('data-testid="planning-layout-compare-row-B"');
     expect(markup).toContain(slots[0]!.planning_snapshot_id);
-    expect(markup).toContain("planning_10km");
+    expect(markup).toContain("planning_unified_7km");
     expect(markup).toContain(`${analytics.rows[0]!.coverage_percent.toFixed(1)}%`);
     expect(markup).toContain(`${analytics.rows[0]!.radar_count}`);
     expect(markup).toContain('data-testid="planning-layout-compare-remove-A"');

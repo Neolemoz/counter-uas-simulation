@@ -1,6 +1,12 @@
 /** Cesium visual tokens (PLAT-RT-V1). */
 
 import {
+  CORE_GRID_LOCAL_INSET_RADIUS_M,
+  WORLD_AXIS_HALF_EXTENT_M,
+  WORLD_FIT_CAMERA_HEIGHT_M,
+  boundsGroundLabel,
+} from "@/world/bounds";
+import {
   ENTITY_GLYPHS,
   ENTITY_LABELS,
   type EntityType,
@@ -21,14 +27,20 @@ export const BOUNDS_GROUND_COLOR = "rgba(56, 189, 248, 0.95)";
 export const BOUNDS_VERTICAL_COLOR = "rgba(56, 189, 248, 0.55)";
 export const BOUNDS_TOP_COLOR = "rgba(56, 189, 248, 0.45)";
 
-export const TIGHT_BOUNDS_CAMERA_HEIGHT_M = 1200;
-export const TERRAIN_OVERVIEW_CAMERA_HEIGHT_M = 4000;
+/** City-core inset overview (~2× local grid radius). */
+export const TIGHT_BOUNDS_CAMERA_HEIGHT_M = Math.max(
+  1200,
+  Math.round(CORE_GRID_LOCAL_INSET_RADIUS_M * 2.2),
+);
+export const TERRAIN_OVERVIEW_CAMERA_HEIGHT_M = WORLD_FIT_CAMERA_HEIGHT_M;
 
 export const SELECTION_RING_PIXEL_SIZE = 22;
 export const SELECTION_RING_COLOR = "rgba(251, 191, 36, 0.35)";
 
-export const BOUNDS_LABEL_GROUND = "±500m";
+export const BOUNDS_LABEL_GROUND = boundsGroundLabel();
 export const BOUNDS_LABEL_Z = "z 0–200m";
+
+export { WORLD_AXIS_HALF_EXTENT_M, boundsGroundLabel };
 
 /** PLAT-RT-V3 P1 — visibility overlay tokens */
 export const VISIBILITY_WEDGE_COLOR = "rgba(167, 139, 250, 0.55)";
@@ -78,7 +90,9 @@ export function markerPixelSize(selected: boolean, distanceScale = 1): number {
 
 /** Scale markers slightly when camera is far from bounds center. */
 export function distanceScaleFromHeight(cameraHeightM: number): number {
-  if (cameraHeightM > 2500) return 1.25;
+  if (cameraHeightM > WORLD_FIT_CAMERA_HEIGHT_M * 0.75) return 1.35;
+  if (cameraHeightM > 5000) return 1.25;
+  if (cameraHeightM > 2500) return 1.15;
   if (cameraHeightM > 1500) return 1.1;
   if (cameraHeightM < 600) return 0.95;
   return 1;
@@ -91,7 +105,8 @@ export function labelFontSizePx(
   hovered: boolean,
 ): number {
   const emphasis = selected || hovered;
-  if (cameraHeightM > 4200) return emphasis ? 14 : 10;
+  if (cameraHeightM > WORLD_FIT_CAMERA_HEIGHT_M * 0.75) return emphasis ? 14 : 10;
+  if (cameraHeightM > 5000) return emphasis ? 15 : 11;
   if (cameraHeightM > 2600) return emphasis ? 15 : 11;
   if (cameraHeightM < 700) return emphasis ? 18 : 13;
   return emphasis ? 16 : 12;

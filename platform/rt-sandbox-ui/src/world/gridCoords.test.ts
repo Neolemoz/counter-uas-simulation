@@ -23,8 +23,8 @@ describe("gridCoords", () => {
   it("cell center within bounds after clamp", () => {
     const center = cellCenterWorld(20, 10);
     const clamped = clampPose({ x: center.x, y: center.y, z: 10 });
-    expect(clamped.x).toBeGreaterThanOrEqual(-500);
-    expect(clamped.x).toBeLessThanOrEqual(500);
+    expect(clamped.x).toBeGreaterThanOrEqual(-7000);
+    expect(clamped.x).toBeLessThanOrEqual(7000);
   });
 
   it("entityCell matches worldToCell on pose", () => {

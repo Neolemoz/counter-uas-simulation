@@ -18,6 +18,19 @@ if str(_SCRIPT_DIR) not in sys.path:
 
 DEFAULT_BASE = "http://127.0.0.1:18765"
 
+_REPO = Path(__file__).resolve().parents[2]
+_BRIDGE_PKG = _REPO / "platform" / "rt-sandbox-bridge"
+if str(_BRIDGE_PKG) not in sys.path:
+    sys.path.insert(0, str(_BRIDGE_PKG))
+
+from rt_sandbox.governance import WORLD_BOUNDS  # noqa: E402
+
+
+def _bounds_grid_params() -> tuple[float, float]:
+    x_min = float(WORLD_BOUNDS["x"]["min"])
+    x_max = float(WORLD_BOUNDS["x"]["max"])
+    return -x_min, x_max - x_min
+
 
 def pull_telemetry(
     *,
@@ -74,9 +87,18 @@ def render_grid(entities: list[dict], summary: dict | None, state: str) -> str:
         lines.append(
             f"entities={summary.get('entity_count', 0)} revision={summary.get('revision', 0)}"
         )
+        bounds = summary.get("bounds") or {}
+        if bounds:
+            x = bounds.get("x") or {}
+            y = bounds.get("y") or {}
+            lines.append(
+                f"bounds: x [{x.get('min', '?')}, {x.get('max', '?')}] "
+                f"y [{y.get('min', '?')}, {y.get('max', '?')}]"
+            )
         lines.append("")
     width, height = 40, 20
-    scale = width / 1000.0
+    world_offset, world_span = _bounds_grid_params()
+    scale = width / world_span
     marks = {"radar": "R", "interceptor": "I", "drone": "D", "waypoint_marker": "W"}
     for row in range(height):
         row_chars = []
@@ -84,8 +106,8 @@ def render_grid(entities: list[dict], summary: dict | None, state: str) -> str:
             ch = "."
             for ent in entities:
                 pose = ent.get("pose") or {}
-                ex = int((float(pose.get("x", 0)) + 500) * scale)
-                ey = int((float(pose.get("y", 0)) + 500) * scale)
+                ex = int((float(pose.get("x", 0)) + world_offset) * scale)
+                ey = int((float(pose.get("y", 0)) + world_offset) * scale)
                 if ex == col and ey == row:
                     ch = marks.get(ent.get("entity_type", ""), "?")
             row_chars.append(ch)

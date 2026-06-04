@@ -227,5 +227,5 @@ export function syncPlanningMeasurementLayer(
 }
 
 export function planningMeasurementsPreserveRuntimeBounds(): boolean {
-  return WORLD_BOUNDS.x.max === 500 && WORLD_BOUNDS.y.max === 500;
+  return WORLD_BOUNDS.x.max === 7000 && WORLD_BOUNDS.y.max === 7000;
 }

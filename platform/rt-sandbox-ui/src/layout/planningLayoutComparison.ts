@@ -187,7 +187,7 @@ function extentMismatchWarnings(
   return [
     {
       warning_id: "extent_mismatch",
-      message: `${formatSlotLabels(allLabels)} use different planning_extent_id values (${extentSummary}). Metrics remain heuristic and are not directly comparable across Planning World extents.`,
+      message: `${formatSlotLabels(allLabels)} use different planning_extent_id values (${extentSummary}). Metrics remain heuristic and are not directly comparable across world metadata variants.`,
       slot_labels: allLabels,
     },
   ];
@@ -457,7 +457,8 @@ function parsePlanningExtent(value: unknown): PlanningMcSnapshotExtent | null {
     !planningExtentId ||
     planningExtentRadiusM === null ||
     !planningExtentLabel ||
-    (planningExtentId !== "planning_5km" &&
+    (planningExtentId !== "planning_unified_7km" &&
+      planningExtentId !== "planning_5km" &&
       planningExtentId !== "planning_10km" &&
       planningExtentId !== "planning_20km")
   ) {

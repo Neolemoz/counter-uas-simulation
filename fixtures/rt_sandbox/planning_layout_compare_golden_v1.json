@@ -1,7 +1,7 @@
 {
   "schema_version": "planning_layout_compare_golden_v1",
   "fixture_utc": "2026-06-04T00:00:00Z",
-  "description": "Stable Planning layout compare golden with three snapshot slots and known delta analytics.",
+  "description": "Stable Planning layout compare golden with three snapshot slots, unified 7 km world metadata, and known delta analytics.",
   "snapshots": {
     "A": {
       "schema_version": "rt_planning_mc_snapshot_v1",
@@ -57,9 +57,17 @@
         }
       },
       "planning_extent": {
-        "planning_extent_id": "planning_10km",
-        "planning_extent_radius_m": 10000,
-        "planning_extent_label": "10 km Planning World"
+        "planning_extent_id": "planning_unified_7km",
+        "planning_extent_radius_m": 7000,
+        "planning_extent_label": "Unified 7 km World"
+      },
+      "world_bounds_m": {
+        "x_min_m": -7000,
+        "x_max_m": 7000,
+        "y_min_m": -7000,
+        "y_max_m": 7000,
+        "z_min_m": 0,
+        "z_max_m": 200
       },
       "presentation": {
         "terrain_mode": "ellipsoid",
@@ -122,9 +130,17 @@
         }
       },
       "planning_extent": {
-        "planning_extent_id": "planning_10km",
-        "planning_extent_radius_m": 10000,
-        "planning_extent_label": "10 km Planning World"
+        "planning_extent_id": "planning_unified_7km",
+        "planning_extent_radius_m": 7000,
+        "planning_extent_label": "Unified 7 km World"
+      },
+      "world_bounds_m": {
+        "x_min_m": -7000,
+        "x_max_m": 7000,
+        "y_min_m": -7000,
+        "y_max_m": 7000,
+        "z_min_m": 0,
+        "z_max_m": 200
       },
       "presentation": {
         "terrain_mode": "ellipsoid",
@@ -197,9 +213,17 @@
         }
       },
       "planning_extent": {
-        "planning_extent_id": "planning_10km",
-        "planning_extent_radius_m": 10000,
-        "planning_extent_label": "10 km Planning World"
+        "planning_extent_id": "planning_unified_7km",
+        "planning_extent_radius_m": 7000,
+        "planning_extent_label": "Unified 7 km World"
+      },
+      "world_bounds_m": {
+        "x_min_m": -7000,
+        "x_max_m": 7000,
+        "y_min_m": -7000,
+        "y_max_m": 7000,
+        "z_min_m": 0,
+        "z_max_m": 200
       },
       "presentation": {
         "terrain_mode": "ellipsoid",

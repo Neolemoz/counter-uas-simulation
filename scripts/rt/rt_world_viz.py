@@ -21,19 +21,39 @@ if str(_SCRIPT_DIR) not in sys.path:
 
 from rt_bridge_client import DEFAULT_URL, send_command  # noqa: E402
 
+_REPO = Path(__file__).resolve().parents[2]
+_BRIDGE_PKG = _REPO / "platform" / "rt-sandbox-bridge"
+if str(_BRIDGE_PKG) not in sys.path:
+    sys.path.insert(0, str(_BRIDGE_PKG))
 
-def _grid_char(x: float, y: float, entities: list[dict], *, scale: float = 0.05) -> str:
+from rt_sandbox.governance import WORLD_BOUNDS  # noqa: E402
+
+
+def _bounds_grid_params() -> tuple[float, float]:
+    x_min = float(WORLD_BOUNDS["x"]["min"])
+    x_max = float(WORLD_BOUNDS["x"]["max"])
+    return -x_min, x_max - x_min
+
+
+def _grid_char(
+    x: float,
+    y: float,
+    entities: list[dict],
+    *,
+    scale: float,
+    world_offset: float,
+) -> str:
     """Map world coords to a small ASCII grid."""
-    gx = int((x + 500) * scale)
-    gy = int((y + 500) * scale)
+    gx = int((x + world_offset) * scale)
+    gy = int((y + world_offset) * scale)
     width, height = 40, 20
     if gx < 0 or gx >= width or gy < 0 or gy >= height:
         return " "
     marks = {"radar": "R", "interceptor": "I", "drone": "D", "waypoint_marker": "W"}
     for ent in entities:
         pose = ent.get("pose") or {}
-        ex = int((float(pose.get("x", 0)) + 500) * scale)
-        ey = int((float(pose.get("y", 0)) + 500) * scale)
+        ex = int((float(pose.get("x", 0)) + world_offset) * scale)
+        ey = int((float(pose.get("y", 0)) + world_offset) * scale)
         if ex == gx and ey == gy:
             return marks.get(ent.get("entity_type", ""), "?")
     return "."
@@ -48,15 +68,26 @@ def render_world(entities: list[dict], summary: dict | None) -> str:
         by_type = summary.get("by_type") or {}
         if by_type:
             lines.append("by_type: " + ", ".join(f"{k}={v}" for k, v in sorted(by_type.items()) if v))
+        bounds = summary.get("bounds") or {}
+        if bounds:
+            x = bounds.get("x") or {}
+            y = bounds.get("y") or {}
+            lines.append(
+                f"bounds: x [{x.get('min', '?')}, {x.get('max', '?')}] "
+                f"y [{y.get('min', '?')}, {y.get('max', '?')}]"
+            )
         lines.append("")
     width, height = 40, 20
-    scale = width / 1000.0
+    world_offset, world_span = _bounds_grid_params()
+    scale = width / world_span
     for row in range(height):
         row_chars = []
         for col in range(width):
-            x = (col / scale) - 500
-            y = (row / scale) - 500
-            row_chars.append(_grid_char(x, y, entities, scale=scale))
+            x = (col / scale) - world_offset
+            y = (row / scale) - world_offset
+            row_chars.append(
+                _grid_char(x, y, entities, scale=scale, world_offset=world_offset)
+            )
         lines.append("".join(row_chars))
     lines.append("")
     lines.append("Legend: R=radar I=interceptor D=drone W=waypoint . empty")

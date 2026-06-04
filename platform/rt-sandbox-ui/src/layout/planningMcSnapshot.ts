@@ -15,11 +15,11 @@ import type { PlanningCoverageAnalysis } from "@/cesium/planningCoverageAnalysis
 import type { CesiumTerrainProviderMode } from "@/cesium/terrainProviderConfig";
 import type { PlanningLocationPresetId } from "@/cesium/planningLocations";
 import {
-  DEFAULT_PLANNING_EXTENT_ID,
-  planningExtentById,
-  planningExtentMetadata,
+  planningExtentMetadataForExport,
+  unifiedPlanningWorld,
   type PlanningExtent,
 } from "@/cesium/planningWorld";
+import { WORLD_BOUNDS } from "@/world/bounds";
 import { sha256Hex16 } from "@/experiment/sha256Hex";
 import { exportJson, copyTextToClipboard, type ClipboardResult } from "./layoutMcHandoff";
 
@@ -57,6 +57,15 @@ export type PlanningMcSnapshotPresentation = {
 
 export type PlanningMcSnapshotExtent = PlanningExtent;
 
+export type PlanningMcSnapshotWorldBoundsM = {
+  x_min_m: number;
+  x_max_m: number;
+  y_min_m: number;
+  y_max_m: number;
+  z_min_m: number;
+  z_max_m: number;
+};
+
 export type PlanningMcSnapshotProvenance = {
   source_layout_id?: string;
   source_geometry_id?: string;
@@ -78,9 +87,21 @@ export type PlanningMcSnapshotV1 = {
   };
   analytics_summary: PlanningMcSnapshotAnalyticsSummary;
   planning_extent: PlanningMcSnapshotExtent;
+  world_bounds_m?: PlanningMcSnapshotWorldBoundsM;
   presentation: PlanningMcSnapshotPresentation;
   provenance: PlanningMcSnapshotProvenance;
 };
+
+export function worldBoundsSnapshotMetadata(): PlanningMcSnapshotWorldBoundsM {
+  return {
+    x_min_m: WORLD_BOUNDS.x.min,
+    x_max_m: WORLD_BOUNDS.x.max,
+    y_min_m: WORLD_BOUNDS.y.min,
+    y_max_m: WORLD_BOUNDS.y.max,
+    z_min_m: WORLD_BOUNDS.z.min,
+    z_max_m: WORLD_BOUNDS.z.max,
+  };
+}
 
 export type BuildPlanningMcSnapshotOptions = {
   createdUtc?: string;
@@ -194,7 +215,7 @@ export function buildPlanningMcSnapshot(
   options: BuildPlanningMcSnapshotOptions,
 ): PlanningMcSnapshotV1 {
   const createdUtc = options.createdUtc ?? utcNow();
-  const extent = options.planningExtent ?? planningExtentById(DEFAULT_PLANNING_EXTENT_ID);
+  const extent = options.planningExtent ?? unifiedPlanningWorld();
   const planningGeometryId = planningGeometryFingerprint(polygon, radars);
   const snapshotCanonical = {
     schema_version: PLANNING_MC_SNAPSHOT_SCHEMA_VERSION,
@@ -216,7 +237,8 @@ export function buildPlanningMcSnapshot(
       radar_sites: radars.sites.map(radarSnapshot),
     },
     analytics_summary: analyticsSnapshot(analysis),
-    planning_extent: planningExtentMetadata(extent),
+    planning_extent: planningExtentMetadataForExport(extent),
+    world_bounds_m: worldBoundsSnapshotMetadata(),
     presentation: {
       terrain_mode: options.terrainMode,
       selected_location_preset: options.selectedLocationPreset,

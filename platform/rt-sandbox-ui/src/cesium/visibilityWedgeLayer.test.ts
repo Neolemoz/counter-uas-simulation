@@ -9,7 +9,7 @@ import {
 
 describe("visibilityWedgeLayer", () => {
   it("computes bounds diagonal half", () => {
-    expect(boundsDiagonalHalfM()).toBeCloseTo(707.1, 0);
+    expect(boundsDiagonalHalfM()).toBeCloseTo(9899.5, 0);
   });
 
   it("clamps wedge polyline count to budget", () => {

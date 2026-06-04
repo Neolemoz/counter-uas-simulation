@@ -10,7 +10,9 @@ export const FICTIONAL_GEOREF_ANCHOR = {
 export const CESIUM_SCENARIO_CAVEAT =
   "Scenario-local fictional georef anchored near Passo Gardena / Sella Group, Dolomites — not deployed geography. Cesium markers are pull mirrors only.";
 
-/** Default camera offset above bounds center (meters). */
-export const DEFAULT_CAMERA_HEIGHT_M = 1880;
+import { WORLD_FIT_CAMERA_HEIGHT_M } from "@/world/bounds";
+
+/** Default camera offset above bounds center (meters) — frames unified world. */
+export const DEFAULT_CAMERA_HEIGHT_M = WORLD_FIT_CAMERA_HEIGHT_M;
 
 export const BOUNDS_LAYER_ID = "rt-world-bounds";

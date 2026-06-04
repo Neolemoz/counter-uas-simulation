@@ -11,20 +11,21 @@ import {
   DEFAULT_PLANNING_MEASUREMENT_STATE,
   addPlanningMeasurementPoint,
 } from "./planningMeasurements";
-import { planningExtentById } from "./planningWorld";
 import {
   PLANNING_COGNITION_GOVERNANCE_COPY,
   buildPlanningSummary,
   buildPlanningWarnings,
+  operationalRingSummary,
   planningCognitionPreservesRuntimeBounds,
+  planningCognitionPreservesWorldBounds,
   planningCompletedMeasurementCount,
   planningCompletedPolygonCount,
   validateAllPlanningExtents,
-  validatePlanningExtentCapabilities,
+  validateUnifiedPlanningWorld,
 } from "./planningCognition";
 
 describe("planningCognition", () => {
-  it("builds Planning summary with extent, polygon, radar, and measurement counts", () => {
+  it("builds Planning summary with unified world and operational rings", () => {
     let polygon = addPlanningVertex(EMPTY_PLANNING_POLYGON, { x: 0, y: 0 });
     polygon = addPlanningVertex(polygon, { x: 500, y: 0 });
     polygon = addPlanningVertex(polygon, { x: 500, y: 500 });
@@ -36,15 +37,15 @@ describe("planningCognition", () => {
     );
 
     const summary = buildPlanningSummary({
-      planningExtent: planningExtentById("planning_10km"),
       polygon,
       radars,
       measurements,
     });
 
     expect(summary).toEqual({
-      extent_label: "10 km Planning World",
-      extent_radius_m: 10_000,
+      world_label: "Unified 7 km World",
+      world_half_extent_m: 7000,
+      operational_rings: operationalRingSummary(),
       polygon_count: 1,
       radar_count: 1,
       measurement_count: 1,
@@ -53,7 +54,6 @@ describe("planningCognition", () => {
 
   it("reports zero counts for empty Planning state", () => {
     const summary = buildPlanningSummary({
-      planningExtent: planningExtentById("planning_5km"),
       polygon: EMPTY_PLANNING_POLYGON,
       radars: EMPTY_PLANNING_RADARS,
       measurements: DEFAULT_PLANNING_MEASUREMENT_STATE,
@@ -62,12 +62,11 @@ describe("planningCognition", () => {
     expect(summary.polygon_count).toBe(0);
     expect(summary.radar_count).toBe(0);
     expect(summary.measurement_count).toBe(0);
-    expect(summary.extent_label).toBe("5 km Planning World");
+    expect(summary.world_label).toBe("Unified 7 km World");
   });
 
   it("emits informational Planning warnings without blocking semantics", () => {
     const warnings = buildPlanningWarnings({
-      planningExtent: planningExtentById("planning_10km"),
       polygon: EMPTY_PLANNING_POLYGON,
       radars: EMPTY_PLANNING_RADARS,
       measurements: DEFAULT_PLANNING_MEASUREMENT_STATE,
@@ -85,7 +84,6 @@ describe("planningCognition", () => {
 
   it("warns when measurement tool has only one point selected", () => {
     const warnings = buildPlanningWarnings({
-      planningExtent: planningExtentById("planning_10km"),
       polygon: EMPTY_PLANNING_POLYGON,
       radars: EMPTY_PLANNING_RADARS,
       measurements: addPlanningMeasurementPoint(DEFAULT_PLANNING_MEASUREMENT_STATE, {
@@ -100,51 +98,35 @@ describe("planningCognition", () => {
     );
   });
 
-  it("updates summary when Planning extent switches", () => {
-    const polygon = finishPlanningPolygon(
-      addPlanningVertex(
-        addPlanningVertex(addPlanningVertex(EMPTY_PLANNING_POLYGON, { x: 0, y: 0 }), {
-          x: 400,
-          y: 0,
-        }),
-        { x: 400, y: 400 },
-      ),
+  it("warns when coordinates are outside unified world bounds", () => {
+    const polygon: typeof EMPTY_PLANNING_POLYGON = {
+      draftVertices: [],
+      completedVertices: [
+        { x: 7500, y: 0 },
+        { x: 7800, y: 0 },
+        { x: 7800, y: 500 },
+      ],
+    };
+    const warnings = buildPlanningWarnings({
+      polygon,
+      radars: addPlanningRadarSite(EMPTY_PLANNING_RADARS, { x: 7600, y: 250 }),
+      measurements: DEFAULT_PLANNING_MEASUREMENT_STATE,
+    });
+
+    expect(warnings.some((warning) => warning.warning_id === "coordinates_outside_world_bounds")).toBe(
+      true,
     );
-
-    const summary5 = buildPlanningSummary({
-      planningExtent: planningExtentById("planning_5km"),
-      polygon,
-      radars: EMPTY_PLANNING_RADARS,
-      measurements: DEFAULT_PLANNING_MEASUREMENT_STATE,
-    });
-    const summary20 = buildPlanningSummary({
-      planningExtent: planningExtentById("planning_20km"),
-      polygon,
-      radars: EMPTY_PLANNING_RADARS,
-      measurements: DEFAULT_PLANNING_MEASUREMENT_STATE,
-    });
-
-    expect(summary5.extent_radius_m).toBe(5_000);
-    expect(summary20.extent_radius_m).toBe(20_000);
-    expect(summary5.polygon_count).toBe(1);
-    expect(summary20.polygon_count).toBe(1);
   });
 
-  it("validates usability for 5 km, 10 km, and 20 km Planning extents", () => {
-    const validations = validateAllPlanningExtents();
+  it("validates unified world capabilities and operational ring summary", () => {
+    const validation = validateUnifiedPlanningWorld();
 
-    expect(validations).toHaveLength(3);
-    validations.forEach((validation) => {
-      expect(validation.overlay_readable).toBe(true);
-      expect(validation.polygon_drawing_usable).toBe(true);
-      expect(validation.radar_placement_usable).toBe(true);
-      expect(validation.measurement_tools_usable).toBe(true);
-      expect(validation.guidance).toContain("planning-only");
-    });
-
-    expect(validatePlanningExtentCapabilities(planningExtentById("planning_20km")).camera_fit_height_m).toBe(
-      29_000,
-    );
+    expect(validation.overlay_readable).toBe(true);
+    expect(validation.polygon_drawing_usable).toBe(true);
+    expect(validation.camera_fit_height_m).toBeGreaterThanOrEqual(7000);
+    expect(validation.operational_rings.spawn_band_outer_m).toBe(7000);
+    expect(validation.guidance).toContain("city 1000 m");
+    expect(validateAllPlanningExtents()).toEqual([validation]);
   });
 
   it("does not mutate runtime bounds or invoke bridge/runtime paths", () => {
@@ -153,13 +135,11 @@ describe("planningCognition", () => {
     const runtimeCommand = vi.fn();
 
     buildPlanningSummary({
-      planningExtent: planningExtentById("planning_10km"),
       polygon: EMPTY_PLANNING_POLYGON,
       radars: EMPTY_PLANNING_RADARS,
       measurements: DEFAULT_PLANNING_MEASUREMENT_STATE,
     });
     buildPlanningWarnings({
-      planningExtent: planningExtentById("planning_10km"),
       polygon: EMPTY_PLANNING_POLYGON,
       radars: EMPTY_PLANNING_RADARS,
       measurements: DEFAULT_PLANNING_MEASUREMENT_STATE,
@@ -167,7 +147,8 @@ describe("planningCognition", () => {
     validateAllPlanningExtents();
 
     expect(JSON.stringify(WORLD_BOUNDS)).toBe(before);
-    expect(WORLD_BOUNDS.x.max).toBe(500);
+    expect(WORLD_BOUNDS.x.max).toBe(7000);
+    expect(planningCognitionPreservesWorldBounds()).toBe(true);
     expect(planningCognitionPreservesRuntimeBounds()).toBe(true);
     expect(planningCompletedPolygonCount(EMPTY_PLANNING_POLYGON)).toBe(0);
     expect(planningCompletedMeasurementCount(DEFAULT_PLANNING_MEASUREMENT_STATE)).toBe(0);

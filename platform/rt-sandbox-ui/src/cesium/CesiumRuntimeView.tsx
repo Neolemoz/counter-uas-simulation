@@ -8,6 +8,7 @@ import "cesium/Build/Cesium/Widgets/widgets.css";
 import type { EntityType } from "@/world/entityCatalog";
 import type { Pose } from "@/world/bounds";
 import { syncBoundsLayer } from "./boundsLayer";
+import { syncOperationalRingLayer } from "./operationalRingLayer";
 import { attachCesiumEditingHandlers, isViewerUsable } from "./cesiumEditing";
 import { setInitialGroundedCamera } from "./cameraHelpers";
 import {
@@ -338,6 +339,7 @@ export function CesiumRuntimeView({
       showVertical: layerVisibility.showVerticalBounds,
       showCornerLabels: layerVisibility.showBounds,
     });
+    syncOperationalRingLayer(viewer, layerVisibility.showBounds);
   }, [sessionId, layerVisibility.showBounds, layerVisibility.showVerticalBounds]);
 
   useEffect(() => {

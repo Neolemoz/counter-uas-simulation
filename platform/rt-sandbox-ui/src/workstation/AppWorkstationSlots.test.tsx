@@ -24,7 +24,7 @@ import {
   type PlanningTool,
 } from "@/cesium/planningDrawing";
 import { analyzePlanningCoverage, type PlanningCoverageAnalysis } from "@/cesium/planningCoverageAnalysis";
-import { planningExtentById } from "@/cesium/planningWorld";
+import { unifiedPlanningWorld } from "@/cesium/planningWorld";
 import {
   DEFAULT_PLANNING_MEASUREMENT_STATE,
   addPlanningMeasurementPoint,
@@ -67,7 +67,6 @@ function renderPlanningPanel({
   coverage = estimatePlanningCoverage(polygon, radars),
   coverageOptions = DEFAULT_PLANNING_COVERAGE_OPTIONS,
   coverageAnalysis = analyzePlanningCoverage(polygon, radars, undefined, { radarPresets: PLANNING_RADAR_PRESETS }),
-  planningExtent = planningExtentById("planning_10km"),
   planningMeasurements = DEFAULT_PLANNING_MEASUREMENT_STATE,
   planningMcPackage = null,
   planningMcPackageStale = false,
@@ -94,7 +93,6 @@ function renderPlanningPanel({
   coverage?: PlanningCoverageEstimate;
   coverageOptions?: PlanningCoverageLayerOptions;
   coverageAnalysis?: PlanningCoverageAnalysis;
-  planningExtent?: ReturnType<typeof planningExtentById>;
   planningMeasurements?: PlanningMeasurementState;
   planningMcPackage?: PlanningMcPackageV1 | null;
   planningMcPackageStale?: boolean;
@@ -121,7 +119,6 @@ function renderPlanningPanel({
       coverage={coverage}
       coverageOptions={coverageOptions}
       coverageAnalysis={coverageAnalysis}
-      planningExtent={planningExtent}
       planningMeasurements={planningMeasurements}
       planningMcPackage={planningMcPackage}
       planningMcPackageStale={planningMcPackageStale}
@@ -139,8 +136,7 @@ function renderPlanningPanel({
       onCustomLongitudeChange={vi.fn()}
       onApplyLocation={vi.fn()}
       onCameraPreset={vi.fn()}
-      onPlanningExtentChange={vi.fn()}
-      onPlanningExtentCameraFit={vi.fn()}
+      onPlanningWorldCameraFit={vi.fn()}
       onPlanningRadiusChange={vi.fn()}
       onClearPlanningMeasurements={vi.fn()}
       onToolChange={vi.fn()}
@@ -177,7 +173,7 @@ function renderPlanningPanel({
 }
 
 describe("AppWorkstationSlots planning mode shell", () => {
-  it("defaults to Grid Mode", () => {
+  it("defaults to Core Grid (local) mode", () => {
     expect(DEFAULT_RUNTIME_WORKSPACE_MODE).toBe("grid");
     expect(workspaceModeShowsPlanningPlaceholder(DEFAULT_RUNTIME_WORKSPACE_MODE)).toBe(false);
   });
@@ -191,7 +187,7 @@ describe("AppWorkstationSlots planning mode shell", () => {
       <RuntimeWorkspaceModeSelector mode="planning" onModeChange={onModeChange} />,
     );
 
-    expect(gridMarkup).toContain("Grid Mode");
+    expect(gridMarkup).toContain("Core Grid (local)");
     expect(gridMarkup).toContain("Planning Mode");
     expect(gridMarkup).toContain("aria-pressed=\"true\"");
     expect(planningMarkup).toContain("Planning Mode");
@@ -695,13 +691,13 @@ describe("AppWorkstationSlots planning mode shell", () => {
     expect(markup).toContain("Download package JSON");
   });
 
-  it("renders Planning extent/runtime distinction copy", () => {
+  it("renders unified Planning world copy", () => {
     const markup = renderPlanningPanel();
 
-    expect(markup).toContain("10 km Planning World");
-    expect(markup).toContain("Approx. area 314.2 km^2");
-    expect(markup).toContain("Runtime bounds remain the ±500m sandbox");
-    expect(markup).toContain("Planning extent only; not runtime bounds");
+    expect(markup).toContain("Unified 7 km World");
+    expect(markup).toContain("Unified runtime world ±7000 m");
+    expect(markup).toContain("Fit Unified World");
+    expect(markup).toContain("Legacy planning extent IDs");
   });
 
   it("renders Planning measurement readouts and governance copy", () => {
@@ -720,16 +716,16 @@ describe("AppWorkstationSlots planning mode shell", () => {
     expect(markup).toContain("Planning measurement tool only; not runtime authority");
   });
 
-  it("allows Planning coordinates outside runtime bounds when inside Planning extent", () => {
+  it("flags world-invalid Planning coordinates outside unified world bounds", () => {
     const polygon: PlanningPolygonState = {
       draftVertices: [],
       completedVertices: [
-        { x: 900, y: 0 },
-        { x: 1300, y: 0 },
-        { x: 1300, y: 500 },
+        { x: 7500, y: 0 },
+        { x: 7800, y: 0 },
+        { x: 7800, y: 500 },
       ],
     };
-    const radars = addPlanningRadarSite(EMPTY_PLANNING_RADARS, { x: 1200, y: 250 });
+    const radars = addPlanningRadarSite(EMPTY_PLANNING_RADARS, { x: 7600, y: 250 });
     const markup = renderPlanningPanel({
       polygon,
       radars,
@@ -737,12 +733,11 @@ describe("AppWorkstationSlots planning mode shell", () => {
       coverageAnalysis: analyzePlanningCoverage(polygon, radars, 4, {
         radarPresets: PLANNING_RADAR_PRESETS,
       }),
-      planningExtent: planningExtentById("planning_5km"),
     });
 
-    expect(markup).toContain('data-testid="planning-runtime-guardrail"');
-    expect(markup).toContain("Outside runtime sandbox; valid for planning only.");
-    expect(markup).toContain("inside 5 km Planning World");
+    expect(markup).toContain('data-testid="planning-world-guardrail"');
+    expect(markup).toContain("World-invalid coordinates");
+    expect(markup).toContain("Unified runtime world ±7000 m");
   });
 
   it("renders Planning MC package stale advisory", () => {
@@ -751,7 +746,7 @@ describe("AppWorkstationSlots planning mode shell", () => {
         schema_version: "rt_planning_mc_package_v1",
         planning_snapshot_id: "rt_planning_snapshot:sha256:old",
         planning_geometry_id: "rt_planning:sha256:old",
-        planning_extent: planningExtentById("planning_10km"),
+        planning_extent: unifiedPlanningWorld(),
         planning_summary: {
           radar_count: 0,
           coverage_summary: { coverage_percent: 0, blind_spot_summary: "none" },
@@ -786,7 +781,7 @@ describe("AppWorkstationSlots planning mode shell", () => {
     });
   });
 
-  it("renders Planning cognition summary with extent, polygon, radar, and measurement counts", () => {
+  it("renders Planning cognition summary with world, operational rings, and counts", () => {
     let polygon = addPlanningVertex(EMPTY_PLANNING_POLYGON, { x: 0, y: 0 });
     polygon = addPlanningVertex(polygon, { x: 500, y: 0 });
     polygon = addPlanningVertex(polygon, { x: 500, y: 500 });
@@ -800,7 +795,13 @@ describe("AppWorkstationSlots planning mode shell", () => {
 
     expect(markup).toContain('data-testid="planning-cognition-panel"');
     expect(markup).toContain('data-testid="planning-summary"');
-    expect(markup).toContain("Extent 10 km Planning World");
+    expect(markup).toContain('data-testid="planning-operational-rings"');
+    expect(markup).toContain("World Unified 7 km World");
+    expect(markup).toContain("Half-extent ±7,000m");
+    expect(markup).toContain("City radius 1,000 m");
+    expect(markup).toContain("Defense radius 3,000 m");
+    expect(markup).toContain("Warning radius 5,000 m");
+    expect(markup).toContain("Spawn band 5,000–7,000 m");
     expect(markup).toContain("Polygons 1");
     expect(markup).toContain("Radar sites 1");
     expect(markup).toContain("Measurements 1");
@@ -817,20 +818,12 @@ describe("AppWorkstationSlots planning mode shell", () => {
     expect(markup).toContain("Place Radar Site");
   });
 
-  it("updates Planning cognition summary when extent switches", () => {
-    const markup5 = renderPlanningPanel({
-      planningExtent: planningExtentById("planning_5km"),
-    });
-    const markup20 = renderPlanningPanel({
-      planningExtent: planningExtentById("planning_20km"),
-    });
+  it("shows unified world guidance in cognition panel", () => {
+    const markup = renderPlanningPanel();
 
-    expect(markup5).toContain("Extent 5 km Planning World");
-    expect(markup5).toContain("Radius 5,000m");
-    expect(markup5).toContain("Compact Planning World");
-    expect(markup20).toContain("Extent 20 km Planning World");
-    expect(markup20).toContain("Radius 20,000m");
-    expect(markup20).toContain("Wide Planning World");
+    expect(markup).toContain('data-testid="planning-world-guidance"');
+    expect(markup).toContain("Unified 7 km world");
+    expect(markup).toContain("spawn band 5000–7000 m");
   });
 
   it("renders Planning layout compare panel with governance and table", () => {
@@ -906,7 +899,7 @@ describe("AppWorkstationSlots planning mode shell", () => {
     expect(markup).toContain("Capture Current Layout");
     expect(markup).toContain("Clear All Slots");
     expect(markup).toContain(snapshot.planning_snapshot_id);
-    expect(markup).toContain("planning_10km");
+    expect(markup).toContain("planning_unified_7km");
   });
 
   it("supports capture, remove slot, and clear all slot flows via compare helpers", () => {

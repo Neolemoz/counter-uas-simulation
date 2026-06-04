@@ -130,8 +130,8 @@ ENTITY_TYPE_LIMITS: dict[str, int] = {
 MAX_ENTITY_COUNT = 32
 
 WORLD_BOUNDS: dict[str, dict[str, float]] = {
-    "x": {"min": -500.0, "max": 500.0},
-    "y": {"min": -500.0, "max": 500.0},
+    "x": {"min": -7000.0, "max": 7000.0},
+    "y": {"min": -7000.0, "max": 7000.0},
     "z": {"min": 0.0, "max": 200.0},
 }
 

@@ -1,10 +1,10 @@
 import { describe, expect, it, vi } from "vitest";
 import { WORLD_BOUNDS } from "@/world/bounds";
-import { planningExtentById } from "./planningWorld";
+import { planningExtentById, unifiedPlanningWorld } from "./planningWorld";
 import {
   PLANNING_EXTENT_LAYER_COPY,
   isInsidePlanningExtent,
-  isInsideRuntimeBounds,
+  isInsideWorldBounds,
   planningExtentAreaKm2,
   syncPlanningExtentLayer,
 } from "./planningExtentLayer";
@@ -33,7 +33,18 @@ function entities(viewer: ReturnType<typeof createViewer>) {
 }
 
 describe("planningExtentLayer", () => {
-  it("renders Planning extent boundary metadata distinct from runtime bounds", () => {
+  it("renders unified world label instead of legacy extent ring", () => {
+    const viewer = createViewer();
+
+    syncPlanningExtentLayer(viewer as never, unifiedPlanningWorld(), true);
+
+    const rows = entities(viewer);
+    expect(rows.map((row) => row.id)).toContain("rt-planning-extent-world-label");
+    expect(rows.map((row) => row.id)).not.toContain("rt-planning-extent-ring");
+    expect(PLANNING_EXTENT_LAYER_COPY).toContain("display-only");
+  });
+
+  it("renders legacy import ring when legacy extent metadata is supplied", () => {
     const viewer = createViewer();
 
     syncPlanningExtentLayer(viewer as never, planningExtentById("planning_20km"), true);
@@ -41,18 +52,16 @@ describe("planningExtentLayer", () => {
     const rows = entities(viewer);
     expect(rows.map((row) => row.id)).toContain("rt-planning-extent-ring");
     expect(rows.find((row) => row.id === "rt-planning-extent-ring")?.name).toContain(
-      "20 km Planning World boundary (planning only)",
+      "legacy import",
     );
-    expect(rows.map((row) => row.id)).toContain("rt-planning-extent-runtime-distinction");
-    expect(PLANNING_EXTENT_LAYER_COPY).toContain("not runtime bounds");
   });
 
-  it("allows detecting coordinates outside runtime bounds but inside Planning extent", () => {
-    const extent = planningExtentById("planning_5km");
-    const vertex = { x: 1200, y: 0 };
+  it("treats coordinates outside axis-aligned world bounds as invalid", () => {
+    const vertex = { x: 8000, y: 0 };
 
-    expect(isInsideRuntimeBounds(vertex)).toBe(false);
-    expect(isInsidePlanningExtent(vertex, extent)).toBe(true);
+    expect(isInsideWorldBounds(vertex)).toBe(false);
+    expect(isInsidePlanningExtent(vertex, unifiedPlanningWorld())).toBe(false);
+    expect(isInsidePlanningExtent(vertex, planningExtentById("planning_10km"))).toBe(true);
   });
 
   it("does not mutate runtime bounds or bridge/runtime paths", () => {
@@ -61,15 +70,15 @@ describe("planningExtentLayer", () => {
     const bridgeCommand = vi.fn();
     const runtimeCommand = vi.fn();
 
-    syncPlanningExtentLayer(viewer as never, planningExtentById("planning_10km"), true);
+    syncPlanningExtentLayer(viewer as never, unifiedPlanningWorld(), true);
 
     expect(JSON.stringify(WORLD_BOUNDS)).toBe(before);
-    expect(WORLD_BOUNDS.x.max).toBe(500);
+    expect(WORLD_BOUNDS.x.max).toBe(7000);
     expect(bridgeCommand).not.toHaveBeenCalled();
     expect(runtimeCommand).not.toHaveBeenCalled();
   });
 
-  it("reports approximate circular Planning area", () => {
+  it("reports approximate circular Planning area for legacy extents", () => {
     expect(planningExtentAreaKm2(planningExtentById("planning_10km"))).toBeCloseTo(314.159, 3);
   });
 });

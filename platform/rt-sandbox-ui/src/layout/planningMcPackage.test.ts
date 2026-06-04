@@ -88,7 +88,7 @@ describe("planningMcPackage", () => {
 
     expect(row.planning_snapshot_id.startsWith("rt_planning_snapshot:sha256:")).toBe(true);
     expect(row.planning_geometry_id.startsWith("rt_planning:sha256:")).toBe(true);
-    expect(row.planning_extent.planning_extent_id).toBe("planning_10km");
+    expect(row.planning_extent.planning_extent_id).toBe("planning_unified_7km");
     expect(row).not.toHaveProperty("geometry_id");
     expect(row).not.toHaveProperty("layout_id");
     expect(row.source_layout_id).toBe("rt_layout_source");
@@ -114,7 +114,7 @@ describe("planningMcPackage", () => {
     expect(row.planning_extent).toEqual({
       planning_extent_id: "planning_5km",
       planning_extent_radius_m: 5000,
-      planning_extent_label: "5 km Planning World",
+      planning_extent_label: "5 km Planning World (legacy)",
     });
   });
 

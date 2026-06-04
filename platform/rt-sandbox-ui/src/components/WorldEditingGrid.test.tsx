@@ -27,7 +27,8 @@ describe("WorldEditingGrid", () => {
     expect(markup).toContain(`width="${WORLD_EDITOR_CELL_SIZE}" height="${WORLD_EDITOR_CELL_SIZE}"`);
     expect(markup).toContain('data-testid="world-editor-grid-stage"');
     expect(markup).toContain('data-testid="world-editor-grid-section"');
-    expect(markup).toContain("aspect-square");
+    expect(markup).toContain('data-testid="core-grid-local-notice"');
+    expect(markup).toContain("Legacy core grid");
     expect(markup).toContain("shrink-0");
     expect(markup).toContain("min-h-");
   });

@@ -1,10 +1,36 @@
 /** Mirror platform/rt-sandbox-bridge/rt_sandbox/governance.py constants. */
 
 export const WORLD_BOUNDS = {
-  x: { min: -500, max: 500 },
-  y: { min: -500, max: 500 },
+  x: { min: -7000, max: 7000 },
+  y: { min: -7000, max: 7000 },
   z: { min: 0, max: 200 },
 } as const;
+
+/** Half-extent of the unified runtime world on each horizontal axis (m). */
+export const WORLD_AXIS_HALF_EXTENT_M = WORLD_BOUNDS.x.max;
+
+/** Camera height to frame the full ±half-extent world (display-only). */
+export const WORLD_FIT_CAMERA_HEIGHT_M = Math.max(
+  1200,
+  Math.round(WORLD_AXIS_HALF_EXTENT_M * 1.45),
+);
+
+/** Legacy SVG core grid covers a local inset only — not the full runtime world. */
+export const CORE_GRID_LOCAL_INSET_RADIUS_M = 1000;
+
+export const CESIUM_PRIMARY_EDITING_COPY =
+  "Cesium globe is the primary editing surface for the unified 7 km runtime world (±7000 m).";
+
+export const CORE_GRID_LOCAL_COPY =
+  "Legacy core grid covers a ~1 km local inset only; use the Cesium globe for full-world placement.";
+
+export function boundsGroundLabel(): string {
+  return `±${WORLD_AXIS_HALF_EXTENT_M}m`;
+}
+
+export function unifiedWorldCopy(): string {
+  return `Unified runtime world ±${WORLD_AXIS_HALF_EXTENT_M} m`;
+}
 
 export const MAX_ENTITY_COUNT = 32;
 

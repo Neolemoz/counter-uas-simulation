@@ -1175,6 +1175,38 @@ def test_per_type_cap(manager: BridgeSessionManager) -> None:
 def test_world_bounds(manager: BridgeSessionManager) -> None:
     start = _cmd(manager, "start_session")
     sid = start["session_id"]
+    bounds = start["world_summary"]["bounds"]
+    assert bounds["x"]["min"] == -7000.0
+    assert bounds["x"]["max"] == 7000.0
+    assert bounds["y"]["min"] == -7000.0
+    assert bounds["y"]["max"] == 7000.0
+
+    for axis_val in (7500, -7500):
+        oob_x = _cmd(
+            manager,
+            "spawn_entity",
+            sid,
+            payload={"entity_type": "radar", "pose": {"x": axis_val, "y": 0, "z": 10}},
+        )
+        assert oob_x["ok"] is False
+        assert oob_x["error_code"] == "INVALID_POSE"
+        oob_y = _cmd(
+            manager,
+            "spawn_entity",
+            sid,
+            payload={"entity_type": "radar", "pose": {"x": 0, "y": axis_val, "z": 10}},
+        )
+        assert oob_y["ok"] is False
+        assert oob_y["error_code"] == "INVALID_POSE"
+
+    inside = _cmd(
+        manager,
+        "spawn_entity",
+        sid,
+        payload={"entity_type": "radar", "pose": {"x": 6500, "y": -6500, "z": 10}},
+    )
+    assert inside["ok"] is True
+
     oob = _cmd(
         manager,
         "spawn_entity",
