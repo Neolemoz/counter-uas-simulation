@@ -1,0 +1,267 @@
+[
+  {
+    "confidence": {
+      "heuristic_confidence": {
+        "basis": [
+          "complete_attacker_identity",
+          "distance_available",
+          "descent_available",
+          "defender_candidates_available",
+          "feasible_tti_available",
+          "deterministic_defender_ranking"
+        ],
+        "level": "high",
+        "score": 0.85
+      }
+    },
+    "defender_ranking": {
+      "ranked_defenders": [
+        {
+          "defender_id": "defender-b",
+          "feasible": true,
+          "rank": 1,
+          "reason_codes": [
+            "shortest_tti"
+          ],
+          "tti_s": 40.0
+        },
+        {
+          "defender_id": "defender-a",
+          "feasible": true,
+          "rank": 2,
+          "reason_codes": [],
+          "tti_s": 45.0
+        }
+      ]
+    },
+    "governance": {
+      "authority": "intelligence_advisory_explanatory",
+      "governance_banner": "INTELLIGENCE ADVISORY - recommendation only; no assignment, engagement, or weapon authority"
+    },
+    "identity": {
+      "advisory_id": "adv-attacker-b",
+      "advisory_utc": "2026-06-05T10:01:00Z",
+      "attacker_id": "attacker-b"
+    },
+    "reasoning": {
+      "explanation": "Attacker attacker-b is descending fast; defender defender-b has the shortest feasible TTI.",
+      "reason_codes": [
+        "inside_warning_ring",
+        "descending_fast",
+        "feasible_pair_available",
+        "shortest_tti"
+      ]
+    },
+    "recommended_defender": {
+      "defender_id": "defender-b",
+      "feasibility": {
+        "feasible": true,
+        "reason": "feasible"
+      },
+      "tti_s": 40.0
+    },
+    "schema": "rt_intelligence_advisory_v1",
+    "threat_evaluation": {
+      "threat_components": {
+        "best_feasible_tti": {
+          "normalized": 0.6666666666666667,
+          "value_s": 40.0,
+          "weight": 30.0
+        },
+        "critical_zone_factor": {
+          "active": false,
+          "normalized": 0.0,
+          "weight": 25.0
+        },
+        "descent_factor": {
+          "normalized": 0.2,
+          "value_mps": -1.0,
+          "weight": 15.0
+        },
+        "distance_to_protected_center": {
+          "normalized": 0.84,
+          "value_m": 800.0,
+          "weight": 30.0
+        }
+      },
+      "threat_rank": 1,
+      "threat_score": 48.2
+    }
+  },
+  {
+    "confidence": {
+      "heuristic_confidence": {
+        "basis": [
+          "complete_attacker_identity",
+          "distance_available",
+          "descent_available",
+          "defender_candidates_available",
+          "feasible_tti_available",
+          "deterministic_defender_ranking"
+        ],
+        "level": "high",
+        "score": 0.85
+      }
+    },
+    "defender_ranking": {
+      "ranked_defenders": [
+        {
+          "defender_id": "defender-a",
+          "feasible": true,
+          "rank": 1,
+          "reason_codes": [
+            "shortest_tti"
+          ],
+          "tti_s": 30.0
+        },
+        {
+          "defender_id": "defender-b",
+          "feasible": true,
+          "rank": 2,
+          "reason_codes": [],
+          "tti_s": 35.0
+        }
+      ]
+    },
+    "governance": {
+      "authority": "intelligence_advisory_explanatory",
+      "governance_banner": "INTELLIGENCE ADVISORY - recommendation only; no assignment, engagement, or weapon authority"
+    },
+    "identity": {
+      "advisory_id": "adv-attacker-a",
+      "advisory_utc": "2026-06-05T10:01:00Z",
+      "attacker_id": "attacker-a"
+    },
+    "reasoning": {
+      "explanation": "Defender defender-a has the shortest feasible TTI for attacker attacker-a.",
+      "reason_codes": [
+        "inside_warning_ring",
+        "feasible_pair_available",
+        "shortest_tti"
+      ]
+    },
+    "recommended_defender": {
+      "defender_id": "defender-a",
+      "feasibility": {
+        "feasible": true,
+        "reason": "feasible"
+      },
+      "tti_s": 30.0
+    },
+    "schema": "rt_intelligence_advisory_v1",
+    "threat_evaluation": {
+      "threat_components": {
+        "best_feasible_tti": {
+          "normalized": 0.75,
+          "value_s": 30.0,
+          "weight": 30.0
+        },
+        "critical_zone_factor": {
+          "active": false,
+          "normalized": 0.0,
+          "weight": 25.0
+        },
+        "descent_factor": {
+          "normalized": 0.0,
+          "value_mps": 0.0,
+          "weight": 15.0
+        },
+        "distance_to_protected_center": {
+          "normalized": 0.76,
+          "value_m": 1200.0,
+          "weight": 30.0
+        }
+      },
+      "threat_rank": 2,
+      "threat_score": 45.3
+    }
+  },
+  {
+    "confidence": {
+      "heuristic_confidence": {
+        "basis": [
+          "complete_attacker_identity",
+          "distance_available",
+          "descent_available",
+          "defender_candidates_available",
+          "feasible_tti_available",
+          "deterministic_defender_ranking"
+        ],
+        "level": "high",
+        "score": 0.85
+      }
+    },
+    "defender_ranking": {
+      "ranked_defenders": [
+        {
+          "defender_id": "defender-a",
+          "feasible": true,
+          "rank": 1,
+          "reason_codes": [
+            "shortest_tti"
+          ],
+          "tti_s": 30.0
+        },
+        {
+          "defender_id": "defender-b",
+          "feasible": true,
+          "rank": 2,
+          "reason_codes": [],
+          "tti_s": 35.0
+        }
+      ]
+    },
+    "governance": {
+      "authority": "intelligence_advisory_explanatory",
+      "governance_banner": "INTELLIGENCE ADVISORY - recommendation only; no assignment, engagement, or weapon authority"
+    },
+    "identity": {
+      "advisory_id": "adv-attacker-c",
+      "advisory_utc": "2026-06-05T10:01:00Z",
+      "attacker_id": "attacker-c"
+    },
+    "reasoning": {
+      "explanation": "Defender defender-a has the shortest feasible TTI for attacker attacker-c.",
+      "reason_codes": [
+        "inside_warning_ring",
+        "feasible_pair_available",
+        "shortest_tti"
+      ]
+    },
+    "recommended_defender": {
+      "defender_id": "defender-a",
+      "feasibility": {
+        "feasible": true,
+        "reason": "feasible"
+      },
+      "tti_s": 30.0
+    },
+    "schema": "rt_intelligence_advisory_v1",
+    "threat_evaluation": {
+      "threat_components": {
+        "best_feasible_tti": {
+          "normalized": 0.75,
+          "value_s": 30.0,
+          "weight": 30.0
+        },
+        "critical_zone_factor": {
+          "active": false,
+          "normalized": 0.0,
+          "weight": 25.0
+        },
+        "descent_factor": {
+          "normalized": 0.0,
+          "value_mps": 0.0,
+          "weight": 15.0
+        },
+        "distance_to_protected_center": {
+          "normalized": 0.76,
+          "value_m": 1200.0,
+          "weight": 30.0
+        }
+      },
+      "threat_rank": 3,
+      "threat_score": 45.3
+    }
+  }
+]

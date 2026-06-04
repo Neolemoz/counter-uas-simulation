@@ -1,0 +1,95 @@
+{
+  "schema": "rt_intelligence_advisory_transport_v1",
+  "session_id": "session-no-solution",
+  "advisory_utc": "2026-06-05T10:03:00Z",
+  "source": "rt_intelligence_advisory_engine",
+  "authority": "recommendation_only",
+  "governance_banner": "INTELLIGENCE ADVISORY - recommendation only; no assignment, engagement, or weapon authority",
+  "refresh_reason": "snapshot",
+  "stale": false,
+  "stale_reason": null,
+  "advisories": [
+    {
+      "schema": "rt_intelligence_advisory_v1",
+      "identity": {
+        "advisory_id": "adv-attacker-no-solution",
+        "attacker_id": "attacker-no-solution",
+        "advisory_utc": "2026-06-05T10:03:00Z"
+      },
+      "threat_evaluation": {
+        "threat_score": 26.4,
+        "threat_rank": 1,
+        "threat_components": {
+          "distance_to_protected_center": {
+            "value_m": 600.0,
+            "normalized": 0.88,
+            "weight": 30.0
+          },
+          "best_feasible_tti": {
+            "value_s": null,
+            "normalized": 0.0,
+            "weight": 30.0
+          },
+          "descent_factor": {
+            "value_mps": null,
+            "normalized": null,
+            "weight": 15.0
+          },
+          "critical_zone_factor": {
+            "active": false,
+            "normalized": 0.0,
+            "weight": 25.0
+          }
+        }
+      },
+      "recommended_defender": {
+        "defender_id": null,
+        "feasibility": {
+          "feasible": false,
+          "reason": "no_solution"
+        },
+        "tti_s": null
+      },
+      "defender_ranking": {
+        "ranked_defenders": [
+          {
+            "defender_id": "defender-a",
+            "rank": 1,
+            "feasible": false,
+            "tti_s": null,
+            "reason_codes": []
+          },
+          {
+            "defender_id": "defender-b",
+            "rank": 2,
+            "feasible": false,
+            "tti_s": null,
+            "reason_codes": []
+          }
+        ]
+      },
+      "reasoning": {
+        "reason_codes": [
+          "inside_warning_ring",
+          "no_solution"
+        ],
+        "explanation": "No feasible defender solution is available for attacker attacker-no-solution."
+      },
+      "confidence": {
+        "heuristic_confidence": {
+          "score": 0.35,
+          "level": "low",
+          "basis": [
+            "complete_attacker_identity",
+            "distance_available",
+            "defender_candidates_available"
+          ]
+        }
+      },
+      "governance": {
+        "authority": "intelligence_advisory_explanatory",
+        "governance_banner": "INTELLIGENCE ADVISORY - recommendation only; no assignment, engagement, or weapon authority"
+      }
+    }
+  ]
+}

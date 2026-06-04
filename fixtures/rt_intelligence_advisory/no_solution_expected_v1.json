@@ -1,0 +1,84 @@
+[
+  {
+    "confidence": {
+      "heuristic_confidence": {
+        "basis": [
+          "complete_attacker_identity",
+          "distance_available",
+          "defender_candidates_available"
+        ],
+        "level": "low",
+        "score": 0.35
+      }
+    },
+    "defender_ranking": {
+      "ranked_defenders": [
+        {
+          "defender_id": "defender-a",
+          "feasible": false,
+          "rank": 1,
+          "reason_codes": [],
+          "tti_s": null
+        },
+        {
+          "defender_id": "defender-b",
+          "feasible": false,
+          "rank": 2,
+          "reason_codes": [],
+          "tti_s": null
+        }
+      ]
+    },
+    "governance": {
+      "authority": "intelligence_advisory_explanatory",
+      "governance_banner": "INTELLIGENCE ADVISORY - recommendation only; no assignment, engagement, or weapon authority"
+    },
+    "identity": {
+      "advisory_id": "adv-attacker-no-solution",
+      "advisory_utc": "2026-06-05T10:03:00Z",
+      "attacker_id": "attacker-no-solution"
+    },
+    "reasoning": {
+      "explanation": "No feasible defender solution is available for attacker attacker-no-solution.",
+      "reason_codes": [
+        "inside_warning_ring",
+        "no_solution"
+      ]
+    },
+    "recommended_defender": {
+      "defender_id": null,
+      "feasibility": {
+        "feasible": false,
+        "reason": "no_solution"
+      },
+      "tti_s": null
+    },
+    "schema": "rt_intelligence_advisory_v1",
+    "threat_evaluation": {
+      "threat_components": {
+        "best_feasible_tti": {
+          "normalized": 0.0,
+          "value_s": null,
+          "weight": 30.0
+        },
+        "critical_zone_factor": {
+          "active": false,
+          "normalized": 0.0,
+          "weight": 25.0
+        },
+        "descent_factor": {
+          "normalized": null,
+          "value_mps": null,
+          "weight": 15.0
+        },
+        "distance_to_protected_center": {
+          "normalized": 0.88,
+          "value_m": 600.0,
+          "weight": 30.0
+        }
+      },
+      "threat_rank": 1,
+      "threat_score": 26.4
+    }
+  }
+]

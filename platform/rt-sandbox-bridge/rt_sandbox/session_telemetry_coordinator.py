@@ -175,6 +175,13 @@ def publish_channels_for_transition(
             telemetry_subs=telemetry_subs,
             audit=audit,
         )
+        publish_telemetry(
+            session,
+            "intelligence_advisory",
+            config=config,
+            telemetry_subs=telemetry_subs,
+            audit=audit,
+        )
 
 
 def handle_telemetry(

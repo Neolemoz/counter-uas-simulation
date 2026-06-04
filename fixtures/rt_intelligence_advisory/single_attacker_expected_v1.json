@@ -1,0 +1,90 @@
+[
+  {
+    "confidence": {
+      "heuristic_confidence": {
+        "basis": [
+          "complete_attacker_identity",
+          "distance_available",
+          "descent_available",
+          "defender_candidates_available",
+          "feasible_tti_available",
+          "deterministic_defender_ranking"
+        ],
+        "level": "high",
+        "score": 0.85
+      }
+    },
+    "defender_ranking": {
+      "ranked_defenders": [
+        {
+          "defender_id": "defender-a",
+          "feasible": true,
+          "rank": 1,
+          "reason_codes": [
+            "shortest_tti"
+          ],
+          "tti_s": 20.0
+        },
+        {
+          "defender_id": "defender-b",
+          "feasible": true,
+          "rank": 2,
+          "reason_codes": [],
+          "tti_s": 25.0
+        }
+      ]
+    },
+    "governance": {
+      "authority": "intelligence_advisory_explanatory",
+      "governance_banner": "INTELLIGENCE ADVISORY - recommendation only; no assignment, engagement, or weapon authority"
+    },
+    "identity": {
+      "advisory_id": "adv-attacker-alpha",
+      "advisory_utc": "2026-06-05T10:00:00Z",
+      "attacker_id": "attacker-alpha"
+    },
+    "reasoning": {
+      "explanation": "Defender defender-a has the shortest feasible TTI for attacker attacker-alpha.",
+      "reason_codes": [
+        "inside_warning_ring",
+        "feasible_pair_available",
+        "shortest_tti"
+      ]
+    },
+    "recommended_defender": {
+      "defender_id": "defender-a",
+      "feasibility": {
+        "feasible": true,
+        "reason": "feasible"
+      },
+      "tti_s": 20.0
+    },
+    "schema": "rt_intelligence_advisory_v1",
+    "threat_evaluation": {
+      "threat_components": {
+        "best_feasible_tti": {
+          "normalized": 0.8333333333333334,
+          "value_s": 20.0,
+          "weight": 30.0
+        },
+        "critical_zone_factor": {
+          "active": false,
+          "normalized": 0.0,
+          "weight": 25.0
+        },
+        "descent_factor": {
+          "normalized": 0.0,
+          "value_mps": 0.0,
+          "weight": 15.0
+        },
+        "distance_to_protected_center": {
+          "normalized": 0.8,
+          "value_m": 1000.0,
+          "weight": 30.0
+        }
+      },
+      "threat_rank": 1,
+      "threat_score": 49.0
+    }
+  }
+]

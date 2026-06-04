@@ -337,6 +337,12 @@ def _build_stub_channel_payload(
         from rt_sandbox.tactical_telemetry import build_tactical_recommendation_payload
 
         return build_tactical_recommendation_payload(session)
+    if channel == "intelligence_advisory":
+        from rt_sandbox.rt_intelligence_advisory_transport import (
+            build_intelligence_advisory_transport,
+        )
+
+        return build_intelligence_advisory_transport(session)
     return None
 
 
@@ -414,6 +420,12 @@ def resolve_channel_payload(
         from rt_sandbox.tactical_telemetry import build_tactical_recommendation_payload
 
         return build_tactical_recommendation_payload(session)
+    if channel == "intelligence_advisory":
+        from rt_sandbox.rt_intelligence_advisory_transport import (
+            build_intelligence_advisory_transport,
+        )
+
+        return build_intelligence_advisory_transport(session)
     return _build_stub_channel_payload(session, channel, config)
 
 
@@ -426,5 +438,6 @@ def publish_all_telemetry_channels(
         "clock_mirror",
         "world_summary",
         "entity_pose_mirror",
+        "intelligence_advisory",
     ):
         publish_fn(ch)

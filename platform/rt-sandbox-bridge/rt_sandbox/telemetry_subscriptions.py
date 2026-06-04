@@ -23,10 +23,11 @@ TELEMETRY_CHANNELS = frozenset(
         "clock_mirror",
         "tactical_state",
         "tactical_recommendation",
+        "intelligence_advisory",
     }
 )
 
-MAX_CHANNELS_PER_SUBSCRIPTION = 7
+MAX_CHANNELS_PER_SUBSCRIPTION = 8
 MAX_SUBSCRIPTIONS_PER_SESSION = 1
 DEFAULT_RING_SIZE = 64
 

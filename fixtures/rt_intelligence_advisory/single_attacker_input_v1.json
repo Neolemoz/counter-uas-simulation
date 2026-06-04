@@ -1,0 +1,47 @@
+{
+  "schema": "rt_intelligence_advisory_input_v1",
+  "session_id": "session-single",
+  "advisory_utc": "2026-06-05T10:00:00Z",
+  "constants": {
+    "warning_ring_radius_m": 5000.0,
+    "critical_radius_m": 14.0,
+    "tti_reference_s": 120.0,
+    "descent_reference_mps": 5.0,
+    "descending_fast_threshold_mps": 0.35,
+    "tti_tie_tolerance_s": 0.001
+  },
+  "attackers": [
+    {
+      "attacker_id": "attacker-alpha",
+      "position": { "x": 1000.0, "y": 0.0, "z": 120.0 },
+      "distance_to_protected_center_m": 1000.0,
+      "descent_rate_mps": 0.0
+    }
+  ],
+  "defender_candidates": [
+    {
+      "defender_id": "defender-a",
+      "position": { "x": 100.0, "y": 0.0, "z": 20.0 }
+    },
+    {
+      "defender_id": "defender-b",
+      "position": { "x": 200.0, "y": 0.0, "z": 20.0 }
+    }
+  ],
+  "feasible_tti": [
+    {
+      "attacker_id": "attacker-alpha",
+      "defender_id": "defender-a",
+      "feasible": true,
+      "tti_s": 20.0,
+      "reason": "feasible"
+    },
+    {
+      "attacker_id": "attacker-alpha",
+      "defender_id": "defender-b",
+      "feasible": true,
+      "tti_s": 25.0,
+      "reason": "feasible"
+    }
+  ]
+}

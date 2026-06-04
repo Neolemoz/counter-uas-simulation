@@ -1309,6 +1309,7 @@ def test_subscribe_channel_cap(manager: BridgeSessionManager) -> None:
                 "clock_mirror",
                 "tactical_state",
                 "tactical_recommendation",
+                "intelligence_advisory",
                 "session_health",
             ]
         },
