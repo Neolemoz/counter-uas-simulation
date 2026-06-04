@@ -69,6 +69,9 @@ import {
   type PlanningRadarState,
   type PlanningVertex,
 } from "./planningDrawing";
+import { syncPlanningExtentLayer } from "./planningExtentLayer";
+import type { PlanningExtent } from "./planningWorld";
+import { syncPlanningMeasurementLayer, type PlanningMeasurementState } from "./planningMeasurements";
 import {
   createCesiumTerrainProvider,
   DEFAULT_CESIUM_TERRAIN_PROVIDER_MODE,
@@ -99,6 +102,8 @@ export interface CesiumRuntimeViewProps {
   mirrorSnapshot?: ChannelSnapshot;
   planningDrawing?: {
     enabled: boolean;
+    planningExtent: PlanningExtent;
+    measurements: PlanningMeasurementState;
     polygon: PlanningPolygonState;
     radars: PlanningRadarState;
     coverageOptions: PlanningCoverageLayerOptions;
@@ -262,6 +267,8 @@ export function CesiumRuntimeView({
         clearTacticalCompareOverlay(viewer);
         clearTacticalSelectionEmphasisLayer(viewer);
         syncPlanningDefenseAreaLayer(viewer, null);
+        syncPlanningExtentLayer(viewer, null, false);
+        syncPlanningMeasurementLayer(viewer, null, false);
         viewer.trackedEntity = undefined;
       }
       if (!viewer.isDestroyed()) {
@@ -414,6 +421,16 @@ export function CesiumRuntimeView({
       planningDrawing?.radars,
       planningDrawing?.coverageOptions,
     );
+    syncPlanningExtentLayer(
+      viewer,
+      planningDrawing?.planningExtent,
+      planningDrawing?.enabled === true,
+    );
+    syncPlanningMeasurementLayer(
+      viewer,
+      planningDrawing?.measurements,
+      planningDrawing?.enabled === true,
+    );
     syncEntityMarkers(viewer, entities, {
       selectedEntityId,
       hoveredEntityId,
@@ -452,6 +469,9 @@ export function CesiumRuntimeView({
     planningDrawing?.radars,
     planningDrawing?.coverageOptions,
     runtimeTelemetryByEntityId,
+    planningDrawing?.planningExtent,
+    planningDrawing?.measurements,
+    planningDrawing?.enabled,
   ]);
 
   if (!sessionId) {

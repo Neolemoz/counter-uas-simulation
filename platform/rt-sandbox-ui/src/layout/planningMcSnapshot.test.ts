@@ -6,6 +6,7 @@ import {
   type PlanningRadarState,
 } from "@/cesium/planningDrawing";
 import { analyzePlanningCoverage } from "@/cesium/planningCoverageAnalysis";
+import { planningExtentById } from "@/cesium/planningWorld";
 import {
   buildPlanningMcSnapshot,
   copyPlanningMcSnapshot,
@@ -95,12 +96,39 @@ describe("planningMcSnapshot", () => {
       radar_preset: "short",
       detection_range_m: 500,
     });
+    expect(first.planning_extent).toEqual({
+      planning_extent_id: "planning_10km",
+      planning_extent_radius_m: 10000,
+      planning_extent_label: "10 km Planning World",
+    });
     expect(first.presentation).toEqual({
       terrain_mode: "ellipsoid",
       selected_location_preset: "bangkok",
     });
     expect(first.provenance.source_layout_id).toBe("rt_layout_source");
     expect(first.provenance.source_geometry_id).toBe("rt_layout:sha256:source");
+  });
+
+  it("preserves explicit Planning extent metadata", () => {
+    const row = buildPlanningMcSnapshot(
+      POLYGON,
+      RADARS,
+      analyzePlanningCoverage(POLYGON, RADARS, 4, {
+        radarPresets: PLANNING_RADAR_PRESETS,
+      }),
+      {
+        createdUtc: "2026-06-04T00:00:00Z",
+        terrainMode: "ellipsoid",
+        selectedLocationPreset: "bangkok",
+        planningExtent: planningExtentById("planning_20km"),
+      },
+    );
+
+    expect(row.planning_extent).toEqual({
+      planning_extent_id: "planning_20km",
+      planning_extent_radius_m: 20000,
+      planning_extent_label: "20 km Planning World",
+    });
   });
 
   it("includes analytics and advisory summaries", () => {

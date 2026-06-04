@@ -32,6 +32,7 @@ import {
 import { toCesiumEntityId } from "./entityId";
 import { isViewerUsable } from "./cesiumEditing";
 import { worldToCartesian } from "./coordinates";
+import type { PlanningExtent } from "./planningWorld";
 import type { MirrorEntity } from "./entityMarkers";
 
 export interface CameraLocationTarget {
@@ -164,6 +165,20 @@ export function flyToLocation(
     1.0,
     TERRAIN_OVERVIEW_PITCH_RAD,
     false,
+  );
+}
+
+export function flyToPlanningExtent(
+  viewer: Viewer | null | undefined,
+  extent: PlanningExtent,
+): void {
+  if (!isViewerUsable(viewer)) return;
+  flyToHeight(
+    viewer,
+    boundsCenterCartesian(),
+    Math.max(1_200, extent.planning_extent_radius_m * 1.45),
+    0.9,
+    TERRAIN_OVERVIEW_PITCH_RAD,
   );
 }
 

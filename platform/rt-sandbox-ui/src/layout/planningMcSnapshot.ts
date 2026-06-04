@@ -14,6 +14,12 @@ import {
 import type { PlanningCoverageAnalysis } from "@/cesium/planningCoverageAnalysis";
 import type { CesiumTerrainProviderMode } from "@/cesium/terrainProviderConfig";
 import type { PlanningLocationPresetId } from "@/cesium/planningLocations";
+import {
+  DEFAULT_PLANNING_EXTENT_ID,
+  planningExtentById,
+  planningExtentMetadata,
+  type PlanningExtent,
+} from "@/cesium/planningWorld";
 import { sha256Hex16 } from "@/experiment/sha256Hex";
 import { exportJson, copyTextToClipboard, type ClipboardResult } from "./layoutMcHandoff";
 
@@ -49,6 +55,8 @@ export type PlanningMcSnapshotPresentation = {
   selected_location_preset: PlanningLocationPresetId;
 };
 
+export type PlanningMcSnapshotExtent = PlanningExtent;
+
 export type PlanningMcSnapshotProvenance = {
   source_layout_id?: string;
   source_geometry_id?: string;
@@ -69,6 +77,7 @@ export type PlanningMcSnapshotV1 = {
     radar_sites: PlanningMcSnapshotRadarSite[];
   };
   analytics_summary: PlanningMcSnapshotAnalyticsSummary;
+  planning_extent: PlanningMcSnapshotExtent;
   presentation: PlanningMcSnapshotPresentation;
   provenance: PlanningMcSnapshotProvenance;
 };
@@ -77,6 +86,7 @@ export type BuildPlanningMcSnapshotOptions = {
   createdUtc?: string;
   terrainMode: CesiumTerrainProviderMode;
   selectedLocationPreset: PlanningLocationPresetId;
+  planningExtent?: PlanningExtent;
   sourceLayoutId?: string;
   sourceGeometryId?: string;
 };
@@ -184,10 +194,12 @@ export function buildPlanningMcSnapshot(
   options: BuildPlanningMcSnapshotOptions,
 ): PlanningMcSnapshotV1 {
   const createdUtc = options.createdUtc ?? utcNow();
+  const extent = options.planningExtent ?? planningExtentById(DEFAULT_PLANNING_EXTENT_ID);
   const planningGeometryId = planningGeometryFingerprint(polygon, radars);
   const snapshotCanonical = {
     schema_version: PLANNING_MC_SNAPSHOT_SCHEMA_VERSION,
     planning_geometry_id: planningGeometryId,
+    planning_extent_id: extent.planning_extent_id,
     created_utc: createdUtc,
     source_layout_id: options.sourceLayoutId ?? null,
     source_geometry_id: options.sourceGeometryId ?? null,
@@ -204,6 +216,7 @@ export function buildPlanningMcSnapshot(
       radar_sites: radars.sites.map(radarSnapshot),
     },
     analytics_summary: analyticsSnapshot(analysis),
+    planning_extent: planningExtentMetadata(extent),
     presentation: {
       terrain_mode: options.terrainMode,
       selected_location_preset: options.selectedLocationPreset,

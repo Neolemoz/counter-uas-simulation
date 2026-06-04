@@ -4,7 +4,7 @@
  */
 
 import { exportJson, copyTextToClipboard, type ClipboardResult } from "./layoutMcHandoff";
-import type { PlanningMcSnapshotV1 } from "./planningMcSnapshot";
+import type { PlanningMcSnapshotExtent, PlanningMcSnapshotV1 } from "./planningMcSnapshot";
 
 export const PLANNING_MC_PACKAGE_SCHEMA_VERSION = "rt_planning_mc_package_v1" as const;
 export const PLANNING_MC_PACKAGE_VERSION = "1" as const;
@@ -36,6 +36,7 @@ export type PlanningMcPackageV1 = {
   schema_version: typeof PLANNING_MC_PACKAGE_SCHEMA_VERSION;
   planning_snapshot_id: string;
   planning_geometry_id: string;
+  planning_extent: PlanningMcSnapshotExtent;
   source_layout_id?: string;
   source_geometry_id?: string;
   planning_summary: {
@@ -80,6 +81,7 @@ export function buildPlanningMcPackage(
     schema_version: PLANNING_MC_PACKAGE_SCHEMA_VERSION,
     planning_snapshot_id: snapshot.planning_snapshot_id,
     planning_geometry_id: snapshot.planning_geometry_id,
+    planning_extent: snapshot.planning_extent,
     ...(snapshot.provenance.source_layout_id
       ? { source_layout_id: snapshot.provenance.source_layout_id }
       : {}),

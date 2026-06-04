@@ -100,6 +100,37 @@ import {
   type PlanningLocationPresetId,
 } from "@/cesium/planningLocations";
 import {
+  DEFAULT_PLANNING_EXTENT_ID,
+  PLANNING_EXTENT_GOVERNANCE_COPY,
+  PLANNING_EXTENTS,
+  planningExtentById,
+  type PlanningExtent,
+  type PlanningExtentId,
+} from "@/cesium/planningWorld";
+import {
+  PLANNING_EXTENT_LAYER_COPY,
+  isInsidePlanningExtent,
+  isInsideRuntimeBounds,
+  planningExtentAreaKm2,
+} from "@/cesium/planningExtentLayer";
+import {
+  DEFAULT_PLANNING_MEASUREMENT_STATE,
+  PLANNING_MEASUREMENT_GOVERNANCE_COPY,
+  PLANNING_RADIUS_OPTIONS_M,
+  addPlanningMeasurementPoint,
+  clearPlanningMeasurements,
+  planningMeasurementSummary,
+  setPlanningRadiusMeters,
+  type PlanningMeasurementState,
+  type PlanningRadiusMeters,
+} from "@/cesium/planningMeasurements";
+import {
+  PLANNING_COGNITION_GOVERNANCE_COPY,
+  buildPlanningSummary,
+  buildPlanningWarnings,
+  validatePlanningExtentCapabilities,
+} from "@/cesium/planningCognition";
+import {
   buildPlanningMcSnapshot,
   planningGeometryFingerprint,
 } from "@/layout/planningMcSnapshot";
@@ -194,6 +225,8 @@ export function PlanningModePanel({
   coverage,
   coverageOptions,
   coverageAnalysis,
+  planningExtent,
+  planningMeasurements,
   planningMcPackage,
   planningMcPackageStale,
   planningResultLink,
@@ -210,6 +243,10 @@ export function PlanningModePanel({
   onCustomLongitudeChange,
   onApplyLocation,
   onCameraPreset,
+  onPlanningExtentChange,
+  onPlanningExtentCameraFit,
+  onPlanningRadiusChange,
+  onClearPlanningMeasurements,
   onToolChange,
   onFinishPolygon,
   onCancelDrawing,
@@ -234,6 +271,8 @@ export function PlanningModePanel({
   coverage: PlanningCoverageEstimate;
   coverageOptions: PlanningCoverageLayerOptions;
   coverageAnalysis: PlanningCoverageAnalysis;
+  planningExtent: PlanningExtent;
+  planningMeasurements: PlanningMeasurementState;
   planningMcPackage: PlanningMcPackageV1 | null;
   planningMcPackageStale: boolean;
   planningResultLink: PlanningResultLinkV1 | null;
@@ -250,6 +289,10 @@ export function PlanningModePanel({
   onCustomLongitudeChange: (value: string) => void;
   onApplyLocation: () => void;
   onCameraPreset: (preset: CameraPreset) => void;
+  onPlanningExtentChange: (extentId: PlanningExtentId) => void;
+  onPlanningExtentCameraFit: () => void;
+  onPlanningRadiusChange: (radiusMeters: PlanningRadiusMeters) => void;
+  onClearPlanningMeasurements: () => void;
   onToolChange: (tool: PlanningTool) => void;
   onFinishPolygon: () => void;
   onCancelDrawing: () => void;
@@ -291,7 +334,33 @@ export function PlanningModePanel({
     { tool: "select", label: "Select" },
     { tool: "draw_defense_area", label: "Draw Defense Area" },
     { tool: "place_radar_site", label: "Place Radar Site" },
+    { tool: "measure_distance", label: "Measure" },
   ];
+
+  const planningAreaKm2 = planningExtentAreaKm2(planningExtent);
+  const planningCoordinates = [
+    ...(polygon.completedVertices ?? []),
+    ...polygon.draftVertices,
+    ...radars.sites.map((site) => site.position),
+  ];
+  const planningOnlyCoordinateCount = planningCoordinates.filter(
+    (vertex) => !isInsideRuntimeBounds(vertex) && isInsidePlanningExtent(vertex, planningExtent),
+  ).length;
+  const measurementSummary = planningMeasurementSummary(planningMeasurements);
+  const planningSummary = buildPlanningSummary({
+    planningExtent,
+    polygon,
+    radars,
+    measurements: planningMeasurements,
+  });
+  const planningWarnings = buildPlanningWarnings({
+    planningExtent,
+    polygon,
+    radars,
+    measurements: planningMeasurements,
+    activeTool: tool,
+  });
+  const extentValidation = validatePlanningExtentCapabilities(planningExtent);
 
   return (
     <div className="space-y-3" data-testid="planning-mode-placeholder">
@@ -307,6 +376,92 @@ export function PlanningModePanel({
           runtime authority, are not validated sensing, and cause no simulation behavior
           change.
         </p>
+        <div className="mt-3 rounded border border-cyan-900/60 bg-cyan-950/15 p-2 text-xs" data-testid="planning-extent-controls">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <div>
+              <p className="font-semibold uppercase tracking-wide text-slate-300">Planning World</p>
+              <p className="mt-1 text-slate-500">
+                {planningExtent.planning_extent_label} - radius {planningExtent.planning_extent_radius_m.toLocaleString()}m
+              </p>
+              <p className="mt-1 text-slate-500">Approx. area {planningAreaKm2.toFixed(1)} km^2</p>
+            </div>
+            <button
+              type="button"
+              onClick={onPlanningExtentCameraFit}
+              className="rounded border border-cyan-700/60 bg-cyan-950/45 px-2.5 py-1.5 font-semibold text-cyan-100"
+            >
+              Fit Planning World
+            </button>
+          </div>
+          <label className="mt-2 grid gap-1 text-slate-400">
+            Planning Extent
+            <select
+              value={planningExtent.planning_extent_id}
+              onChange={(event) =>
+                onPlanningExtentChange(event.currentTarget.value as PlanningExtentId)
+              }
+              className="rounded border border-slate-700 bg-slate-950 px-2 py-1 text-slate-100"
+            >
+              {PLANNING_EXTENTS.map((extent) => (
+                <option key={extent.planning_extent_id} value={extent.planning_extent_id}>
+                  {extent.planning_extent_label}
+                </option>
+              ))}
+            </select>
+          </label>
+          <p className="mt-2 text-[11px] leading-relaxed text-cyan-100/80">
+            {PLANNING_EXTENT_GOVERNANCE_COPY}
+          </p>
+          <p className="mt-1 text-[11px] leading-relaxed text-slate-400">Runtime bounds remain the ±500m sandbox; Planning extent is the large-area map planner boundary.</p>
+          <p className="mt-1 text-[11px] leading-relaxed text-cyan-100/80">{PLANNING_EXTENT_LAYER_COPY}</p>
+          {planningOnlyCoordinateCount > 0 && (
+            <p className="mt-2 rounded border border-amber-700/60 bg-amber-950/35 px-2 py-1 text-[11px] text-amber-100" data-testid="planning-runtime-guardrail">
+              Outside runtime sandbox; valid for planning only. {planningOnlyCoordinateCount} planning coordinate{planningOnlyCoordinateCount === 1 ? "" : "s"} outside runtime bounds remain inside {planningExtent.planning_extent_label}.
+            </p>
+          )}
+        </div>
+        <div className="mt-3 rounded border border-amber-900/60 bg-amber-950/15 p-2 text-xs" data-testid="planning-measurement-controls">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <div>
+              <p className="font-semibold uppercase tracking-wide text-slate-300">Measurement tools</p>
+              <p className="mt-1 text-slate-500">Select Measure, then click two Planning-only map points for distance and bearing readout.</p>
+            </div>
+            <button
+              type="button"
+              onClick={onClearPlanningMeasurements}
+              className="rounded border border-amber-700/60 bg-amber-950/45 px-2.5 py-1.5 font-semibold text-amber-100"
+            >
+              Clear Measurements
+            </button>
+          </div>
+          <label className="mt-2 grid gap-1 text-slate-400">
+            Radius Display
+            <select
+              value={planningMeasurements.radiusMeters}
+              onChange={(event) =>
+                onPlanningRadiusChange(Number(event.currentTarget.value) as PlanningRadiusMeters)
+              }
+              className="rounded border border-slate-700 bg-slate-950 px-2 py-1 text-slate-100"
+            >
+              {PLANNING_RADIUS_OPTIONS_M.map((radiusMeters) => (
+                <option key={radiusMeters} value={radiusMeters}>
+                  {radiusMeters / 1000} km radius
+                </option>
+              ))}
+            </select>
+          </label>
+          <div className="mt-2 grid gap-1 text-slate-300" data-testid="planning-measurement-readout">
+            <span>Distance m {measurementSummary.distance_m === null ? "Select two points" : Math.round(measurementSummary.distance_m)}</span>
+            <span>Distance km {measurementSummary.distance_km === null ? "Select two points" : measurementSummary.distance_km.toFixed(2)}</span>
+            <span>Bearing {measurementSummary.bearing ?? "Select two points"}</span>
+            <span>Start {measurementSummary.start_readout ?? "No point selected"}</span>
+            <span>End {measurementSummary.end_readout ?? "No point selected"}</span>
+            <span>Radius {measurementSummary.radius_label}</span>
+          </div>
+          <p className="mt-2 text-[11px] leading-relaxed text-amber-100/80">
+            {PLANNING_MEASUREMENT_GOVERNANCE_COPY}
+          </p>
+        </div>
         <div className="mt-3 rounded border border-slate-800 bg-slate-950/55 p-2 text-xs" data-testid="planning-terrain-controls">
           <div className="flex flex-wrap items-center justify-between gap-2">
             <div>
@@ -479,6 +634,53 @@ export function PlanningModePanel({
           UI-local planning only: no runtime authority, no bridge commands, no
           apply_scenario path, no validated sensing, and no simulation behavior change.
         </p>
+        <div
+          className="mt-3 rounded border border-cyan-900/60 bg-cyan-950/20 p-2 text-xs"
+          data-testid="planning-cognition-panel"
+        >
+          <h4 className="font-semibold uppercase tracking-wide text-cyan-100">
+            Planning cognition
+          </h4>
+          <p className="mt-1 text-[11px] leading-relaxed text-slate-400">
+            {PLANNING_COGNITION_GOVERNANCE_COPY}
+          </p>
+          <div className="mt-2 grid grid-cols-2 gap-2 text-slate-300" data-testid="planning-summary">
+            <span className="rounded border border-slate-800 bg-slate-950 px-2 py-1">
+              Extent {planningSummary.extent_label}
+            </span>
+            <span className="rounded border border-slate-800 bg-slate-950 px-2 py-1">
+              Radius {planningSummary.extent_radius_m.toLocaleString()}m
+            </span>
+            <span className="rounded border border-slate-800 bg-slate-950 px-2 py-1">
+              Polygons {planningSummary.polygon_count}
+            </span>
+            <span className="rounded border border-slate-800 bg-slate-950 px-2 py-1">
+              Radar sites {planningSummary.radar_count}
+            </span>
+            <span className="rounded border border-slate-800 bg-slate-950 px-2 py-1 col-span-2">
+              Measurements {planningSummary.measurement_count}
+            </span>
+          </div>
+          <p className="mt-2 text-[11px] text-slate-500" data-testid="planning-extent-guidance">
+            {extentValidation.guidance}
+          </p>
+          {planningWarnings.length > 0 && (
+            <ul
+              className="mt-2 space-y-1 text-[11px] leading-relaxed text-amber-100/90"
+              data-testid="planning-warnings"
+            >
+              {planningWarnings.map((warning) => (
+                <li
+                  key={warning.warning_id}
+                  className="rounded border border-amber-800/50 bg-amber-950/25 px-2 py-1"
+                  data-testid={`planning-warning-${warning.warning_id}`}
+                >
+                  {warning.message}
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
         <div className="mt-3 grid grid-cols-2 gap-2 text-xs">
           <span className="rounded border border-slate-800 bg-slate-950 px-2 py-1 text-slate-300">
             Draft vertices {polygon.draftVertices.length}
@@ -612,6 +814,7 @@ export function PlanningModePanel({
               <div className="mt-2 grid gap-1 text-slate-300">
                 <span>planning_snapshot_id {planningMcPackage.planning_snapshot_id}</span>
                 <span>planning_geometry_id {planningMcPackage.planning_geometry_id}</span>
+                <span>planning_extent {planningMcPackage.planning_extent.planning_extent_label} ({planningMcPackage.planning_extent.planning_extent_radius_m.toLocaleString()}m)</span>
                 <span>Radar count {planningMcPackage.planning_summary.radar_count}</span>
                 <span>Coverage summary {planningMcPackage.planning_summary.coverage_summary.coverage_percent.toFixed(1)}%</span>
                 <span>Overlap summary {planningMcPackage.planning_summary.overlap_summary.overlap_percent.toFixed(1)}%</span>
@@ -1017,10 +1220,16 @@ export function AppWorkstationSlots(props: AppWorkstationSlotsProps) {
     useState<PlanningCoverageLayerOptions>(DEFAULT_PLANNING_COVERAGE_OPTIONS);
   const [planningCameraPresetRequest, setPlanningCameraPresetRequest] =
     useState<{ id: number; preset: CameraPreset } | null>(null);
+  const [planningExtentCameraRequest, setPlanningExtentCameraRequest] =
+    useState<{ id: number; extent: PlanningExtent } | null>(null);
   const [planningLocationRequest, setPlanningLocationRequest] =
     useState<{ id: number; location: CameraLocationTarget } | null>(null);
   const [planningLocationPresetId, setPlanningLocationPresetId] =
     useState<PlanningLocationPresetId>(DEFAULT_PLANNING_LOCATION_PRESET_ID);
+  const [planningExtentId, setPlanningExtentId] =
+    useState<PlanningExtentId>(DEFAULT_PLANNING_EXTENT_ID);
+  const [planningMeasurements, setPlanningMeasurements] =
+    useState<PlanningMeasurementState>(DEFAULT_PLANNING_MEASUREMENT_STATE);
   const [customPlanningLatitude, setCustomPlanningLatitude] = useState(
     String(planningLocationPreset(DEFAULT_PLANNING_LOCATION_PRESET_ID).latitudeDeg),
   );
@@ -1034,6 +1243,10 @@ export function AppWorkstationSlots(props: AppWorkstationSlotsProps) {
   const planningCoverageAnalysis = useMemo(
     () => analyzePlanningCoverage(planningPolygon, planningRadars, undefined, { radarPresets: PLANNING_RADAR_PRESETS }),
     [planningPolygon, planningRadars],
+  );
+  const planningExtent = useMemo(
+    () => planningExtentById(planningExtentId),
+    [planningExtentId],
   );
   const [planningMcPackage, setPlanningMcPackage] =
     useState<PlanningMcPackageV1 | null>(null);
@@ -1049,7 +1262,8 @@ export function AppWorkstationSlots(props: AppWorkstationSlotsProps) {
   );
   const planningMcPackageStale =
     planningMcPackage !== null &&
-    planningMcPackage.planning_geometry_id !== currentPlanningGeometryId;
+    (planningMcPackage.planning_geometry_id !== currentPlanningGeometryId ||
+      planningMcPackage.planning_extent.planning_extent_id !== planningExtent.planning_extent_id);
   const planningResultLink = useMemo(
     () =>
       planningMcPackage
@@ -1074,6 +1288,7 @@ export function AppWorkstationSlots(props: AppWorkstationSlotsProps) {
     planningModeActive,
     planningTool,
   );
+  const planningMeasurementEnabled = planningModeActive && planningTool === "measure_distance";
   const planningCesiumClickEnabled = planningToolUsesCesiumClick(
     planningModeActive,
     planningTool,
@@ -1092,6 +1307,21 @@ export function AppWorkstationSlots(props: AppWorkstationSlotsProps) {
       id: (current?.id ?? 0) + 1,
       preset,
     }));
+  }, []);
+
+  const handlePlanningExtentCameraFit = useCallback(() => {
+    setPlanningExtentCameraRequest((current) => ({
+      id: (current?.id ?? 0) + 1,
+      extent: planningExtent,
+    }));
+  }, [planningExtent]);
+
+  const handlePlanningRadiusChange = useCallback((radiusMeters: PlanningRadiusMeters) => {
+    setPlanningMeasurements((current) => setPlanningRadiusMeters(current, radiusMeters));
+  }, []);
+
+  const handleClearPlanningMeasurements = useCallback(() => {
+    setPlanningMeasurements((current) => clearPlanningMeasurements(current));
   }, []);
 
   const handlePlanningLocationPresetChange = useCallback(
@@ -1134,6 +1364,7 @@ export function AppWorkstationSlots(props: AppWorkstationSlotsProps) {
       {
         terrainMode: terrainProviderMode,
         selectedLocationPreset: planningLocationPresetId,
+        planningExtent,
       },
     );
     setPlanningMcPackage(buildPlanningMcPackage(snapshot));
@@ -1146,6 +1377,7 @@ export function AppWorkstationSlots(props: AppWorkstationSlotsProps) {
     planningCoverageAnalysis,
     terrainProviderMode,
     planningLocationPresetId,
+    planningExtent,
   ]);
 
   const handleCopyPlanningMcPackage = useCallback(() => {
@@ -1201,9 +1433,13 @@ export function AppWorkstationSlots(props: AppWorkstationSlotsProps) {
       }
       if (planningRadarPlacementEnabled) {
         setPlanningRadars((current) => addPlanningRadarSite(current, vertex));
+        return;
+      }
+      if (planningMeasurementEnabled) {
+        setPlanningMeasurements((current) => addPlanningMeasurementPoint(current, vertex));
       }
     },
-    [planningDrawingEnabled, planningRadarPlacementEnabled],
+    [planningDrawingEnabled, planningRadarPlacementEnabled, planningMeasurementEnabled],
   );
   const selectedEntity = entities.find((entity) => entity.entity_id === selectedEntityId);
   const sensorDomeOptions = {
@@ -1473,6 +1709,8 @@ export function AppWorkstationSlots(props: AppWorkstationSlotsProps) {
                 coverage={planningCoverage}
                 coverageOptions={planningCoverageOptions}
                 coverageAnalysis={planningCoverageAnalysis}
+                planningExtent={planningExtent}
+                planningMeasurements={planningMeasurements}
                 planningMcPackage={planningMcPackage}
                 planningMcPackageStale={planningMcPackageStale}
                 planningResultLink={planningResultLink}
@@ -1489,6 +1727,10 @@ export function AppWorkstationSlots(props: AppWorkstationSlotsProps) {
                 onCustomLongitudeChange={setCustomPlanningLongitude}
                 onApplyLocation={handlePlanningLocationJump}
                 onCameraPreset={handlePlanningCameraPreset}
+                onPlanningExtentChange={setPlanningExtentId}
+                onPlanningExtentCameraFit={handlePlanningExtentCameraFit}
+                onPlanningRadiusChange={handlePlanningRadiusChange}
+                onClearPlanningMeasurements={handleClearPlanningMeasurements}
                 onToolChange={setPlanningTool}
                 onFinishPolygon={() =>
                   setPlanningPolygon((current) => finishPlanningPolygon(current))
@@ -1563,9 +1805,12 @@ export function AppWorkstationSlots(props: AppWorkstationSlotsProps) {
             terrainProviderMode={terrainProviderMode}
             onTerrainProviderModeChange={onTerrainProviderModeChange}
             planningCameraPresetRequest={planningCameraPresetRequest}
+            planningExtentCameraRequest={planningExtentCameraRequest}
             planningLocationRequest={planningLocationRequest}
             planningDrawing={{
               enabled: planningCesiumClickEnabled,
+              planningExtent,
+              measurements: planningMeasurements,
               polygon: planningPolygon,
               radars: planningRadars,
               coverageOptions: planningCoverageOptions,

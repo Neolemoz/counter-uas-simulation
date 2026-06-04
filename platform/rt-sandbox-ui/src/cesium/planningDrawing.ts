@@ -19,7 +19,7 @@ import {
   type PlanningCoverageAnalysis,
 } from "./planningCoverageAnalysis";
 
-export type PlanningTool = "select" | "draw_defense_area" | "place_radar_site";
+export type PlanningTool = "select" | "draw_defense_area" | "place_radar_site" | "measure_distance";
 
 export interface PlanningVertex {
   x: number;
@@ -146,7 +146,8 @@ export function planningToolUsesCesiumClick(
 ): boolean {
   return (
     planningToolAllowsDrawing(planningModeActive, tool) ||
-    planningToolAllowsRadarPlacement(planningModeActive, tool)
+    planningToolAllowsRadarPlacement(planningModeActive, tool) ||
+    (planningModeActive && tool === "measure_distance")
   );
 }
 

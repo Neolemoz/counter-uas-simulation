@@ -24,6 +24,12 @@ import {
   type PlanningTool,
 } from "@/cesium/planningDrawing";
 import { analyzePlanningCoverage, type PlanningCoverageAnalysis } from "@/cesium/planningCoverageAnalysis";
+import { planningExtentById } from "@/cesium/planningWorld";
+import {
+  DEFAULT_PLANNING_MEASUREMENT_STATE,
+  addPlanningMeasurementPoint,
+  type PlanningMeasurementState,
+} from "@/cesium/planningMeasurements";
 import { buildPlanningMcSnapshot } from "@/layout/planningMcSnapshot";
 import { buildPlanningMcPackage, type PlanningMcPackageV1 } from "@/layout/planningMcPackage";
 import {
@@ -55,6 +61,8 @@ function renderPlanningPanel({
   coverage = estimatePlanningCoverage(polygon, radars),
   coverageOptions = DEFAULT_PLANNING_COVERAGE_OPTIONS,
   coverageAnalysis = analyzePlanningCoverage(polygon, radars, undefined, { radarPresets: PLANNING_RADAR_PRESETS }),
+  planningExtent = planningExtentById("planning_10km"),
+  planningMeasurements = DEFAULT_PLANNING_MEASUREMENT_STATE,
   planningMcPackage = null,
   planningMcPackageStale = false,
   planningResultLink = planningMcPackage ? buildEmptyPlanningResultLink(planningMcPackage) : null,
@@ -72,6 +80,8 @@ function renderPlanningPanel({
   coverage?: PlanningCoverageEstimate;
   coverageOptions?: PlanningCoverageLayerOptions;
   coverageAnalysis?: PlanningCoverageAnalysis;
+  planningExtent?: ReturnType<typeof planningExtentById>;
+  planningMeasurements?: PlanningMeasurementState;
   planningMcPackage?: PlanningMcPackageV1 | null;
   planningMcPackageStale?: boolean;
   planningResultLink?: PlanningResultLinkV1 | null;
@@ -91,6 +101,8 @@ function renderPlanningPanel({
       coverage={coverage}
       coverageOptions={coverageOptions}
       coverageAnalysis={coverageAnalysis}
+      planningExtent={planningExtent}
+      planningMeasurements={planningMeasurements}
       planningMcPackage={planningMcPackage}
       planningMcPackageStale={planningMcPackageStale}
       planningResultLink={planningResultLink}
@@ -107,6 +119,10 @@ function renderPlanningPanel({
       onCustomLongitudeChange={vi.fn()}
       onApplyLocation={vi.fn()}
       onCameraPreset={vi.fn()}
+      onPlanningExtentChange={vi.fn()}
+      onPlanningExtentCameraFit={vi.fn()}
+      onPlanningRadiusChange={vi.fn()}
+      onClearPlanningMeasurements={vi.fn()}
       onToolChange={vi.fn()}
       onFinishPolygon={vi.fn()}
       onCancelDrawing={vi.fn()}
@@ -647,12 +663,63 @@ describe("AppWorkstationSlots planning mode shell", () => {
     expect(markup).toContain("Download package JSON");
   });
 
+  it("renders Planning extent/runtime distinction copy", () => {
+    const markup = renderPlanningPanel();
+
+    expect(markup).toContain("10 km Planning World");
+    expect(markup).toContain("Approx. area 314.2 km^2");
+    expect(markup).toContain("Runtime bounds remain the ±500m sandbox");
+    expect(markup).toContain("Planning extent only; not runtime bounds");
+  });
+
+  it("renders Planning measurement readouts and governance copy", () => {
+    const planningMeasurements = addPlanningMeasurementPoint(
+      addPlanningMeasurementPoint(DEFAULT_PLANNING_MEASUREMENT_STATE, { x: 0, y: 0 }),
+      { x: 3000, y: 4000 },
+    );
+    const markup = renderPlanningPanel({ planningMeasurements });
+
+    expect(markup).toContain('data-testid="planning-measurement-controls"');
+    expect(markup).toContain("Distance m 5000");
+    expect(markup).toContain("Distance km 5.00");
+    expect(markup).toContain("Bearing NE");
+    expect(markup).toContain("Start X 0m, Y 0m");
+    expect(markup).toContain("End X 3000m, Y 4000m");
+    expect(markup).toContain("Planning measurement tool only; not runtime authority");
+  });
+
+  it("allows Planning coordinates outside runtime bounds when inside Planning extent", () => {
+    const polygon: PlanningPolygonState = {
+      draftVertices: [],
+      completedVertices: [
+        { x: 900, y: 0 },
+        { x: 1300, y: 0 },
+        { x: 1300, y: 500 },
+      ],
+    };
+    const radars = addPlanningRadarSite(EMPTY_PLANNING_RADARS, { x: 1200, y: 250 });
+    const markup = renderPlanningPanel({
+      polygon,
+      radars,
+      coverage: estimatePlanningCoverage(polygon, radars, 4),
+      coverageAnalysis: analyzePlanningCoverage(polygon, radars, 4, {
+        radarPresets: PLANNING_RADAR_PRESETS,
+      }),
+      planningExtent: planningExtentById("planning_5km"),
+    });
+
+    expect(markup).toContain('data-testid="planning-runtime-guardrail"');
+    expect(markup).toContain("Outside runtime sandbox; valid for planning only.");
+    expect(markup).toContain("inside 5 km Planning World");
+  });
+
   it("renders Planning MC package stale advisory", () => {
     const markup = renderPlanningPanel({
       planningMcPackage: {
         schema_version: "rt_planning_mc_package_v1",
         planning_snapshot_id: "rt_planning_snapshot:sha256:old",
         planning_geometry_id: "rt_planning:sha256:old",
+        planning_extent: planningExtentById("planning_10km"),
         planning_summary: {
           radar_count: 0,
           coverage_summary: { coverage_percent: 0, blind_spot_summary: "none" },
@@ -685,6 +752,53 @@ describe("AppWorkstationSlots planning mode shell", () => {
       uncoveredCells: [],
       blindSpotHints: [],
     });
+  });
+
+  it("renders Planning cognition summary with extent, polygon, radar, and measurement counts", () => {
+    let polygon = addPlanningVertex(EMPTY_PLANNING_POLYGON, { x: 0, y: 0 });
+    polygon = addPlanningVertex(polygon, { x: 500, y: 0 });
+    polygon = addPlanningVertex(polygon, { x: 500, y: 500 });
+    polygon = finishPlanningPolygon(polygon);
+    const radars = addPlanningRadarSite(EMPTY_PLANNING_RADARS, { x: 100, y: 100 });
+    const planningMeasurements = addPlanningMeasurementPoint(
+      addPlanningMeasurementPoint(DEFAULT_PLANNING_MEASUREMENT_STATE, { x: 0, y: 0 }),
+      { x: 1000, y: 0 },
+    );
+    const markup = renderPlanningPanel({ polygon, radars, planningMeasurements });
+
+    expect(markup).toContain('data-testid="planning-cognition-panel"');
+    expect(markup).toContain('data-testid="planning-summary"');
+    expect(markup).toContain("Extent 10 km Planning World");
+    expect(markup).toContain("Polygons 1");
+    expect(markup).toContain("Radar sites 1");
+    expect(markup).toContain("Measurements 1");
+    expect(markup).toContain("Planning cognition summary is UI-local and non-authoritative");
+  });
+
+  it("shows informational Planning warnings without blocking controls", () => {
+    const markup = renderPlanningPanel({ tool: "measure_distance" });
+
+    expect(markup).toContain('data-testid="planning-warnings"');
+    expect(markup).toContain('data-testid="planning-warning-no_polygon_defined"');
+    expect(markup).toContain('data-testid="planning-warning-no_radar_sites"');
+    expect(markup).toContain("Finish Polygon");
+    expect(markup).toContain("Place Radar Site");
+  });
+
+  it("updates Planning cognition summary when extent switches", () => {
+    const markup5 = renderPlanningPanel({
+      planningExtent: planningExtentById("planning_5km"),
+    });
+    const markup20 = renderPlanningPanel({
+      planningExtent: planningExtentById("planning_20km"),
+    });
+
+    expect(markup5).toContain("Extent 5 km Planning World");
+    expect(markup5).toContain("Radius 5,000m");
+    expect(markup5).toContain("Compact Planning World");
+    expect(markup20).toContain("Extent 20 km Planning World");
+    expect(markup20).toContain("Radius 20,000m");
+    expect(markup20).toContain("Wide Planning World");
   });
 
 });

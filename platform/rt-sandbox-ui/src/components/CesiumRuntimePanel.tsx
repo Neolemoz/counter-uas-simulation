@@ -11,6 +11,7 @@ import {
   flyToEntity,
   flyToFitEntities,
   flyToLocation,
+  flyToPlanningExtent,
   flyToPreset,
   flyToCrestLine,
   flyToRidgeLine,
@@ -81,6 +82,8 @@ import type {
 } from "@/bridge/tacticalCommands";
 import { useTacticalCompareBaseline } from "@/hooks/useTacticalCompareBaseline";
 import type { SessionSlot } from "@/hooks/useRtSessionWorkspace";
+import type { PlanningExtent } from "@/cesium/planningWorld";
+import type { PlanningMeasurementState } from "@/cesium/planningMeasurements";
 import type {
   PlanningCoverageLayerOptions,
   PlanningPolygonState,
@@ -125,6 +128,7 @@ export function CesiumRuntimePanel({
   radarPreviewControls = null,
   planningDrawing,
   planningCameraPresetRequest,
+  planningExtentCameraRequest,
   planningLocationRequest,
   terrainProviderMode = DEFAULT_CESIUM_TERRAIN_PROVIDER_MODE,
   onTerrainProviderModeChange = () => undefined,
@@ -164,12 +168,15 @@ export function CesiumRuntimePanel({
   } | null;
   planningDrawing?: {
     enabled: boolean;
+    planningExtent: PlanningExtent;
+    measurements: PlanningMeasurementState;
     polygon: PlanningPolygonState;
     radars: PlanningRadarState;
     coverageOptions: PlanningCoverageLayerOptions;
     onMapClick: (vertex: PlanningVertex) => void;
   };
   planningCameraPresetRequest?: { id: number; preset: CameraPreset } | null;
+  planningExtentCameraRequest?: { id: number; extent: PlanningExtent } | null;
   planningLocationRequest?: { id: number; location: CameraLocationTarget } | null;
   terrainProviderMode?: CesiumTerrainProviderMode;
   onTerrainProviderModeChange?: (mode: CesiumTerrainProviderMode) => void;
@@ -405,6 +412,15 @@ export function CesiumRuntimePanel({
     selectedEntityId,
     terrainLayers.showTerrainMesh,
   ]);
+
+  useEffect(() => {
+    if (!planningExtentCameraRequest) return;
+    const currentViewer = viewerRef.current;
+    if (!isViewerUsable(currentViewer)) return;
+    setFollowSelected(false);
+    setFollowEntity(currentViewer, null);
+    flyToPlanningExtent(currentViewer, planningExtentCameraRequest.extent);
+  }, [planningExtentCameraRequest]);
 
   useEffect(() => {
     if (!planningLocationRequest) return;
