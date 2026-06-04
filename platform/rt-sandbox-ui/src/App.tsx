@@ -28,6 +28,7 @@ import {
 } from "@/hooks/useRuntimeControls";
 import { useTacticalState } from "@/hooks/useTacticalState";
 import { ENTITY_RAIL_SPAWN_XY } from "@/entity/entityControlStates";
+import { AppWorkstationSlots } from "@/workstation/AppWorkstationSlots";
 import { scenarioControlStates } from "@/scenario/scenarioControlStates";
 import { defaultPose } from "@/world/entityCatalog";
 import { sessionStateFromSnapshots } from "@/telemetry/channelIndex";

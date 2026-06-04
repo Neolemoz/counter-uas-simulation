@@ -8,6 +8,7 @@ export const TELEMETRY_CHANNELS = [
   "clock_mirror",
   "tactical_state",
   "tactical_recommendation",
+  "intelligence_advisory",
 ] as const;
 
 export type TelemetryChannel = (typeof TELEMETRY_CHANNELS)[number];

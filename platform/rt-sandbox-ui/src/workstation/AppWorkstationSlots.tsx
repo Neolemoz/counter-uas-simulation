@@ -56,6 +56,9 @@ import type { EditHistoryEntry, EditCommandType } from "@/editing/editHistory";
 import type { UiEntity } from "@/editing/localEntityMirror";
 import { ExperimentWorkbenchPanel } from "@/experiment/ExperimentWorkbenchPanel";
 import type { AdvisoryExperimentRollup } from "@/handoff/advisoryTypes";
+import { IntelligenceAdvisoryPanel } from "@/intelligence/IntelligenceAdvisoryPanel";
+import { SelectedTargetAdvisoryCard } from "@/intelligence/SelectedTargetAdvisoryCard";
+import { getAdvisoryTransportFromSnapshot, getSelectedEntityAdvisory } from "@/intelligence/intelligenceSelectors";
 import type { SessionSlot } from "@/hooks/useRtSessionWorkspace";
 import type { SessionRuntimeProfile } from "@/runtime/sessionRuntimeProfile";
 import type { useTacticalState } from "@/hooks/useTacticalState";
@@ -1139,6 +1142,35 @@ export type AppWorkstationSlotsProps = {
   hidePanelCognition: boolean;
 };
 
+export function IntelligenceAdvisoryWorkstationSurfaces({
+  snapshots,
+  selectedEntityId,
+}: {
+  snapshots: Partial<Record<TelemetryChannel, ChannelSnapshot>>;
+  selectedEntityId: string | null;
+}) {
+  const intelligenceAdvisoryTransport = getAdvisoryTransportFromSnapshot(
+    snapshots.intelligence_advisory,
+  );
+  const selectedIntelligenceAdvisory = getSelectedEntityAdvisory(
+    intelligenceAdvisoryTransport,
+    selectedEntityId,
+  );
+  if (!intelligenceAdvisoryTransport) return null;
+
+  return (
+    <>
+      <IntelligenceAdvisoryPanel transport={intelligenceAdvisoryTransport} />
+      {selectedIntelligenceAdvisory && (
+        <SelectedTargetAdvisoryCard
+          transport={intelligenceAdvisoryTransport}
+          selectedAttackerId={selectedEntityId}
+        />
+      )}
+    </>
+  );
+}
+
 export function AppWorkstationSlots(props: AppWorkstationSlotsProps) {
   const {
     connected,
@@ -1238,6 +1270,9 @@ export function AppWorkstationSlots(props: AppWorkstationSlotsProps) {
     hidePanelCognition,
   } = props;
 
+  const intelligenceAdvisoryTransport = getAdvisoryTransportFromSnapshot(
+    snapshots.intelligence_advisory,
+  );
   const [radarDomeConfig, setRadarDomeConfig] = useState<RadarDomeConfig>(
     DEFAULT_RADAR_DOME_CONFIG,
   );
@@ -1971,6 +2006,7 @@ export function AppWorkstationSlots(props: AppWorkstationSlotsProps) {
             onLayerVisibilityChange={onLayerVisibilityChange}
             tacticalState={tactical.state}
             tacticalRecommendation={tactical.recommendation}
+            intelligenceAdvisory={intelligenceAdvisoryTransport}
             slotList={slotList}
           />
         ) : (
@@ -1983,6 +2019,10 @@ export function AppWorkstationSlots(props: AppWorkstationSlotsProps) {
       tacticalColumn={
         connected ? (
           <div className="space-y-4">
+            <IntelligenceAdvisoryWorkstationSurfaces
+              snapshots={snapshots}
+              selectedEntityId={selectedEntityId}
+            />
             <TacticalManualPanel
               sessionId={sessionId}
               editingEnabled={editingEnabled}

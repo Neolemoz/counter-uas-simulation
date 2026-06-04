@@ -34,6 +34,8 @@ import {
   type VisualLayerVisibility,
 } from "@/cesium/visualLayerRegistry";
 import { VisualLayerToggleRail } from "@/components/VisualLayerToggleRail";
+import { IntelligenceAdvisoryStrip } from "@/intelligence/IntelligenceAdvisoryStrip";
+import type { RtIntelligenceAdvisoryTransportV1 } from "@/intelligence/intelligenceAdvisory";
 import { sessionLayerVisibilityMemoryLine } from "@/workstation/sessionLayerVisibilityStore";
 import { SessionComparisonCognitionStrip } from "@/workstation/SessionComparisonCognitionStrip";
 import {
@@ -141,6 +143,7 @@ export function CesiumRuntimePanel({
   onLayerVisibilityChange,
   tacticalState = null,
   tacticalRecommendation = null,
+  intelligenceAdvisory = null,
   slotList = [],
 }: {
   sessionId: string | null;
@@ -189,6 +192,7 @@ export function CesiumRuntimePanel({
   onLayerVisibilityChange: (layers: VisualLayerVisibility) => void;
   tacticalState?: TacticalStatePayload | null;
   tacticalRecommendation?: TacticalRecommendationPayload | null;
+  intelligenceAdvisory?: RtIntelligenceAdvisoryTransportV1 | null;
   slotList?: readonly SessionSlot[];
 }) {
   const compareBaseline = useTacticalCompareBaseline(sessionId, tacticalState);
@@ -679,6 +683,12 @@ export function CesiumRuntimePanel({
         >
           {TACTICAL_VIEW_GOVERNANCE_COPY}
         </p>
+      )}
+
+      {intelligenceAdvisory && (
+        <div className="mb-2">
+          <IntelligenceAdvisoryStrip transport={intelligenceAdvisory} />
+        </div>
       )}
 
       {tacticalRankingSummary && (

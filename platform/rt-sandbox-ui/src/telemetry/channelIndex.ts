@@ -1,4 +1,16 @@
+import type { RtIntelligenceAdvisoryTransportV1 } from "@/intelligence/intelligenceAdvisory";
 import type { TelemetryChannel } from "./constants";
+
+export type TelemetryPayloadByChannel = {
+  session_health: Record<string, unknown>;
+  lifecycle_state: Record<string, unknown>;
+  world_summary: Record<string, unknown>;
+  entity_pose_mirror: Record<string, unknown>;
+  clock_mirror: Record<string, unknown>;
+  tactical_state: Record<string, unknown>;
+  tactical_recommendation: Record<string, unknown>;
+  intelligence_advisory: RtIntelligenceAdvisoryTransportV1;
+};
 
 export interface TelemetryEvent {
   channel: string;
@@ -8,9 +20,9 @@ export interface TelemetryEvent {
   governance_banner?: string;
 }
 
-export interface ChannelSnapshot {
-  channel: TelemetryChannel;
-  payload: Record<string, unknown>;
+export interface ChannelSnapshot<C extends TelemetryChannel | undefined = undefined> {
+  channel: C extends TelemetryChannel ? C : TelemetryChannel;
+  payload: C extends TelemetryChannel ? TelemetryPayloadByChannel[C] : Record<string, unknown>;
   timestamp_utc: string;
   governance_banner?: string;
 }
