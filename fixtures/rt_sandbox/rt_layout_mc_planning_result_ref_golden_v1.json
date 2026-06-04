@@ -1,0 +1,22 @@
+{
+  "description": "Expected rt_planning_mc_result_ref_v1 when mapping layout MC golden handoff to Planning MC golden package ids.",
+  "layout_job_id": "rt_layout_mc_golden_exec",
+  "layout_source_layout_id": "rt_layout_mc_golden",
+  "layout_geometry_id": "rt_layout:sha256:4b965e63718a311b",
+  "planning_snapshot_id": "rt_planning_snapshot:sha256:2a52abfa1744b803",
+  "planning_geometry_id": "rt_planning:sha256:b4b557ab7147c3d3",
+  "result_ref": {
+    "imported_utc": "2026-06-02T01:00:00Z",
+    "linked_package_id": "rt_planning_package:rt_planning_snapshot:sha256:2a52abfa1744b803",
+    "linked_planning_geometry_id": "rt_planning:sha256:b4b557ab7147c3d3",
+    "mc_result_id": "rt_mc_result:layout_mc:rt_layout_mc_golden_exec",
+    "mc_run_label": "rt_layout_mc_golden_exec",
+    "schema_version": "rt_planning_mc_result_ref_v1",
+    "summary": {
+      "intercept_time_mean": 4.0,
+      "miss_distance_p95": 2.5,
+      "success_rate": 0.8
+    }
+  },
+  "schema_version": "rt_layout_mc_planning_result_ref_golden_v1"
+}

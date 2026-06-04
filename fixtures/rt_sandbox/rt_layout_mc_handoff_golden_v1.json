@@ -1,0 +1,89 @@
+{
+  "exported_utc": "2026-06-02T00:10:00Z",
+  "layout": {
+    "created_utc": "2026-06-02T00:00:00Z",
+    "entities": [
+      {
+        "entity_type": "radar",
+        "pose": {
+          "x": 0.0,
+          "y": 0.0,
+          "yaw_deg": 0.0,
+          "z": 10.0
+        }
+      },
+      {
+        "entity_type": "interceptor",
+        "pose": {
+          "x": -5.0,
+          "y": 0.0,
+          "yaw_deg": 0.0,
+          "z": 10.0
+        }
+      },
+      {
+        "entity_type": "interceptor",
+        "pose": {
+          "x": 4.0,
+          "y": -4.0,
+          "yaw_deg": 0.0,
+          "z": 10.0
+        }
+      },
+      {
+        "entity_type": "interceptor",
+        "pose": {
+          "x": -4.0,
+          "y": 5.0,
+          "yaw_deg": 0.0,
+          "z": 10.0
+        }
+      },
+      {
+        "entity_type": "drone",
+        "pose": {
+          "x": -1500.0,
+          "y": 0.0,
+          "yaw_deg": 0.0,
+          "z": 300.0
+        }
+      },
+      {
+        "entity_type": "waypoint_marker",
+        "pose": {
+          "x": -750.0,
+          "y": 0.0,
+          "yaw_deg": 0.0,
+          "z": 20.0
+        }
+      }
+    ],
+    "layout_id": "rt_layout_mc_golden",
+    "notes": "Golden RT layout MC handoff fixture; browser handoff only, not SA authority.",
+    "schema_version": "rt_layout_scenario_v1",
+    "source": {
+      "authority": "offline_fixture",
+      "origin": "fixtures/rt_sandbox",
+      "ui_flow": "world_editor_layout_export_preview"
+    },
+    "terrain_preset": "rt_sandbox_flat"
+  },
+  "mc_job_preview": {
+    "estimated_duration": "~15 min",
+    "estimated_duration_sec": 900,
+    "geometry_id": "rt_layout:sha256:4b965e63718a311b",
+    "launch_args": "target_start_x_m:=-1500 target_start_y_m:=0 target_start_z_m:=300 interceptor_ic_layout:=custom:-5,0,4,-4,-4,5",
+    "prepared_utc": "2026-06-02T00:05:00Z",
+    "preset": "quick",
+    "preset_label": "Quick",
+    "run_count": 10,
+    "scenario_label": "single-target",
+    "schema_version": "rt_mc_job_preview_v1",
+    "source_layout_id": "rt_layout_mc_golden",
+    "warnings": [
+      "radar entities are retained as metadata only for MC preview",
+      "waypoint_marker entities are retained as metadata only for MC preview"
+    ]
+  },
+  "schema_version": "rt_layout_mc_handoff_v1"
+}

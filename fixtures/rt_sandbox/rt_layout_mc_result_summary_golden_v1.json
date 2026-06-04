@@ -1,0 +1,22 @@
+{
+  "cohort": "rt_layout_mc_golden_review",
+  "completed_utc": "2026-06-02T01:00:00Z",
+  "geometry_id": "rt_layout:sha256:4b965e63718a311b",
+  "job_id": "rt_layout_mc_golden_exec",
+  "mc_metrics": {
+    "intercept_time_s_mean": 4.0,
+    "intercept_time_s_p95": 5.1,
+    "miss_distance_m_mean": 1.2,
+    "miss_distance_m_p95": 2.5,
+    "n_runs": 10,
+    "n_success": 8,
+    "success_rate": 0.8
+  },
+  "output_paths": {
+    "summary_csv": "runs/mc/rt_layout_mc_golden_exec.csv",
+    "summary_json": "runs/mc/rt_layout_mc_golden_exec.json"
+  },
+  "run_count": 10,
+  "schema_version": "rt_layout_mc_result_summary_v1",
+  "source_layout_id": "rt_layout_mc_golden"
+}

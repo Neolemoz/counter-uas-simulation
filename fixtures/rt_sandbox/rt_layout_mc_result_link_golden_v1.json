@@ -1,0 +1,15 @@
+{
+  "cohort": "rt_layout_mc_golden_review",
+  "geometry_id": "rt_layout:sha256:4b965e63718a311b",
+  "job_id": "rt_layout_mc_golden_exec",
+  "linked_utc": "2026-06-02T01:00:00Z",
+  "manifest_path": "runs/rt_sandbox/mc_jobs/rt_layout_mc_golden_exec/manifest.json",
+  "output_paths": {
+    "summary_csv": "runs/mc/rt_layout_mc_golden_exec.csv",
+    "summary_json": "runs/mc/rt_layout_mc_golden_exec.json"
+  },
+  "result_summary_path": "runs/rt_sandbox/mc_jobs/rt_layout_mc_golden_exec/result_summary.json",
+  "schema_version": "rt_layout_mc_result_link_v1",
+  "source_layout_id": "rt_layout_mc_golden",
+  "status_path": "runs/rt_sandbox/mc_jobs/rt_layout_mc_golden_exec/status.json"
+}
