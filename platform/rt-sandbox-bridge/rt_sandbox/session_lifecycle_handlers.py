@@ -92,6 +92,7 @@ def start_session(
     command_id: str,
     issued_by: str,
     now: float,
+    runtime_profile: str = "stub",
 ) -> dict[str, Any]:
     if non_terminal_count() >= config.max_concurrent_sessions:
         return fail(base, "SESSION_CAPACITY_EXCEEDED", "session capacity reached")
@@ -106,6 +107,7 @@ def start_session(
         issued_by=issued_by,
         world=WorldStateStore(session_id=session_id),
         runtime=runtime,
+        runtime_profile=runtime_profile,
     )
     record.world.registry.max_entity_count = config.max_entity_count
     record.tactical = TacticalController(session_id)

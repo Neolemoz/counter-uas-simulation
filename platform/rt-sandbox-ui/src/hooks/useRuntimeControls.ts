@@ -1,5 +1,5 @@
 import { useCallback, useState } from "react";
-import { stopSession } from "@/bridge/client";
+import { stopSessionForProfile } from "@/bridge/sessionStop";
 import { resetSession } from "@/bridge/lifecycleCommands";
 import {
   assignTarget,
@@ -10,6 +10,10 @@ import {
 } from "@/bridge/runtimeCommands";
 import type { UiEntity } from "@/editing/localEntityMirror";
 import type { Pose } from "@/world/bounds";
+import {
+  DEFAULT_SESSION_RUNTIME_PROFILE,
+  type SessionRuntimeProfile,
+} from "@/runtime/sessionRuntimeProfile";
 
 export function resolveSelectedDefenderId(
   selectedEntityId: string | null,
@@ -40,6 +44,7 @@ export function useRuntimeControls({
   editingEnabled,
   selectedDefenderId,
   selectedTargetId,
+  requestedRuntimeProfile = DEFAULT_SESSION_RUNTIME_PROFILE,
   doPull,
   setLastError,
 }: {
@@ -47,6 +52,7 @@ export function useRuntimeControls({
   editingEnabled: boolean;
   selectedDefenderId: string | null;
   selectedTargetId: string | null;
+  requestedRuntimeProfile?: SessionRuntimeProfile;
   doPull: () => Promise<void>;
   setLastError: (message: string | null) => void;
 }) {
@@ -117,8 +123,10 @@ export function useRuntimeControls({
 
   const stopSessionCommand = useCallback(async () => {
     if (!sessionId) return;
-    await runRuntimeCommand(() => stopSession(sessionId));
-  }, [sessionId, runRuntimeCommand]);
+    await runRuntimeCommand(() =>
+      stopSessionForProfile(sessionId, requestedRuntimeProfile),
+    );
+  }, [sessionId, requestedRuntimeProfile, runRuntimeCommand]);
 
   return {
     busy,

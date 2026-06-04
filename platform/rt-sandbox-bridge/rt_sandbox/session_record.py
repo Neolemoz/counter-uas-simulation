@@ -33,3 +33,6 @@ class SessionRecord:
     tactical: TacticalController | None = None
     live_assignments: dict[str, str] = field(default_factory=dict)
     runtime_capture: RuntimeCaptureState | None = None
+    runtime_profile: str = "stub"
+    last_live_background_poll_monotonic: float | None = None
+    last_live_background_poll_utc: str | None = None

@@ -1763,12 +1763,395 @@ def test_start_session_runtime_profile_mock_adapter(
     _cmd(manager, "discard_session", start["session_id"])
 
 
-def test_start_session_runtime_profile_rejects_live(
-    manager: BridgeSessionManager,
+def test_start_session_live_profile_rejected_when_preflight_fails(
+    manager: BridgeSessionManager, monkeypatch: pytest.MonkeyPatch
 ) -> None:
+    monkeypatch.setattr(
+        "rt_sandbox.session_manager.check_live_runtime_preflight",
+        lambda: {
+            "schema": "rt_live_runtime_preflight_v1",
+            "ok": False,
+            "checks": {
+                "ros2_available": False,
+                "gz_available": False,
+                "rt_sandbox_gz_available": False,
+            },
+            "blockers": ["ros2 not found on PATH"],
+            "message": "ros2 not found on PATH",
+        },
+    )
     out = _cmd(manager, "start_session", payload={"runtime_profile": "live"})
     assert out["ok"] is False
-    assert out["error_code"] == "COMMAND_FORBIDDEN"
+    assert out["error_code"] == "RUNTIME_UNAVAILABLE"
+    assert "preflight" in out
+
+
+def test_check_live_runtime_preflight_command(manager: BridgeSessionManager) -> None:
+    out = _cmd(manager, "check_live_runtime_preflight")
+    assert out["ok"] is True
+    preflight = out.get("preflight")
+    assert isinstance(preflight, dict)
+    assert "checks" in preflight
+    assert "ros2_available" in preflight["checks"]
+
+
+def test_start_session_live_profile_passes_preflight_uses_adapter(
+    manager: BridgeSessionManager, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from rt_sandbox import runtime_adapter
+
+    _FakeGazeboRuntimeAdapter.instances.clear()
+    monkeypatch.setattr(runtime_adapter, "GazeboRuntimeAdapter", _FakeGazeboRuntimeAdapter)
+    monkeypatch.setattr(
+        "rt_sandbox.session_manager.check_live_runtime_preflight",
+        lambda: {
+            "schema": "rt_live_runtime_preflight_v1",
+            "ok": True,
+            "checks": {
+                "ros2_available": True,
+                "gz_available": True,
+                "rt_sandbox_gz_available": True,
+            },
+            "blockers": [],
+            "message": "live runtime ready",
+        },
+    )
+    start = _cmd(manager, "start_session", payload={"runtime_profile": "live"})
+    assert start["ok"] is True, start.get("error_code")
+    assert manager._session is not None
+    assert manager._session.runtime.mode == "live"
+    assert manager._session.runtime.kind == "adapter"
+    assert manager._session.runtime_profile == "live"
+    _cmd(manager, "discard_session", start["session_id"])
+
+
+def test_live_background_poll_skipped_for_mock_adapter(
+    adapter_manager: BridgeSessionManager, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    polls: list[str] = []
+
+    def _fake_poll(*args, **kwargs):
+        polls.append("tick")
+        from rt_sandbox.adapter_poll import AdapterPollResult
+
+        return AdapterPollResult()
+
+    monkeypatch.setattr("rt_sandbox.session_manager.run_adapter_poll_tick", _fake_poll)
+    start = _cmd(adapter_manager, "start_session")
+    assert start["ok"] is True
+    adapter_manager._tick_timeouts(time.monotonic())
+    assert polls == []
+
+
+def test_live_background_poll_runs_for_live_session(
+    manager: BridgeSessionManager, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from rt_sandbox import runtime_adapter
+
+    _FakeGazeboRuntimeAdapter.instances.clear()
+    monkeypatch.setattr(runtime_adapter, "GazeboRuntimeAdapter", _FakeGazeboRuntimeAdapter)
+    monkeypatch.setattr(
+        "rt_sandbox.session_manager.check_live_runtime_preflight",
+        lambda: {
+            "ok": True,
+            "checks": {
+                "ros2_available": True,
+                "gz_available": True,
+                "rt_sandbox_gz_available": True,
+            },
+            "blockers": [],
+            "message": "live runtime ready",
+        },
+    )
+    polls: list[str] = []
+
+    def _fake_poll(session, config, **kwargs):
+        polls.append(getattr(session.runtime, "mode", ""))
+        from rt_sandbox.adapter_poll import AdapterPollResult
+
+        return AdapterPollResult(should_publish_channels=True)
+
+    monkeypatch.setattr("rt_sandbox.session_manager.run_adapter_poll_tick", _fake_poll)
+    monkeypatch.setattr(
+        "rt_sandbox.session_manager.apply_adapter_poll_result",
+        lambda *args, **kwargs: None,
+    )
+    start = _cmd(manager, "start_session", payload={"runtime_profile": "live"})
+    assert start["ok"] is True
+    session = manager._registry.get(start["session_id"])
+    assert session is not None
+    session.last_live_background_poll_monotonic = None
+    manager._tick_timeouts(time.monotonic())
+    assert polls == ["live"]
+    _cmd(manager, "stop_sim", start["session_id"])
+    _cmd(manager, "discard_session", start["session_id"])
+
+
+def test_pull_telemetry_triggers_live_background_poll(
+    manager: BridgeSessionManager, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from rt_sandbox import runtime_adapter
+
+    _FakeGazeboRuntimeAdapter.instances.clear()
+    monkeypatch.setattr(runtime_adapter, "GazeboRuntimeAdapter", _FakeGazeboRuntimeAdapter)
+    monkeypatch.setattr(
+        "rt_sandbox.session_manager.check_live_runtime_preflight",
+        lambda: {
+            "ok": True,
+            "checks": {
+                "ros2_available": True,
+                "gz_available": True,
+                "rt_sandbox_gz_available": True,
+            },
+            "blockers": [],
+            "message": "live runtime ready",
+        },
+    )
+    polls: list[str] = []
+
+    def _fake_poll(session, config, **kwargs):
+        polls.append(getattr(session.runtime, "mode", ""))
+        from rt_sandbox.adapter_poll import AdapterPollResult
+
+        return AdapterPollResult(should_publish_channels=True)
+
+    monkeypatch.setattr("rt_sandbox.session_manager.run_adapter_poll_tick", _fake_poll)
+    monkeypatch.setattr(
+        "rt_sandbox.session_manager.apply_adapter_poll_result",
+        lambda *args, **kwargs: None,
+    )
+    start = _cmd(manager, "start_session", payload={"runtime_profile": "live"})
+    assert start["ok"] is True
+    sid = start["session_id"]
+    session = manager._registry.get(sid)
+    assert session is not None
+    session.last_live_background_poll_monotonic = None
+    sub = _cmd(
+        manager,
+        "subscribe_telemetry",
+        sid,
+        payload={"channels": ["session_health", "entity_pose_mirror"]},
+    )
+    polls.clear()
+    session.last_live_background_poll_monotonic = time.monotonic() - 2.0
+    pull = manager.pull_telemetry(sid, sub["subscription_id"])
+    assert pull["ok"] is True
+    assert polls == ["live"]
+    assert session.last_live_background_poll_utc is not None
+    _cmd(manager, "stop_sim", sid)
+    _cmd(manager, "discard_session", sid)
+
+
+def test_session_health_exposes_live_poll_fields(
+    manager: BridgeSessionManager, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from rt_sandbox import runtime_adapter
+    from rt_sandbox.telemetry_bridge import resolve_channel_payload
+
+    _FakeGazeboRuntimeAdapter.instances.clear()
+    monkeypatch.setattr(runtime_adapter, "GazeboRuntimeAdapter", _FakeGazeboRuntimeAdapter)
+    monkeypatch.setattr(
+        "rt_sandbox.session_manager.check_live_runtime_preflight",
+        lambda: {
+            "ok": True,
+            "checks": {
+                "ros2_available": True,
+                "gz_available": True,
+                "rt_sandbox_gz_available": True,
+            },
+            "blockers": [],
+            "message": "live runtime ready",
+        },
+    )
+    start = _cmd(manager, "start_session", payload={"runtime_profile": "live"})
+    sid = start["session_id"]
+    session = manager._registry.get(sid)
+    assert session is not None
+    session.last_live_background_poll_utc = "2026-06-03T12:00:00+00:00"
+    sh = resolve_channel_payload(session, "session_health", manager.config)
+    assert sh is not None
+    assert sh.get("runtime_profile") == "live"
+    assert sh.get("live_background_poll_hz", 0) > 0
+    assert sh.get("last_live_poll_utc") == "2026-06-03T12:00:00+00:00"
+    _cmd(manager, "stop_sim", sid)
+    _cmd(manager, "discard_session", sid)
+
+
+def test_pull_telemetry_publishes_entity_pose_mirror_after_live_poll(
+    manager: BridgeSessionManager, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from rt_sandbox import runtime_adapter
+
+    _FakeGazeboRuntimeAdapter.instances.clear()
+    monkeypatch.setattr(runtime_adapter, "GazeboRuntimeAdapter", _FakeGazeboRuntimeAdapter)
+    monkeypatch.setattr(
+        "rt_sandbox.session_manager.check_live_runtime_preflight",
+        lambda: {
+            "ok": True,
+            "checks": {
+                "ros2_available": True,
+                "gz_available": True,
+                "rt_sandbox_gz_available": True,
+            },
+            "blockers": [],
+            "message": "live runtime ready",
+        },
+    )
+
+    def _fake_poll(session, config, **kwargs):
+        from rt_sandbox.adapter_poll import AdapterPollResult
+        from rt_sandbox.telemetry_bridge import ensure_telemetry_mirror
+
+        mirror = ensure_telemetry_mirror(session)
+        mirror.update_from_poll(
+            {
+                "timestamp_utc": "2026-06-05T12:00:00+00:00",
+                "telemetry_seq": 1,
+                "entity_pose_mirror": {
+                    "entities": [
+                        {
+                            "entity_id": "d-live",
+                            "entity_type": "drone",
+                            "pose": {"x": 3.0, "y": 4.0, "z": 5.0},
+                        }
+                    ]
+                },
+                "adapter_health": {"alive": True, "mode": "live"},
+                "clock_mirror": {"paused": False},
+            },
+            config,
+        )
+        return AdapterPollResult(should_publish_channels=True)
+
+    monkeypatch.setattr("rt_sandbox.session_manager.run_adapter_poll_tick", _fake_poll)
+    start = _cmd(manager, "start_session", payload={"runtime_profile": "live"})
+    sid = start["session_id"]
+    session = manager._registry.get(sid)
+    assert session is not None
+    _cmd(manager, "spawn_attacker", sid)
+    sub = _cmd(
+        manager,
+        "subscribe_telemetry",
+        sid,
+        payload={"channels": ["entity_pose_mirror"]},
+    )
+    session.last_live_background_poll_monotonic = time.monotonic() - 2.0
+    pull = manager.pull_telemetry(sid, sub["subscription_id"], max_events=20)
+    assert pull["ok"] is True
+    assert session.telemetry_mirror is not None
+    mirrored = session.telemetry_mirror.entity_pose_mirror.get("entities") or []
+    assert any(str(e.get("entity_id")) == "d-live" for e in mirrored)
+    mirror_events = [ev for ev in pull["events"] if ev["channel"] == "entity_pose_mirror"]
+    assert mirror_events, "expected entity_pose_mirror publish on pull drain"
+    _cmd(manager, "stop_sim", sid)
+    _cmd(manager, "discard_session", sid)
+
+
+def test_stop_session_live_profile_uses_terminate_via_ui_alias(
+    manager: BridgeSessionManager, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """UI live disconnect maps to stop_sim (terminate), not pause-only stop_session."""
+    from rt_sandbox import runtime_adapter
+
+    _FakeGazeboRuntimeAdapter.instances.clear()
+    monkeypatch.setattr(runtime_adapter, "GazeboRuntimeAdapter", _FakeGazeboRuntimeAdapter)
+    monkeypatch.setattr(
+        "rt_sandbox.session_manager.check_live_runtime_preflight",
+        lambda: {
+            "ok": True,
+            "checks": {
+                "ros2_available": True,
+                "gz_available": True,
+                "rt_sandbox_gz_available": True,
+            },
+            "blockers": [],
+            "message": "live runtime ready",
+        },
+    )
+    start = _cmd(manager, "start_session", payload={"runtime_profile": "live"})
+    sid = start["session_id"]
+    adapter = _FakeGazeboRuntimeAdapter.instances[-1]
+    stop = _cmd(manager, "stop_sim", sid)
+    assert stop["ok"] is True
+    assert adapter.terminated is True
+    assert adapter.is_alive() is False
+    _cmd(manager, "discard_session", sid)
+
+
+def test_live_entity_commands_visible_in_pose_mirror(
+    manager: BridgeSessionManager, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Spawn/move/delete on live profile publish entity_pose_mirror without maintainer CLI."""
+    from rt_sandbox import runtime_adapter
+
+    _FakeGazeboRuntimeAdapter.instances.clear()
+    monkeypatch.setattr(runtime_adapter, "GazeboRuntimeAdapter", _FakeGazeboRuntimeAdapter)
+    monkeypatch.setattr(
+        "rt_sandbox.session_manager.check_live_runtime_preflight",
+        lambda: {
+            "ok": True,
+            "checks": {
+                "ros2_available": True,
+                "gz_available": True,
+                "rt_sandbox_gz_available": True,
+            },
+            "blockers": [],
+            "message": "live runtime ready",
+        },
+    )
+    start = _cmd(manager, "start_session", payload={"runtime_profile": "live"})
+    sid = start["session_id"]
+    spawn = _cmd(
+        manager,
+        "spawn_entity",
+        sid,
+        payload={"entity_type": "drone", "pose": _pose(10, 20, 15)},
+    )
+    assert spawn["ok"] is True
+    eid = spawn["entity_id"]
+    sub = _cmd(
+        manager,
+        "subscribe_telemetry",
+        sid,
+        payload={"channels": ["entity_pose_mirror"]},
+    )
+    events = sub.get("initial_events") or []
+    mirror = next(ev for ev in events if ev["channel"] == "entity_pose_mirror")
+    entities = mirror["payload"]["entities"]
+    assert any(str(e.get("entity_id")) == eid for e in entities)
+
+    _cmd(
+        manager,
+        "move_entity",
+        sid,
+        payload={"entity_id": eid, "pose": _pose(30, 40, 25)},
+    )
+    session = manager._registry.get(sid)
+    assert session is not None
+    assert session.telemetry_mirror is not None
+    mirrored_after_move = session.telemetry_mirror.entity_pose_mirror.get("entities") or []
+    moved = next(e for e in mirrored_after_move if str(e.get("entity_id")) == eid)
+    assert float(moved["pose"]["x"]) == 30.0
+
+    pull = manager.pull_telemetry(sid, sub["subscription_id"], max_events=20)
+    assert any(ev["channel"] == "entity_pose_mirror" for ev in pull["events"])
+
+    _cmd(manager, "delete_entity", sid, payload={"entity_id": eid})
+    mirrored_after_delete = session.telemetry_mirror.entity_pose_mirror.get("entities") or []
+    assert not any(str(e.get("entity_id")) == eid for e in mirrored_after_delete)
+    _cmd(manager, "stop_sim", sid)
+    _cmd(manager, "discard_session", sid)
+
+
+def test_governance_entity_commands_unchanged() -> None:
+    from rt_sandbox.governance import ALLOWED_COMMANDS
+
+    assert "spawn_entity" in ALLOWED_COMMANDS
+    assert "move_entity" in ALLOWED_COMMANDS
+    assert "delete_entity" in ALLOWED_COMMANDS
+    assert "start_session" in ALLOWED_COMMANDS
+    assert "stop_session" in ALLOWED_COMMANDS
+    assert "/tracks/state" not in ALLOWED_COMMANDS
 
 
 def test_mock_adapter_session_lifecycle(adapter_manager: BridgeSessionManager) -> None:

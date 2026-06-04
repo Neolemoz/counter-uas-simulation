@@ -42,7 +42,7 @@ import {
   writeStoredSessionRuntimeProfile,
   type SessionRuntimeProfile,
 } from "@/runtime/sessionRuntimeProfile";
-import { AppWorkstationSlots } from "@/workstation/AppWorkstationSlots";
+import { useLiveRuntimePreflight } from "@/hooks/useLiveRuntimePreflight";
 
 export default function App() {
   const [backgroundDiagOpen, setBackgroundDiagOpen] = useState(false);
@@ -77,6 +77,15 @@ export default function App() {
     selectTab,
     backgroundSlots,
   } = useRtSessionWorkspace({ pauseBackgroundPoll: !backgroundDiagOpen });
+
+  const preflightProfile = connected
+    ? activeRequestedRuntimeProfile
+    : sessionRuntimeProfile;
+  const {
+    livePreflight,
+    preflightLoading,
+    preflightError,
+  } = useLiveRuntimePreflight(preflightProfile);
 
   const [selectedType, setSelectedType] = useState<EntityType>("drone");
   const [layerVisibility, setLayerVisibility] = useState<VisualLayerVisibility>(() =>
@@ -193,6 +202,7 @@ export default function App() {
     editingEnabled,
     selectedDefenderId,
     selectedTargetId,
+    requestedRuntimeProfile: activeRequestedRuntimeProfile,
     doPull,
     setLastError,
   });
@@ -309,6 +319,9 @@ export default function App() {
         sessionRuntimeProfile={sessionRuntimeProfile}
         onSessionRuntimeProfileChange={handleSessionRuntimeProfileChange}
         activeRequestedRuntimeProfile={activeRequestedRuntimeProfile}
+        livePreflight={livePreflight}
+        preflightLoading={preflightLoading}
+        preflightError={preflightError}
         onConnectNewSession={() => void connectNewSession(sessionRuntimeProfile)}
         onDisconnectSelected={() => {
           if (selectedSessionId) handleDisconnectSession(selectedSessionId);

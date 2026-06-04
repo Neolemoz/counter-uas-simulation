@@ -3,6 +3,7 @@ import {
   buildStartSessionPayload,
   DEFAULT_SESSION_RUNTIME_PROFILE,
   isSessionRuntimeProfile,
+  LIVE_GAZEBO_GOVERNANCE,
   readStoredSessionRuntimeProfile,
   SESSION_RUNTIME_PROFILE_STORAGE_KEY,
   writeStoredSessionRuntimeProfile,
@@ -39,9 +40,11 @@ describe("sessionRuntimeProfile", () => {
     expect(readStoredSessionRuntimeProfile()).toBe("mock_adapter");
   });
 
-  it("rejects live profile as session runtime profile", () => {
-    expect(isSessionRuntimeProfile("live")).toBe(false);
+  it("accepts live profile as session runtime profile", () => {
+    expect(isSessionRuntimeProfile("live")).toBe(true);
     expect(isSessionRuntimeProfile("live_adapter")).toBe(false);
+    writeStoredSessionRuntimeProfile("live");
+    expect(readStoredSessionRuntimeProfile()).toBe("live");
   });
 
   it("omits payload for stub start_session", () => {
@@ -52,5 +55,12 @@ describe("sessionRuntimeProfile", () => {
     expect(buildStartSessionPayload("mock_adapter")).toEqual({
       runtime_profile: "mock_adapter",
     });
+  });
+
+  it("builds live start_session payload", () => {
+    expect(buildStartSessionPayload("live")).toEqual({
+      runtime_profile: "live",
+    });
+    expect(LIVE_GAZEBO_GOVERNANCE).toContain("experimental");
   });
 });

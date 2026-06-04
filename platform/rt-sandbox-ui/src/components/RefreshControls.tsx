@@ -3,6 +3,10 @@ import { RuntimeProfileSelector } from "@/components/RuntimeProfileSelector";
 import { ENTITY_CONTROL_GOVERNANCE } from "@/entity/entityControlStates";
 import { lifecycleControlStates } from "@/lifecycle/lifecycleControlStates";
 import {
+  LIVE_STOP_GOVERNANCE,
+  isLiveRuntimeProfile,
+} from "@/runtime/liveSessionUx";
+import {
   sessionRuntimeProfileLabel,
   type SessionRuntimeProfile,
 } from "@/runtime/sessionRuntimeProfile";
@@ -181,6 +185,14 @@ export function BridgeConnectionBar({
           </span>
         </p>
       )}
+      {connected && isLiveRuntimeProfile(activeRequestedRuntimeProfile) && (
+        <p
+          className="text-xs text-amber-400/90"
+          data-testid="bridge-live-stop-copy"
+        >
+          {LIVE_STOP_GOVERNANCE}
+        </p>
+      )}
       <div className="flex flex-wrap items-center gap-3">
       <button
         type="button"
@@ -213,6 +225,7 @@ export function LifecycleControlBar({
   editingEnabled,
   busy,
   sessionState,
+  requestedRuntimeProfile = null,
   onPause,
   onResume,
   onReset,
@@ -222,6 +235,7 @@ export function LifecycleControlBar({
   editingEnabled: boolean;
   busy: boolean;
   sessionState: string;
+  requestedRuntimeProfile?: SessionRuntimeProfile | null;
   onPause: () => void;
   onResume: () => void;
   onReset: () => void;
@@ -229,9 +243,11 @@ export function LifecycleControlBar({
 }) {
   const baseDisabled = !connected || !editingEnabled || busy;
   const states = lifecycleControlStates(sessionState);
+  const liveActive = isLiveRuntimeProfile(requestedRuntimeProfile);
 
   return (
-    <div className="flex flex-wrap items-center gap-2 rounded-lg border border-slate-600/80 bg-slate-900/70 px-3 py-2">
+    <div className="flex flex-col gap-2 rounded-lg border border-slate-600/80 bg-slate-900/70 px-3 py-2">
+      <div className="flex flex-wrap items-center gap-2">
       <span className="text-xs font-semibold uppercase tracking-wide text-slate-400">
         Lifecycle
       </span>
@@ -268,6 +284,15 @@ export function LifecycleControlBar({
       >
         Stop session
       </button>
+      </div>
+      {liveActive && (
+        <p
+          className="text-[11px] leading-snug text-amber-400/90"
+          data-testid="lifecycle-live-stop-copy"
+        >
+          {LIVE_STOP_GOVERNANCE}
+        </p>
+      )}
     </div>
   );
 }

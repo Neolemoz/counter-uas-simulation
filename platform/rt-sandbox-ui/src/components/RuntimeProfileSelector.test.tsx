@@ -20,11 +20,13 @@ describe("RuntimeProfileSelector", () => {
     expect(markup).toContain("Not ROS-backed");
   });
 
-  it("does not expose live adapter option", () => {
+  it("exposes live Gazebo option with experimental copy", () => {
     const markup = renderToStaticMarkup(
-      <RuntimeProfileSelector value="stub" onChange={() => undefined} />,
+      <RuntimeProfileSelector value="live" onChange={() => undefined} />,
     );
-    expect(markup).not.toContain("live_adapter");
-    expect(markup).not.toContain("Live adapter");
+    expect(markup).toContain('data-testid="runtime-profile-option-live"');
+    expect(markup).toContain("Live Gazebo");
+    expect(markup).toContain("experimental");
+    expect(markup).toContain("ROS 2");
   });
 });

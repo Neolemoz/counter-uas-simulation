@@ -105,6 +105,8 @@ TACTICAL_COMMANDS = frozenset(
     }
 )
 
+LIVE_RUNTIME_COMMANDS = frozenset({"check_live_runtime_preflight"})
+
 ALLOWED_COMMANDS = (
     SESSION_COMMANDS
     | SIM_COMMAND_ALIASES
@@ -116,6 +118,7 @@ ALLOWED_COMMANDS = (
     | WORKFLOW_COMMANDS
     | RUNTIME_COMMANDS
     | TACTICAL_COMMANDS
+    | LIVE_RUNTIME_COMMANDS
 )
 
 ENTITY_CATALOG = frozenset({"radar", "interceptor", "drone", "waypoint_marker"})
@@ -158,7 +161,9 @@ RUNTIME_SUBCOMMAND_AUDIT_EXCEPTIONS: dict[str, str] = {
     "adapter_resync": "sync_update",
 }
 
-SESSION_RUNTIME_PROFILES = frozenset({"stub", "mock_adapter"})
+SESSION_RUNTIME_PROFILES = frozenset({"stub", "mock_adapter", "live"})
+
+LIVE_ADAPTER_BACKGROUND_POLL_HZ = 1.0
 
 RT_FORBIDDEN_COMMANDS = frozenset(
     {
@@ -279,7 +284,7 @@ def classify_command(command_type: str) -> str | None:
 
 
 def validate_start_session_payload(payload: Any) -> str | None:
-    """Optional additive start_session payload — stub default; mock_adapter only."""
+    """Optional additive start_session payload — stub default; mock_adapter or live."""
     if payload is None:
         return None
     if not isinstance(payload, dict):

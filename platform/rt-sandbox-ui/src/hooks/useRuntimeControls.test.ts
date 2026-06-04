@@ -58,4 +58,13 @@ describe("useRuntimeControls lifecycle commands", () => {
     );
     expect(resumeBody.command_type).toBe("resume_sim");
   });
+
+  it("live stop uses stop_sim via stopSessionForProfile", async () => {
+    const { stopSessionForProfile } = await import("@/bridge/sessionStop");
+    await stopSessionForProfile("session-live", "live");
+    const body = JSON.parse(
+      String((fetch as ReturnType<typeof vi.fn>).mock.calls[0][1]?.body),
+    );
+    expect(body.command_type).toBe("stop_sim");
+  });
 });

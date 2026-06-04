@@ -14,6 +14,7 @@ from rt_sandbox.governance import (
     ENTITY_TYPE_LIMITS,
     GOVERNANCE_BANNER,
     GovernanceConfig,
+    LIVE_ADAPTER_BACKGROUND_POLL_HZ,
     RateLimiter,
     TACTICAL_COMMANDS,
     TEMPLATE_COMMANDS,
@@ -24,6 +25,10 @@ from rt_sandbox.governance import (
     validate_pose,
     validate_start_session_payload,
 )
+from rt_sandbox.adapter_poll import run_adapter_poll_tick
+from rt_sandbox.live_preflight import check_live_runtime_preflight
+from rt_sandbox.runtime_handle import runtime_is_adapter
+from rt_sandbox.session_adapter_results import apply_adapter_poll_result
 from rt_sandbox.isolation import repo_root_from
 from rt_sandbox.lifecycle import SessionState, can_transition
 from rt_sandbox.session_capture_handler import capture_session as handle_capture_session
@@ -201,13 +206,26 @@ def _validate_scenario_payload(
     return normalized, None
 
 
+def _runtime_profile_from_config(config: GovernanceConfig) -> str:
+    if not config.enable_gazebo_adapter:
+        return "stub"
+    if config.adapter_mode == "live":
+        return "live"
+    return "mock_adapter"
+
+
 def _config_for_command(
     config: GovernanceConfig,
     command_type: str,
     payload: Any = None,
 ) -> GovernanceConfig:
     if command_type == "start_sim":
-        return replace(config, enable_gazebo_adapter=True, adapter_mode="live")
+        return replace(
+            config,
+            enable_gazebo_adapter=True,
+            adapter_mode="live",
+            adapter_live_background_poll_hz=_live_poll_hz(config),
+        )
     if command_type == "start_session":
         if validate_start_session_payload(payload):
             return config
@@ -216,19 +234,36 @@ def _config_for_command(
             profile = str(payload.get("runtime_profile", "stub"))
         if profile == "mock_adapter":
             return replace(config, enable_gazebo_adapter=True, adapter_mode="mock")
+        if profile == "live":
+            return replace(
+                config,
+                enable_gazebo_adapter=True,
+                adapter_mode="live",
+                adapter_live_background_poll_hz=_live_poll_hz(config),
+            )
         return config
     return config
+
+
+def _live_poll_hz(config: GovernanceConfig) -> float:
+    if config.adapter_live_background_poll_hz > 0:
+        return config.adapter_live_background_poll_hz
+    return LIVE_ADAPTER_BACKGROUND_POLL_HZ
 
 
 def _config_for_session(config: GovernanceConfig, session: Any) -> GovernanceConfig:
     runtime = getattr(session, "runtime", None)
     if getattr(runtime, "kind", "") != "adapter":
         return config
-    return replace(
+    mode = getattr(runtime, "mode", config.adapter_mode)
+    out = replace(
         config,
         enable_gazebo_adapter=True,
-        adapter_mode=getattr(runtime, "mode", config.adapter_mode),
+        adapter_mode=mode,
     )
+    if mode == "live":
+        out = replace(out, adapter_live_background_poll_hz=_live_poll_hz(config))
+    return out
 
 
 # Re-export for backward compatibility
@@ -320,6 +355,18 @@ class BridgeSessionManager:
         if command_type == "start_session":
             if not self._global_rate_limiter.check(now):
                 return fail(base, "RESOURCE_LIMIT_EXCEEDED", "command rate limit")
+            profile = "stub"
+            if isinstance(payload, dict):
+                profile = str(payload.get("runtime_profile", "stub"))
+            if profile == "live":
+                preflight = check_live_runtime_preflight()
+                if not preflight.get("ok"):
+                    return fail(
+                        base,
+                        "RUNTIME_UNAVAILABLE",
+                        str(preflight.get("message", "live runtime unavailable")),
+                        preflight=preflight,
+                    )
             result = start_session(
                 base,
                 config=command_config,
@@ -331,6 +378,7 @@ class BridgeSessionManager:
                 command_id=command_id,
                 issued_by=issued_by,
                 now=now,
+                runtime_profile=profile,
             )
             if result.get("ok") and result.get("session_id"):
                 sid = str(result["session_id"])
@@ -374,6 +422,14 @@ class BridgeSessionManager:
 
         if command_type == "list_runtime_templates":
             return list_runtime_templates(base, self.config)
+
+        if command_type == "check_live_runtime_preflight":
+            if not self._global_rate_limiter.check(now):
+                return fail(base, "RESOURCE_LIMIT_EXCEEDED", "command rate limit")
+            preflight = check_live_runtime_preflight()
+            resp = ok(base, state="idle")
+            resp["preflight"] = preflight
+            return resp
 
         sid = session_id
         if not sid or not isinstance(sid, str):
@@ -976,6 +1032,7 @@ class BridgeSessionManager:
         subscription_id: str,
         max_events: int = 10,
     ) -> dict[str, Any]:
+        self._tick_timeouts(time.monotonic())
         sub = self._telemetry_subs.get(subscription_id)
         if sub is None or sub.session_id != session_id:
             return {
@@ -1064,6 +1121,7 @@ class BridgeSessionManager:
                 telemetry_subs=self._telemetry_subs,
                 now=now,
             )
+            self._tick_live_background_poll(session, now)
             tick_tactical_autonomous_for_session(
                 session,
                 mono,
@@ -1071,6 +1129,39 @@ class BridgeSessionManager:
                 audit=self._audit,
                 publish_channel=lambda ch, s=session: self._publish_telemetry(s, ch),
             )
+
+    def _tick_live_background_poll(self, session: SessionRecord, now: float) -> None:
+        session_config = _config_for_session(self.config, session)
+        hz = session_config.adapter_live_background_poll_hz
+        if hz <= 0 or getattr(session.runtime, "mode", None) != "live":
+            return
+        if session.state not in {SessionState.RUNNING, SessionState.PAUSED}:
+            return
+        if not runtime_is_adapter(session.runtime) or not session.runtime.is_alive():
+            return
+        last = session.last_live_background_poll_monotonic
+        if last is not None and (now - last) < (1.0 / hz):
+            return
+        session.last_live_background_poll_monotonic = now
+        from datetime import datetime, timezone
+
+        session.last_live_background_poll_utc = (
+            datetime.now(timezone.utc).replace(microsecond=0).isoformat()
+        )
+        poll_result = run_adapter_poll_tick(
+            session,
+            session_config,
+            poll_feedback=True,
+            poll_telemetry=True,
+            emit_feedback_audit=False,
+        )
+        apply_adapter_poll_result(
+            session,
+            poll_result,
+            self._audit,
+            lambda ch: self._publish_telemetry(session, ch),
+            issued_by="bridge_live_poll",
+        )
 
     # Backward-compatible private aliases for tests
     def _response_base(self, command_id: str, session_id: Any) -> dict[str, Any]:

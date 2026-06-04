@@ -101,4 +101,99 @@ describe("deriveAdapterStatus", () => {
     expect(view.requestedProfileLabel).toBe("Mock adapter");
     expect(view.requestedProfileGovernance).toContain("simulation-only");
   });
+
+  it("surfaces live poll freshness and maintainer smoke hint", () => {
+    const view = deriveAdapterStatus({
+      sessionHealthPayload: {
+        adapter_alive: true,
+        adapter_mode: "live",
+        runtime_profile: "live",
+        live_background_poll_hz: 1,
+        last_live_poll_utc: "2026-06-03T12:00:09.000Z",
+      },
+      worldSummaryPayload: { adapter_mode: "live" },
+      requestedRuntimeProfile: "live",
+      nowMs,
+    });
+    expect(view.liveProfileActive).toBe(true);
+    expect(view.liveBackgroundPollHz).toBe(1);
+    expect(view.lastLivePollUtc).toBe("2026-06-03T12:00:09.000Z");
+    expect(view.livePollFreshness.tone).toBe("ok");
+    expect(view.maintainerSmokeHint).toContain("rt_live_smoke.py");
+  });
+
+  it("marks live poll stale when bridge poll is old", () => {
+    const view = deriveAdapterStatus({
+      sessionHealthPayload: {
+        adapter_alive: true,
+        adapter_mode: "live",
+        runtime_profile: "live",
+        live_background_poll_hz: 1,
+        last_live_poll_utc: "2026-06-03T11:00:00.000Z",
+      },
+      worldSummaryPayload: { adapter_mode: "live" },
+      nowMs,
+    });
+    expect(view.livePollFreshness.tone).toBe("warn");
+    expect(view.livePollFreshness.label).toContain("stale");
+  });
+
+  it("derives mirror freshness fresh/stale/unavailable", () => {
+    const fresh = deriveAdapterStatus({
+      connected: true,
+      sessionHealthPayload: { adapter_alive: true, adapter_mode: "live" },
+      worldSummaryPayload: { adapter_mode: "live", telemetry_health: "ok" },
+      entityPoseMirrorSnapshot: {
+        channel: "entity_pose_mirror",
+        timestamp_utc: "2026-06-03T12:00:09.000Z",
+        payload: { entities: [{ entity_id: "d1" }], telemetry_health: "ok" },
+      },
+      nowMs,
+    });
+    expect(fresh.mirrorFreshness.state).toBe("fresh");
+
+    const stale = deriveAdapterStatus({
+      connected: true,
+      entityPoseMirrorSnapshot: {
+        channel: "entity_pose_mirror",
+        timestamp_utc: "2026-06-03T11:00:00.000Z",
+        payload: { entities: [], telemetry_health: "stale" },
+      },
+      nowMs,
+    });
+    expect(stale.mirrorFreshness.state).toBe("stale");
+
+    const unavailable = deriveAdapterStatus({
+      connected: true,
+      nowMs,
+    });
+    expect(unavailable.mirrorFreshness.state).toBe("unavailable");
+  });
+
+  it("derives live command health ready and unavailable", () => {
+    const ready = deriveAdapterStatus({
+      connected: true,
+      requestedRuntimeProfile: "live",
+      sessionHealthPayload: {
+        state: "running",
+        runtime_profile: "live",
+        adapter_alive: true,
+        adapter_mode: "live",
+      },
+      editingEnabled: true,
+    });
+    expect(ready.commandHealth?.state).toBe("command_ready");
+
+    const unavailable = deriveAdapterStatus({
+      connected: true,
+      requestedRuntimeProfile: "live",
+      sessionHealthPayload: {
+        state: "running",
+        runtime_profile: "live",
+        adapter_alive: false,
+      },
+      editingEnabled: true,
+    });
+    expect(unavailable.commandHealth?.state).toBe("command_unavailable");
+  });
 });

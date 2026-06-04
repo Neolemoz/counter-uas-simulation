@@ -2,13 +2,13 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   discardSession,
   listSessions,
-  stopSession,
   pullTelemetry,
   setEditingSession,
   startSession,
   subscribeTelemetry,
   unsubscribeTelemetry,
 } from "@/bridge/client";
+import { stopSessionForProfile } from "@/bridge/sessionStop";
 import type { BridgeCommandResponse } from "@/bridge/types";
 import {
   DEFAULT_SESSION_RUNTIME_PROFILE,
@@ -243,9 +243,12 @@ export function useRtSessionWorkspace(options: UseRtSessionWorkspaceOptions = {}
 
   const disconnectSession = useCallback(
     async (targetId: string) => {
+      const slot = slotsRef.current.get(targetId);
+      const profile =
+        slot?.requestedRuntimeProfile ?? DEFAULT_SESSION_RUNTIME_PROFILE;
       setBusy(true);
       try {
-        await stopSession(targetId).catch(() => undefined);
+        await stopSessionForProfile(targetId, profile).catch(() => undefined);
         await unsubscribeTelemetry(targetId).catch(() => undefined);
         await discardSession(targetId).catch(() => undefined);
       } finally {
@@ -368,7 +371,9 @@ export function useRtSessionWorkspace(options: UseRtSessionWorkspaceOptions = {}
   useEffect(() => {
     return () => {
       for (const slot of slotsRef.current.values()) {
-        void stopSession(slot.sessionId).catch(() => undefined);
+        void stopSessionForProfile(slot.sessionId, slot.requestedRuntimeProfile).catch(
+          () => undefined,
+        );
         void unsubscribeTelemetry(slot.sessionId).catch(() => undefined);
         void discardSession(slot.sessionId).catch(() => undefined);
       }

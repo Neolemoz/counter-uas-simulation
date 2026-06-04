@@ -1,6 +1,6 @@
-/** Session runtime profile selection for start_session (PLAT-RT-ADAPTER-R1 A2). */
+/** Session runtime profile selection for start_session (PLAT-RT-ADAPTER-R1 A2 + live Step 2). */
 
-export type SessionRuntimeProfile = "stub" | "mock_adapter";
+export type SessionRuntimeProfile = "stub" | "mock_adapter" | "live";
 
 export const DEFAULT_SESSION_RUNTIME_PROFILE: SessionRuntimeProfile = "stub";
 
@@ -12,6 +12,9 @@ export const MOCK_ADAPTER_GOVERNANCE =
 
 export const STUB_RUNTIME_GOVERNANCE =
   "Stub runtime — bridge RuntimeStub with no adapter worker.";
+
+export const LIVE_GAZEBO_GOVERNANCE =
+  "Live Gazebo — experimental local-host runtime. Requires ROS 2 + Gazebo + rt_sandbox_gz on PATH. Not operational state.";
 
 export type RuntimeProfileOption = {
   id: SessionRuntimeProfile;
@@ -33,10 +36,16 @@ export const SESSION_RUNTIME_PROFILE_OPTIONS: RuntimeProfileOption[] = [
     description: "GazeboRuntimeAdapter in mock mode — in-memory sim feedback only.",
     governance: MOCK_ADAPTER_GOVERNANCE,
   },
+  {
+    id: "live",
+    title: "Live Gazebo",
+    description: "GazeboRuntimeAdapter in live mode — launches rt_sandbox_gz on local host.",
+    governance: LIVE_GAZEBO_GOVERNANCE,
+  },
 ];
 
 export function isSessionRuntimeProfile(value: unknown): value is SessionRuntimeProfile {
-  return value === "stub" || value === "mock_adapter";
+  return value === "stub" || value === "mock_adapter" || value === "live";
 }
 
 export function readStoredSessionRuntimeProfile(): SessionRuntimeProfile {

@@ -19,7 +19,7 @@ from rt_sandbox.authority_labels import (
     SOURCE_BRIDGE_SESSION,
     enrich_channel_payload,
 )
-from rt_sandbox.governance import GovernanceConfig
+from rt_sandbox.governance import GovernanceConfig, LIVE_ADAPTER_BACKGROUND_POLL_HZ
 from rt_sandbox.runtime_handle import runtime_is_adapter
 from rt_sandbox.time_utils import is_poll_stale
 
@@ -232,6 +232,28 @@ def _merge_fidelity_telemetry_fields(
     return merged
 
 
+def _session_health_live_fields(
+    session: Any,
+    config: GovernanceConfig | None,
+) -> dict[str, Any]:
+    profile = str(getattr(session, "runtime_profile", "stub"))
+    out: dict[str, Any] = {"runtime_profile": profile}
+    runtime = getattr(session, "runtime", None)
+    mode = getattr(runtime, "mode", None)
+    if profile != "live" and mode != "live":
+        return out
+    hz = 0.0
+    if config is not None and config.adapter_live_background_poll_hz > 0:
+        hz = float(config.adapter_live_background_poll_hz)
+    elif mode == "live":
+        hz = float(LIVE_ADAPTER_BACKGROUND_POLL_HZ)
+    out["live_background_poll_hz"] = hz
+    last_utc = getattr(session, "last_live_background_poll_utc", None)
+    if isinstance(last_utc, str) and last_utc:
+        out["last_live_poll_utc"] = last_utc
+    return out
+
+
 def _build_stub_channel_payload(
     session: Any,
     channel: str,
@@ -248,6 +270,7 @@ def _build_stub_channel_payload(
                 "adapter_alive": health.get("adapter_alive", False),
                 "adapter_mode": health.get("adapter_mode"),
                 "adapter_pid": health.get("adapter_pid"),
+                **_session_health_live_fields(session, config),
             },
             source=SOURCE_BRIDGE_SESSION,
             authority_label=AUTHORITY_COMMAND,
@@ -362,6 +385,7 @@ def resolve_channel_payload(
         base["telemetry_revision"] = mirror.telemetry_revision
         base["source"] = SOURCE_ADAPTER_TELEMETRY
         base["authority_label"] = AUTHORITY_EXPLANATORY_TELEMETRY
+        base.update(_session_health_live_fields(session, config))
         return _merge_fidelity_telemetry_fields(base, session, config)
     if channel == "world_summary":
         if session.world is None:

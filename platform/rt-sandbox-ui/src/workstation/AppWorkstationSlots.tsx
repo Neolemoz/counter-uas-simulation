@@ -1060,6 +1060,9 @@ export type AppWorkstationSlotsProps = {
   sessionRuntimeProfile: SessionRuntimeProfile;
   onSessionRuntimeProfileChange: (profile: SessionRuntimeProfile) => void;
   activeRequestedRuntimeProfile: SessionRuntimeProfile;
+  livePreflight?: import("@/runtime/livePreflight").LivePreflightResult | null;
+  preflightLoading?: boolean;
+  preflightError?: string | null;
   onConnectNewSession: () => void;
   onDisconnectSelected: () => void;
   onCloseSession: (sessionId: string) => void;
@@ -1167,6 +1170,9 @@ export function AppWorkstationSlots(props: AppWorkstationSlotsProps) {
     sessionRuntimeProfile,
     onSessionRuntimeProfileChange,
     activeRequestedRuntimeProfile,
+    livePreflight = null,
+    preflightLoading = false,
+    preflightError = null,
     onConnectNewSession,
     onDisconnectSelected,
     onCloseSession,
@@ -1634,6 +1640,7 @@ export function AppWorkstationSlots(props: AppWorkstationSlotsProps) {
               editingEnabled={editingEnabled}
               busy={busy || runtimeBusy}
               sessionState={sessionState}
+              requestedRuntimeProfile={activeRequestedRuntimeProfile}
               onPause={onPauseSim}
               onResume={onResumeSim}
               onReset={onResetSession}
@@ -1715,6 +1722,8 @@ export function AppWorkstationSlots(props: AppWorkstationSlotsProps) {
           connectedCount={connectedCount}
           editingSessionId={editingSessionId}
           requestedRuntimeProfile={activeRequestedRuntimeProfile}
+          sessionHealth={snapshots.session_health}
+          livePreflightOk={livePreflight?.ok ?? null}
         />
       }
       cognitionColumn={
@@ -2066,10 +2075,17 @@ export function AppWorkstationSlots(props: AppWorkstationSlotsProps) {
             <AdapterStatusPanel
               sessionHealth={snapshots.session_health}
               worldSummary={snapshots.world_summary}
+              entityPoseMirror={snapshots.entity_pose_mirror}
+              connected={connected}
+              editingEnabled={editingEnabled}
+              livePreflightOk={livePreflight?.ok ?? null}
               lastPullUtc={lastPullUtc}
               pullHz={pullHz}
               requestedRuntimeProfile={activeRequestedRuntimeProfile}
               pendingRuntimeProfile={connected ? null : sessionRuntimeProfile}
+              livePreflight={livePreflight}
+              preflightLoading={preflightLoading}
+              preflightError={preflightError}
             />
             <SessionLifecyclePanel
               snapshot={snapshots.lifecycle_state}

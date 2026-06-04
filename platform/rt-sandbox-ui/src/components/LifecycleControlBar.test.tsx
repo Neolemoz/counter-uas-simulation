@@ -41,4 +41,19 @@ describe("LifecycleControlBar", () => {
     const resumeButton = markup.match(/<button[^>]*>Resume<\/button>/)?.[0] ?? "";
     expect(resumeButton).toContain('disabled=""');
   });
+
+  it("shows live stop governance copy when live profile active", () => {
+    const markup = renderToStaticMarkup(
+      <LifecycleControlBar
+        connected
+        editingEnabled
+        busy={false}
+        sessionState="running"
+        requestedRuntimeProfile="live"
+        {...handlers}
+      />,
+    );
+    expect(markup).toContain('data-testid="lifecycle-live-stop-copy"');
+    expect(markup).toContain("Live stop terminates the Gazebo adapter.");
+  });
 });

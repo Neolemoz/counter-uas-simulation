@@ -28,11 +28,18 @@ def ok(base: dict[str, Any], *, state: str | None) -> dict[str, Any]:
     return out
 
 
-def fail(base: dict[str, Any], error_code: str, message: str) -> dict[str, Any]:
+def fail(
+    base: dict[str, Any],
+    error_code: str,
+    message: str,
+    **extra: Any,
+) -> dict[str, Any]:
     out = dict(base)
     out["ok"] = False
     out["error_code"] = error_code
     out["message"] = message
+    if extra:
+        out.update(extra)
     return out
 
 

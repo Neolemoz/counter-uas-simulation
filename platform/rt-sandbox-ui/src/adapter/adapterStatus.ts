@@ -3,7 +3,17 @@ import {
   sessionRuntimeProfileLabel,
   type SessionRuntimeProfile,
 } from "@/runtime/sessionRuntimeProfile";
+import { LIVE_MAINTAINER_SMOKE_HINT } from "@/runtime/liveSessionUx";
+import {
+  deriveLiveCommandHealth,
+  type LiveCommandHealthView,
+} from "@/runtime/liveCommandHealth";
 import { adapterModeLabel } from "@/sync/cognition";
+import type { ChannelSnapshot } from "@/telemetry/channelIndex";
+import {
+  deriveMirrorFreshness,
+  type MirrorFreshnessView,
+} from "@/telemetry/mirrorFreshness";
 import {
   formatLastPullAge,
   isPullAgeStale,
@@ -35,10 +45,18 @@ export type AdapterStatusView = {
   adapterPid: string | null;
   stubAlive: boolean | null;
   adapterEntityCount: number | null;
+  launchHealth: string | null;
   telemetryHealth: string | null;
   syncHealth: string | null;
   telemetryRevision: number | null;
   bridgeLastPollUtc: string | null;
+  liveProfileActive: boolean;
+  liveBackgroundPollHz: number | null;
+  lastLivePollUtc: string | null;
+  livePollFreshness: FreshnessView;
+  maintainerSmokeHint: string | null;
+  mirrorFreshness: MirrorFreshnessView;
+  commandHealth: LiveCommandHealthView | null;
   telemetryFreshness: FreshnessView;
   syncFreshness: FreshnessView;
   uiPullFreshness: FreshnessView;
@@ -178,20 +196,84 @@ function mergeHealth(
   return null;
 }
 
+function deriveLaunchHealth(
+  sessionHealth?: Record<string, unknown>,
+): string | null {
+  const sh = sessionHealth ?? {};
+  const nested = asRecord(sh.adapter_health);
+  const alive =
+    boolOrNull(nested?.alive) ?? boolOrNull(sh.adapter_alive);
+  if (alive === true) return "launched";
+  if (alive === false) return "not_running";
+  const mode = stringOrNull(nested?.mode) ?? stringOrNull(sh.adapter_mode);
+  if (mode === "live" && alive === null) return "unknown";
+  return null;
+}
+
+function deriveLivePollFreshness(
+  lastLivePollUtc: string | null,
+  pollHz: number | null,
+  nowMs: number,
+): FreshnessView {
+  if (!pollHz || pollHz <= 0) {
+    return {
+      label: "Live poll: n/a",
+      tone: "neutral",
+      detail: "Background poll inactive for this profile.",
+    };
+  }
+  if (!lastLivePollUtc) {
+    return {
+      label: "Live poll: pending",
+      tone: "warn",
+      detail: "Waiting for first bridge live background poll.",
+    };
+  }
+  const staleAfterMs = Math.max(2000, Math.ceil((2000 / pollHz)));
+  const ageMs = nowMs - Date.parse(lastLivePollUtc);
+  const stale = !Number.isFinite(ageMs) || ageMs > staleAfterMs;
+  return {
+    label: stale ? "Live poll: stale" : "Live poll: fresh",
+    tone: stale ? "warn" : "ok",
+    detail: `Last bridge live poll ${formatLastPullAge(lastLivePollUtc, nowMs)} (${pollHz} Hz cap).`,
+  };
+}
+
+function pickLivePollFields(sessionHealth?: Record<string, unknown>): {
+  liveBackgroundPollHz: number | null;
+  lastLivePollUtc: string | null;
+  runtimeProfile: string | null;
+} {
+  const sh = sessionHealth ?? {};
+  return {
+    liveBackgroundPollHz: numberOrNull(sh.live_background_poll_hz),
+    lastLivePollUtc: stringOrNull(sh.last_live_poll_utc),
+    runtimeProfile: stringOrNull(sh.runtime_profile),
+  };
+}
+
 export function deriveAdapterStatus({
   sessionHealthPayload,
   worldSummaryPayload,
+  entityPoseMirrorSnapshot,
+  connected = true,
   lastPullUtc,
   pullHz = 1,
   nowMs = Date.now(),
   requestedRuntimeProfile = null,
+  editingEnabled = true,
+  livePreflightOk = null,
 }: {
   sessionHealthPayload?: Record<string, unknown>;
   worldSummaryPayload?: Record<string, unknown>;
+  entityPoseMirrorSnapshot?: ChannelSnapshot;
+  connected?: boolean;
   lastPullUtc?: string | null;
   pullHz?: number;
   nowMs?: number;
   requestedRuntimeProfile?: SessionRuntimeProfile | null;
+  editingEnabled?: boolean;
+  livePreflightOk?: boolean | null;
 }): AdapterStatusView {
   const sh = sessionHealthPayload ?? {};
   const ws = worldSummaryPayload ?? {};
@@ -241,6 +323,35 @@ export function deriveAdapterStatus({
   }
 
   const syncFreshness = healthFreshness(syncHealth, "sync");
+  const launchHealth = deriveLaunchHealth(sh);
+  const liveFields = pickLivePollFields(sh);
+  const liveProfileActive =
+    profile === "live_adapter" ||
+    requestedRuntimeProfile === "live" ||
+    liveFields.runtimeProfile === "live";
+  const livePollFreshness = deriveLivePollFreshness(
+    liveFields.lastLivePollUtc,
+    liveFields.liveBackgroundPollHz,
+    nowMs,
+  );
+  const mirrorFreshness = deriveMirrorFreshness({
+    mirrorSnapshot: entityPoseMirrorSnapshot,
+    worldSummaryPayload: ws,
+    sessionHealthPayload: sh,
+    connected,
+    liveBackgroundPollHz: liveFields.liveBackgroundPollHz,
+    nowMs,
+  });
+  const sessionState =
+    typeof sh.state === "string" ? sh.state : "unknown";
+  const commandHealth = deriveLiveCommandHealth({
+    connected,
+    requestedRuntimeProfile,
+    sessionState,
+    editingEnabled,
+    sessionHealthPayload: sh,
+    livePreflightOk,
+  });
 
   return {
     profile,
@@ -259,10 +370,18 @@ export function deriveAdapterStatus({
     adapterPid: adapterFields.adapterPid,
     stubAlive: adapterFields.stubAlive,
     adapterEntityCount: adapterFields.adapterEntityCount,
+    launchHealth,
     telemetryHealth,
     syncHealth,
     telemetryRevision,
     bridgeLastPollUtc,
+    liveProfileActive,
+    liveBackgroundPollHz: liveFields.liveBackgroundPollHz,
+    lastLivePollUtc: liveFields.lastLivePollUtc,
+    livePollFreshness,
+    maintainerSmokeHint: liveProfileActive ? LIVE_MAINTAINER_SMOKE_HINT : null,
+    mirrorFreshness,
+    commandHealth,
     telemetryFreshness,
     syncFreshness,
     uiPullFreshness,
