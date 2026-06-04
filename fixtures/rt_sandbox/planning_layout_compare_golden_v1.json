@@ -1,0 +1,273 @@
+{
+  "schema_version": "planning_layout_compare_golden_v1",
+  "fixture_utc": "2026-06-04T00:00:00Z",
+  "description": "Stable Planning layout compare golden with three snapshot slots and known delta analytics.",
+  "snapshots": {
+    "A": {
+      "schema_version": "rt_planning_mc_snapshot_v1",
+      "planning_snapshot_id": "rt_planning_snapshot:sha256:99550c3466b4b831",
+      "planning_geometry_id": "rt_planning:sha256:b4b557ab7147c3d3",
+      "created_utc": "2026-06-04T00:00:00Z",
+      "polygon": {
+        "defense_area_vertices": [
+          {
+            "x": 0,
+            "y": 0
+          },
+          {
+            "x": 1000,
+            "y": 0
+          },
+          {
+            "x": 1000,
+            "y": 1000
+          },
+          {
+            "x": 0,
+            "y": 1000
+          }
+        ]
+      },
+      "radars": {
+        "radar_sites": [
+          {
+            "id": "planning-radar-1",
+            "position": {
+              "x": 150,
+              "y": 150
+            },
+            "radar_type": "Short Range",
+            "radar_preset": "short",
+            "detection_range_m": 500
+          }
+        ]
+      },
+      "analytics_summary": {
+        "coverage_percent": 37.5,
+        "overlap_percent": 0,
+        "redundancy_percent": 0,
+        "blind_spot_summary": "62.5% uncovered, largest gap in NE uncovered sector.",
+        "recommendation_summary": {
+          "suggested_radar": "Long Range",
+          "suggested_position": {
+            "x": 750,
+            "y": 750
+          },
+          "reason": "Add Long Range near NE uncovered sector. Existing planning radars leave 62.5% of sampled planning area uncovered."
+        }
+      },
+      "planning_extent": {
+        "planning_extent_id": "planning_10km",
+        "planning_extent_radius_m": 10000,
+        "planning_extent_label": "10 km Planning World"
+      },
+      "presentation": {
+        "terrain_mode": "ellipsoid",
+        "selected_location_preset": "bangkok"
+      },
+      "provenance": {
+        "authority": "rt_planning_ui",
+        "origin": "platform/rt-sandbox-ui",
+        "ui_flow": "planning_mode"
+      }
+    },
+    "B": {
+      "schema_version": "rt_planning_mc_snapshot_v1",
+      "planning_snapshot_id": "rt_planning_snapshot:sha256:c698d53800bebb16",
+      "planning_geometry_id": "rt_planning:sha256:51c2fc7e519ec510",
+      "created_utc": "2026-06-04T01:00:00Z",
+      "polygon": {
+        "defense_area_vertices": [
+          {
+            "x": 0,
+            "y": 0
+          },
+          {
+            "x": 1000,
+            "y": 0
+          },
+          {
+            "x": 1000,
+            "y": 1000
+          },
+          {
+            "x": 0,
+            "y": 1000
+          }
+        ]
+      },
+      "radars": {
+        "radar_sites": [
+          {
+            "id": "planning-radar-2",
+            "position": {
+              "x": 800,
+              "y": 800
+            },
+            "radar_type": "Medium Range",
+            "radar_preset": null,
+            "detection_range_m": 1000
+          }
+        ]
+      },
+      "analytics_summary": {
+        "coverage_percent": 100,
+        "overlap_percent": 0,
+        "redundancy_percent": 0,
+        "blind_spot_summary": "No uncovered planning cells.",
+        "recommendation_summary": {
+          "suggested_radar": null,
+          "suggested_position": null,
+          "reason": null
+        }
+      },
+      "planning_extent": {
+        "planning_extent_id": "planning_10km",
+        "planning_extent_radius_m": 10000,
+        "planning_extent_label": "10 km Planning World"
+      },
+      "presentation": {
+        "terrain_mode": "ellipsoid",
+        "selected_location_preset": "bangkok"
+      },
+      "provenance": {
+        "authority": "rt_planning_ui",
+        "origin": "platform/rt-sandbox-ui",
+        "ui_flow": "planning_mode"
+      }
+    },
+    "C": {
+      "schema_version": "rt_planning_mc_snapshot_v1",
+      "planning_snapshot_id": "rt_planning_snapshot:sha256:338be91c53cb15b1",
+      "planning_geometry_id": "rt_planning:sha256:c024035f80f9b1f8",
+      "created_utc": "2026-06-04T02:00:00Z",
+      "polygon": {
+        "defense_area_vertices": [
+          {
+            "x": 0,
+            "y": 0
+          },
+          {
+            "x": 1000,
+            "y": 0
+          },
+          {
+            "x": 1000,
+            "y": 1000
+          },
+          {
+            "x": 0,
+            "y": 1000
+          }
+        ]
+      },
+      "radars": {
+        "radar_sites": [
+          {
+            "id": "planning-radar-1",
+            "position": {
+              "x": 150,
+              "y": 150
+            },
+            "radar_type": "Short Range",
+            "radar_preset": "short",
+            "detection_range_m": 500
+          },
+          {
+            "id": "planning-radar-2",
+            "position": {
+              "x": 850,
+              "y": 850
+            },
+            "radar_type": "Medium Range",
+            "radar_preset": null,
+            "detection_range_m": 1000
+          }
+        ]
+      },
+      "analytics_summary": {
+        "coverage_percent": 100,
+        "overlap_percent": 31.25,
+        "redundancy_percent": 31.25,
+        "blind_spot_summary": "No uncovered planning cells.",
+        "recommendation_summary": {
+          "suggested_radar": null,
+          "suggested_position": null,
+          "reason": null
+        }
+      },
+      "planning_extent": {
+        "planning_extent_id": "planning_10km",
+        "planning_extent_radius_m": 10000,
+        "planning_extent_label": "10 km Planning World"
+      },
+      "presentation": {
+        "terrain_mode": "ellipsoid",
+        "selected_location_preset": "bangkok"
+      },
+      "provenance": {
+        "authority": "rt_planning_ui",
+        "origin": "platform/rt-sandbox-ui",
+        "ui_flow": "planning_mode"
+      }
+    }
+  },
+  "expected_deltas": [
+    {
+      "metric": "coverage_percent",
+      "baseline_slot": "A",
+      "target_slot": "B",
+      "delta": 62.5,
+      "label": "improved"
+    },
+    {
+      "metric": "overlap_percent",
+      "baseline_slot": "A",
+      "target_slot": "B",
+      "delta": 0,
+      "label": "unchanged"
+    },
+    {
+      "metric": "redundancy_percent",
+      "baseline_slot": "A",
+      "target_slot": "B",
+      "delta": 0,
+      "label": "unchanged"
+    },
+    {
+      "metric": "radar_count",
+      "baseline_slot": "A",
+      "target_slot": "B",
+      "delta": 0,
+      "label": "unchanged"
+    },
+    {
+      "metric": "coverage_percent",
+      "baseline_slot": "A",
+      "target_slot": "C",
+      "delta": 62.5,
+      "label": "improved"
+    },
+    {
+      "metric": "overlap_percent",
+      "baseline_slot": "A",
+      "target_slot": "C",
+      "delta": 31.25,
+      "label": "improved"
+    },
+    {
+      "metric": "redundancy_percent",
+      "baseline_slot": "A",
+      "target_slot": "C",
+      "delta": 31.25,
+      "label": "improved"
+    },
+    {
+      "metric": "radar_count",
+      "baseline_slot": "A",
+      "target_slot": "C",
+      "delta": 1,
+      "label": "improved"
+    }
+  ]
+}

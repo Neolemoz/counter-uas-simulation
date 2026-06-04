@@ -38,6 +38,12 @@ import {
   type PlanningResultLinkV1,
 } from "@/layout/planningMcResultLink";
 import {
+  buildPlanningLayoutCompareSlot,
+  capturePlanningLayoutCompareSlot,
+  type PlanningLayoutCompareSlotV1,
+} from "@/layout/planningLayoutComparison";
+import { buildPlanningLayoutComparePanelDerivation } from "@/workstation/PlanningLayoutComparePanel";
+import {
   DEFAULT_CESIUM_TERRAIN_PROVIDER_MODE,
   type CesiumTerrainProviderMode,
 } from "@/cesium/terrainProviderConfig";
@@ -69,6 +75,14 @@ function renderPlanningPanel({
   planningResultLinkPreview = buildPlanningResultLinkPreview(planningResultLink),
   planningResultImportText = "",
   planningResultImportError = null,
+  planningLayoutCompareSlots = [] as PlanningLayoutCompareSlotV1[],
+  planningLayoutCompareAnalytics = buildPlanningLayoutComparePanelDerivation(
+    planningLayoutCompareSlots,
+  ),
+  planningLayoutCompareCaptureDisabled = planningLayoutCompareSlots.length >= 3,
+  planningLayoutCompareImportSlotLabel = "A" as const,
+  planningLayoutCompareImportText = "",
+  planningLayoutCompareImportError = null as string | null,
   terrainProviderMode = DEFAULT_CESIUM_TERRAIN_PROVIDER_MODE,
   locationPresetId = DEFAULT_PLANNING_LOCATION_PRESET_ID,
   customLatitude = String(planningLocationPreset(DEFAULT_PLANNING_LOCATION_PRESET_ID).latitudeDeg),
@@ -88,6 +102,12 @@ function renderPlanningPanel({
   planningResultLinkPreview?: ReturnType<typeof buildPlanningResultLinkPreview>;
   planningResultImportText?: string;
   planningResultImportError?: string | null;
+  planningLayoutCompareSlots?: PlanningLayoutCompareSlotV1[];
+  planningLayoutCompareAnalytics?: ReturnType<typeof buildPlanningLayoutComparePanelDerivation>;
+  planningLayoutCompareCaptureDisabled?: boolean;
+  planningLayoutCompareImportSlotLabel?: "A" | "B" | "C";
+  planningLayoutCompareImportText?: string;
+  planningLayoutCompareImportError?: string | null;
   terrainProviderMode?: CesiumTerrainProviderMode;
   locationPresetId?: PlanningLocationPresetId;
   customLatitude?: string;
@@ -140,6 +160,18 @@ function renderPlanningPanel({
       onImportPlanningResultMetadata={vi.fn()}
       onImportMockPlanningResultRef={vi.fn()}
       onClearPlanningResultImport={vi.fn()}
+      planningLayoutCompareSlots={planningLayoutCompareSlots}
+      planningLayoutCompareAnalytics={planningLayoutCompareAnalytics}
+      planningLayoutCompareCaptureDisabled={planningLayoutCompareCaptureDisabled}
+      planningLayoutCompareImportSlotLabel={planningLayoutCompareImportSlotLabel}
+      planningLayoutCompareImportText={planningLayoutCompareImportText}
+      planningLayoutCompareImportError={planningLayoutCompareImportError}
+      onCapturePlanningLayoutCompare={vi.fn()}
+      onRemovePlanningLayoutCompareSlot={vi.fn()}
+      onClearPlanningLayoutCompareSlots={vi.fn()}
+      onPlanningLayoutCompareImportSlotLabelChange={vi.fn()}
+      onPlanningLayoutCompareImportTextChange={vi.fn()}
+      onImportPlanningLayoutCompareSnapshot={vi.fn()}
     />,
   );
 }
@@ -799,6 +831,130 @@ describe("AppWorkstationSlots planning mode shell", () => {
     expect(markup20).toContain("Extent 20 km Planning World");
     expect(markup20).toContain("Radius 20,000m");
     expect(markup20).toContain("Wide Planning World");
+  });
+
+  it("renders Planning layout compare panel with governance and table", () => {
+    const polygon: PlanningPolygonState = {
+      draftVertices: [],
+      completedVertices: [
+        { x: 0, y: 0 },
+        { x: 1000, y: 0 },
+        { x: 1000, y: 1000 },
+        { x: 0, y: 1000 },
+      ],
+    };
+    const radars: PlanningRadarState = {
+      ...EMPTY_PLANNING_RADARS,
+      sites: [
+        {
+          id: "planning-radar-1",
+          position: { x: 150, y: 150 },
+          radar_type: "Short Range",
+          detection_range_m: 500,
+        },
+      ],
+    };
+    const coverageAnalysis = analyzePlanningCoverage(polygon, radars, 4, {
+      radarPresets: PLANNING_RADAR_PRESETS,
+    });
+    const snapshot = buildPlanningMcSnapshot(polygon, radars, coverageAnalysis, {
+      createdUtc: "2026-06-04T00:00:00Z",
+      terrainMode: "ellipsoid",
+      selectedLocationPreset: "bangkok",
+    });
+    const snapB = buildPlanningMcSnapshot(
+      polygon,
+      addPlanningRadarSite(EMPTY_PLANNING_RADARS, { x: 800, y: 800 }),
+      analyzePlanningCoverage(
+        polygon,
+        addPlanningRadarSite(EMPTY_PLANNING_RADARS, { x: 800, y: 800 }),
+        4,
+        { radarPresets: PLANNING_RADAR_PRESETS },
+      ),
+      {
+        createdUtc: "2026-06-04T01:00:00Z",
+        terrainMode: "ellipsoid",
+        selectedLocationPreset: "bangkok",
+      },
+    );
+    let planningLayoutCompareSlots = capturePlanningLayoutCompareSlot(
+      [],
+      snapshot,
+      "2026-06-04T00:00:00Z",
+    ).slots;
+    planningLayoutCompareSlots = capturePlanningLayoutCompareSlot(
+      planningLayoutCompareSlots,
+      snapB,
+      "2026-06-04T01:00:00Z",
+    ).slots;
+
+    const markup = renderPlanningPanel({
+      polygon,
+      radars,
+      coverageAnalysis,
+      planningLayoutCompareSlots,
+    });
+
+    expect(markup).toContain('data-testid="planning-layout-compare-panel"');
+    expect(markup).toContain('data-testid="planning-layout-compare-governance"');
+    expect(markup).toContain('data-testid="planning-layout-compare-table"');
+    expect(markup).toContain('data-testid="planning-layout-compare-row-A"');
+    expect(markup).toContain('data-testid="planning-layout-compare-deltas"');
+    expect(markup).toContain('data-testid="planning-layout-compare-blind-spots"');
+    expect(markup).toContain('data-testid="planning-layout-compare-recommendations"');
+    expect(markup).toContain('data-testid="planning-layout-compare-import"');
+    expect(markup).toContain("Capture Current Layout");
+    expect(markup).toContain("Clear All Slots");
+    expect(markup).toContain(snapshot.planning_snapshot_id);
+    expect(markup).toContain("planning_10km");
+  });
+
+  it("supports capture, remove slot, and clear all slot flows via compare helpers", () => {
+    const polygon: PlanningPolygonState = {
+      draftVertices: [],
+      completedVertices: [
+        { x: 0, y: 0 },
+        { x: 1000, y: 0 },
+        { x: 1000, y: 1000 },
+      ],
+    };
+    const radarsA = addPlanningRadarSite(EMPTY_PLANNING_RADARS, { x: 150, y: 150 });
+    const radarsB = addPlanningRadarSite(EMPTY_PLANNING_RADARS, { x: 800, y: 800 });
+    const snapA = buildPlanningMcSnapshot(
+      polygon,
+      radarsA,
+      analyzePlanningCoverage(polygon, radarsA, 4, { radarPresets: PLANNING_RADAR_PRESETS }),
+      {
+        createdUtc: "2026-06-04T00:00:00Z",
+        terrainMode: "ellipsoid",
+        selectedLocationPreset: "bangkok",
+      },
+    );
+    const snapB = buildPlanningMcSnapshot(
+      polygon,
+      radarsB,
+      analyzePlanningCoverage(polygon, radarsB, 4, { radarPresets: PLANNING_RADAR_PRESETS }),
+      {
+        createdUtc: "2026-06-04T01:00:00Z",
+        terrainMode: "ellipsoid",
+        selectedLocationPreset: "bangkok",
+      },
+    );
+
+    const capturedA = capturePlanningLayoutCompareSlot([], snapA).slots;
+    const capturedBoth = capturePlanningLayoutCompareSlot(capturedA, snapB).slots;
+    expect(capturedBoth.map((slot) => slot.slot_label)).toEqual(["A", "B"]);
+
+    const duplicateSlotA = buildPlanningLayoutCompareSlot("A", snapA);
+    const duplicateSlotB = buildPlanningLayoutCompareSlot("B", snapA, {
+      captureUtc: "2026-06-04T02:00:00Z",
+    });
+    const duplicateWarningMarkup = renderPlanningPanel({
+      planningLayoutCompareSlots: [duplicateSlotA, duplicateSlotB],
+    });
+    expect(duplicateWarningMarkup).toContain(
+      'data-testid="planning-layout-compare-warning-duplicate_geometry"',
+    );
   });
 
 });

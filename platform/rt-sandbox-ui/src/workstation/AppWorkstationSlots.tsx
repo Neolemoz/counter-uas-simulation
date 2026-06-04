@@ -135,6 +135,20 @@ import {
   planningGeometryFingerprint,
 } from "@/layout/planningMcSnapshot";
 import {
+  capturePlanningLayoutCompareSlot,
+  clearPlanningLayoutCompareSlots,
+  nextAvailablePlanningLayoutCompareSlotLabel,
+  parsePlanningMcSnapshotJson,
+  removePlanningLayoutCompareSlot,
+  setPlanningLayoutCompareSlot,
+  type PlanningLayoutCompareSlotLabel,
+  type PlanningLayoutCompareSlotV1,
+} from "@/layout/planningLayoutComparison";
+import {
+  buildPlanningLayoutComparePanelDerivation,
+  PlanningLayoutComparePanel,
+} from "@/workstation/PlanningLayoutComparePanel";
+import {
   buildPlanningMcPackage,
   copyPlanningMcPackage,
   downloadPlanningMcPackage,
@@ -264,6 +278,18 @@ export function PlanningModePanel({
   onImportPlanningResultMetadata,
   onImportMockPlanningResultRef,
   onClearPlanningResultImport,
+  planningLayoutCompareSlots,
+  planningLayoutCompareAnalytics,
+  planningLayoutCompareCaptureDisabled,
+  planningLayoutCompareImportSlotLabel,
+  planningLayoutCompareImportText,
+  planningLayoutCompareImportError,
+  onCapturePlanningLayoutCompare,
+  onRemovePlanningLayoutCompareSlot,
+  onClearPlanningLayoutCompareSlots,
+  onPlanningLayoutCompareImportSlotLabelChange,
+  onPlanningLayoutCompareImportTextChange,
+  onImportPlanningLayoutCompareSnapshot,
 }: {
   tool: PlanningTool;
   polygon: PlanningPolygonState;
@@ -310,6 +336,18 @@ export function PlanningModePanel({
   onImportPlanningResultMetadata: () => void;
   onImportMockPlanningResultRef: () => void;
   onClearPlanningResultImport: () => void;
+  planningLayoutCompareSlots: PlanningLayoutCompareSlotV1[];
+  planningLayoutCompareAnalytics: ReturnType<typeof buildPlanningLayoutComparePanelDerivation>;
+  planningLayoutCompareCaptureDisabled: boolean;
+  planningLayoutCompareImportSlotLabel: PlanningLayoutCompareSlotLabel;
+  planningLayoutCompareImportText: string;
+  planningLayoutCompareImportError: string | null;
+  onCapturePlanningLayoutCompare: () => void;
+  onRemovePlanningLayoutCompareSlot: (slotLabel: PlanningLayoutCompareSlotV1["slot_label"]) => void;
+  onClearPlanningLayoutCompareSlots: () => void;
+  onPlanningLayoutCompareImportSlotLabelChange: (slotLabel: PlanningLayoutCompareSlotLabel) => void;
+  onPlanningLayoutCompareImportTextChange: (value: string) => void;
+  onImportPlanningLayoutCompareSnapshot: () => void;
 }) {
   const canFinish = canFinishPlanningPolygon(polygon);
   const hasDraft = polygon.draftVertices.length > 0;
@@ -925,6 +963,20 @@ export function PlanningModePanel({
               </button>
             </div>
           </div>
+          <PlanningLayoutComparePanel
+            slots={planningLayoutCompareSlots}
+            analytics={planningLayoutCompareAnalytics}
+            captureDisabled={planningLayoutCompareCaptureDisabled}
+            importSlotLabel={planningLayoutCompareImportSlotLabel}
+            importText={planningLayoutCompareImportText}
+            importError={planningLayoutCompareImportError}
+            onImportSlotLabelChange={onPlanningLayoutCompareImportSlotLabelChange}
+            onImportTextChange={onPlanningLayoutCompareImportTextChange}
+            onImportSnapshot={onImportPlanningLayoutCompareSnapshot}
+            onCaptureCurrentLayout={onCapturePlanningLayoutCompare}
+            onRemoveSlot={onRemovePlanningLayoutCompareSlot}
+            onClearAllSlots={onClearPlanningLayoutCompareSlots}
+          />
         </div>
         <div className="mt-3 grid gap-2 text-xs" data-testid="planning-radar-editor">
           <label className="grid gap-1 text-slate-300">
@@ -1256,6 +1308,15 @@ export function AppWorkstationSlots(props: AppWorkstationSlotsProps) {
   const [planningResultImportError, setPlanningResultImportError] = useState<string | null>(
     null,
   );
+  const [planningLayoutCompareSlots, setPlanningLayoutCompareSlots] = useState<
+    PlanningLayoutCompareSlotV1[]
+  >([]);
+  const [planningLayoutCompareImportSlotLabel, setPlanningLayoutCompareImportSlotLabel] =
+    useState<PlanningLayoutCompareSlotLabel>("A");
+  const [planningLayoutCompareImportText, setPlanningLayoutCompareImportText] = useState("");
+  const [planningLayoutCompareImportError, setPlanningLayoutCompareImportError] = useState<
+    string | null
+  >(null);
   const currentPlanningGeometryId = useMemo(
     () => planningGeometryFingerprint(planningPolygon, planningRadars),
     [planningPolygon, planningRadars],
@@ -1279,6 +1340,12 @@ export function AppWorkstationSlots(props: AppWorkstationSlotsProps) {
     () => buildPlanningResultLinkPreview(planningResultLink),
     [planningResultLink],
   );
+  const planningLayoutCompareAnalytics = useMemo(
+    () => buildPlanningLayoutComparePanelDerivation(planningLayoutCompareSlots),
+    [planningLayoutCompareSlots],
+  );
+  const planningLayoutCompareCaptureDisabled =
+    planningLayoutCompareSlots.length >= 3;
   const planningModeActive = workspaceModeShowsPlanningPlaceholder(workspaceMode);
   const planningDrawingEnabled = planningToolAllowsDrawing(
     planningModeActive,
@@ -1424,6 +1491,85 @@ export function AppWorkstationSlots(props: AppWorkstationSlotsProps) {
     setPlanningResultImportText("");
     setPlanningResultImportError(null);
   }, []);
+
+  const handleCapturePlanningLayoutCompare = useCallback(() => {
+    const snapshot = buildPlanningMcSnapshot(
+      planningPolygon,
+      planningRadars,
+      planningCoverageAnalysis,
+      {
+        terrainMode: terrainProviderMode,
+        selectedLocationPreset: planningLocationPresetId,
+        planningExtent,
+      },
+    );
+    setPlanningLayoutCompareSlots((current) =>
+      capturePlanningLayoutCompareSlot(
+        current,
+        snapshot,
+        new Date().toISOString().replace(/\.\d{3}Z$/, "Z"),
+      ).slots,
+    );
+  }, [
+    planningPolygon,
+    planningRadars,
+    planningCoverageAnalysis,
+    terrainProviderMode,
+    planningLocationPresetId,
+    planningExtent,
+  ]);
+
+  const handleRemovePlanningLayoutCompareSlot = useCallback(
+    (slotLabel: PlanningLayoutCompareSlotV1["slot_label"]) => {
+      setPlanningLayoutCompareSlots((current) =>
+        removePlanningLayoutCompareSlot(current, slotLabel),
+      );
+    },
+    [],
+  );
+
+  const handleClearPlanningLayoutCompareSlots = useCallback(() => {
+    setPlanningLayoutCompareSlots(clearPlanningLayoutCompareSlots());
+    setPlanningLayoutCompareImportError(null);
+  }, []);
+
+  const handlePlanningLayoutCompareImportTextChange = useCallback((value: string) => {
+    setPlanningLayoutCompareImportText(value);
+    setPlanningLayoutCompareImportError(null);
+  }, []);
+
+  const handlePlanningLayoutCompareImportSlotLabelChange = useCallback(
+    (slotLabel: PlanningLayoutCompareSlotLabel) => {
+      setPlanningLayoutCompareImportSlotLabel(slotLabel);
+      setPlanningLayoutCompareImportError(null);
+    },
+    [],
+  );
+
+  const handleImportPlanningLayoutCompareSnapshot = useCallback(() => {
+    const parsed = parsePlanningMcSnapshotJson(planningLayoutCompareImportText);
+    if (!parsed.ok) {
+      setPlanningLayoutCompareImportError(parsed.error);
+      return;
+    }
+    const captureUtc = new Date().toISOString().replace(/\.\d{3}Z$/, "Z");
+    const updatedSlots = setPlanningLayoutCompareSlot(
+      planningLayoutCompareSlots,
+      planningLayoutCompareImportSlotLabel,
+      parsed.snapshot,
+      captureUtc,
+    );
+    setPlanningLayoutCompareSlots(updatedSlots);
+    const nextLabel = nextAvailablePlanningLayoutCompareSlotLabel(updatedSlots);
+    if (nextLabel) {
+      setPlanningLayoutCompareImportSlotLabel(nextLabel);
+    }
+    setPlanningLayoutCompareImportError(null);
+  }, [
+    planningLayoutCompareImportSlotLabel,
+    planningLayoutCompareImportText,
+    planningLayoutCompareSlots,
+  ]);
 
   const handlePlanningMapClick = useCallback(
     (vertex: PlanningVertex) => {
@@ -1766,6 +1912,22 @@ export function AppWorkstationSlots(props: AppWorkstationSlotsProps) {
                 onImportPlanningResultMetadata={handleImportPlanningResultMetadata}
                 onImportMockPlanningResultRef={handleImportMockPlanningResultRef}
                 onClearPlanningResultImport={handleClearPlanningResultImport}
+                planningLayoutCompareSlots={planningLayoutCompareSlots}
+                planningLayoutCompareAnalytics={planningLayoutCompareAnalytics}
+                planningLayoutCompareCaptureDisabled={planningLayoutCompareCaptureDisabled}
+                planningLayoutCompareImportSlotLabel={planningLayoutCompareImportSlotLabel}
+                planningLayoutCompareImportText={planningLayoutCompareImportText}
+                planningLayoutCompareImportError={planningLayoutCompareImportError}
+                onCapturePlanningLayoutCompare={handleCapturePlanningLayoutCompare}
+                onRemovePlanningLayoutCompareSlot={handleRemovePlanningLayoutCompareSlot}
+                onClearPlanningLayoutCompareSlots={handleClearPlanningLayoutCompareSlots}
+                onPlanningLayoutCompareImportSlotLabelChange={
+                  handlePlanningLayoutCompareImportSlotLabelChange
+                }
+                onPlanningLayoutCompareImportTextChange={
+                  handlePlanningLayoutCompareImportTextChange
+                }
+                onImportPlanningLayoutCompareSnapshot={handleImportPlanningLayoutCompareSnapshot}
               />
             )}
           </div>
