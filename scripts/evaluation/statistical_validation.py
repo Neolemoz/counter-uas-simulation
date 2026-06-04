@@ -175,7 +175,23 @@ def _failure_class(row: dict[str, str]) -> str:
     log_path = (row.get("log_path") or "").strip()
     if not log_path or not Path(log_path).is_file():
         return ""
-    return classify_run_failure(Path(log_path), capture_rc=None)
+    capture_rc = None
+    raw_capture_rc = str(row.get("capture_rc") or "").strip()
+    if raw_capture_rc:
+        try:
+            capture_rc = int(raw_capture_rc)
+        except ValueError:
+            capture_rc = None
+    if capture_rc is None:
+        meta_path = Path(log_path).with_suffix(".meta.json")
+        if meta_path.is_file():
+            try:
+                meta_rc = json.loads(meta_path.read_text(encoding="utf-8")).get("capture_rc")
+                if meta_rc is not None and str(meta_rc).strip():
+                    capture_rc = int(str(meta_rc).strip())
+            except (OSError, json.JSONDecodeError, ValueError):
+                capture_rc = None
+    return classify_run_failure(Path(log_path), capture_rc=capture_rc)
 
 
 def paired_report(
@@ -295,7 +311,12 @@ def validate_manifest(manifest: dict, rows: list[dict[str, str]]) -> dict[str, o
     require_clean = bool(manifest.get("require_clean_git", False))
     seeds = [s for s in (seed_for_row(r) for r in rows) if s is not None]
     cohorts = sorted({str(r.get("cohort") or "").strip() for r in rows if str(r.get("cohort") or "").strip()})
-    dirty_values = {str(r.get("git_dirty") or "").strip().lower() for r in rows if str(r.get("git_dirty") or "").strip()}
+    dirty_values_present = [
+        str(r.get("git_dirty") or "").strip().lower()
+        for r in rows
+        if str(r.get("git_dirty") or "").strip()
+    ]
+    dirty_values = set(dirty_values_present)
     missing_logs = [
         r.get("log_path", "")
         for r in rows
@@ -316,6 +337,8 @@ def validate_manifest(manifest: dict, rows: list[dict[str, str]]) -> dict[str, o
         problems.append(f"duplicate seeds: {duplicates}")
     if len(seeds) != len(rows):
         problems.append(f"{len(rows) - len(seeds)} rows are missing seed metadata")
+    if require_clean and len(dirty_values_present) != len(rows):
+        problems.append(f"{len(rows) - len(dirty_values_present)} rows are missing git_dirty metadata")
     if require_clean and dirty_values - {"false", "0"}:
         problems.append(f"dirty git rows present: {sorted(dirty_values)}")
     if missing_logs:

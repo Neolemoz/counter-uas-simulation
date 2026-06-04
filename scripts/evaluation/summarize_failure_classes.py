@@ -19,6 +19,18 @@ import stats_helpers as stats  # noqa: E402
 from classify_run import classify_run_failure_evidence  # noqa: E402
 
 
+def _parse_capture_rc(value: object) -> int | None:
+    if value is None:
+        return None
+    text = str(value).strip()
+    if not text:
+        return None
+    try:
+        return int(text)
+    except ValueError:
+        return None
+
+
 def main() -> int:
     ap = argparse.ArgumentParser(description='Count failure_class over MC CSV log_path column.')
     ap.add_argument('csv_path', type=Path, help='monte_carlo *.csv with log_path header')
@@ -53,16 +65,21 @@ def main() -> int:
             missing_logs.append(lp)
             continue
         mp = log_path.with_suffix('.meta.json')
+        capture_rc = _parse_capture_rc(row.get('capture_rc'))
         if mp.is_file():
             try:
                 md = json.loads(mp.read_text(encoding='utf-8'))
                 co = md.get('cohort')
                 if co is not None and str(co).strip():
                     cohorts.add(str(co).strip())
+                if capture_rc is None:
+                    capture_rc = _parse_capture_rc(md.get('capture_rc'))
             except (OSError, json.JSONDecodeError):
                 pass
-        evidence = classify_run_failure_evidence(log_path, capture_rc=None)
-        hist[str(evidence['failure_class'])] += 1
+        evidence = classify_run_failure_evidence(log_path, capture_rc=capture_rc)
+        failure_class = str(evidence.get('failure_class') or '')
+        if failure_class:
+            hist[failure_class] += 1
         evidence_rows.append(evidence)
 
     total = int(sum(hist.values()))

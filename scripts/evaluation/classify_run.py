@@ -43,15 +43,17 @@ def classify_run_failure_evidence(
     has_eng_metric = '[eng_metric]' in low
     max_abs_delta = max((abs(d) for d in deltas), default=None)
 
-    failure_class = 'F5_unknown'
-    if timeout_seen:
-        failure_class = 'F1_timeout'
-    elif assignment_switch_count > 0:
-        failure_class = 'F4_assignment'
-    elif deltas and (max(abs(d) for d in deltas) > 8.0 or len(deltas) > 15):
-        failure_class = 'F3_track_instability'
-    elif not summary.hit and feasible_geom_seen:
-        failure_class = 'F2_geom_not_dyn'
+    failure_class = ''
+    if not summary.hit:
+        failure_class = 'F5_unknown'
+        if timeout_seen:
+            failure_class = 'F1_timeout'
+        elif assignment_switch_count > 0:
+            failure_class = 'F4_assignment'
+        elif deltas and (max(abs(d) for d in deltas) > 8.0 or len(deltas) > 15):
+            failure_class = 'F3_track_instability'
+        elif feasible_geom_seen:
+            failure_class = 'F2_geom_not_dyn'
 
     return {
         'failure_class': failure_class,

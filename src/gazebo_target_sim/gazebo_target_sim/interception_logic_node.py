@@ -3351,11 +3351,12 @@ class InterceptionLogicNode(Node):
         self._prev_velocity = {iid: (0.0, 0.0, 0.0) for iid in self._ids}
         self._last_control_time = None
         self._control_dt = self._control_dt_default
-        for iid in self._ids:
-            self._intercept_point_filtered[iid] = None
-            self._guidance_mode[iid] = 'pursuit'
-            self._valid_streak[iid] = 0
-            self._invalid_streak[iid] = 0
+        self._intercept_point_filtered = {iid: None for iid in self._ids}
+        self._guidance_mode = {iid: 'pursuit' for iid in self._ids}
+        self._valid_streak = {iid: 0 for iid in self._ids}
+        self._invalid_streak = {iid: 0 for iid in self._ids}
+        self._t_go_filtered.clear()
+        self._guidance_unit_prev.clear()
         self._last_layer = ''
         self._last_feas_log = None
         self._last_class_warn = None
@@ -3942,11 +3943,12 @@ class InterceptionLogicNode(Node):
         self._mc_engage_state.clear()
         # Reset intercept filter and mode-hysteresis state so a new assignment
         # starts from scratch with no stale prediction or committed mode.
-        for iid in self._ids:
-            self._intercept_point_filtered[iid] = None
-            self._guidance_mode[iid] = 'pursuit'
-            self._valid_streak[iid] = 0
-            self._invalid_streak[iid] = 0
+        self._intercept_point_filtered = {iid: None for iid in self._ids}
+        self._guidance_mode = {iid: 'pursuit' for iid in self._ids}
+        self._valid_streak = {iid: 0 for iid in self._ids}
+        self._invalid_streak = {iid: 0 for iid in self._ids}
+        self._t_go_filtered.clear()
+        self._guidance_unit_prev.clear()
         self._last_hit_range = {i: None for i in self._ids}
         self._feasible_at_engagement_start_by_pair.clear()
         self._feas_eng_latch_assign.clear()
@@ -5071,8 +5073,9 @@ class InterceptionLogicNode(Node):
                 selected, iid_h, ix, iy, iz, tx, ty, tz, feas_m, v_cmd=0.0,
             )
             return zero
+        guidance_key = f'{target_label}|{selected}' if target_label else selected
         guidance_cmd_m = self._compute_guidance_command_for_pair(
-            key=selected,
+            key=guidance_key,
             tx=tx,
             ty=ty,
             tz=tz,

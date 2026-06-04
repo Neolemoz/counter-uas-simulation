@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import importlib.util
 import json
+import types
 from pathlib import Path
 
 _REPO_ROOT = Path(__file__).resolve().parents[3]
@@ -43,6 +44,7 @@ def _write_synthetic_logs(tmp_dir: Path) -> None:
                 'notes': 'mc_label=unit seed=100 geometry_id="cell_a"',
                 'launch_args_raw': 'use_gazebo_gui:=false noise_seed:=100',
                 'launch_args_kv': {'noise_seed': '100'},
+                'capture_rc': 0,
             },
         ),
         encoding='utf-8',
@@ -56,6 +58,7 @@ def _write_synthetic_logs(tmp_dir: Path) -> None:
                 'notes': 'mc_label=unit seed=101 geometry_id="cell_a"',
                 'launch_args_raw': 'use_gazebo_gui:=false noise_seed:=101',
                 'launch_args_kv': {'noise_seed': '101'},
+                'capture_rc': 124,
             },
         ),
         encoding='utf-8',
@@ -121,5 +124,63 @@ def test_aggregate_writes_outputs(tmp_path) -> None:
     csv_text = csv_path.read_text(encoding='utf-8')
     assert 'run_id' in csv_text and 'miss_distance_m' in csv_text
     assert 'noise_seed_mc' in csv_text and 'cohort' in csv_text and 'meta_path' in csv_text
+    assert 'capture_rc' in csv_text
     assert 'unit_cohort' in csv_text and 'cell_a' in csv_text
     assert 'run_a' in csv_text and 'run_b' in csv_text
+
+
+def test_run_mode_forces_per_trial_seed_and_fails_partial_cohort(tmp_path, monkeypatch) -> None:  # noqa: ANN001
+    mc = _load_mc()
+    out_dir = tmp_path / 'mc'
+    log_path = tmp_path / 'run_0.log'
+    log_path.write_text(_HIT_LOG, encoding='utf-8')
+    log_path.with_suffix('.meta.json').write_text(
+        json.dumps(
+            {
+                'cohort': 'unit_cohort',
+                'git_commit': 'abc123',
+                'git_dirty': False,
+                'notes': 'mc_label=unit seed=10',
+                'launch_args_raw': 'measurement_delay_s:=0.1 noise_seed:=10',
+                'launch_args_kv': {'measurement_delay_s': '0.1', 'noise_seed': '10'},
+                'capture_rc': 0,
+            },
+        ),
+        encoding='utf-8',
+    )
+    seen_launch_args: list[str] = []
+
+    def fake_run(cmd, capture_output, text):  # noqa: ANN001, ANN202
+        launch_idx = cmd.index('--launch-args') + 1
+        seen_launch_args.append(cmd[launch_idx])
+        if len(seen_launch_args) == 1:
+            return types.SimpleNamespace(returncode=0, stdout=f'{log_path}\n{log_path.with_suffix(".meta.json")}\n', stderr='')
+        return types.SimpleNamespace(returncode=2, stdout='', stderr='sim crashed')
+
+    monkeypatch.setattr(mc.subprocess, 'run', fake_run)
+
+    args = types.SimpleNamespace(
+        n=2,
+        seed_base=10,
+        launch_args='measurement_delay_s:=0.1 noise_seed:=999',
+        geometry_id='',
+        scenario='single',
+        timeout_s=1.0,
+        label='unit',
+        cohort='unit_cohort',
+        out_dir=str(out_dir),
+    )
+
+    rc = mc.cmd_run(args)
+
+    assert rc == 1
+    assert seen_launch_args == [
+        'measurement_delay_s:=0.1 noise_seed:=10',
+        'measurement_delay_s:=0.1 noise_seed:=11',
+    ]
+    payload = json.loads((out_dir / 'unit.json').read_text(encoding='utf-8'))
+    assert payload['requested_n'] == 2
+    assert payload['collected_n'] == 1
+    assert payload['skipped_runs'][0]['reason'] == 'run_capture_failed'
+    csv_text = (out_dir / 'unit.csv').read_text(encoding='utf-8')
+    assert 'capture_rc' in csv_text
