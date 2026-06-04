@@ -27,6 +27,7 @@ from gazebo_target_sim.kinematic_plant import (
     KinematicPlantParams,
     KinematicPlantState,
     PlantCommand,
+    norm3,
     reset_plant_memory,
     step_kinematic_plant,
 )
@@ -322,7 +323,7 @@ class InterceptorControllerNode(Node):
         return max(1e-4, min(0.5, dt))
 
     def _quat_from_motion(self, vx: float, vy: float, vz: float, idle: bool) -> tuple[float, float, float, float]:
-        if idle or self._norm3(vx, vy, vz) < self._v_orient_floor:
+        if idle or norm3((vx, vy, vz)) < self._v_orient_floor:
             return (0.0, 0.0, 0.0, 1.0)
         return quat_align_body_x_to_velocity(vx, vy, vz)
 

@@ -244,6 +244,7 @@ def _write_outputs(out_dir: Path, label: str, summary: dict, rows: list[dict]) -
         "git_dirty",
         "launch_args_raw",
         "notes",
+        "capture_rc",
         "log_path",
     ]
     with csv_path.open("w", encoding="utf-8", newline="") as f:
@@ -280,6 +281,14 @@ def _note_value(notes: str, key: str) -> str:
     return ""
 
 
+def _strip_launch_arg(raw: str, key: str) -> str:
+    """Remove a simple ROS launch ``key:=value`` token from a whitespace-delimited arg string."""
+    if not raw:
+        return ""
+    prefix = f"{key}:="
+    return " ".join(tok for tok in str(raw).split() if not tok.startswith(prefix))
+
+
 def _enrich_result_with_meta(result: dict, log_path: Path) -> dict:
     """Attach replay/provenance fields needed for Layer C paired cohorts."""
     md = _load_log_meta(log_path)
@@ -295,6 +304,7 @@ def _enrich_result_with_meta(result: dict, log_path: Path) -> dict:
     result.setdefault("git_dirty", md.get("git_dirty") if md.get("git_dirty") is not None else "")
     result.setdefault("launch_args_raw", md.get("launch_args_raw") or "")
     result.setdefault("notes", notes)
+    result.setdefault("capture_rc", md.get("capture_rc") if md.get("capture_rc") is not None else "")
     if seed_text:
         result.setdefault("noise_seed_mc", seed_text)
         result.setdefault("seed", seed_text)
@@ -368,7 +378,8 @@ def cmd_run(args: argparse.Namespace) -> int:
         return 2
 
     rows: list[dict] = []
-    base_args = args.launch_args or ""
+    skipped_runs: list[dict[str, object]] = []
+    base_args = _strip_launch_arg(args.launch_args or "", "noise_seed")
     gid = getattr(args, "geometry_id", "").strip()
 
     geometry_note = ""
@@ -377,10 +388,9 @@ def cmd_run(args: argparse.Namespace) -> int:
 
     for i in range(args.n):
         seed = args.seed_base + i
-        # Compose seed-aware launch args without overwriting whatever the caller already set.
-        per_run_args = base_args
-        if "noise_seed" not in base_args:
-            per_run_args = f"{per_run_args} noise_seed:={seed}".strip()
+        # Force one deterministic MC seed per trial; a caller-supplied noise_seed would
+        # otherwise replay the same stochastic run N times and corrupt cohort statistics.
+        per_run_args = f"{base_args} noise_seed:={seed}".strip()
         cmd = [
             sys.executable,
             str(rc_script),
@@ -402,14 +412,17 @@ def cmd_run(args: argparse.Namespace) -> int:
         if r.returncode not in (0, 124):
             print(r.stderr, file=sys.stderr)
             print(f"[monte_carlo] run failed (rc={r.returncode}); skipping", file=sys.stderr)
+            skipped_runs.append({"index": i, "seed": seed, "reason": "run_capture_failed", "returncode": r.returncode})
             continue
         out_lines = (r.stdout or "").strip().splitlines()
         if not out_lines:
             print("[monte_carlo] run produced no output; skipping", file=sys.stderr)
+            skipped_runs.append({"index": i, "seed": seed, "reason": "missing_run_capture_output"})
             continue
         log_path = Path(out_lines[0].strip())
         if not log_path.is_file():
             print(f"[monte_carlo] log path missing: {log_path}", file=sys.stderr)
+            skipped_runs.append({"index": i, "seed": seed, "reason": "missing_log", "log_path": str(log_path)})
             continue
         result = analyze.parse_run_to_result(str(log_path))
         result["run_id"] = log_path.stem
@@ -425,8 +438,17 @@ def cmd_run(args: argparse.Namespace) -> int:
         print("no successful runs collected", file=sys.stderr)
         return 1
     summary = _summarise(rows, args.label)
+    summary["requested_n"] = int(args.n)
+    summary["collected_n"] = len(rows)
+    summary["skipped_runs"] = skipped_runs
     _print_summary(summary)
     _write_outputs(Path(args.out_dir), args.label, summary, rows)
+    if len(rows) != int(args.n):
+        print(
+            f"[monte_carlo] incomplete cohort: collected {len(rows)}/{int(args.n)} runs",
+            file=sys.stderr,
+        )
+        return 1
     return 0
 
 
