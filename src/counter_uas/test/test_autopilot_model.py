@@ -49,6 +49,11 @@ def _install_controller_import_stubs() -> None:
     rclpy_node.Node = object
     rclpy_time = types.ModuleType('rclpy.time')
     rclpy_time.Time = _Dummy
+    rclpy_qos = types.ModuleType('rclpy.qos')
+    rclpy_qos.DurabilityPolicy = types.SimpleNamespace(VOLATILE=0)
+    rclpy_qos.HistoryPolicy = types.SimpleNamespace(KEEP_LAST=0)
+    rclpy_qos.ReliabilityPolicy = types.SimpleNamespace(BEST_EFFORT=0)
+    rclpy_qos.QoSProfile = _Dummy
 
     geometry_msgs = types.ModuleType('geometry_msgs')
     geometry_msgs_msg = types.ModuleType('geometry_msgs.msg')
@@ -68,12 +73,16 @@ def _install_controller_import_stubs() -> None:
     interfaces = types.ModuleType('gazebo_target_sim_interfaces')
     interfaces_msg = types.ModuleType('gazebo_target_sim_interfaces.msg')
     interfaces_msg.ImpactEvent = _Dummy
+    rosgraph_msgs = types.ModuleType('rosgraph_msgs')
+    rosgraph_msgs_msg = types.ModuleType('rosgraph_msgs.msg')
+    rosgraph_msgs_msg.Clock = _Dummy
 
     sys.modules.update(
         {
             'rclpy': rclpy,
             'rclpy.node': rclpy_node,
             'rclpy.time': rclpy_time,
+            'rclpy.qos': rclpy_qos,
             'geometry_msgs': geometry_msgs,
             'geometry_msgs.msg': geometry_msgs_msg,
             'std_msgs': std_msgs,
@@ -82,6 +91,8 @@ def _install_controller_import_stubs() -> None:
             'visualization_msgs.msg': visualization_msgs_msg,
             'gazebo_target_sim_interfaces': interfaces,
             'gazebo_target_sim_interfaces.msg': interfaces_msg,
+            'rosgraph_msgs': rosgraph_msgs,
+            'rosgraph_msgs.msg': rosgraph_msgs_msg,
         },
     )
 
