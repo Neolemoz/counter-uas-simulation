@@ -16,6 +16,22 @@ from pathlib import Path
 import pytest
 
 _REPO_ROOT = Path(__file__).resolve().parents[3]
+_CONTROLLER_STUB_MODULES = (
+    'rclpy',
+    'rclpy.node',
+    'rclpy.time',
+    'rclpy.qos',
+    'geometry_msgs',
+    'geometry_msgs.msg',
+    'std_msgs',
+    'std_msgs.msg',
+    'visualization_msgs',
+    'visualization_msgs.msg',
+    'gazebo_target_sim_interfaces',
+    'gazebo_target_sim_interfaces.msg',
+    'rosgraph_msgs',
+    'rosgraph_msgs.msg',
+)
 
 
 def _delay_fifo(buf: deque, cmd: tuple[float, float, float]) -> tuple[float, float, float]:
@@ -35,7 +51,9 @@ def _first_order_step(prev: tuple[float, float, float], cmd: tuple[float, float,
     )
 
 
-def _install_controller_import_stubs() -> None:
+def _install_controller_import_stubs() -> dict[str, types.ModuleType | None]:
+    previous = {name: sys.modules.get(name) for name in _CONTROLLER_STUB_MODULES}
+
     class _Dummy:
         def __init__(self, *args, **kwargs) -> None:  # noqa: ANN002, ANN003
             pass
@@ -95,10 +113,19 @@ def _install_controller_import_stubs() -> None:
             'rosgraph_msgs.msg': rosgraph_msgs_msg,
         },
     )
+    return previous
+
+
+def _restore_controller_import_stubs(previous: dict[str, types.ModuleType | None]) -> None:
+    for name, module in previous.items():
+        if module is None:
+            sys.modules.pop(name, None)
+        else:
+            sys.modules[name] = module
 
 
 def _load_controller_module():  # noqa: ANN201
-    _install_controller_import_stubs()
+    previous = _install_controller_import_stubs()
     src_dir = _REPO_ROOT / 'src' / 'gazebo_target_sim'
     if str(src_dir) not in sys.path:
         sys.path.insert(0, str(src_dir))
@@ -106,7 +133,10 @@ def _load_controller_module():  # noqa: ANN201
     spec = importlib.util.spec_from_file_location('interceptor_controller_node_under_test', path)
     mod = importlib.util.module_from_spec(spec)
     assert spec is not None and spec.loader is not None
-    spec.loader.exec_module(mod)
+    try:
+        spec.loader.exec_module(mod)
+    finally:
+        _restore_controller_import_stubs(previous)
     return mod
 
 
