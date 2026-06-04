@@ -27,9 +27,63 @@ from __future__ import annotations
 import importlib.util
 import math
 import sys
+import types
 from pathlib import Path
 
 _REPO_ROOT = Path(__file__).resolve().parents[3]
+
+
+def _install_ros_free_tracking_stubs() -> None:
+    class _Time:
+        @staticmethod
+        def to_msg():  # noqa: ANN201
+            return types.SimpleNamespace(sec=0, nanosec=0)
+
+    class _Node:
+        def __init__(self, *args, **kwargs) -> None:  # noqa: ANN002, ANN003
+            pass
+
+    class _Point:
+        __slots__ = ('x', 'y', 'z')
+
+        def __init__(self) -> None:
+            self.x = 0.0
+            self.y = 0.0
+            self.z = 0.0
+
+    class _Odometry:
+        def __init__(self) -> None:
+            self.header = types.SimpleNamespace(stamp=None, frame_id='')
+            self.child_frame_id = ''
+            self.pose = types.SimpleNamespace(
+                pose=types.SimpleNamespace(position=_Point()),
+                covariance=[0.0] * 36,
+            )
+            self.twist = types.SimpleNamespace(
+                twist=types.SimpleNamespace(linear=_Point()),
+                covariance=[0.0] * 36,
+            )
+
+    rclpy_mod = types.ModuleType('rclpy')
+    rclpy_time_mod = types.ModuleType('rclpy.time')
+    rclpy_node_mod = types.ModuleType('rclpy.node')
+    rclpy_time_mod.Time = _Time
+    rclpy_node_mod.Node = _Node
+    rclpy_mod.time = rclpy_time_mod
+    geom_pkg = types.ModuleType('geometry_msgs')
+    geom_msg = types.ModuleType('geometry_msgs.msg')
+    geom_msg.Point = _Point
+    nav_pkg = types.ModuleType('nav_msgs')
+    nav_msg = types.ModuleType('nav_msgs.msg')
+    nav_msg.Odometry = _Odometry
+
+    sys.modules['rclpy'] = rclpy_mod
+    sys.modules['rclpy.time'] = rclpy_time_mod
+    sys.modules['rclpy.node'] = rclpy_node_mod
+    sys.modules['geometry_msgs'] = geom_pkg
+    sys.modules['geometry_msgs.msg'] = geom_msg
+    sys.modules['nav_msgs'] = nav_pkg
+    sys.modules['nav_msgs.msg'] = nav_msg
 
 
 def _load_tracking_module():  # noqa: ANN201
@@ -44,6 +98,7 @@ def _load_tracking_module():  # noqa: ANN201
     if rclpy_mod is not None and not hasattr(rclpy_mod, 'time'):
         sys.modules.pop('rclpy', None)
         sys.modules.pop('rclpy.node', None)
+    _install_ros_free_tracking_stubs()
     path = _REPO_ROOT / 'src' / 'tracking' / 'tracking' / 'tracking_node.py'
     assert path.is_file(), f'missing {path}'
     spec = importlib.util.spec_from_file_location('tracking_node_under_test', path)
