@@ -5,6 +5,7 @@ from __future__ import annotations
 import importlib.util
 import json
 from pathlib import Path
+from types import SimpleNamespace
 
 _REPO_ROOT = Path(__file__).resolve().parents[3]
 
@@ -123,3 +124,47 @@ def test_aggregate_writes_outputs(tmp_path) -> None:
     assert 'noise_seed_mc' in csv_text and 'cohort' in csv_text and 'meta_path' in csv_text
     assert 'unit_cohort' in csv_text and 'cell_a' in csv_text
     assert 'run_a' in csv_text and 'run_b' in csv_text
+
+
+def test_run_mode_forces_unique_noise_seed_and_fails_partial_cohort(tmp_path, monkeypatch) -> None:
+    mc = _load_mc()
+    log_path = tmp_path / 'run_ok.log'
+    log_path.write_text(_MISS_LOG, encoding='utf-8')
+    log_path.with_suffix('.meta.json').write_text('{}', encoding='utf-8')
+    calls = []
+
+    def fake_run(cmd, capture_output=True, text=True):  # noqa: ANN001, ANN202
+        calls.append(cmd)
+        if len(calls) == 1:
+            return SimpleNamespace(returncode=0, stdout=f'{log_path}\n', stderr='')
+        return SimpleNamespace(returncode=2, stdout='', stderr='boom')
+
+    class FakeAnalyze:
+        @staticmethod
+        def parse_run_to_result(_path):  # noqa: ANN001, ANN202
+            return {'success': False, 'miss_distance_m': 7.812, 'intercept_time_s': None}
+
+    monkeypatch.setattr(mc.subprocess, 'run', fake_run)
+    monkeypatch.setattr(mc, '_load_analyze_run', lambda: FakeAnalyze)
+
+    args = SimpleNamespace(
+        n=2,
+        seed_base=10,
+        launch_args='use_gazebo_gui:=false noise_seed:=999',
+        geometry_id='',
+        scenario='single',
+        timeout_s=1.0,
+        label='partial',
+        out_dir=str(tmp_path / 'mc'),
+        cohort='',
+    )
+    rc = mc.cmd_run(args)
+
+    assert rc == 1
+    assert len(calls) == 2
+    launch_args_1 = calls[0][calls[0].index('--launch-args') + 1]
+    launch_args_2 = calls[1][calls[1].index('--launch-args') + 1]
+    assert 'noise_seed:=999' not in launch_args_1
+    assert 'noise_seed:=10' in launch_args_1
+    assert 'noise_seed:=11' in launch_args_2
+    assert (tmp_path / 'mc' / 'partial.csv').is_file()

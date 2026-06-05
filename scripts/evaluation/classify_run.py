@@ -39,12 +39,14 @@ def classify_run_failure_evidence(
 
     timeout_seen = '=== timeout ===' in low or (capture_rc is not None and int(capture_rc) == 124)
     assignment_switch_count = len(_REASSIGN_RE.findall(text))
-    feasible_geom_seen = 'feasible_geom=true' in text or '[feas_warn]' in low
+    feasible_geom_seen = 'feasible_geom=true' in low or '[feas_warn]' in low
     has_eng_metric = '[eng_metric]' in low
     max_abs_delta = max((abs(d) for d in deltas), default=None)
 
-    failure_class = 'F5_unknown'
-    if timeout_seen:
+    failure_class = ''
+    if summary.hit:
+        failure_class = ''
+    elif timeout_seen:
         failure_class = 'F1_timeout'
     elif assignment_switch_count > 0:
         failure_class = 'F4_assignment'
@@ -52,6 +54,8 @@ def classify_run_failure_evidence(
         failure_class = 'F3_track_instability'
     elif not summary.hit and feasible_geom_seen:
         failure_class = 'F2_geom_not_dyn'
+    else:
+        failure_class = 'F5_unknown'
 
     return {
         'failure_class': failure_class,
@@ -74,13 +78,14 @@ def classify_run_failure(
     capture_rc: int | None = None,
 ) -> str:
     """
-    Return F1..F5 bucket for a single Gazebo capture log.
+    Return F1..F5 bucket for a failed Gazebo capture log.
 
     F1_timeout — run cut by timeout or obvious time limit.
     F2_geom_not_dyn — no HIT but geometry looked feasible in metrics.
     F3_track_instability — large jump in logged t_go (when [ENG_METRIC] present).
     F4_assignment — multi-assignment / switch hints in log.
     F5_unknown — default.
+    Successful HIT logs return an empty string because they are not failures.
     """
     return str(classify_run_failure_evidence(log_path, capture_rc=capture_rc)['failure_class'])
 

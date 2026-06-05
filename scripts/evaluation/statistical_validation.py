@@ -295,7 +295,12 @@ def validate_manifest(manifest: dict, rows: list[dict[str, str]]) -> dict[str, o
     require_clean = bool(manifest.get("require_clean_git", False))
     seeds = [s for s in (seed_for_row(r) for r in rows) if s is not None]
     cohorts = sorted({str(r.get("cohort") or "").strip() for r in rows if str(r.get("cohort") or "").strip()})
-    dirty_values = {str(r.get("git_dirty") or "").strip().lower() for r in rows if str(r.get("git_dirty") or "").strip()}
+    dirty_cells = [
+        str(r.get("git_dirty")).strip().lower()
+        for r in rows
+        if r.get("git_dirty") is not None and str(r.get("git_dirty")).strip()
+    ]
+    dirty_values = set(dirty_cells)
     missing_logs = [
         r.get("log_path", "")
         for r in rows
@@ -316,6 +321,8 @@ def validate_manifest(manifest: dict, rows: list[dict[str, str]]) -> dict[str, o
         problems.append(f"duplicate seeds: {duplicates}")
     if len(seeds) != len(rows):
         problems.append(f"{len(rows) - len(seeds)} rows are missing seed metadata")
+    if require_clean and len(dirty_cells) != len(rows):
+        problems.append(f"{len(rows) - len(dirty_cells)} rows are missing git_dirty provenance")
     if require_clean and dirty_values - {"false", "0"}:
         problems.append(f"dirty git rows present: {sorted(dirty_values)}")
     if missing_logs:
