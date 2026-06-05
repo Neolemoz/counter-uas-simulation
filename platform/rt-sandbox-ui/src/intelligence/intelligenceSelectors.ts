@@ -68,10 +68,14 @@ export function getTopAdvisory(
 export function getSelectedEntityAdvisory(
   transport: RtIntelligenceAdvisoryTransportV1 | null | undefined,
   selectedEntityId: string | null | undefined,
+  options: { includeStale?: boolean } = {},
 ): RtIntelligenceAdvisoryV1 | null {
   if (!selectedEntityId) return null;
+  const advisories = options.includeStale
+    ? transport?.advisories ?? []
+    : activeAdvisories(transport);
   return (
-    activeAdvisories(transport).find(
+    advisories.find(
       (advisory) => advisory.identity.attacker_id === selectedEntityId,
     ) ?? null
   );

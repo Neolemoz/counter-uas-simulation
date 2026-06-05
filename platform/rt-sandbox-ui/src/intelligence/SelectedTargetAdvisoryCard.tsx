@@ -22,7 +22,9 @@ export function SelectedTargetAdvisoryCard({
   selectedAttackerId: string | null | undefined;
 }) {
   const state = advisoryUiState(transport);
-  const advisory = getSelectedEntityAdvisory(transport, selectedAttackerId);
+  const advisory = getSelectedEntityAdvisory(transport, selectedAttackerId, {
+    includeStale: true,
+  });
 
   return (
     <section

@@ -58,6 +58,8 @@ import { ExperimentWorkbenchPanel } from "@/experiment/ExperimentWorkbenchPanel"
 import type { AdvisoryExperimentRollup } from "@/handoff/advisoryTypes";
 import { IntelligenceAdvisoryPanel } from "@/intelligence/IntelligenceAdvisoryPanel";
 import { SelectedTargetAdvisoryCard } from "@/intelligence/SelectedTargetAdvisoryCard";
+import { ThreatEvaluationWorkbench } from "@/intelligence/workbench/ThreatEvaluationWorkbench";
+import { INTELLIGENCE_ADVISORY_BANNER } from "@/intelligence/intelligenceGovernance";
 import { getAdvisoryTransportFromSnapshot, getSelectedEntityAdvisory } from "@/intelligence/intelligenceSelectors";
 import type { SessionSlot } from "@/hooks/useRtSessionWorkspace";
 import type { SessionRuntimeProfile } from "@/runtime/sessionRuntimeProfile";
@@ -1142,6 +1144,41 @@ export type AppWorkstationSlotsProps = {
   hidePanelCognition: boolean;
 };
 
+function ThreatEvaluationWorkbenchSurface({
+  advisory,
+  stale,
+  staleReason,
+}: {
+  advisory: ReturnType<typeof getSelectedEntityAdvisory>;
+  stale: boolean;
+  staleReason: string | null;
+}) {
+  if (!advisory) {
+    return (
+      <section
+        className="rounded border border-slate-800 bg-slate-950/50 p-3 text-xs"
+        data-testid="threat-evaluation-workbench-empty"
+      >
+        <p className="text-[10px] text-amber-100/80">{INTELLIGENCE_ADVISORY_BANNER}</p>
+        <p className="mt-2 font-semibold uppercase tracking-wide text-slate-300">
+          Threat evaluation workbench
+        </p>
+        <p className="mt-2 text-slate-500">
+          Select an attacker to inspect threat evaluation details.
+        </p>
+      </section>
+    );
+  }
+
+  return (
+    <ThreatEvaluationWorkbench
+      advisory={advisory}
+      stale={stale}
+      staleReason={staleReason}
+    />
+  );
+}
+
 export function IntelligenceAdvisoryWorkstationSurfaces({
   snapshots,
   selectedEntityId,
@@ -1156,6 +1193,11 @@ export function IntelligenceAdvisoryWorkstationSurfaces({
     intelligenceAdvisoryTransport,
     selectedEntityId,
   );
+  const selectedWorkbenchAdvisory = getSelectedEntityAdvisory(
+    intelligenceAdvisoryTransport,
+    selectedEntityId,
+    { includeStale: true },
+  );
   if (!intelligenceAdvisoryTransport) return null;
 
   return (
@@ -1167,6 +1209,11 @@ export function IntelligenceAdvisoryWorkstationSurfaces({
           selectedAttackerId={selectedEntityId}
         />
       )}
+      <ThreatEvaluationWorkbenchSurface
+        advisory={selectedWorkbenchAdvisory}
+        stale={intelligenceAdvisoryTransport.stale}
+        staleReason={intelligenceAdvisoryTransport.stale_reason}
+      />
     </>
   );
 }
