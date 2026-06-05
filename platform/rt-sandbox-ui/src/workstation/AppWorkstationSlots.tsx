@@ -62,6 +62,7 @@ import { ThreatEvaluationWorkbench } from "@/intelligence/workbench/ThreatEvalua
 import { INTELLIGENCE_ADVISORY_BANNER } from "@/intelligence/intelligenceGovernance";
 import { getAdvisoryTransportFromSnapshot, getSelectedEntityAdvisory } from "@/intelligence/intelligenceSelectors";
 import { SelectedTrackSensorWorkbench } from "@/tracks/workbench/SelectedTrackSensorWorkbench";
+import { SelectedTrackTraceabilityWorkbench } from "@/traceability/workbench/SelectedTrackTraceabilityWorkbench";
 import type { SessionSlot } from "@/hooks/useRtSessionWorkspace";
 import type { SessionRuntimeProfile } from "@/runtime/sessionRuntimeProfile";
 import type { useTacticalState } from "@/hooks/useTacticalState";
@@ -1231,6 +1232,18 @@ export function TrackSensorWorkbenchWorkstationSurface({
   );
 }
 
+export function TrackTraceabilityWorkstationSurface({
+  selectedTrackId,
+}: {
+  selectedTrackId: string | null;
+}) {
+  return (
+    <section data-testid="track-traceability-workstation-surface">
+      <SelectedTrackTraceabilityWorkbench selectedTrackId={selectedTrackId} />
+    </section>
+  );
+}
+
 export function AppWorkstationSlots(props: AppWorkstationSlotsProps) {
   const {
     connected,
@@ -2084,6 +2097,9 @@ export function AppWorkstationSlots(props: AppWorkstationSlotsProps) {
               selectedEntityId={selectedEntityId}
             />
             <TrackSensorWorkbenchWorkstationSurface
+              selectedTrackId={selectedEntityId}
+            />
+            <TrackTraceabilityWorkstationSurface
               selectedTrackId={selectedEntityId}
             />
             <TacticalManualPanel
