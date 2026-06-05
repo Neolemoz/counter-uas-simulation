@@ -61,7 +61,7 @@ import { SelectedTargetAdvisoryCard } from "@/intelligence/SelectedTargetAdvisor
 import { ThreatEvaluationWorkbench } from "@/intelligence/workbench/ThreatEvaluationWorkbench";
 import { INTELLIGENCE_ADVISORY_BANNER } from "@/intelligence/intelligenceGovernance";
 import { getAdvisoryTransportFromSnapshot, getSelectedEntityAdvisory } from "@/intelligence/intelligenceSelectors";
-import { SelectedTrackSensorWorkbench } from "@/tracks/workbench/SelectedTrackSensorWorkbench";
+import { LiveTrackSensorWorkbenchSurface } from "@/tracks/workbench/LiveTrackSensorWorkbenchSurface";
 import { LiveTraceabilityWorkbenchSurface } from "@/traceability/workbench/LiveTraceabilityWorkbenchSurface";
 import type { SessionSlot } from "@/hooks/useRtSessionWorkspace";
 import type { SessionRuntimeProfile } from "@/runtime/sessionRuntimeProfile";
@@ -1222,12 +1222,26 @@ export function IntelligenceAdvisoryWorkstationSurfaces({
 
 export function TrackSensorWorkbenchWorkstationSurface({
   selectedTrackId,
+  entityPoseMirror,
+  intelligenceAdvisory,
 }: {
   selectedTrackId: string | null;
+  entityPoseMirror?: ChannelSnapshot | null;
+  intelligenceAdvisory?: ReturnType<typeof getAdvisoryTransportFromSnapshot>;
 }) {
+  const liveEntityPoseMirror =
+    entityPoseMirror?.channel === "entity_pose_mirror"
+      ? (entityPoseMirror as unknown as ChannelSnapshot<"entity_pose_mirror">)
+      : null;
+
   return (
     <section data-testid="track-sensor-workstation-surface">
-      <SelectedTrackSensorWorkbench selectedTrackId={selectedTrackId} />
+      <LiveTrackSensorWorkbenchSurface
+        selectedEntityId={selectedTrackId}
+        entityPoseMirror={liveEntityPoseMirror}
+        intelligenceAdvisory={intelligenceAdvisory}
+        mirrorFreshness={liveEntityPoseMirror ? "fresh" : "unknown"}
+      />
     </section>
   );
 }
@@ -2112,6 +2126,10 @@ export function AppWorkstationSlots(props: AppWorkstationSlotsProps) {
             />
             <TrackSensorWorkbenchWorkstationSurface
               selectedTrackId={selectedEntityId}
+              entityPoseMirror={snapshots.entity_pose_mirror}
+              intelligenceAdvisory={getAdvisoryTransportFromSnapshot(
+                snapshots.intelligence_advisory,
+              )}
             />
             <TrackTraceabilityWorkstationSurface
               selectedTrackId={selectedEntityId}
