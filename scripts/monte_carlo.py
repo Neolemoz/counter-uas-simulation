@@ -18,7 +18,7 @@ Two operating modes
    tests / CI where Gazebo is not available.
 
 2. ``--mode run`` — drive ``scripts/run_capture.py`` for ``--n`` runs. Each injected
-   Monte Carlo RNG uses ``noise_seed:=<seed_base+i>`` (unless overridden) and records
+   Monte Carlo RNG uses ``noise_seed:=<seed_base+i>`` and records
    ``noise_seed_mc`` + optional static ``geometry_id`` for reproducible pairing with
    spatial scenario matrices.
 
@@ -53,6 +53,7 @@ import importlib.util
 import json
 import math
 import re
+import shlex
 import statistics
 import subprocess
 import sys
@@ -280,6 +281,12 @@ def _note_value(notes: str, key: str) -> str:
     return ""
 
 
+def _launch_args_with_noise_seed(base_args: str, seed: int) -> str:
+    tokens = [tok for tok in shlex.split(base_args or "") if not tok.startswith("noise_seed:=")]
+    tokens.append(f"noise_seed:={int(seed)}")
+    return shlex.join(tokens)
+
+
 def _enrich_result_with_meta(result: dict, log_path: Path) -> dict:
     """Attach replay/provenance fields needed for Layer C paired cohorts."""
     md = _load_log_meta(log_path)
@@ -368,6 +375,7 @@ def cmd_run(args: argparse.Namespace) -> int:
         return 2
 
     rows: list[dict] = []
+    skipped_runs = 0
     base_args = args.launch_args or ""
     gid = getattr(args, "geometry_id", "").strip()
 
@@ -377,10 +385,7 @@ def cmd_run(args: argparse.Namespace) -> int:
 
     for i in range(args.n):
         seed = args.seed_base + i
-        # Compose seed-aware launch args without overwriting whatever the caller already set.
-        per_run_args = base_args
-        if "noise_seed" not in base_args:
-            per_run_args = f"{per_run_args} noise_seed:={seed}".strip()
+        per_run_args = _launch_args_with_noise_seed(base_args, seed)
         cmd = [
             sys.executable,
             str(rc_script),
@@ -402,14 +407,17 @@ def cmd_run(args: argparse.Namespace) -> int:
         if r.returncode not in (0, 124):
             print(r.stderr, file=sys.stderr)
             print(f"[monte_carlo] run failed (rc={r.returncode}); skipping", file=sys.stderr)
+            skipped_runs += 1
             continue
         out_lines = (r.stdout or "").strip().splitlines()
         if not out_lines:
             print("[monte_carlo] run produced no output; skipping", file=sys.stderr)
+            skipped_runs += 1
             continue
         log_path = Path(out_lines[0].strip())
         if not log_path.is_file():
             print(f"[monte_carlo] log path missing: {log_path}", file=sys.stderr)
+            skipped_runs += 1
             continue
         result = analyze.parse_run_to_result(str(log_path))
         result["run_id"] = log_path.stem
@@ -427,6 +435,12 @@ def cmd_run(args: argparse.Namespace) -> int:
     summary = _summarise(rows, args.label)
     _print_summary(summary)
     _write_outputs(Path(args.out_dir), args.label, summary, rows)
+    if skipped_runs or len(rows) != int(args.n):
+        print(
+            f"[monte_carlo] incomplete cohort: collected {len(rows)}/{int(args.n)} runs",
+            file=sys.stderr,
+        )
+        return 1
     return 0
 
 

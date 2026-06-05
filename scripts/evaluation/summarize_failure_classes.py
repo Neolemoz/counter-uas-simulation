@@ -62,6 +62,8 @@ def main() -> int:
             except (OSError, json.JSONDecodeError):
                 pass
         evidence = classify_run_failure_evidence(log_path, capture_rc=None)
+        if bool(evidence.get('hit_seen')):
+            continue
         hist[str(evidence['failure_class'])] += 1
         evidence_rows.append(evidence)
 

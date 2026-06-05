@@ -35,6 +35,7 @@ class RunMeta:
     cohort: str | None = None
     launch_args_raw: str | None = None
     launch_args_kv: dict[str, str] | None = None
+    capture_rc: int | None = None
 
 
 def _utc_ts() -> str:
@@ -195,10 +196,18 @@ def run_capture(
                 check=False,
                 env=env,
             )
-            return log_path, meta_path, meta, int(r.returncode)
+            rc = int(r.returncode)
+            if rc == 124:
+                f.write("\n=== TIMEOUT ===\n")
+                f.flush()
+            meta_dict["capture_rc"] = rc
+            meta_path.write_text(json.dumps(meta_dict, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+            return log_path, meta_path, meta, rc
         except subprocess.TimeoutExpired:
             f.write("\n=== TIMEOUT ===\n")
             f.flush()
+            meta_dict["capture_rc"] = 124
+            meta_path.write_text(json.dumps(meta_dict, indent=2, sort_keys=True) + "\n", encoding="utf-8")
             return log_path, meta_path, meta, 124
 
 
