@@ -62,7 +62,7 @@ import { ThreatEvaluationWorkbench } from "@/intelligence/workbench/ThreatEvalua
 import { INTELLIGENCE_ADVISORY_BANNER } from "@/intelligence/intelligenceGovernance";
 import { getAdvisoryTransportFromSnapshot, getSelectedEntityAdvisory } from "@/intelligence/intelligenceSelectors";
 import { SelectedTrackSensorWorkbench } from "@/tracks/workbench/SelectedTrackSensorWorkbench";
-import { SelectedTrackTraceabilityWorkbench } from "@/traceability/workbench/SelectedTrackTraceabilityWorkbench";
+import { LiveTraceabilityWorkbenchSurface } from "@/traceability/workbench/LiveTraceabilityWorkbenchSurface";
 import type { SessionSlot } from "@/hooks/useRtSessionWorkspace";
 import type { SessionRuntimeProfile } from "@/runtime/sessionRuntimeProfile";
 import type { useTacticalState } from "@/hooks/useTacticalState";
@@ -1234,12 +1234,26 @@ export function TrackSensorWorkbenchWorkstationSurface({
 
 export function TrackTraceabilityWorkstationSurface({
   selectedTrackId,
+  entityPoseMirror,
+  intelligenceAdvisory,
 }: {
   selectedTrackId: string | null;
+  entityPoseMirror?: ChannelSnapshot | null;
+  intelligenceAdvisory?: ReturnType<typeof getAdvisoryTransportFromSnapshot>;
 }) {
+  const liveEntityPoseMirror =
+    entityPoseMirror?.channel === "entity_pose_mirror"
+      ? (entityPoseMirror as unknown as ChannelSnapshot<"entity_pose_mirror">)
+      : null;
+
   return (
     <section data-testid="track-traceability-workstation-surface">
-      <SelectedTrackTraceabilityWorkbench selectedTrackId={selectedTrackId} />
+      <LiveTraceabilityWorkbenchSurface
+        selectedEntityId={selectedTrackId}
+        entityPoseMirror={liveEntityPoseMirror}
+        intelligenceAdvisory={intelligenceAdvisory}
+        mirrorFreshness={liveEntityPoseMirror ? "fresh" : "unknown"}
+      />
     </section>
   );
 }
@@ -2101,6 +2115,10 @@ export function AppWorkstationSlots(props: AppWorkstationSlotsProps) {
             />
             <TrackTraceabilityWorkstationSurface
               selectedTrackId={selectedEntityId}
+              entityPoseMirror={snapshots.entity_pose_mirror}
+              intelligenceAdvisory={getAdvisoryTransportFromSnapshot(
+                snapshots.intelligence_advisory,
+              )}
             />
             <TacticalManualPanel
               sessionId={sessionId}
