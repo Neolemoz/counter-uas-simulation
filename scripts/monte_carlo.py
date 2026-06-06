@@ -53,6 +53,7 @@ import importlib.util
 import json
 import math
 import re
+import shlex
 import statistics
 import subprocess
 import sys
@@ -303,6 +304,26 @@ def _enrich_result_with_meta(result: dict, log_path: Path) -> dict:
     return result
 
 
+def _split_launch_args(raw: str) -> list[str]:
+    try:
+        return shlex.split(raw or "")
+    except ValueError:
+        # Keep malformed legacy strings from crashing the harness; run_capture will
+        # still report the launch-argument error for the specific run.
+        return (raw or "").split()
+
+
+def _launch_args_with_mc_seed(base_args: str, seed: int) -> str:
+    """Force the per-run MC seed so CSV pairing metadata matches the actual launch."""
+    tokens = [
+        tok
+        for tok in _split_launch_args(base_args)
+        if not tok.startswith("noise_seed:=")
+    ]
+    tokens.append(f"noise_seed:={seed}")
+    return shlex.join(tokens)
+
+
 def _log_matches_aggregate_filters(
     log_path: Path,
     *,
@@ -370,6 +391,7 @@ def cmd_run(args: argparse.Namespace) -> int:
     rows: list[dict] = []
     base_args = args.launch_args or ""
     gid = getattr(args, "geometry_id", "").strip()
+    failed_runs = 0
 
     geometry_note = ""
     if gid:
@@ -377,10 +399,7 @@ def cmd_run(args: argparse.Namespace) -> int:
 
     for i in range(args.n):
         seed = args.seed_base + i
-        # Compose seed-aware launch args without overwriting whatever the caller already set.
-        per_run_args = base_args
-        if "noise_seed" not in base_args:
-            per_run_args = f"{per_run_args} noise_seed:={seed}".strip()
+        per_run_args = _launch_args_with_mc_seed(base_args, seed)
         cmd = [
             sys.executable,
             str(rc_script),
@@ -402,14 +421,17 @@ def cmd_run(args: argparse.Namespace) -> int:
         if r.returncode not in (0, 124):
             print(r.stderr, file=sys.stderr)
             print(f"[monte_carlo] run failed (rc={r.returncode}); skipping", file=sys.stderr)
+            failed_runs += 1
             continue
         out_lines = (r.stdout or "").strip().splitlines()
         if not out_lines:
             print("[monte_carlo] run produced no output; skipping", file=sys.stderr)
+            failed_runs += 1
             continue
         log_path = Path(out_lines[0].strip())
         if not log_path.is_file():
             print(f"[monte_carlo] log path missing: {log_path}", file=sys.stderr)
+            failed_runs += 1
             continue
         result = analyze.parse_run_to_result(str(log_path))
         result["run_id"] = log_path.stem
@@ -425,8 +447,16 @@ def cmd_run(args: argparse.Namespace) -> int:
         print("no successful runs collected", file=sys.stderr)
         return 1
     summary = _summarise(rows, args.label)
+    summary["n_requested"] = int(args.n)
+    summary["n_capture_failed"] = int(failed_runs)
     _print_summary(summary)
     _write_outputs(Path(args.out_dir), args.label, summary, rows)
+    if len(rows) != args.n:
+        print(
+            f"incomplete Monte Carlo cohort: collected {len(rows)}/{args.n} runs",
+            file=sys.stderr,
+        )
+        return 1
     return 0
 
 
