@@ -57,6 +57,8 @@ import type { UiEntity } from "@/editing/localEntityMirror";
 import { ExperimentWorkbenchPanel } from "@/experiment/ExperimentWorkbenchPanel";
 import type { AdvisoryExperimentRollup } from "@/handoff/advisoryTypes";
 import { IntelligenceAdvisoryPanel } from "@/intelligence/IntelligenceAdvisoryPanel";
+import { ProtectedCenterStatusStrip } from "@/intelligence/ProtectedCenterStatusStrip";
+import type { ProtectedCenterClearReason } from "@/intelligence/protectedCenterCopy";
 import { SelectedTargetAdvisoryCard } from "@/intelligence/SelectedTargetAdvisoryCard";
 import { ThreatEvaluationWorkbench } from "@/intelligence/workbench/ThreatEvaluationWorkbench";
 import { INTELLIGENCE_ADVISORY_BANNER } from "@/intelligence/intelligenceGovernance";
@@ -1108,6 +1110,10 @@ export type AppWorkstationSlotsProps = {
   entityDeleteDisabled: boolean;
   onMove: (entityId: string, pose: Pose) => void;
   onDelete: (entityId: string) => void;
+  onDesignateProtectedCenter?: () => void;
+  protectedCenterEntityId?: string | null;
+  protectedCenterRecoveryNotice?: ProtectedCenterClearReason | null;
+  designateProtectedCenterDisabled?: boolean;
   onApplyToRuntime: () => void;
   applyToRuntimeDisabled: boolean;
   applyScenarioDisabled: boolean;
@@ -1184,9 +1190,15 @@ function ThreatEvaluationWorkbenchSurface({
 export function IntelligenceAdvisoryWorkstationSurfaces({
   snapshots,
   selectedEntityId,
+  protectedCenterEntityId,
+  protectedCenterRecoveryNotice = null,
+  entities,
 }: {
   snapshots: Partial<Record<TelemetryChannel, ChannelSnapshot>>;
   selectedEntityId: string | null;
+  protectedCenterEntityId: string | null;
+  protectedCenterRecoveryNotice?: ProtectedCenterClearReason | null;
+  entities: UiEntity[];
 }) {
   const intelligenceAdvisoryTransport = getAdvisoryTransportFromSnapshot(
     snapshots.intelligence_advisory,
@@ -1204,6 +1216,11 @@ export function IntelligenceAdvisoryWorkstationSurfaces({
 
   return (
     <>
+      <ProtectedCenterStatusStrip
+        protectedCenterEntityId={protectedCenterEntityId}
+        protectedCenterRecoveryNotice={protectedCenterRecoveryNotice}
+        entities={entities}
+      />
       <IntelligenceAdvisoryPanel transport={intelligenceAdvisoryTransport} />
       {selectedIntelligenceAdvisory && (
         <SelectedTargetAdvisoryCard
@@ -1337,6 +1354,10 @@ export function AppWorkstationSlots(props: AppWorkstationSlotsProps) {
     entityDeleteDisabled,
     onMove,
     onDelete,
+    onDesignateProtectedCenter,
+    protectedCenterEntityId = null,
+    protectedCenterRecoveryNotice = null,
+    designateProtectedCenterDisabled = true,
     onApplyToRuntime,
     applyToRuntimeDisabled,
     applyScenarioDisabled,
@@ -1740,6 +1761,7 @@ export function AppWorkstationSlots(props: AppWorkstationSlotsProps) {
     show: defenseZoneVisible,
     selectedEntityId:
       selectedEntity?.entity_type === "waypoint_marker" ? selectedEntityId : null,
+    protectedCenterEntityId,
     selectedOnly: defenseZoneSelectedOnly,
     showLabels: defenseZoneConfig.showLabels,
     config: defenseZoneConfig,
@@ -1959,6 +1981,10 @@ export function AppWorkstationSlots(props: AppWorkstationSlotsProps) {
                   onSpawn={onSpawn}
                   onMove={onMove}
                   onDelete={onDelete}
+                  onDesignateProtectedCenter={onDesignateProtectedCenter}
+                  protectedCenterEntityId={protectedCenterEntityId}
+                  protectedCenterRecoveryNotice={protectedCenterRecoveryNotice}
+                  designateProtectedCenterDisabled={designateProtectedCenterDisabled}
                   onApplyToRuntime={onApplyToRuntime}
                   applyToRuntimeDisabled={applyToRuntimeDisabled}
                   applyRuntimeStatus={applyRuntimeStatus}
@@ -2078,6 +2104,10 @@ export function AppWorkstationSlots(props: AppWorkstationSlotsProps) {
             onSpawn={onSpawn}
             onMove={onMove}
             onDelete={onDelete}
+            protectedCenterEntityId={protectedCenterEntityId}
+            protectedCenterRecoveryNotice={protectedCenterRecoveryNotice}
+            onDesignateProtectedCenter={onDesignateProtectedCenter}
+            designateProtectedCenterDisabled={designateProtectedCenterDisabled}
             layerVisibility={layerVisibility}
             sensorDomeOptions={sensorDomeOptions}
             defenseZoneOptions={defenseZoneOptions}
@@ -2123,6 +2153,9 @@ export function AppWorkstationSlots(props: AppWorkstationSlotsProps) {
             <IntelligenceAdvisoryWorkstationSurfaces
               snapshots={snapshots}
               selectedEntityId={selectedEntityId}
+              protectedCenterEntityId={protectedCenterEntityId}
+              protectedCenterRecoveryNotice={protectedCenterRecoveryNotice}
+              entities={entities}
             />
             <TrackSensorWorkbenchWorkstationSurface
               selectedTrackId={selectedEntityId}

@@ -6,6 +6,10 @@ import {
   INTELLIGENCE_ADVISORY_STALE_COPY,
 } from "./intelligenceGovernance";
 import {
+  isProtectedCenterUnavailable,
+  PROTECTED_CENTER_UNAVAILABLE_COPY,
+} from "./protectedCenterCopy";
+import {
   getAdvisoryConfidenceLabel,
   getAdvisoryReasonLabels,
   getRankedAdvisories,
@@ -111,9 +115,19 @@ export function IntelligenceAdvisoryPanel({
         <p className="text-xs text-slate-500">No current intelligence advisories.</p>
       )}
       {state === "stale" && (
-        <p className="rounded border border-amber-800/60 bg-amber-950/35 px-2 py-1.5 text-xs text-amber-100">
-          {INTELLIGENCE_ADVISORY_STALE_COPY}
-          {transport?.stale_reason ? ` Reason: ${transport.stale_reason}.` : ""}
+        <p
+          className="rounded border border-amber-800/60 bg-amber-950/35 px-2 py-1.5 text-xs text-amber-100"
+          data-testid={
+            isProtectedCenterUnavailable(transport?.stale_reason)
+              ? "intelligence-protected-center-unavailable"
+              : "intelligence-advisory-stale"
+          }
+        >
+          {isProtectedCenterUnavailable(transport?.stale_reason)
+            ? PROTECTED_CENTER_UNAVAILABLE_COPY
+            : `${INTELLIGENCE_ADVISORY_STALE_COPY}${
+                transport?.stale_reason ? ` Reason: ${transport.stale_reason}.` : ""
+              }`}
         </p>
       )}
       {state === "active" && (

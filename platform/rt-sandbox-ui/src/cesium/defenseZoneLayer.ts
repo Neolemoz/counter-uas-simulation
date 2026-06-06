@@ -35,6 +35,10 @@ import {
   ZONE_SURFACE_LIFT_M,
   zoneLabelLiftM,
 } from "./terrainGrounding";
+import {
+  PROTECTED_CENTER_ZONE_LABEL,
+  resolveDefenseZoneEntityVisual,
+} from "./defenseZoneVisualState";
 
 const DEFENSE_PREFIX = "rt-defense-zone-";
 
@@ -92,17 +96,6 @@ export const DEFENSE_ZONE_LEVELS: DefenseZoneLevelSpec[] = [
     label: "Warning",
   },
 ];
-
-function defenseZoneFade(
-  isSelected: boolean,
-  selectedDefensePresent: boolean,
-  showAllDefenseZones: boolean,
-): number {
-  if (isSelected) return 1;
-  if (!showAllDefenseZones) return 1;
-  if (selectedDefensePresent) return 0.34;
-  return 0.62;
-}
 
 function addRangeLabel(
   viewer: Viewer,
@@ -199,14 +192,13 @@ function renderDefenseZone(
   config: DefenseZoneConfig,
   applyTerrainDisplay: boolean,
   options: DefenseZoneRenderOptions,
-  isSelected: boolean,
-  fade: number,
-  emphasis: number,
+  visual: ReturnType<typeof resolveDefenseZoneEntityVisual>,
 ): void {
   const { x, y } = entityGroundPose(ent, applyTerrainDisplay);
   const cameraHeight = cameraHeightM(viewer);
+  const { fade, emphasis, isSelected, isDesignated, showZoneLabels } = visual;
   const showLabels =
-    options.showLabels !== false && config.showLabels !== false && isSelected;
+    options.showLabels !== false && config.showLabels !== false && showZoneLabels;
   const warningSize = config.sizes.warningM;
   const coreSize = config.sizes.coreM;
 
@@ -345,6 +337,24 @@ function renderDefenseZone(
       );
     }
   }
+
+  if (isDesignated && showLabels && config.shape === "circle") {
+    addRangeLabel(
+      viewer,
+      `${DEFENSE_PREFIX}protected-center-label-${ent.entity_id}`,
+      worldToCartesian(
+        x,
+        y,
+        groundedSurfaceZ(x, y, ZONE_SURFACE_LIFT_M) + zoneLabelLiftM("core") + 8,
+      ),
+      PROTECTED_CENTER_ZONE_LABEL,
+      "52, 211, 153",
+      fade,
+      emphasis,
+      "core",
+      cameraHeight,
+    );
+  }
 }
 
 export function syncDefenseZoneLayer(
@@ -365,23 +375,21 @@ export function syncDefenseZoneLayer(
   const showAllDefenseZones = !selectedDefenseOnly;
   const selectedDefensePresent = isProtectedAsset(selected?.entity_type ?? "");
 
+  const labelsEnabled = options.showLabels !== false && config.showLabels !== false;
+
   for (const ent of entities) {
     if (!ent.entity_id || !isProtectedAsset(ent.entity_type)) continue;
     if (selectedDefenseOnly && ent.entity_id !== selected?.entity_id) continue;
 
-    const isSelected = ent.entity_id === options.selectedEntityId;
-    const emphasis = isSelected ? 1.28 : 1;
-    const fade = defenseZoneFade(isSelected, selectedDefensePresent, showAllDefenseZones);
-    renderDefenseZone(
-      viewer,
-      ent,
-      config,
-      applyTerrainDisplay,
-      options,
-      isSelected,
-      fade,
-      emphasis,
-    );
+    const visual = resolveDefenseZoneEntityVisual({
+      entityId: ent.entity_id,
+      selectedEntityId: options.selectedEntityId,
+      protectedCenterEntityId: options.protectedCenterEntityId,
+      selectedDefensePresent,
+      showAllDefenseZones,
+      labelsEnabled,
+    });
+    renderDefenseZone(viewer, ent, config, applyTerrainDisplay, options, visual);
   }
 }
 

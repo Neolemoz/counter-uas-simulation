@@ -44,6 +44,13 @@ import {
   type SessionRuntimeProfile,
 } from "@/runtime/sessionRuntimeProfile";
 import { useLiveRuntimePreflight } from "@/hooks/useLiveRuntimePreflight";
+import { getAdvisoryTransportFromSnapshot } from "@/intelligence/intelligenceSelectors";
+import { isProtectedCenterUnavailable } from "@/intelligence/protectedCenterCopy";
+import type { ProtectedCenterClearReason } from "@/intelligence/protectedCenterCopy";
+import {
+  executeProtectedCenterDesignation,
+  resolveProtectedCenterDesignationAttempt,
+} from "@/intelligence/protectedCenterDesignation";
 
 export default function App() {
   const [backgroundDiagOpen, setBackgroundDiagOpen] = useState(false);
@@ -127,6 +134,12 @@ export default function App() {
   const [experimentRollup, setExperimentRollup] = useState<AdvisoryExperimentRollup | null>(
     null,
   );
+  const [protectedCenterBySession, setProtectedCenterBySession] = useState<
+    Record<string, string | null>
+  >({});
+  const [protectedCenterRecoveryNoticeBySession, setProtectedCenterRecoveryNoticeBySession] =
+    useState<Record<string, ProtectedCenterClearReason | null>>({});
+  const [designatingProtectedCenter, setDesignatingProtectedCenter] = useState(false);
 
   const sessionState = sessionStateFromSnapshots(snapshots);
   const worldSummary = snapshots.world_summary?.payload as
@@ -178,6 +191,133 @@ export default function App() {
     editingEnabled,
   );
 
+  const protectedCenterEntityId = sessionId
+    ? (protectedCenterBySession[sessionId] ?? null)
+    : null;
+  const protectedCenterRecoveryNotice = sessionId
+    ? (protectedCenterRecoveryNoticeBySession[sessionId] ?? null)
+    : null;
+
+  const clearProtectedCenterForSession = useCallback(
+    (sid: string, reason?: ProtectedCenterClearReason) => {
+      setProtectedCenterBySession((prev) => {
+        if (prev[sid] == null) return prev;
+        if (reason) {
+          setProtectedCenterRecoveryNoticeBySession((notices) => ({
+            ...notices,
+            [sid]: reason,
+          }));
+        }
+        return { ...prev, [sid]: null };
+      });
+    },
+    [],
+  );
+
+  const clearProtectedCenterRecoveryNotice = useCallback((sid: string) => {
+    setProtectedCenterRecoveryNoticeBySession((prev) => {
+      if (prev[sid] == null) return prev;
+      return { ...prev, [sid]: null };
+    });
+  }, []);
+
+  useEffect(() => {
+    if (!sessionId) return;
+    const transport = getAdvisoryTransportFromSnapshot(snapshots.intelligence_advisory);
+    if (
+      transport?.stale &&
+      isProtectedCenterUnavailable(transport.stale_reason)
+    ) {
+      clearProtectedCenterForSession(sessionId, "protected_center_unavailable");
+    }
+  }, [sessionId, snapshots.intelligence_advisory, clearProtectedCenterForSession]);
+
+  useEffect(() => {
+    const activeIds = new Set(workspaceSessionIds);
+    setProtectedCenterBySession((prev) => {
+      let changed = false;
+      const next = { ...prev };
+      for (const sid of Object.keys(next)) {
+        if (!activeIds.has(sid)) {
+          delete next[sid];
+          changed = true;
+        }
+      }
+      return changed ? next : prev;
+    });
+    setProtectedCenterRecoveryNoticeBySession((prev) => {
+      let changed = false;
+      const next = { ...prev };
+      for (const sid of Object.keys(next)) {
+        if (!activeIds.has(sid)) {
+          delete next[sid];
+          changed = true;
+        }
+      }
+      return changed ? next : prev;
+    });
+  }, [workspaceSessionIds]);
+
+  const handleDesignateProtectedCenter = useCallback(async () => {
+    const attempt = resolveProtectedCenterDesignationAttempt({
+      sessionId,
+      entityId: selectedEntityId,
+      currentCenterId: sessionId
+        ? (protectedCenterBySession[sessionId] ?? null)
+        : null,
+      editingEnabled,
+      busy: designatingProtectedCenter || commandBusy,
+      confirm: (message) => window.confirm(message),
+    });
+    if (!attempt) return;
+
+    setDesignatingProtectedCenter(true);
+    try {
+      const result = await executeProtectedCenterDesignation(attempt);
+      if (!result.ok) {
+        setLastError(result.error);
+        return;
+      }
+      setLastError(null);
+      setProtectedCenterBySession((prev) => ({
+        ...prev,
+        [attempt.sessionId]: result.entityId,
+      }));
+      clearProtectedCenterRecoveryNotice(attempt.sessionId);
+      await doPull();
+    } catch (err) {
+      setLastError(err instanceof Error ? err.message : "designation error");
+    } finally {
+      setDesignatingProtectedCenter(false);
+    }
+  }, [
+    sessionId,
+    selectedEntityId,
+    editingEnabled,
+    designatingProtectedCenter,
+    commandBusy,
+    protectedCenterBySession,
+    clearProtectedCenterRecoveryNotice,
+    setLastError,
+    doPull,
+  ]);
+
+  useEffect(() => {
+    if (applyRuntimeStatus.phase === "applied" && sessionId) {
+      clearProtectedCenterForSession(sessionId, "apply_scenario");
+    }
+  }, [applyRuntimeStatus.phase, sessionId, clearProtectedCenterForSession]);
+
+  const handleDeleteEntity = useCallback(
+    (entityId: string) => {
+      if (sessionId && protectedCenterBySession[sessionId] === entityId) {
+        clearProtectedCenterForSession(sessionId);
+      }
+      handleDelete(entityId);
+    },
+    [sessionId, protectedCenterBySession, clearProtectedCenterForSession, handleDelete],
+  );
+
   const selectedDefenderId = useMemo(
     () =>
       resolveSelectedDefenderId(
@@ -214,6 +354,11 @@ export default function App() {
     doPull,
     setLastError,
   });
+
+  const handleResetSession = useCallback(() => {
+    if (sessionId) clearProtectedCenterForSession(sessionId, "reset_session");
+    void runtime.resetSession();
+  }, [sessionId, clearProtectedCenterForSession, runtime]);
 
   const handleSelectEntity = useCallback(
     (id: string | null) => {
@@ -359,12 +504,18 @@ export default function App() {
           )
         }
         onDeleteSelected={() => {
-          if (selectedEntityId) handleDelete(selectedEntityId);
+          if (selectedEntityId) handleDeleteEntity(selectedEntityId);
         }}
         entityControlsDisabled={!editingEnabled}
         entityDeleteDisabled={!editingEnabled || !selectedEntityId}
         onMove={handleMove}
-        onDelete={handleDelete}
+        onDelete={handleDeleteEntity}
+        onDesignateProtectedCenter={() => void handleDesignateProtectedCenter()}
+        protectedCenterEntityId={protectedCenterEntityId}
+        protectedCenterRecoveryNotice={protectedCenterRecoveryNotice}
+        designateProtectedCenterDisabled={
+          !editingEnabled || !selectedEntityId || commandBusy || designatingProtectedCenter
+        }
         onApplyToRuntime={() => void handleApplyScenario()}
         applyToRuntimeDisabled={
           !sessionId ||
@@ -401,7 +552,7 @@ export default function App() {
         selectedTargetId={selectedTargetId}
         onPauseSim={() => void runtime.pauseSim()}
         onResumeSim={() => void runtime.resumeSim()}
-        onResetSession={() => void runtime.resetSession()}
+        onResetSession={handleResetSession}
         onStopSession={() => void runtime.stopSession()}
         onSpawnDefender={() => void runtime.spawnDefender()}
         onStartCapture={() => void capture.startCapture()}

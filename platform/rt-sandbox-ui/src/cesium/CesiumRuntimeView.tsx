@@ -436,6 +436,7 @@ export function CesiumRuntimeView({
     );
     syncEntityMarkers(viewer, entities, {
       selectedEntityId,
+      protectedCenterEntityId: defenseZoneOptions?.protectedCenterEntityId ?? null,
       hoveredEntityId,
       showLabels: layerVisibility.showLabels,
       syncHealth,

@@ -22,6 +22,7 @@ import {
   markerDisplayZ,
   MARKER_SURFACE_LIFT_M,
 } from "./terrainGrounding";
+import { isDesignatedProtectedCenter } from "./defenseZoneVisualState";
 import { toCesiumEntityId } from "./entityId";
 import { isViewerUsable } from "./cesiumEditing";
 import {
@@ -38,8 +39,12 @@ import {
 const GHOST_ENTITY_SUFFIX = "-cmd-ghost";
 const GROUND_TICK_SUFFIX = "-ground-tick";
 const TACTICAL_TARGET_HALO_SUFFIX = "-tactical-target-halo";
+const PROTECTED_CENTER_HALO_SUFFIX = "-protected-center-halo";
 const MUTED_MARKER_ALPHA_SCALE = 0.55;
 const TACTICAL_TARGET_HALO_COLOR = "rgba(248, 113, 113, 0.42)";
+const PROTECTED_CENTER_HALO_COLOR = "rgba(52, 211, 153, 0.46)";
+const PROTECTED_CENTER_HALO_OUTLINE = "rgba(16, 185, 129, 0.92)";
+export const PROTECTED_CENTER_HALO_PIXEL_SIZE = SELECTION_RING_PIXEL_SIZE + 8;
 const TACTICAL_TARGET_LABEL_FILL = "rgba(254, 243, 199, 0.98)";
 
 export type MarkerEmphasis = "full" | "muted";
@@ -213,7 +218,8 @@ export function syncEntityMarkers(
     sessionAccentCss?: string;
     applyTerrainDisplay?: boolean;
     markerEmphasis?: MarkerEmphasis;
-    /** Assigned/selected tactical target — display-only emphasis. */
+    /** Explicit session protected center — never inferred from selection. */
+    protectedCenterEntityId?: string | null;
     tacticalTargetEntityId?: string | null;
     runtimeTelemetryByEntityId?: Map<string, EntityRuntimeTelemetry>;
   },
@@ -274,6 +280,10 @@ export function syncEntityMarkers(
     const tacticalTarget =
       options.tacticalTargetEntityId != null &&
       ent.entity_id === options.tacticalTargetEntityId;
+    const protectedCenter = isDesignatedProtectedCenter(
+      ent.entity_id,
+      options.protectedCenterEntityId,
+    );
     const drift = options.perEntityDriftM?.[ent.entity_id];
     const healthStyle = markerStyleForHealth(
       options.syncHealth,
@@ -292,7 +302,7 @@ export function syncEntityMarkers(
       healthStyle,
       options.sessionAccentCss,
     );
-    if (mutedUnselected && !selected && !hovered && !tacticalTarget) {
+    if (mutedUnselected && !selected && !hovered && !tacticalTarget && !protectedCenter) {
       color = applyAlphaScale(color, MUTED_MARKER_ALPHA_SCALE);
       outline = applyAlphaScale(outline, MUTED_MARKER_ALPHA_SCALE);
     }
@@ -360,6 +370,26 @@ export function syncEntityMarkers(
       );
     }
 
+    const protectedCenterHaloId = `${id}${PROTECTED_CENTER_HALO_SUFFIX}`;
+    if (protectedCenter) {
+      keep.add(protectedCenterHaloId);
+      const existingProtectedHalo = viewer.entities.getById(protectedCenterHaloId);
+      if (existingProtectedHalo) viewer.entities.remove(existingProtectedHalo);
+      viewer.entities.add(
+        new Entity({
+          id: protectedCenterHaloId,
+          position,
+          point: {
+            pixelSize: PROTECTED_CENTER_HALO_PIXEL_SIZE,
+            color: Color.fromCssColorString(PROTECTED_CENTER_HALO_COLOR),
+            outlineColor: Color.fromCssColorString(PROTECTED_CENTER_HALO_OUTLINE),
+            outlineWidth: 2,
+            disableDepthTestDistance: Number.POSITIVE_INFINITY,
+          },
+        }),
+      );
+    }
+
     if (selected || hovered) {
       keep.add(ringId);
       viewer.entities.add(
@@ -391,7 +421,7 @@ export function syncEntityMarkers(
       hovered,
       cameraHeight,
     );
-    const markerEmphasized = selected || hovered || tacticalTarget;
+    const markerEmphasized = selected || hovered || tacticalTarget || protectedCenter;
     const selectedRuntimeSuffix = selected
       ? compactSelectedLabelSuffix(
           options.runtimeTelemetryByEntityId?.get(ent.entity_id),

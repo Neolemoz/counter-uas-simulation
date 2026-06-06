@@ -75,6 +75,7 @@ function advisory(
 function transport(
   advisories: RtIntelligenceAdvisoryV1[],
   stale = false,
+  staleReason: string | null = stale ? "source_stale" : null,
 ): RtIntelligenceAdvisoryTransportV1 {
   return {
     schema: "rt_intelligence_advisory_transport_v1",
@@ -86,7 +87,7 @@ function transport(
       "INTELLIGENCE ADVISORY - recommendation only; no assignment, engagement, or weapon authority",
     refresh_reason: "snapshot",
     stale,
-    stale_reason: stale ? "source_stale" : null,
+    stale_reason: staleReason,
     advisories,
   };
 }
@@ -106,11 +107,24 @@ function snapshots(payload: RtIntelligenceAdvisoryTransportV1): {
 function renderSurfaces(
   payload: RtIntelligenceAdvisoryTransportV1,
   selectedEntityId: string | null = null,
+  protectedCenterEntityId: string | null = null,
 ): string {
   return renderToStaticMarkup(
     <IntelligenceAdvisoryWorkstationSurfaces
       snapshots={snapshots(payload)}
       selectedEntityId={selectedEntityId}
+      protectedCenterEntityId={protectedCenterEntityId}
+      entities={
+        protectedCenterEntityId
+          ? [
+              {
+                entity_id: protectedCenterEntityId,
+                entity_type: "waypoint_marker",
+                pose: { x: 0, y: 0, z: 5 },
+              },
+            ]
+          : []
+      }
     />,
   );
 }
@@ -138,6 +152,23 @@ describe("workstation intelligence advisory integration", () => {
     expect(markup).toContain("Threat score");
     expect(markup).toContain("72.5");
     expect(markup).toContain("Defender defender-a has the shortest feasible TTI.");
+  });
+
+  it("renders protected center status strip", () => {
+    const markup = renderSurfaces(transport([]), null, "center-a");
+    expect(markup).toContain('data-testid="protected-center-status-strip"');
+    expect(markup).toContain('data-testid="protected-center-designated"');
+    expect(markup).toContain("center-a");
+    expect(markup).toContain("Waypoint");
+  });
+
+  it("renders protected_center_unavailable copy in advisory panel", () => {
+    const markup = renderSurfaces(
+      transport([], true, "protected_center_unavailable"),
+    );
+    expect(markup).toContain('data-testid="intelligence-protected-center-unavailable"');
+    expect(markup).toContain("restore live threat evaluation");
+    expect(markup).not.toContain("Advisory stale - review as historical");
   });
 
   it("renders stale advisory transport and keeps selected workbench accessible", () => {

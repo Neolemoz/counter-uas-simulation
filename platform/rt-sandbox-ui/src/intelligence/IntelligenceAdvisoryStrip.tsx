@@ -5,6 +5,10 @@ import {
   INTELLIGENCE_ADVISORY_STALE_COPY,
 } from "./intelligenceGovernance";
 import {
+  isProtectedCenterUnavailable,
+  PROTECTED_CENTER_UNAVAILABLE_STRIP_COPY,
+} from "./protectedCenterCopy";
+import {
   getAdvisoryConfidenceLabel,
   getTopAdvisory,
 } from "./intelligenceSelectors";
@@ -33,7 +37,9 @@ export function IntelligenceAdvisoryStrip({
     state === "loading"
       ? "Waiting for advisory transport."
       : state === "stale"
-        ? INTELLIGENCE_ADVISORY_STALE_COPY
+        ? isProtectedCenterUnavailable(transport?.stale_reason)
+          ? PROTECTED_CENTER_UNAVAILABLE_STRIP_COPY
+          : INTELLIGENCE_ADVISORY_STALE_COPY
         : state === "empty" || !transport
           ? "No current intelligence advisories."
           : formatTopLine(transport);
@@ -41,7 +47,11 @@ export function IntelligenceAdvisoryStrip({
   return (
     <section
       className="rounded border border-indigo-800/50 bg-indigo-950/25 px-2.5 py-1.5 text-[10px] text-indigo-100"
-      data-testid="intelligence-advisory-strip"
+      data-testid={
+        state === "stale" && isProtectedCenterUnavailable(transport?.stale_reason)
+          ? "intelligence-advisory-strip-protected-center-unavailable"
+          : "intelligence-advisory-strip"
+      }
     >
       <div className="flex flex-wrap items-center justify-between gap-2">
         <span>{line}</span>

@@ -80,6 +80,21 @@ function transport(
 }
 
 describe("intelligence advisory components", () => {
+  it("renders protected_center_unavailable copy without generic stale wording", () => {
+    const payload = transport([], true);
+    payload.stale_reason = "protected_center_unavailable";
+    const panel = renderToStaticMarkup(<IntelligenceAdvisoryPanel transport={payload} />);
+    expect(panel).toContain('data-testid="intelligence-protected-center-unavailable"');
+    expect(panel).toContain("restore live threat evaluation");
+    expect(panel).not.toContain("Advisory stale - review as historical");
+
+    const strip = renderToStaticMarkup(<IntelligenceAdvisoryStrip transport={payload} />);
+    expect(strip).toContain(
+      'data-testid="intelligence-advisory-strip-protected-center-unavailable"',
+    );
+    expect(strip).toContain("restore live threat evaluation");
+  });
+
   it("renders panel empty state as read-only", () => {
     const markup = renderToStaticMarkup(
       <IntelligenceAdvisoryPanel transport={transport([])} />,

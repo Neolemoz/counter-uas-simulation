@@ -1,5 +1,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Crosshair, LocateFixed, Map as MapIcon, Maximize2, Minus, Plus, Trash2 } from "lucide-react";
+import { DesignateProtectedCenterButton } from "./DesignateProtectedCenterButton";
+import { ProtectedCenterRecoveryBanner } from "@/intelligence/ProtectedCenterRecoveryBanner";
+import type { ProtectedCenterClearReason } from "@/intelligence/protectedCenterCopy";
 import {
   RadarDomePreviewPanel,
   type RadarDomePreviewControlHandlers,
@@ -120,6 +123,10 @@ export function WorldEditingGrid({
   onSpawn,
   onMove,
   onDelete,
+  onDesignateProtectedCenter,
+  protectedCenterEntityId = null,
+  protectedCenterRecoveryNotice = null,
+  designateProtectedCenterDisabled = true,
   onApplyToRuntime,
   applyToRuntimeDisabled = true,
   applyRuntimeStatus = { phase: "idle" },
@@ -180,6 +187,10 @@ export function WorldEditingGrid({
   onSpawn: (pose: Pose, entityType: EntityType) => void;
   onMove: (entityId: string, pose: Pose) => void;
   onDelete: (entityId: string) => void;
+  onDesignateProtectedCenter?: () => void;
+  protectedCenterEntityId?: string | null;
+  protectedCenterRecoveryNotice?: ProtectedCenterClearReason | null;
+  designateProtectedCenterDisabled?: boolean;
   onApplyToRuntime?: () => void;
   applyToRuntimeDisabled?: boolean;
   applyRuntimeStatus?: ApplyRuntimeStatus;
@@ -548,6 +559,10 @@ export function WorldEditingGrid({
     if (selectedEntityId) onDelete(selectedEntityId);
   };
 
+  const handleDesignateProtectedCenter = () => {
+    onDesignateProtectedCenter?.();
+  };
+
   return (
     <PanelShell
       title="Core grid (local)"
@@ -561,6 +576,12 @@ export function WorldEditingGrid({
       >
         {CORE_GRID_LOCAL_COPY}
       </p>
+      <div className="mt-2" data-testid="world-editor-protected-center-recovery">
+        <ProtectedCenterRecoveryBanner
+          recoveryNotice={protectedCenterRecoveryNotice}
+          protectedCenterEntityId={protectedCenterEntityId}
+        />
+      </div>
       {onApplyToRuntime && (
         <div
           className="mt-2 flex flex-wrap items-center justify-between gap-2 rounded border border-slate-800 bg-slate-950/60 px-3 py-2"
@@ -700,7 +721,13 @@ export function WorldEditingGrid({
                 />
               )}
             </div>
-            <div className="flex shrink-0 gap-2">
+            <div className="flex shrink-0 flex-wrap gap-2">
+              <DesignateProtectedCenterButton
+                selectedEntityId={selectedEntityId}
+                protectedCenterEntityId={protectedCenterEntityId}
+                disabled={designateProtectedCenterDisabled}
+                onDesignate={handleDesignateProtectedCenter}
+              />
               <button
                 type="button"
                 onClick={handleDeleteSelected}
@@ -760,6 +787,7 @@ export function WorldEditingGrid({
             entities={displayEntities}
             cellSize={CELL_SIZE}
             selectedEntityId={selectedEntityId}
+            protectedCenterEntityId={protectedCenterEntityId}
             config={defenseZoneConfig}
             visible={
               defenseZoneVisible &&

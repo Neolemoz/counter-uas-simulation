@@ -1,6 +1,9 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Globe2 } from "lucide-react";
 import type { ChannelSnapshot } from "@/telemetry/channelIndex";
+import { CesiumSelectedEntityActionRow } from "@/components/CesiumSelectedEntityActionRow";
+import { ProtectedCenterRecoveryBanner } from "@/intelligence/ProtectedCenterRecoveryBanner";
+import type { ProtectedCenterClearReason } from "@/intelligence/protectedCenterCopy";
 import { PanelShell } from "@/components/GovernanceChrome";
 import { CesiumEditingCognitionStrip } from "@/components/CesiumEditingCognitionStrip";
 import { FidelityTruthCognitionStrip } from "@/components/FidelityTruthCognitionStrip";
@@ -129,6 +132,10 @@ export function CesiumRuntimePanel({
   onSpawn,
   onMove,
   onDelete,
+  protectedCenterEntityId = null,
+  protectedCenterRecoveryNotice = null,
+  onDesignateProtectedCenter,
+  designateProtectedCenterDisabled = true,
   layerVisibility,
   sensorDomeOptions,
   defenseZoneOptions,
@@ -167,6 +174,10 @@ export function CesiumRuntimePanel({
   onSpawn: (pose: Pose) => void;
   onMove: (entityId: string, pose: Pose) => void;
   onDelete: (entityId: string) => void;
+  protectedCenterEntityId?: string | null;
+  protectedCenterRecoveryNotice?: ProtectedCenterClearReason | null;
+  onDesignateProtectedCenter?: () => void;
+  designateProtectedCenterDisabled?: boolean;
   layerVisibility: VisualLayerVisibility;
   sensorDomeOptions?: SensorDomeRenderOptions;
   defenseZoneOptions?: DefenseZoneRenderOptions;
@@ -691,6 +702,13 @@ export function CesiumRuntimePanel({
         </div>
       )}
 
+      <div className="mb-2" data-testid="cesium-protected-center-recovery">
+        <ProtectedCenterRecoveryBanner
+          recoveryNotice={protectedCenterRecoveryNotice}
+          protectedCenterEntityId={protectedCenterEntityId}
+        />
+      </div>
+
       {tacticalRankingSummary && (
         <p
           className="mb-2 rounded border border-indigo-800/50 bg-indigo-950/35 px-2.5 py-1.5 text-[10px] text-indigo-100/90"
@@ -738,6 +756,17 @@ export function CesiumRuntimePanel({
           onSpawn={onSpawn}
           onMove={onMove}
         />
+        {editingEnabled && selectedEntity && onDesignateProtectedCenter && (
+          <div className="pointer-events-none absolute inset-x-3 bottom-3 z-10">
+            <CesiumSelectedEntityActionRow
+              selectedEntity={selectedEntity}
+              protectedCenterEntityId={protectedCenterEntityId}
+              designateProtectedCenterDisabled={designateProtectedCenterDisabled}
+              onDesignateProtectedCenter={onDesignateProtectedCenter}
+              onClearSelection={() => onSelectEntity(null)}
+            />
+          </div>
+        )}
         {radarPreviewControls && selectedEntity?.entity_type === "radar" && (
           <div className="pointer-events-none absolute left-3 top-3 z-10 max-w-[calc(100%-1.5rem)]">
             <RadarDomeMapQuickControls

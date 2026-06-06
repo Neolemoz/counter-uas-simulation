@@ -20,6 +20,8 @@ export interface DefenseZoneConfig {
 export interface DefenseZoneRenderOptions {
   show?: boolean;
   selectedEntityId?: string | null;
+  /** Explicit session protected center — never inferred from selection. */
+  protectedCenterEntityId?: string | null;
   selectedOnly?: boolean;
   showLabels?: boolean;
   config?: DefenseZoneConfig;
