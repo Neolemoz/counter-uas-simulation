@@ -26,7 +26,7 @@ Prefix: `/rt_sandbox/<session_id>/`
 |-------|-----------|---------|
 | `entity_pose_cmd` | Worker → Gz node | `rt_entity_pose_cmd_v1` JSON on `std_msgs/String` |
 | `entity_state` | Gz node → Worker | `rt_entity_state_v1` JSON on `std_msgs/String` |
-| `clock` | Optional mirror | Unchanged from G2 |
+| `clock` | Worker → Gz node (pause mirror); optional sim time | See [rt_live_control_truth_v1.md](rt_live_control_truth_v1.md) |
 
 ---
 
@@ -50,6 +50,9 @@ Prefix: `/rt_sandbox/<session_id>/`
 |------|----------|
 | `apply` | Spawn if new `sim_entity_ref`; else `set_pose` |
 | `delete` | Remove Gazebo model; drop from state publish |
+| `reset_world` | Clear bridge runtime maps; publish empty `entity_state` (PLAT-RT-LIVE-CONTROL-TRUTH1) |
+
+See [rt_live_control_truth_v1.md](rt_live_control_truth_v1.md) for WorldControl pause/resume/reset and `clock` sim-time fields.
 
 ### 3.2 `rt_entity_state_v1`
 

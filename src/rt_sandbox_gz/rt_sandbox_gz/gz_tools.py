@@ -40,6 +40,37 @@ def fmt_pose_req(name: str, x: float, y: float, z: float, yaw_deg: float = 0.0) 
     )
 
 
+WORLD_CONTROL_SERVICE = "control"
+
+
+def fmt_world_control_pause() -> str:
+    return "pause: true"
+
+
+def fmt_world_control_resume() -> str:
+    return "pause: false"
+
+
+def fmt_world_control_reset_all() -> str:
+    return "reset: {all: true}"
+
+
+def gz_world_control(world_name: str, req: str, timeout_ms: int = 3000) -> bool:
+    return gz_service(world_name, WORLD_CONTROL_SERVICE, req, timeout_ms=timeout_ms)
+
+
+def gz_world_pause(world_name: str, timeout_ms: int = 3000) -> bool:
+    return gz_world_control(world_name, fmt_world_control_pause(), timeout_ms=timeout_ms)
+
+
+def gz_world_resume(world_name: str, timeout_ms: int = 3000) -> bool:
+    return gz_world_control(world_name, fmt_world_control_resume(), timeout_ms=timeout_ms)
+
+
+def gz_world_reset_all(world_name: str, timeout_ms: int = 3000) -> bool:
+    return gz_world_control(world_name, fmt_world_control_reset_all(), timeout_ms=timeout_ms)
+
+
 def gz_service(world_name: str, service: str, req: str, timeout_ms: int = 3000) -> bool:
     if not service.startswith('/'):
         service = f'/world/{world_name}/{service}'
@@ -65,6 +96,8 @@ def gz_service(world_name: str, service: str, req: str, timeout_ms: int = 3000) 
 
 
 def _reqtype_for(service: str) -> str:
+    if service.endswith('control'):
+        return 'gz.msgs.WorldControl'
     if service.endswith('set_pose'):
         return 'gz.msgs.Pose'
     if service.endswith('create'):

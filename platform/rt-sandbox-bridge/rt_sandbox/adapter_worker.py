@@ -19,6 +19,34 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
+_GZ_TOOLS: Any | None = None
+
+
+def _gz_tools_module() -> Any | None:
+    global _GZ_TOOLS
+    if _GZ_TOOLS is not None:
+        return _GZ_TOOLS if _GZ_TOOLS is not False else None
+    try:
+        from rt_sandbox_gz import gz_tools as mod
+
+        _GZ_TOOLS = mod
+        return mod
+    except ImportError:
+        gz_root = Path(__file__).resolve().parents[3] / "src" / "rt_sandbox_gz"
+        if gz_root.is_dir():
+            root_s = str(gz_root)
+            if root_s not in sys.path:
+                sys.path.insert(0, root_s)
+            try:
+                from rt_sandbox_gz import gz_tools as mod
+
+                _GZ_TOOLS = mod
+                return mod
+            except ImportError:
+                pass
+    _GZ_TOOLS = False
+    return None
+
 
 def _utc_now() -> str:
     return datetime.now(timezone.utc).replace(microsecond=0).isoformat()
@@ -43,6 +71,7 @@ from rt_sandbox.ros_allowlist import (
 class MockSimState:
     session_id: str
     mode: str
+    world_name: str = "rt_sandbox_flat"
     paused: bool = False
     entities: dict[str, dict[str, Any]] = field(default_factory=dict)
     published: list[dict[str, Any]] = field(default_factory=list)
@@ -185,7 +214,8 @@ class AdapterWorker:
                 error_code="COMMAND_FORBIDDEN",
                 error_message="invalid adapter mode",
             )
-        self._state = MockSimState(session_id=req.session_id, mode=mode)
+        world_name = str(req.payload.get("rt_sandbox_world") or "rt_sandbox_flat")
+        self._state = MockSimState(session_id=req.session_id, mode=mode, world_name=world_name)
         ros_domain_id = req.payload.get("ros_domain_id")
         if ros_domain_id is not None:
             self._state.ros_domain_id = int(ros_domain_id)
@@ -237,6 +267,7 @@ class AdapterWorker:
                     error_code="RUNTIME_UNAVAILABLE",
                     error_message="rclpy unavailable for live adapter",
                 )
+            self._publish_clock_mirror()
         topics = sorted(allowed_session_topics(req.session_id))
         return IpcResponse(
             request_id=req.request_id,
@@ -396,6 +427,41 @@ class AdapterWorker:
             },
         )
 
+    def _invoke_gz_world_pause(self) -> None:
+        if self._state is None or self._state.mode != "live" or shutil.which("gz") is None:
+            return
+        mod = _gz_tools_module()
+        if mod is None:
+            return
+        mod.gz_world_pause(self._state.world_name)
+
+    def _invoke_gz_world_resume(self) -> None:
+        if self._state is None or self._state.mode != "live" or shutil.which("gz") is None:
+            return
+        mod = _gz_tools_module()
+        if mod is None:
+            return
+        mod.gz_world_resume(self._state.world_name)
+
+    def _invoke_gz_world_reset_all(self) -> None:
+        if self._state is None or self._state.mode != "live" or shutil.which("gz") is None:
+            return
+        mod = _gz_tools_module()
+        if mod is None:
+            return
+        mod.gz_world_reset_all(self._state.world_name)
+
+    def _clear_runtime_maps(self) -> None:
+        if self._state is None:
+            return
+        self._state.entities.clear()
+        self._state.drift_offsets.clear()
+        self._state.sim_entity_refs.clear()
+        self._state.sync_seq = 0
+        self._state.telemetry_seq = 0
+        self._state.published.clear()
+        self._state.last_poll_monotonic = None
+
     def _pause(self, req: IpcRequest) -> IpcResponse:
         if self._state is None:
             return IpcResponse(
@@ -405,7 +471,8 @@ class AdapterWorker:
                 error_message="not attached",
             )
         self._state.paused = True
-        self._record_clock_topic()
+        self._invoke_gz_world_pause()
+        self._publish_clock_mirror()
         return IpcResponse(
             request_id=req.request_id,
             ok=True,
@@ -421,7 +488,9 @@ class AdapterWorker:
                 error_message="not attached",
             )
         self._state.paused = False
-        self._record_clock_topic()
+        self._reset_mock_poll_clock()
+        self._invoke_gz_world_resume()
+        self._publish_clock_mirror()
         return IpcResponse(
             request_id=req.request_id,
             ok=True,
@@ -553,14 +622,13 @@ class AdapterWorker:
                 error_code="RUNTIME_UNAVAILABLE",
                 error_message="not attached",
             )
-        self._state.entities.clear()
-        self._state.drift_offsets.clear()
-        self._state.sync_seq = 0
-        self._state.telemetry_seq = 0
-        self._state.published.clear()
-        if self._state.mode == "live" and self._state.live_ros is not None:
-            refs = list(self._state.sim_entity_refs.items())
-            for eid, sim_ref in refs:
+        live_refs = (
+            list(self._state.sim_entity_refs.items())
+            if self._state.mode == "live" and self._state.live_ros is not None
+            else []
+        )
+        if live_refs and self._state.live_ros is not None:
+            for eid, sim_ref in live_refs:
                 self._state.live_ros.publish_pose_cmd(
                     op="delete",
                     entity_id=eid,
@@ -568,8 +636,14 @@ class AdapterWorker:
                     pose={},
                     sim_entity_ref=sim_ref,
                 )
-        self._state.sim_entity_refs.clear()
-        self._record_clock_topic()
+        self._clear_runtime_maps()
+        if self._state.mode == "live" and self._state.live_ros is not None:
+            self._state.live_ros.publish_world_reset()
+            self._state.live_ros.clear_state_cache()
+            self._invoke_gz_world_reset_all()
+            if self._state.paused:
+                self._invoke_gz_world_pause()
+        self._publish_clock_mirror()
         return IpcResponse(
             request_id=req.request_id,
             ok=True,
@@ -728,7 +802,12 @@ class AdapterWorker:
         alive = True
         if self._state.launch_proc is not None:
             alive = self._state.launch_proc.poll() is None
-        if self._state.mode != "live" and self._state.kinematic_plant_enabled and not mock_stale:
+        if (
+            self._state.mode != "live"
+            and self._state.kinematic_plant_enabled
+            and not mock_stale
+            and not self._state.paused
+        ):
             now = time.monotonic()
             last = self._state.last_poll_monotonic
             dt = max(0.0, now - float(last)) if last is not None else 0.0
@@ -759,7 +838,7 @@ class AdapterWorker:
             "schema": "rt_adapter_telemetry_v1",
             "timestamp_utc": ts,
             "telemetry_seq": self._state.telemetry_seq,
-            "clock_mirror": self._state.clock_payload(),
+            "clock_mirror": self._clock_mirror_payload(),
             "adapter_health": {
                 "alive": alive,
                 "mode": self._state.mode,
@@ -800,15 +879,32 @@ class AdapterWorker:
             result=result,
         )
 
-    def _record_clock_topic(self) -> None:
+    def _reset_mock_poll_clock(self) -> None:
+        """Avoid mock plant dt jump after resume."""
+        if self._state is None:
+            return
+        if self._state.last_poll_monotonic is not None:
+            self._state.last_poll_monotonic = time.monotonic()
+
+    def _clock_mirror_payload(self) -> dict[str, Any]:
+        if self._state is None:
+            return {}
+        payload = dict(self._state.clock_payload())
+        if self._state.mode == "live" and self._state.live_ros is not None:
+            fields_fn = getattr(self._state.live_ros, "sim_time_fields", lambda: {})
+            payload.update(fields_fn())
+        return payload
+
+    def _publish_clock_mirror(self) -> None:
         if self._state is None:
             return
         topic = f"{session_topic_prefix(self._state.session_id)}clock"
         if classify_topic(self._state.session_id, topic):
             return
-        self._state.published.append(
-            {"topic": topic, "payload": self._state.clock_payload()}
-        )
+        payload = self._clock_mirror_payload()
+        self._state.published.append({"topic": topic, "payload": payload})
+        if self._state.mode == "live" and self._state.live_ros is not None:
+            self._state.live_ros.publish_clock(payload)
 
 
 def main() -> None:

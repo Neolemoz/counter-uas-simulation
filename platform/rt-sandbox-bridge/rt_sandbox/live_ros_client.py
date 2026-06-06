@@ -34,9 +34,13 @@ class LiveRosClient:
         self._prefix = session_topic_prefix(session_id)
         self._cmd_topic = f"{self._prefix}entity_pose_cmd"
         self._state_topic = f"{self._prefix}entity_state"
+        self._clock_topic = f"{self._prefix}clock"
         self._node = None
         self._cmd_pub = None
+        self._clock_pub = None
         self._latest_state: dict[str, Any] | None = None
+        self._sim_time_sec: int | None = None
+        self._sim_time_nsec: int | None = None
         self._lock = threading.Lock()
         self._started = False
 
@@ -50,6 +54,7 @@ class LiveRosClient:
 
             import rclpy
             from rclpy.node import Node
+            from rosgraph_msgs.msg import Clock
             from std_msgs.msg import String
         except ImportError:
             return False
@@ -72,11 +77,19 @@ class LiveRosClient:
             with self._lock:
                 self._latest_state = data
 
+        def _on_gazebo_clock(msg: Clock) -> None:
+            with self._lock:
+                self._sim_time_sec = int(msg.clock.sec)
+                self._sim_time_nsec = int(msg.clock.nanosec)
+
         node.create_subscription(String, self._state_topic, _on_state, 10)
+        node.create_subscription(Clock, "/clock", _on_gazebo_clock, 10)
         cmd_pub = node.create_publisher(String, self._cmd_topic, 10)
+        clock_pub = node.create_publisher(String, self._clock_topic, 10)
 
         self._node = node
         self._cmd_pub = cmd_pub
+        self._clock_pub = clock_pub
         self._String = String
         self._started = True
 
@@ -96,7 +109,52 @@ class LiveRosClient:
         except Exception:
             pass
         self._node = None
+        self._clock_pub = None
+        self._sim_time_sec = None
+        self._sim_time_nsec = None
         self._started = False
+
+    def sim_time_fields(self) -> dict[str, Any]:
+        """Additive Gazebo sim-time fields for clock_mirror when /clock is bridged."""
+        with self._lock:
+            if self._sim_time_sec is None:
+                return {}
+            return {
+                "sim_time_sec": self._sim_time_sec,
+                "sim_time_nsec": self._sim_time_nsec,
+                "sim_time_source": "gazebo_clock_bridge",
+            }
+
+    def publish_clock(self, payload: dict[str, Any]) -> None:
+        """Publish session clock mirror (pause state) to rt_sandbox_gz bridge node."""
+        if not self._started or self._clock_pub is None:
+            return
+        msg = self._String()
+        msg.data = json.dumps(payload)
+        self._clock_pub.publish(msg)
+
+    def publish_world_reset(self) -> None:
+        """Tell rt_sandbox_gz bridge node to drop runtime entity/integration state."""
+        if not self._started or self._cmd_pub is None:
+            return
+        payload: dict[str, Any] = {
+            "schema": "rt_entity_pose_cmd_v1",
+            "op": "reset_world",
+            "entity_id": "_world_",
+            "entity_type": "drone",
+            "pose": {},
+        }
+        msg = self._String()
+        msg.data = json.dumps(payload)
+        self._cmd_pub.publish(msg)
+
+    def clear_state_cache(self) -> None:
+        with self._lock:
+            self._latest_state = {
+                "schema": "rt_entity_state_v1",
+                "sync_seq": 0,
+                "entities": [],
+            }
 
     def publish_pose_cmd(
         self,

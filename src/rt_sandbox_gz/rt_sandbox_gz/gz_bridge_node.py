@@ -89,13 +89,16 @@ class RtSandboxGzBridgeNode(Node):
         prefix = f'/rt_sandbox/{self._ros_session_id}/'
         self._cmd_topic = f'{prefix}entity_pose_cmd'
         self._state_topic = f'{prefix}entity_state'
+        self._clock_topic = f'{prefix}clock'
 
         self._entities: dict[str, dict[str, Any]] = {}
         self._sync_seq = 0
+        self._paused = False
         self._model_paths = self._resolve_model_paths()
         self._timer_dt = 1.0 / self._rate_hz
 
         self.create_subscription(String, self._cmd_topic, self._on_cmd, 10)
+        self.create_subscription(String, self._clock_topic, self._on_clock, 10)
         self._state_pub = self.create_publisher(String, self._state_topic, 10)
         self.create_timer(self._timer_dt, self._on_timer)
         self.get_logger().info(
@@ -154,6 +157,46 @@ class RtSandboxGzBridgeNode(Node):
         ent['last_integrate_monotonic'] = time.monotonic()
         return dict(ent['pose'])
 
+    def _on_clock(self, msg: String) -> None:
+        try:
+            data = json.loads(msg.data)
+        except json.JSONDecodeError:
+            self.get_logger().warning('invalid clock JSON')
+            return
+        paused = bool(data.get('paused', False))
+        if self._paused and not paused:
+            self._reset_integrate_timestamps()
+        self._paused = paused
+
+    def _reset_integrate_timestamps(self) -> None:
+        now = time.monotonic()
+        for ent in self._entities.values():
+            ent['last_integrate_monotonic'] = now
+
+    def _reset_runtime_state(self) -> None:
+        """Drop bridge entity maps after adapter reset_world; publish empty entity_state."""
+        self._entities.clear()
+        self._sync_seq = 0
+        self._publish_state()
+
+    def _apply_commanded_pose(
+        self,
+        ent: dict[str, Any],
+        commanded: dict[str, float],
+        *,
+        dt: float,
+        initial_spawn: bool = False,
+    ) -> dict[str, float]:
+        """Explicit commands while paused snap immediately; timer path stays gated."""
+        if self._paused and not initial_spawn:
+            ent['commanded_pose'] = dict(commanded)
+            plant = snap_to_commanded(self._plant_state(ent), commanded)
+            ent['pose'] = plant.as_pose()
+            ent['velocity'] = {'x': plant.vx, 'y': plant.vy, 'z': plant.vz}
+            ent['last_integrate_monotonic'] = time.monotonic()
+            return dict(ent['pose'])
+        return self._advance_entity(ent, commanded, dt, initial_spawn=initial_spawn)
+
     def _push_pose_to_gazebo(self, ent: dict[str, Any]) -> bool:
         sim_ref = str(ent.get('sim_entity_ref') or '')
         if not sim_ref:
@@ -196,6 +239,9 @@ class RtSandboxGzBridgeNode(Node):
         if data.get('schema') != 'rt_entity_pose_cmd_v1':
             return
         op = str(data.get('op', 'apply'))
+        if op == 'reset_world':
+            self._reset_runtime_state()
+            return
         entity_id = str(data.get('entity_id', ''))
         if not entity_id:
             return
@@ -246,8 +292,8 @@ class RtSandboxGzBridgeNode(Node):
 
         now = time.monotonic()
         last = float(existing.get('last_integrate_monotonic') or now)
-        dt = max(0.0, now - last)
-        self._advance_entity(existing, commanded, dt)
+        dt = 0.0 if self._paused else max(0.0, now - last)
+        self._apply_commanded_pose(existing, commanded, dt=dt)
         if not self._push_pose_to_gazebo(existing):
             self.get_logger().warning(f'set_pose failed for {sim_ref}')
             return
@@ -255,6 +301,8 @@ class RtSandboxGzBridgeNode(Node):
         self._publish_state()
 
     def _on_timer(self) -> None:
+        if self._paused:
+            return
         if not self._plant_enabled or not self._entities:
             self._publish_state()
             return
