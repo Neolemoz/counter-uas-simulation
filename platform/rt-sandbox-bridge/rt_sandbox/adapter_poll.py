@@ -112,6 +112,7 @@ def _append_telemetry_poll(
     )
     if err_code:
         result.telemetry_error_code = err_code
+        result.should_publish_channels = True
     else:
         result.should_publish_channels = True
     for cmd_type, res, fdetail in build_fidelity_poll_audits(session, config):

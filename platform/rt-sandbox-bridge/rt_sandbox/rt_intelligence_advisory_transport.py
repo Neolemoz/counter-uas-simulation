@@ -51,11 +51,21 @@ def build_intelligence_advisory_transport(
     refresh_reason: str = "snapshot",
     stale_reason: str | None = None,
     now_utc: str | None = None,
+    telemetry_stale_s: float = 30.0,
 ) -> dict[str, Any]:
     """Build rt_intelligence_advisory_transport_v1 without side effects."""
     raw_input: Any = advisory_input
     if raw_input is None:
         raw_input = getattr(session, INPUT_ATTR, None)
+    if raw_input is None and hasattr(session, "world"):
+        from rt_sandbox.rt_intelligence_live import assemble_live_advisory_input
+
+        raw_input, live_stale_reason = assemble_live_advisory_input(
+            session,
+            telemetry_stale_s=telemetry_stale_s,
+            now_utc=now_utc,
+        )
+        stale_reason = stale_reason or live_stale_reason
 
     reason = _stale_reason(raw_input, stale_reason)
     data = raw_input if isinstance(raw_input, dict) else None

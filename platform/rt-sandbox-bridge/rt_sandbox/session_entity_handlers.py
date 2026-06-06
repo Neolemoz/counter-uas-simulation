@@ -118,6 +118,34 @@ def handle_entity(
     world = session.world
     registry = world.registry
 
+    if command_type == "designate_protected_center":
+        entity_id = str(payload["entity_id"])
+        if registry.get(entity_id) is None:
+            return fail(base, "ENTITY_NOT_FOUND", entity_id)
+        current = session.protected_center_entity_id
+        if (
+            current is not None
+            and current != entity_id
+            and payload.get("replace") is not True
+        ):
+            return fail(base, "INVALID_STATE", "explicit replace required")
+        session.protected_center_entity_id = entity_id
+        detail = {
+            "protected_center_entity_id": entity_id,
+            "replaced_entity_id": current if current != entity_id else None,
+            "state": session.state.value,
+        }
+        audit.append(
+            session.session_id,
+            command_id=command_id,
+            command_type="designate_protected_center",
+            issued_by=issued_by,
+            result="OK",
+            detail=detail,
+        )
+        publish_transition("designate_protected_center", session.state, False)
+        return entity_ok(session, base, telemetry, pose_sync_summary, detail=detail)
+
     if command_type == "spawn_entity":
         if total_entity_count is not None:
             if total_entity_count() >= config.max_total_entities_across_sessions:
@@ -262,6 +290,8 @@ def handle_entity(
         if err:
             return fail(base, err, err)
         world.bump_revision()
+        if session.protected_center_entity_id == entity_id:
+            session.protected_center_entity_id = None
         detail = {
             "entity_id": record.entity_id,
             "entity_type": record.entity_type,

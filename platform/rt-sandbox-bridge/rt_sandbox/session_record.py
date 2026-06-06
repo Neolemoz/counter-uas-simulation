@@ -36,3 +36,4 @@ class SessionRecord:
     runtime_profile: str = "stub"
     last_live_background_poll_monotonic: float | None = None
     last_live_background_poll_utc: str | None = None
+    protected_center_entity_id: str | None = None

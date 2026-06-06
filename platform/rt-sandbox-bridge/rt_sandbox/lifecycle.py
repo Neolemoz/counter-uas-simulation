@@ -38,6 +38,9 @@ _TRANSITIONS: dict[str, frozenset[SessionState]] = {
     "spawn_entity": frozenset({SessionState.RUNNING, SessionState.PAUSED}),
     "move_entity": frozenset({SessionState.RUNNING, SessionState.PAUSED}),
     "delete_entity": frozenset({SessionState.RUNNING, SessionState.PAUSED}),
+    "designate_protected_center": frozenset(
+        {SessionState.RUNNING, SessionState.PAUSED}
+    ),
     "subscribe_telemetry": frozenset({SessionState.RUNNING, SessionState.PAUSED}),
     "unsubscribe_telemetry": frozenset(
         {SessionState.RUNNING, SessionState.PAUSED, SessionState.STOPPED}

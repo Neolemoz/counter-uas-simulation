@@ -154,6 +154,7 @@ def publish_channels_for_transition(
         "spawn_entity",
         "move_entity",
         "delete_entity",
+        "designate_protected_center",
         "reset_session",
         "apply_runtime_template",
         "apply_scenario",

@@ -266,6 +266,7 @@ def reset_session(
     if session.tactical is not None:
         session.tactical.reset()
     session.live_assignments.clear()
+    session.protected_center_entity_id = None
     audit.append(
         session.session_id,
         command_id=command_id,

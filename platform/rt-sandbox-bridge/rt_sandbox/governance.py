@@ -61,6 +61,7 @@ ENTITY_COMMANDS = frozenset(
         "spawn_entity",
         "move_entity",
         "delete_entity",
+        "designate_protected_center",
     }
 )
 
@@ -360,6 +361,12 @@ def validate_entity_payload(command_type: str, payload: Any) -> str | None:
         entity_id = payload.get("entity_id")
         if not isinstance(entity_id, str) or not entity_id:
             return "ENTITY_NOT_FOUND"
+    if command_type == "designate_protected_center":
+        entity_id = payload.get("entity_id")
+        if not isinstance(entity_id, str) or not entity_id:
+            return "ENTITY_NOT_FOUND"
+        if not isinstance(payload.get("replace", False), bool):
+            return "COMMAND_FORBIDDEN"
     return None
 
 

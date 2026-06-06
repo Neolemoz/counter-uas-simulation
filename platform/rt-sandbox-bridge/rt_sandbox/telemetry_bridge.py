@@ -342,7 +342,10 @@ def _build_stub_channel_payload(
             build_intelligence_advisory_transport,
         )
 
-        return build_intelligence_advisory_transport(session)
+        stale_s = config.telemetry_stale_s if config is not None else 30.0
+        return build_intelligence_advisory_transport(
+            session, telemetry_stale_s=stale_s
+        )
     return None
 
 
@@ -425,7 +428,9 @@ def resolve_channel_payload(
             build_intelligence_advisory_transport,
         )
 
-        return build_intelligence_advisory_transport(session)
+        return build_intelligence_advisory_transport(
+            session, telemetry_stale_s=config.telemetry_stale_s
+        )
     return _build_stub_channel_payload(session, channel, config)
 
 
