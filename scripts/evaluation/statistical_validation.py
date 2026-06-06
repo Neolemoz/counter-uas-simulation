@@ -294,7 +294,7 @@ def validate_manifest(manifest: dict, rows: list[dict[str, str]]) -> dict[str, o
     expected_cohort = str(manifest.get("cohort") or "").strip()
     require_clean = bool(manifest.get("require_clean_git", False))
     seeds = [s for s in (seed_for_row(r) for r in rows) if s is not None]
-    cohorts = sorted({str(r.get("cohort") or "").strip() for r in rows if str(r.get("cohort") or "").strip()})
+    cohorts = sorted({str(r.get("cohort") or "").strip() for r in rows})
     dirty_values = {str(r.get("git_dirty") or "").strip().lower() for r in rows if str(r.get("git_dirty") or "").strip()}
     missing_logs = [
         r.get("log_path", "")
