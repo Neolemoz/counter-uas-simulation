@@ -79,6 +79,10 @@ export const BANNER_TACTICAL_RANKING_CUES =
 export const BANNER_TACTICAL_COMPARE =
   "TACTICAL COMPARE — background-session ghosts and deltas are explanatory only; active session remains command authority";
 
+/** Additive panel banner — runtime radar coverage heuristic (PLAT-RT-RADAR-COVERAGE1). */
+export const BANNER_RUNTIME_COVERAGE =
+  "RUNTIME COVERAGE — heuristic 2D geometry only; not sensor truth or detection probability";
+
 export const BASE_BANNERS = [
   BANNER_PRIMARY,
   BANNER_TRANSIENT,

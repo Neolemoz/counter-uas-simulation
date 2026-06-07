@@ -59,6 +59,8 @@ import type { AdvisoryExperimentRollup } from "@/handoff/advisoryTypes";
 import { IntelligenceAdvisoryPanel } from "@/intelligence/IntelligenceAdvisoryPanel";
 import { ProtectedCenterStatusStrip } from "@/intelligence/ProtectedCenterStatusStrip";
 import type { ProtectedCenterClearReason } from "@/intelligence/protectedCenterCopy";
+import { RuntimeCoverageStatusStrip } from "@/coverage/RuntimeCoverageStatusStrip";
+import type { TacticalStatePayload } from "@/bridge/tacticalCommands";
 import { SelectedTargetAdvisoryCard } from "@/intelligence/SelectedTargetAdvisoryCard";
 import { ThreatEvaluationWorkbench } from "@/intelligence/workbench/ThreatEvaluationWorkbench";
 import { INTELLIGENCE_ADVISORY_BANNER } from "@/intelligence/intelligenceGovernance";
@@ -1193,12 +1195,20 @@ export function IntelligenceAdvisoryWorkstationSurfaces({
   protectedCenterEntityId,
   protectedCenterRecoveryNotice = null,
   entities,
+  showRuntimeCoverageStrip = false,
+  defenseZoneConfig = DEFAULT_DEFENSE_ZONE_CONFIG,
+  radarDomeConfig = DEFAULT_RADAR_DOME_CONFIG,
+  tacticalState = null,
 }: {
   snapshots: Partial<Record<TelemetryChannel, ChannelSnapshot>>;
   selectedEntityId: string | null;
   protectedCenterEntityId: string | null;
   protectedCenterRecoveryNotice?: ProtectedCenterClearReason | null;
   entities: UiEntity[];
+  showRuntimeCoverageStrip?: boolean;
+  defenseZoneConfig?: DefenseZoneConfig;
+  radarDomeConfig?: RadarDomeConfig;
+  tacticalState?: TacticalStatePayload | null;
 }) {
   const intelligenceAdvisoryTransport = getAdvisoryTransportFromSnapshot(
     snapshots.intelligence_advisory,
@@ -1221,6 +1231,15 @@ export function IntelligenceAdvisoryWorkstationSurfaces({
         protectedCenterRecoveryNotice={protectedCenterRecoveryNotice}
         entities={entities}
       />
+      {showRuntimeCoverageStrip ? (
+        <RuntimeCoverageStatusStrip
+          entities={entities}
+          protectedCenterEntityId={protectedCenterEntityId}
+          defenseZoneConfig={defenseZoneConfig}
+          radarDomeConfig={radarDomeConfig}
+          tacticalState={tacticalState}
+        />
+      ) : null}
       <IntelligenceAdvisoryPanel transport={intelligenceAdvisoryTransport} />
       {selectedIntelligenceAdvisory && (
         <SelectedTargetAdvisoryCard
@@ -1968,6 +1987,11 @@ export function AppWorkstationSlots(props: AppWorkstationSlotsProps) {
                   radarDomeLabelsVisible={radarDomeLabelsVisible}
                   sensorDomeZoneMode={sensorDomeZoneMode}
                   sensorDomeLayerEnabled={terrainLayers.showSensorDomes}
+                  runtimeCoverageVisible={
+                    layerVisibility.showRuntimeCoverageCells &&
+                    !workspaceModeShowsPlanningPlaceholder(workspaceMode)
+                  }
+                  tacticalState={tactical.state}
                   onRadarDomeConfigChange={setRadarDomeConfig}
                   onDefenseZoneConfigChange={setDefenseZoneConfig}
                   onRadarDomeSelectedOnlyChange={setRadarDomeSelectedOnly}
@@ -2156,6 +2180,12 @@ export function AppWorkstationSlots(props: AppWorkstationSlotsProps) {
               protectedCenterEntityId={protectedCenterEntityId}
               protectedCenterRecoveryNotice={protectedCenterRecoveryNotice}
               entities={entities}
+              showRuntimeCoverageStrip={
+                !workspaceModeShowsPlanningPlaceholder(workspaceMode)
+              }
+              defenseZoneConfig={defenseZoneConfig}
+              radarDomeConfig={radarDomeConfig}
+              tacticalState={tactical.state}
             />
             <TrackSensorWorkbenchWorkstationSurface
               selectedTrackId={selectedEntityId}

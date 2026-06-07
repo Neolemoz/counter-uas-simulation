@@ -49,6 +49,11 @@ import {
   syncTacticalTrajectoryLayer,
 } from "./tacticalTrajectoryLayer";
 import {
+  clearRuntimeCoverageLayer,
+  syncRuntimeCoverageLayer,
+  type RuntimeCoverageLayerOptions,
+} from "@/coverage/runtimeCoverageLayer";
+import {
   clearTacticalSelectionEmphasisLayer,
   syncTacticalSelectionEmphasisLayer,
 } from "./tacticalSelectionEmphasisLayer";
@@ -112,6 +117,7 @@ export interface CesiumRuntimeViewProps {
     onMapClick: (vertex: PlanningVertex) => void;
   };
   terrainProviderMode?: CesiumTerrainProviderMode;
+  runtimeCoverage?: RuntimeCoverageLayerOptions | null;
   onViewerReady?: (viewer: Viewer | null) => void;
   onSelectEntity: (id: string | null) => void;
   onSpawn: (pose: Pose) => void;
@@ -203,6 +209,7 @@ export function CesiumRuntimeView({
   mirrorSnapshot,
   planningDrawing,
   terrainProviderMode = DEFAULT_CESIUM_TERRAIN_PROVIDER_MODE,
+  runtimeCoverage = null,
   onViewerReady,
   onSelectEntity,
   onSpawn,
@@ -268,6 +275,7 @@ export function CesiumRuntimeView({
         clearTacticalRankingCueLayer(viewer);
         clearTacticalCompareOverlay(viewer);
         clearTacticalSelectionEmphasisLayer(viewer);
+        clearRuntimeCoverageLayer(viewer);
         syncPlanningDefenseAreaLayer(viewer, null);
         syncPlanningExtentLayer(viewer, null, false);
         syncPlanningMeasurementLayer(viewer, null, false);
@@ -434,6 +442,7 @@ export function CesiumRuntimeView({
       planningDrawing?.measurements,
       planningDrawing?.enabled === true,
     );
+    syncRuntimeCoverageLayer(viewer, runtimeCoverage ?? { enabled: false, params: { entities: [], protectedCenterEntityId: null } });
     syncEntityMarkers(viewer, entities, {
       selectedEntityId,
       protectedCenterEntityId: defenseZoneOptions?.protectedCenterEntityId ?? null,
@@ -477,6 +486,7 @@ export function CesiumRuntimeView({
     planningDrawing?.planningExtent,
     planningDrawing?.measurements,
     planningDrawing?.enabled,
+    runtimeCoverage,
   ]);
 
   if (!sessionId) {

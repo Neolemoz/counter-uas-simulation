@@ -63,7 +63,8 @@ export type LayerVisibilityKey =
   | "showTacticalRankingCues"
   | "showTacticalTimingLabels"
   | "showTacticalSelectionEmphasis"
-  | "showTacticalCompareOverlay";
+  | "showTacticalCompareOverlay"
+  | "showRuntimeCoverageCells";
 
 export interface VisualLayerPerformanceBudget {
   max_active_overlay_layers: number;
@@ -129,6 +130,7 @@ export interface VisualLayerVisibility {
   showTacticalTimingLabels: boolean;
   showTacticalSelectionEmphasis: boolean;
   showTacticalCompareOverlay: boolean;
+  showRuntimeCoverageCells: boolean;
 }
 
 export const COGNITION_GROUP_TITLES: Record<CognitionGroupId, string> = {
@@ -178,6 +180,7 @@ const LAYER_ID_TO_VISIBILITY_KEY: Partial<Record<string, LayerVisibilityKey>> = 
   tactical_timing_labels: "showTacticalTimingLabels",
   tactical_selection_emphasis: "showTacticalSelectionEmphasis",
   tactical_compare_overlay: "showTacticalCompareOverlay",
+  runtime_coverage_cells: "showRuntimeCoverageCells",
 };
 
 const V4_P0_LAYERS: VisualLayerDescriptor[] = [
@@ -429,6 +432,25 @@ const TACTICAL_LAYERS: VisualLayerDescriptor[] = [
   },
 ];
 
+const RUNTIME_COVERAGE_LAYERS: VisualLayerDescriptor[] = [
+  {
+    layer_id: "runtime_coverage_cells",
+    label: "Runtime coverage cells",
+    z_order: 51,
+    default_on: false,
+    plat_phase: "v4_p1",
+    toggleable: true,
+    visibility_key: "showRuntimeCoverageCells",
+    cognition_group: "sensor_context",
+    module_anchor: "runtimeCoverageLayer",
+    cognition_kind: "sensor",
+    density_group: "visibility_context",
+    display_only: true,
+    disclaimer:
+      "Runtime coverage cells are heuristic 2D geometry only — not sensor truth or detection probability",
+  },
+];
+
 export const CANONICAL_VISUAL_LAYER_REGISTRY: VisualLayerRegistryV4 = {
   ...(registryJson as VisualLayerRegistryV3),
   schema: SCHEMA_RT_VISUAL_LAYER_REGISTRY_V4,
@@ -442,6 +464,7 @@ export const CANONICAL_VISUAL_LAYER_REGISTRY: VisualLayerRegistryV4 = {
     ...V4_P0_LAYERS,
     ...V4_P1_LAYERS,
     ...TACTICAL_LAYERS,
+    ...RUNTIME_COVERAGE_LAYERS,
   ],
 };
 
@@ -540,6 +563,7 @@ export function defaultVisibilityFromRegistry(
     showTacticalTimingLabels: false,
     showTacticalSelectionEmphasis: false,
     showTacticalCompareOverlay: false,
+    showRuntimeCoverageCells: false,
   };
 
   for (const layer of reg.layers) {
@@ -631,6 +655,7 @@ const OVERLAY_COUNT_KEYS: LayerVisibilityKey[] = [
   "showTacticalTimingLabels",
   "showTacticalSelectionEmphasis",
   "showTacticalCompareOverlay",
+  "showRuntimeCoverageCells",
 ];
 
 const DENSITY_CONTROL_KEYS: LayerVisibilityKey[] = [

@@ -69,6 +69,7 @@ describe("visualLayerRegistry", () => {
     expect(defaults.showContourOverlays).toBe(false);
     expect(defaults.showVegetationMarkers).toBe(false);
     expect(defaults.showEnvironmentMarkers).toBe(false);
+    expect(defaults.showRuntimeCoverageCells).toBe(false);
   });
 
   it("preserves frozen default-on for mesh, ridges, and entity_markers registry row", () => {

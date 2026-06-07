@@ -11,6 +11,8 @@ import {
 import { PanelShell } from "./GovernanceChrome";
 import { BoundsGridOverlay, BoundsIndicator } from "./BoundsIndicator";
 import { DefenseZoneSvgOverlay } from "./DefenseZoneSvgOverlay";
+import { RuntimeCoverageSvgOverlay } from "@/coverage/RuntimeCoverageSvgOverlay";
+import type { TacticalStatePayload } from "@/bridge/tacticalCommands";
 import { TerrainSvgOverlay } from "./TerrainSvgOverlay";
 import {
   markerVisualStyle,
@@ -143,6 +145,8 @@ export function WorldEditingGrid({
   radarDomeLabelsVisible = true,
   sensorDomeZoneMode = DEFAULT_SENSOR_DOME_ZONE_MODE,
   sensorDomeLayerEnabled = false,
+  runtimeCoverageVisible = false,
+  tacticalState = null,
   onRadarDomeConfigChange = () => undefined,
   onDefenseZoneConfigChange = () => undefined,
   onRadarDomeSelectedOnlyChange = () => undefined,
@@ -174,6 +178,8 @@ export function WorldEditingGrid({
   radarDomeLabelsVisible?: boolean;
   sensorDomeZoneMode?: SensorDomeZoneMode;
   sensorDomeLayerEnabled?: boolean;
+  runtimeCoverageVisible?: boolean;
+  tacticalState?: TacticalStatePayload | null;
   onRadarDomeConfigChange?: (config: RadarDomeConfig) => void;
   onDefenseZoneConfigChange?: (config: DefenseZoneConfig) => void;
   onRadarDomeSelectedOnlyChange?: (selectedOnly: boolean) => void;
@@ -794,6 +800,15 @@ export function WorldEditingGrid({
               sensorDomeLayerEnabled &&
               shouldShowDefenseZones(sensorDomeZoneMode)
             }
+          />
+          <RuntimeCoverageSvgOverlay
+            entities={displayEntities}
+            cellSize={CELL_SIZE}
+            protectedCenterEntityId={protectedCenterEntityId}
+            defenseZoneConfig={defenseZoneConfig}
+            radarDomeConfig={radarDomeConfig}
+            tacticalState={tacticalState}
+            visible={runtimeCoverageVisible}
           />
           {Array.from({ length: GRID_HEIGHT }, (_, row) =>
             Array.from({ length: GRID_WIDTH }, (_, col) => (

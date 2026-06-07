@@ -44,6 +44,7 @@ import { SessionComparisonCognitionStrip } from "@/workstation/SessionComparison
 import {
   BANNER_FIDELITY_TRUTH,
   BANNER_REALISM_F4,
+  BANNER_RUNTIME_COVERAGE,
   BANNER_TACTICAL_COMPARE,
   BANNER_TACTICAL_RANKING_CUES,
   BANNER_TACTICAL_THREAT_CORRIDOR,
@@ -227,6 +228,26 @@ export function CesiumRuntimePanel({
     ],
   );
   const terrainLayers = toTerrainLayerVisibility(layerVisibility);
+  const runtimeCoverage = useMemo(
+    () => ({
+      enabled: layerVisibility.showRuntimeCoverageCells,
+      params: {
+        entities,
+        protectedCenterEntityId: protectedCenterEntityId ?? null,
+        defenseZoneConfig: defenseZoneOptions?.config,
+        radarDomeConfig: sensorDomeOptions?.radii,
+        tacticalState,
+      },
+    }),
+    [
+      layerVisibility.showRuntimeCoverageCells,
+      entities,
+      protectedCenterEntityId,
+      defenseZoneOptions?.config,
+      sensorDomeOptions?.radii,
+      tacticalState,
+    ],
+  );
   const [followSelected, setFollowSelected] = useState(false);
   const [viewer, setViewer] = useState<Viewer | null>(null);
   const viewerRef = useRef<Viewer | null>(null);
@@ -554,6 +575,11 @@ export function CesiumRuntimePanel({
               {tacticalCompareOn && (
                 <p className="text-[10px] text-amber-100/80">{BANNER_TACTICAL_COMPARE}</p>
               )}
+              {layerVisibility.showRuntimeCoverageCells && (
+                <p className="text-[10px] text-amber-100/80" data-testid="runtime-coverage-map-banner">
+                  {BANNER_RUNTIME_COVERAGE}
+                </p>
+              )}
               {tacticalViewLayersActive && (
                 <p className="text-[10px] text-amber-100/80">{TACTICAL_VIEW_GOVERNANCE_COPY}</p>
               )}
@@ -751,6 +777,7 @@ export function CesiumRuntimePanel({
           mirrorSnapshot={mirrorSnapshot}
           planningDrawing={planningDrawing}
           terrainProviderMode={terrainProviderMode}
+          runtimeCoverage={runtimeCoverage}
           onViewerReady={handleViewerReady}
           onSelectEntity={onSelectEntity}
           onSpawn={onSpawn}

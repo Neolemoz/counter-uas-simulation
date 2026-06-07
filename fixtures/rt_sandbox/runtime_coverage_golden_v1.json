@@ -1,0 +1,143 @@
+{
+  "schema": "rt_runtime_coverage_golden_v1",
+  "description": "Golden inputs for Runtime Coverage Analysis P0 (heuristic 2D discs).",
+  "cases": {
+    "one_radar_covering_center": {
+      "protected_center_entity_id": "center-1",
+      "defense_zone_config": {
+        "shape": "circle",
+        "sizes": { "coreM": 50, "engageM": 150, "warningM": 200 }
+      },
+      "radar_dome_config": { "detectionM": 300 },
+      "entities": [
+        {
+          "entity_id": "center-1",
+          "entity_type": "waypoint_marker",
+          "pose": { "x": 0, "y": 0, "z": 10 }
+        },
+        {
+          "entity_id": "radar-a",
+          "entity_type": "radar",
+          "pose": { "x": 0, "y": 0, "z": 10 }
+        }
+      ],
+      "sample_steps": 12,
+      "expect": {
+        "availability": "ready",
+        "center_covered": true,
+        "covering_radar_count": 1,
+        "nearest_edge_distance_m": 0,
+        "coverage_percent_min": 99,
+        "overlap_percent_max": 0
+      }
+    },
+    "two_radar_overlap": {
+      "protected_center_entity_id": "center-1",
+      "defense_zone_config": {
+        "shape": "circle",
+        "sizes": { "coreM": 50, "engageM": 150, "warningM": 200 }
+      },
+      "radar_dome_config": { "detectionM": 300 },
+      "entities": [
+        {
+          "entity_id": "center-1",
+          "entity_type": "waypoint_marker",
+          "pose": { "x": 0, "y": 0, "z": 10 }
+        },
+        {
+          "entity_id": "radar-a",
+          "entity_type": "radar",
+          "pose": { "x": -80, "y": 0, "z": 10 }
+        },
+        {
+          "entity_id": "radar-b",
+          "entity_type": "radar",
+          "pose": { "x": 80, "y": 0, "z": 10 }
+        }
+      ],
+      "sample_steps": 12,
+      "expect": {
+        "availability": "ready",
+        "center_covered": true,
+        "covering_radar_count": 2,
+        "coverage_percent_min": 99,
+        "overlap_percent_min": 1,
+        "redundancy_percent_min": 1
+      }
+    },
+    "blind_spot": {
+      "protected_center_entity_id": "center-1",
+      "defense_zone_config": {
+        "shape": "circle",
+        "sizes": { "coreM": 50, "engageM": 150, "warningM": 200 }
+      },
+      "radar_dome_config": { "detectionM": 120 },
+      "entities": [
+        {
+          "entity_id": "center-1",
+          "entity_type": "waypoint_marker",
+          "pose": { "x": 0, "y": 0, "z": 10 }
+        },
+        {
+          "entity_id": "radar-a",
+          "entity_type": "radar",
+          "pose": { "x": -250, "y": 0, "z": 10 }
+        }
+      ],
+      "sample_steps": 16,
+      "expect": {
+        "availability": "ready",
+        "center_covered": false,
+        "covering_radar_count": 0,
+        "nearest_edge_distance_m_min": 100,
+        "coverage_percent_max": 60,
+        "blind_spot_sector_count_min": 1
+      }
+    },
+    "no_radar": {
+      "protected_center_entity_id": "center-1",
+      "defense_zone_config": {
+        "shape": "circle",
+        "sizes": { "coreM": 50, "engageM": 150, "warningM": 200 }
+      },
+      "radar_dome_config": { "detectionM": 300 },
+      "entities": [
+        {
+          "entity_id": "center-1",
+          "entity_type": "waypoint_marker",
+          "pose": { "x": 0, "y": 0, "z": 10 }
+        }
+      ],
+      "sample_steps": 12,
+      "expect": {
+        "availability": "ready",
+        "center_covered": false,
+        "covering_radar_count": 0,
+        "nearest_edge_distance_m": null,
+        "coverage_percent_max": 0.5,
+        "blind_spot_uncovered_percent_min": 99
+      }
+    },
+    "half_covered_corridor": {
+      "radar_dome_config": { "detectionM": 250 },
+      "entities": [
+        {
+          "entity_id": "radar-a",
+          "entity_type": "radar",
+          "pose": { "x": 250, "y": 0, "z": 10 }
+        }
+      ],
+      "corridor_points": [
+        { "x": 0, "y": 0, "z": 10 },
+        { "x": 1000, "y": 0, "z": 10 }
+      ],
+      "expect": {
+        "total_length_m": 1000,
+        "covered_percent_min": 45,
+        "covered_percent_max": 55,
+        "uncovered_percent_min": 45,
+        "uncovered_percent_max": 55
+      }
+    }
+  }
+}
