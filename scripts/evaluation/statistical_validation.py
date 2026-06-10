@@ -162,12 +162,17 @@ def aggregate_report(
 def _by_seed(rows: list[dict[str, str]]) -> tuple[dict[int, dict[str, str]], list[dict[str, str]]]:
     out: dict[int, dict[str, str]] = {}
     missing: list[dict[str, str]] = []
+    seen: Counter[int] = Counter()
     for row in rows:
         seed = seed_for_row(row)
         if seed is None:
             missing.append(row)
             continue
+        seen[seed] += 1
         out[seed] = row
+    duplicates = sorted(seed for seed, count in seen.items() if count > 1)
+    if duplicates:
+        raise ValueError(f"duplicate seeds in paired input: {duplicates}")
     return out, missing
 
 
@@ -294,7 +299,7 @@ def validate_manifest(manifest: dict, rows: list[dict[str, str]]) -> dict[str, o
     expected_cohort = str(manifest.get("cohort") or "").strip()
     require_clean = bool(manifest.get("require_clean_git", False))
     seeds = [s for s in (seed_for_row(r) for r in rows) if s is not None]
-    cohorts = sorted({str(r.get("cohort") or "").strip() for r in rows if str(r.get("cohort") or "").strip()})
+    cohorts = sorted({str(r.get("cohort") or "").strip() for r in rows})
     dirty_values = {str(r.get("git_dirty") or "").strip().lower() for r in rows if str(r.get("git_dirty") or "").strip()}
     missing_logs = [
         r.get("log_path", "")
@@ -309,8 +314,17 @@ def validate_manifest(manifest: dict, rows: list[dict[str, str]]) -> dict[str, o
     problems: list[str] = []
     if expected_n and len(rows) != expected_n:
         problems.append(f"row count {len(rows)} != manifest n {expected_n}")
-    if expected_cohort and cohorts != [expected_cohort]:
-        problems.append(f"cohorts seen {cohorts} do not match manifest cohort {expected_cohort!r}")
+    if expected_cohort:
+        bad_cohort_count = sum(
+            1
+            for r in rows
+            if str(r.get("cohort") or "").strip() != expected_cohort
+        )
+        if bad_cohort_count:
+            problems.append(
+                f"{bad_cohort_count} rows do not match manifest cohort {expected_cohort!r}; "
+                f"cohorts seen {cohorts}"
+            )
     duplicates = sorted(k for k, v in Counter(seeds).items() if v > 1)
     if duplicates:
         problems.append(f"duplicate seeds: {duplicates}")

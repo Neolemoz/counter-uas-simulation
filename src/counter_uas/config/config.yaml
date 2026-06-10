@@ -41,6 +41,16 @@ tracking_node:
   ros__parameters:
     scenario: single
     mahalanobis_gate_threshold: 16.27
+    # Defaults are km-scale and bringup.launch.py feeds interception from /tracks/state.
+    # The fused stream is bursty (~3 Hz), so candidates must survive quiet cycles and match
+    # ~15 m inter-detection motion before a stable track can be born.
+    candidate_match_gate_m: 20.0
+    candidate_predictive_gate: true
+    association_gate_m: 25.0
+    confirmation_hits: 2
+    candidate_max_missed_frames: 5
+    max_track_speed_mps: 80.0
+    max_update_jump_m: 25.0
 
 viz_node:
   ros__parameters:

@@ -71,6 +71,16 @@ def _make_point(mod, x: float, y: float, z: float):  # noqa: ANN001, ANN201
     return p
 
 
+def test_default_config_uses_km_scale_tracking_gates() -> None:
+    text = (_REPO_ROOT / 'src' / 'counter_uas' / 'config' / 'config.yaml').read_text(encoding='utf-8')
+    assert 'candidate_match_gate_m: 20.0' in text
+    assert 'association_gate_m: 25.0' in text
+    assert 'confirmation_hits: 2' in text
+    assert 'candidate_max_missed_frames: 5' in text
+    assert 'max_track_speed_mps: 80.0' in text
+    assert 'max_update_jump_m: 25.0' in text
+
+
 def test_predicted_candidate_xyz_extrapolates_with_history() -> None:
     mod = _load_tracking_module()
     cand = mod.Candidate(x=10.0, y=0.0, z=0.0, hit_count=2)
