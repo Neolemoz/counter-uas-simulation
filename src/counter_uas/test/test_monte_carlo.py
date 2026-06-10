@@ -123,3 +123,67 @@ def test_aggregate_writes_outputs(tmp_path) -> None:
     assert 'noise_seed_mc' in csv_text and 'cohort' in csv_text and 'meta_path' in csv_text
     assert 'unit_cohort' in csv_text and 'cell_a' in csv_text
     assert 'run_a' in csv_text and 'run_b' in csv_text
+
+
+def test_cmd_run_forces_per_run_seed_and_fails_incomplete_cohort(tmp_path, monkeypatch) -> None:
+    mc = _load_mc()
+    out_dir = tmp_path / 'mc'
+    log_dir = tmp_path / 'logs'
+    log_dir.mkdir()
+    captured_launch_args: list[str] = []
+
+    class Result:
+        def __init__(self, returncode: int, stdout: str = '', stderr: str = '') -> None:
+            self.returncode = returncode
+            self.stdout = stdout
+            self.stderr = stderr
+
+    def fake_run(cmd, capture_output, text):  # noqa: ANN001, ANN202
+        launch_args = cmd[cmd.index('--launch-args') + 1]
+        captured_launch_args.append(launch_args)
+        if len(captured_launch_args) == 2:
+            return Result(2, stderr='sim crashed')
+        log_path = log_dir / 'run_0.log'
+        log_path.write_text(_HIT_LOG, encoding='utf-8')
+        log_path.with_suffix('.meta.json').write_text(
+            json.dumps(
+                {
+                    'cohort': 'unit_cohort',
+                    'git_commit': 'abc123',
+                    'git_dirty': False,
+                    'notes': 'mc_label=unit seed=200',
+                    'launch_args_raw': launch_args,
+                    'launch_args_kv': {'noise_seed': '200'},
+                },
+            ),
+            encoding='utf-8',
+        )
+        return Result(0, stdout=f'{log_path}\n')
+
+    monkeypatch.setattr(mc.subprocess, 'run', fake_run)
+
+    class Args:
+        pass
+
+    args = Args()
+    args.n = 2
+    args.seed_base = 200
+    args.launch_args = 'use_gazebo_gui:=false noise_seed:=999'
+    args.geometry_id = ''
+    args.label = 'unit'
+    args.scenario = 'single'
+    args.timeout_s = 1.0
+    args.cohort = 'unit_cohort'
+    args.out_dir = str(out_dir)
+
+    rc = mc.cmd_run(args)
+
+    assert rc == 1
+    assert captured_launch_args == [
+        'use_gazebo_gui:=false noise_seed:=200',
+        'use_gazebo_gui:=false noise_seed:=201',
+    ]
+    payload = json.loads((out_dir / 'unit.json').read_text(encoding='utf-8'))
+    assert payload['requested_n'] == 2
+    assert payload['collected_n'] == 1
+    assert payload['failed_n'] == 1

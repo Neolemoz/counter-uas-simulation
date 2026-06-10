@@ -3360,11 +3360,15 @@ class InterceptionLogicNode(Node):
         self._last_feas_log = None
         self._last_class_warn = None
         self._v_tgt_smooth = (0.0, 0.0, 0.0)
+        self._target = None
+        self._target_filter_velocity = None
         self._prev_target = None
         self._prev_target_time = None
         self._hit_snap_target_prev = None
         self._hit_snap_target_prev_multi.clear()
         self._target_detect_time = None
+        self._inter_pos = {iid: None for iid in self._ids}
+        self._inter_start_pos.clear()
         for iid in self._ids:
             self._prev_inter_pos[iid] = None
             self._prev_inter_time[iid] = None
@@ -3932,6 +3936,15 @@ class InterceptionLogicNode(Node):
         s = self._r_mid / d
         return (cx + dx * s, cy + dy * s, cz + dz * s)
 
+    def _reset_guidance_memory_for_key(self, key: str) -> None:
+        self._intercept_point_filtered[key] = None
+        self._guidance_mode[key] = 'pursuit'
+        self._valid_streak[key] = 0
+        self._invalid_streak[key] = 0
+        self._t_go_filtered.pop(key, None)
+        self._guidance_unit_prev.pop(key, None)
+        self._last_t_go_raw_for_metrics.pop(key, None)
+
     def _clear_assignments(self) -> None:
         self._locked_selected_id = None
         self._current_selected_id = None
@@ -3943,10 +3956,19 @@ class InterceptionLogicNode(Node):
         # Reset intercept filter and mode-hysteresis state so a new assignment
         # starts from scratch with no stale prediction or committed mode.
         for iid in self._ids:
-            self._intercept_point_filtered[iid] = None
-            self._guidance_mode[iid] = 'pursuit'
-            self._valid_streak[iid] = 0
-            self._invalid_streak[iid] = 0
+            self._reset_guidance_memory_for_key(iid)
+        for store in (
+            self._intercept_point_filtered,
+            self._guidance_mode,
+            self._valid_streak,
+            self._invalid_streak,
+            self._t_go_filtered,
+            self._guidance_unit_prev,
+            self._last_t_go_raw_for_metrics,
+        ):
+            for key in list(store):
+                if key not in self._ids:
+                    store.pop(key, None)
         self._last_hit_range = {i: None for i in self._ids}
         self._feasible_at_engagement_start_by_pair.clear()
         self._feas_eng_latch_assign.clear()
@@ -5071,8 +5093,9 @@ class InterceptionLogicNode(Node):
                 selected, iid_h, ix, iy, iz, tx, ty, tz, feas_m, v_cmd=0.0,
             )
             return zero
+        guidance_key = f'{target_label}|{selected}' if target_label else selected
         guidance_cmd_m = self._compute_guidance_command_for_pair(
-            key=selected,
+            key=guidance_key,
             tx=tx,
             ty=ty,
             tz=tz,

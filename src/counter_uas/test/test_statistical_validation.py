@@ -62,6 +62,20 @@ def test_paired_report_uses_matched_seed_rows() -> None:
     assert [r['seed'] for r in rows] == [1, 2]
 
 
+def test_paired_report_rejects_duplicate_seeds() -> None:
+    layer_c = _load_layer_c()
+    baseline = [
+        {'success': 'true', 'miss_distance_m': '3.0', 'intercept_time_s': '9.0', 'seed': '1'},
+        {'success': 'false', 'miss_distance_m': '6.0', 'intercept_time_s': '12.0', 'seed': '1'},
+    ]
+    candidate = [
+        {'success': 'true', 'miss_distance_m': '2.0', 'intercept_time_s': '8.0', 'seed': '1'},
+    ]
+
+    with pytest.raises(ValueError, match='duplicate seeds'):
+        layer_c.paired_report(baseline, candidate)
+
+
 def test_validate_manifest_detects_mixed_cohorts(tmp_path: Path) -> None:
     layer_c = _load_layer_c()
     log_path = tmp_path / 'run.log'
@@ -79,3 +93,23 @@ def test_validate_manifest_detects_mixed_cohorts(tmp_path: Path) -> None:
     assert result['ok'] is False
     assert any('cohorts seen' in p for p in result['problems'])
     assert result['seed_count'] == 1
+
+
+def test_validate_manifest_detects_blank_cohort_rows(tmp_path: Path) -> None:
+    layer_c = _load_layer_c()
+    log_path = tmp_path / 'run.log'
+    log_path.write_text('', encoding='utf-8')
+    log_path.with_suffix('.meta.json').write_text(json.dumps({'cohort': 'expected'}), encoding='utf-8')
+    rows = [
+        {
+            'seed': '1',
+            'cohort': '',
+            'git_dirty': 'False',
+            'log_path': str(log_path),
+        },
+    ]
+
+    result = layer_c.validate_manifest({'n': 1, 'cohort': 'expected', 'require_clean_git': True}, rows)
+
+    assert result['ok'] is False
+    assert any('do not match manifest cohort' in p for p in result['problems'])
