@@ -4,7 +4,11 @@ from __future__ import annotations
 
 import importlib.util
 import json
+import subprocess
+import types
 from pathlib import Path
+
+import pytest
 
 _REPO_ROOT = Path(__file__).resolve().parents[3]
 
@@ -123,3 +127,71 @@ def test_aggregate_writes_outputs(tmp_path) -> None:
     assert 'noise_seed_mc' in csv_text and 'cohort' in csv_text and 'meta_path' in csv_text
     assert 'unit_cohort' in csv_text and 'cell_a' in csv_text
     assert 'run_a' in csv_text and 'run_b' in csv_text
+
+
+def test_run_forces_per_trial_noise_seed() -> None:
+    mc = _load_mc()
+    assert mc._strip_launch_arg('use_gazebo_gui:=false noise_seed:=999 foo:=bar', 'noise_seed') == (
+        'use_gazebo_gui:=false foo:=bar'
+    )
+
+
+def test_run_returns_nonzero_for_partial_collection(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    mc = _load_mc()
+    log = tmp_path / 'run_ok.log'
+    log.write_text(_HIT_LOG, encoding='utf-8')
+    log.with_suffix('.meta.json').write_text(
+        json.dumps(
+            {
+                'cohort': 'unit_cohort',
+                'git_commit': 'abc123',
+                'git_dirty': False,
+                'capture_rc': 0,
+                'notes': 'mc_label=unit seed=10',
+                'launch_args_raw': 'noise_seed:=10',
+                'launch_args_kv': {'noise_seed': '10'},
+            },
+        ),
+        encoding='utf-8',
+    )
+
+    calls: list[list[str]] = []
+
+    def fake_run(cmd, capture_output, text):  # noqa: ANN001, ANN202
+        calls.append(list(cmd))
+        if len(calls) == 1:
+            return subprocess.CompletedProcess(cmd, 0, stdout=f'{log}\n', stderr='')
+        return subprocess.CompletedProcess(cmd, 2, stdout='', stderr='boom')
+
+    monkeypatch.setattr(mc.subprocess, 'run', fake_run)
+    monkeypatch.setattr(
+        mc,
+        '_load_analyze_run',
+        lambda: types.SimpleNamespace(parse_run_to_result=lambda _path: {'success': True, 'miss_distance_m': 0.2}),
+    )
+
+    class Args:
+        pass
+
+    args = Args()
+    args.n = 2
+    args.seed_base = 10
+    args.launch_args = 'use_gazebo_gui:=false noise_seed:=999'
+    args.geometry_id = ''
+    args.scenario = 'single'
+    args.timeout_s = 1.0
+    args.label = 'unit'
+    args.cohort = 'unit_cohort'
+    args.out_dir = str(tmp_path / 'mc')
+
+    rc = mc.cmd_run(args)
+
+    assert rc == 1
+    cmd_text = ' '.join(calls[0])
+    assert 'noise_seed:=10' in cmd_text
+    assert 'noise_seed:=999' not in cmd_text
+    payload = json.loads((Path(args.out_dir) / 'unit.json').read_text(encoding='utf-8'))
+    assert payload['n_runs'] == 1
+    assert payload['requested_runs'] == 2
+    assert payload['complete'] is False
+    assert payload['n_collection_failures'] == 1
