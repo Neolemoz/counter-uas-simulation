@@ -39,3 +39,23 @@ def test_classify_run_failure_evidence_tracks_instability(tmp_path: Path) -> Non
     assert evidence['failure_class'] == 'F3_track_instability'
     assert evidence['has_eng_metric'] is True
     assert evidence['max_abs_delta_t_go'] == 9.5
+
+
+def test_classify_run_failure_evidence_hit_overrides_timeout(tmp_path: Path) -> None:
+    classify = _load_classify()
+    log = tmp_path / 'hit.log'
+    log.write_text('[HIT] interceptor_0  min_miss=0.2 m\n=== TIMEOUT ===\n', encoding='utf-8')
+    evidence = classify.classify_run_failure_evidence(log, capture_rc=124)
+    assert evidence['failure_class'] == ''
+    assert evidence['hit_seen'] is True
+    assert evidence['timeout_seen'] is True
+    assert evidence['parser_warnings'] == []
+
+
+def test_feasible_geom_true_is_case_insensitive(tmp_path: Path) -> None:
+    classify = _load_classify()
+    log = tmp_path / 'geom.log'
+    log.write_text('[ENG_METRIC] feasible_geom=True margin=1.2\n', encoding='utf-8')
+    evidence = classify.classify_run_failure_evidence(log)
+    assert evidence['failure_class'] == 'F2_geom_not_dyn'
+    assert evidence['feasible_geom_seen'] is True

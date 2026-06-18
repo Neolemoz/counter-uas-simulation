@@ -34,6 +34,16 @@ def _float_or_nan(value: object) -> float:
     return f if math.isfinite(f) else float("nan")
 
 
+def _int_or_none(value: object) -> int | None:
+    try:
+        text = str(value).strip()
+        if not text:
+            return None
+        return int(float(text))
+    except (TypeError, ValueError):
+        return None
+
+
 def _read_csv(path: Path) -> list[dict[str, str]]:
     with path.open(encoding="utf-8", newline="") as f:
         return [dict(r) for r in csv.DictReader(f)]
@@ -175,7 +185,11 @@ def _failure_class(row: dict[str, str]) -> str:
     log_path = (row.get("log_path") or "").strip()
     if not log_path or not Path(log_path).is_file():
         return ""
-    return classify_run_failure(Path(log_path), capture_rc=None)
+    capture_rc = _int_or_none(row.get("capture_rc"))
+    if capture_rc is None:
+        meta = _meta_for_row(row)
+        capture_rc = _int_or_none(meta.get("capture_rc"))
+    return classify_run_failure(Path(log_path), capture_rc=capture_rc)
 
 
 def paired_report(
@@ -294,8 +308,10 @@ def validate_manifest(manifest: dict, rows: list[dict[str, str]]) -> dict[str, o
     expected_cohort = str(manifest.get("cohort") or "").strip()
     require_clean = bool(manifest.get("require_clean_git", False))
     seeds = [s for s in (seed_for_row(r) for r in rows) if s is not None]
-    cohorts = sorted({str(r.get("cohort") or "").strip() for r in rows if str(r.get("cohort") or "").strip()})
-    dirty_values = {str(r.get("git_dirty") or "").strip().lower() for r in rows if str(r.get("git_dirty") or "").strip()}
+    row_cohorts = [str(r.get("cohort") or "").strip() for r in rows]
+    cohorts = sorted({c for c in row_cohorts if c})
+    row_dirty_values = [str(r.get("git_dirty") or "").strip().lower() for r in rows]
+    dirty_values = {v for v in row_dirty_values if v}
     missing_logs = [
         r.get("log_path", "")
         for r in rows
@@ -309,15 +325,24 @@ def validate_manifest(manifest: dict, rows: list[dict[str, str]]) -> dict[str, o
     problems: list[str] = []
     if expected_n and len(rows) != expected_n:
         problems.append(f"row count {len(rows)} != manifest n {expected_n}")
-    if expected_cohort and cohorts != [expected_cohort]:
-        problems.append(f"cohorts seen {cohorts} do not match manifest cohort {expected_cohort!r}")
+    if expected_cohort:
+        bad_cohort_count = sum(1 for c in row_cohorts if c != expected_cohort)
+        if bad_cohort_count:
+            problems.append(
+                f"{bad_cohort_count} rows do not match manifest cohort {expected_cohort!r}; "
+                f"cohorts seen {cohorts}"
+            )
     duplicates = sorted(k for k, v in Counter(seeds).items() if v > 1)
     if duplicates:
         problems.append(f"duplicate seeds: {duplicates}")
     if len(seeds) != len(rows):
         problems.append(f"{len(rows) - len(seeds)} rows are missing seed metadata")
-    if require_clean and dirty_values - {"false", "0"}:
-        problems.append(f"dirty git rows present: {sorted(dirty_values)}")
+    if require_clean:
+        missing_dirty = sum(1 for v in row_dirty_values if not v)
+        if missing_dirty:
+            problems.append(f"{missing_dirty} rows are missing git_dirty provenance")
+        if dirty_values - {"false", "0"}:
+            problems.append(f"dirty git rows present: {sorted(dirty_values)}")
     if missing_logs:
         problems.append(f"{len(missing_logs)} missing log paths")
     if missing_meta:
