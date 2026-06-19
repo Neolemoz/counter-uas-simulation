@@ -7,9 +7,14 @@ the node uses.  Any drift in the node's logic should be caught by porting the ch
 
 from __future__ import annotations
 
+import ast
 from collections import deque
+from pathlib import Path
 
 import pytest
+
+_REPO_ROOT = Path(__file__).resolve().parents[3]
+_INTERCEPTOR_NODE = _REPO_ROOT / "src" / "gazebo_target_sim" / "gazebo_target_sim" / "interceptor_controller_node.py"
 
 
 def _delay_fifo(buf: deque, cmd: tuple[float, float, float]) -> tuple[float, float, float]:
@@ -71,3 +76,24 @@ def test_first_order_63_pct_at_one_tau() -> None:
     # Discrete approximation of 1 - exp(-1) ≈ 0.6321; allow a small numerical margin for the
     # forward-Euler discretisation used in the node.
     assert 0.55 < state[0] < 0.7
+
+
+def test_interceptor_controller_defines_norm_helper_used_by_orientation() -> None:
+    """ROS is unavailable in unit tests, so statically guard the active-flight crash path."""
+    tree = ast.parse(_INTERCEPTOR_NODE.read_text())
+    cls = next(
+        node for node in tree.body
+        if isinstance(node, ast.ClassDef) and node.name == "InterceptorControllerNode"
+    )
+    methods = {node.name for node in cls.body if isinstance(node, ast.FunctionDef)}
+    self_norm_calls = [
+        node for node in ast.walk(cls)
+        if isinstance(node, ast.Call)
+        and isinstance(node.func, ast.Attribute)
+        and node.func.attr == "_norm3"
+        and isinstance(node.func.value, ast.Name)
+        and node.func.value.id == "self"
+    ]
+
+    assert self_norm_calls
+    assert "_norm3" in methods
