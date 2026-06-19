@@ -62,6 +62,27 @@ def test_paired_report_uses_matched_seed_rows() -> None:
     assert [r['seed'] for r in rows] == [1, 2]
 
 
+def test_paired_report_rejects_duplicate_seeds() -> None:
+    layer_c = _load_layer_c()
+    baseline = [
+        {'success': 'true', 'miss_distance_m': '3.0', 'intercept_time_s': '9.0', 'seed': '1'},
+        {'success': 'false', 'miss_distance_m': '6.0', 'intercept_time_s': '12.0', 'seed': '1'},
+    ]
+    candidate = [{'success': 'true', 'miss_distance_m': '2.0', 'intercept_time_s': '8.0', 'seed': '1'}]
+    with pytest.raises(ValueError, match='duplicate seed'):
+        layer_c.paired_report(baseline, candidate)
+
+
+def test_failure_class_uses_capture_rc_and_skips_hits(tmp_path: Path) -> None:
+    layer_c = _load_layer_c()
+    timeout_log = tmp_path / 'timeout.log'
+    timeout_log.write_text('no hit before timeout\n', encoding='utf-8')
+    hit_log = tmp_path / 'hit.log'
+    hit_log.write_text('[HIT] interceptor_0 min_miss=0.1 m\n', encoding='utf-8')
+    assert layer_c._failure_class({'log_path': str(timeout_log), 'capture_rc': '124'}) == 'F1_timeout'
+    assert layer_c._failure_class({'log_path': str(hit_log), 'capture_rc': '124'}) == ''
+
+
 def test_validate_manifest_detects_mixed_cohorts(tmp_path: Path) -> None:
     layer_c = _load_layer_c()
     log_path = tmp_path / 'run.log'
@@ -79,3 +100,21 @@ def test_validate_manifest_detects_mixed_cohorts(tmp_path: Path) -> None:
     assert result['ok'] is False
     assert any('cohorts seen' in p for p in result['problems'])
     assert result['seed_count'] == 1
+
+
+def test_validate_manifest_rejects_missing_git_dirty(tmp_path: Path) -> None:
+    layer_c = _load_layer_c()
+    log_path = tmp_path / 'run.log'
+    log_path.write_text('', encoding='utf-8')
+    log_path.with_suffix('.meta.json').write_text(json.dumps({'cohort': 'expected'}), encoding='utf-8')
+    rows = [
+        {
+            'seed': '1',
+            'cohort': 'expected',
+            'git_dirty': '',
+            'log_path': str(log_path),
+        },
+    ]
+    result = layer_c.validate_manifest({'n': 1, 'cohort': 'expected', 'require_clean_git': True}, rows)
+    assert result['ok'] is False
+    assert any('missing git_dirty' in p for p in result['problems'])
