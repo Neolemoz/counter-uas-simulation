@@ -5,6 +5,7 @@ from __future__ import annotations
 import importlib.util
 import json
 from pathlib import Path
+from types import SimpleNamespace
 
 _REPO_ROOT = Path(__file__).resolve().parents[3]
 
@@ -123,3 +124,64 @@ def test_aggregate_writes_outputs(tmp_path) -> None:
     assert 'noise_seed_mc' in csv_text and 'cohort' in csv_text and 'meta_path' in csv_text
     assert 'unit_cohort' in csv_text and 'cell_a' in csv_text
     assert 'run_a' in csv_text and 'run_b' in csv_text
+
+
+def test_cmd_run_fails_incomplete_cohort_and_forces_noise_seed(tmp_path, monkeypatch) -> None:
+    mc = _load_mc()
+    log = tmp_path / 'run_10.log'
+    log.write_text(_HIT_LOG, encoding='utf-8')
+    log.with_suffix('.meta.json').write_text(
+        json.dumps(
+            {
+                'cohort': 'unit_cohort',
+                'git_commit': 'abc123',
+                'git_dirty': False,
+                'capture_rc': 0,
+                'notes': 'mc_label=unit seed=10',
+                'launch_args_raw': 'use_noisy_measurement:=true noise_seed:=10',
+                'launch_args_kv': {'noise_seed': '10'},
+            },
+        ),
+        encoding='utf-8',
+    )
+    calls: list[list[str]] = []
+
+    def fake_run(cmd, *args, **kwargs):  # noqa: ANN001, ANN202
+        del args, kwargs
+        calls.append(list(cmd))
+        if len(calls) == 1:
+            return SimpleNamespace(returncode=0, stdout=f'{log}\n{log.with_suffix(".meta.json")}\n', stderr='')
+        return SimpleNamespace(returncode=2, stdout='', stderr='launch failed')
+
+    monkeypatch.setattr(mc.subprocess, 'run', fake_run)
+
+    class Args:
+        pass
+
+    args = Args()
+    args.n = 2
+    args.seed_base = 10
+    args.launch_args = 'use_noisy_measurement:=true noise_seed:=999'
+    args.geometry_id = ''
+    args.scenario = 'single'
+    args.timeout_s = 1.0
+    args.label = 'unit'
+    args.out_dir = str(tmp_path / 'mc')
+    args.cohort = 'unit_cohort'
+
+    rc = mc.cmd_run(args)
+    assert rc == 1
+    launch_args = [cmd[cmd.index('--launch-args') + 1] for cmd in calls]
+    assert 'noise_seed:=999' not in launch_args[0]
+    assert 'noise_seed:=999' not in launch_args[1]
+    assert 'noise_seed:=10' in launch_args[0]
+    assert 'noise_seed:=11' in launch_args[1]
+
+    summary = json.loads((tmp_path / 'mc' / 'unit.json').read_text(encoding='utf-8'))
+    assert summary['n_runs'] == 1
+    assert summary['n_requested'] == 2
+    assert summary['n_collected'] == 1
+    assert summary['n_collection_failed'] == 1
+    assert summary['collection_failures'][0]['seed'] == 11
+    csv_text = (tmp_path / 'mc' / 'unit.csv').read_text(encoding='utf-8')
+    assert 'capture_rc' in csv_text

@@ -54,6 +54,23 @@ def _meta_for_row(row: dict[str, str]) -> dict:
         return {}
 
 
+def _capture_rc_for_row(row: dict[str, str]) -> int | None:
+    raw = str(row.get("capture_rc") or "").strip()
+    if raw:
+        try:
+            return int(float(raw))
+        except ValueError:
+            return None
+    meta = _meta_for_row(row)
+    raw = str(meta.get("capture_rc") or "").strip()
+    if raw:
+        try:
+            return int(float(raw))
+        except ValueError:
+            return None
+    return None
+
+
 def _note_value(notes: str, key: str) -> str:
     quoted = re.search(rf'\b{re.escape(key)}="([^"]+)"', notes)
     if quoted:
@@ -167,6 +184,8 @@ def _by_seed(rows: list[dict[str, str]]) -> tuple[dict[int, dict[str, str]], lis
         if seed is None:
             missing.append(row)
             continue
+        if seed in out:
+            raise ValueError(f"duplicate seed in paired cohort: {seed}")
         out[seed] = row
     return out, missing
 
@@ -175,7 +194,7 @@ def _failure_class(row: dict[str, str]) -> str:
     log_path = (row.get("log_path") or "").strip()
     if not log_path or not Path(log_path).is_file():
         return ""
-    return classify_run_failure(Path(log_path), capture_rc=None)
+    return classify_run_failure(Path(log_path), capture_rc=_capture_rc_for_row(row))
 
 
 def paired_report(
@@ -296,6 +315,7 @@ def validate_manifest(manifest: dict, rows: list[dict[str, str]]) -> dict[str, o
     seeds = [s for s in (seed_for_row(r) for r in rows) if s is not None]
     cohorts = sorted({str(r.get("cohort") or "").strip() for r in rows if str(r.get("cohort") or "").strip()})
     dirty_values = {str(r.get("git_dirty") or "").strip().lower() for r in rows if str(r.get("git_dirty") or "").strip()}
+    missing_dirty = sum(1 for r in rows if not str(r.get("git_dirty") or "").strip())
     missing_logs = [
         r.get("log_path", "")
         for r in rows
@@ -318,6 +338,8 @@ def validate_manifest(manifest: dict, rows: list[dict[str, str]]) -> dict[str, o
         problems.append(f"{len(rows) - len(seeds)} rows are missing seed metadata")
     if require_clean and dirty_values - {"false", "0"}:
         problems.append(f"dirty git rows present: {sorted(dirty_values)}")
+    if require_clean and missing_dirty:
+        problems.append(f"{missing_dirty} rows are missing git_dirty provenance")
     if missing_logs:
         problems.append(f"{len(missing_logs)} missing log paths")
     if missing_meta:
@@ -331,6 +353,7 @@ def validate_manifest(manifest: dict, rows: list[dict[str, str]]) -> dict[str, o
         "duplicate_seeds": duplicates,
         "missing_logs": missing_logs,
         "missing_meta": missing_meta,
+        "missing_git_dirty": missing_dirty,
     }
 
 
