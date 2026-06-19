@@ -5312,7 +5312,7 @@ class InterceptionLogicNode(Node):
             self._publish_stop_signal(tlabel)
             self._schedule_stop_signal_repeats(tlabel)
             self._log_active_targets_remaining()
-            if self._pause_gz_on_hit:
+            if self._pause_gz_on_hit and all(self._hits_multi.get(lab, False) for lab in self._multi_labels):
                 self._pause_gazebo_world()
             return True
         if (
