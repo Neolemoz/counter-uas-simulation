@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import importlib.util
 import json
+import sys
 from pathlib import Path
 
 
@@ -16,6 +17,7 @@ def _load_run_capture():  # noqa: ANN201
     spec = importlib.util.spec_from_file_location('run_capture', path)
     mod = importlib.util.module_from_spec(spec)
     assert spec.loader is not None
+    sys.modules[spec.name] = mod
     spec.loader.exec_module(mod)
     return mod
 
