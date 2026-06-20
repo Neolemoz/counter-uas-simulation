@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import importlib.util
 import json
+import types
 from pathlib import Path
 
 _REPO_ROOT = Path(__file__).resolve().parents[3]
@@ -123,3 +124,64 @@ def test_aggregate_writes_outputs(tmp_path) -> None:
     assert 'noise_seed_mc' in csv_text and 'cohort' in csv_text and 'meta_path' in csv_text
     assert 'unit_cohort' in csv_text and 'cell_a' in csv_text
     assert 'run_a' in csv_text and 'run_b' in csv_text
+
+
+def test_run_mode_fails_closed_on_partial_capture_and_overrides_pinned_seed(tmp_path, monkeypatch) -> None:  # noqa: ANN001
+    mc = _load_mc()
+    log_path = tmp_path / 'run_a.log'
+    meta_path = tmp_path / 'run_a.meta.json'
+    log_path.write_text(_HIT_LOG, encoding='utf-8')
+    meta_path.write_text(
+        json.dumps(
+            {
+                'cohort': 'unit_cohort',
+                'git_commit': 'abc123',
+                'git_dirty': False,
+                'notes': 'mc_label=unit seed=100',
+                'launch_args_raw': 'use_noisy_measurement:=true noise_seed:=100',
+                'launch_args_kv': {'noise_seed': '100'},
+                'capture_rc': 0,
+            },
+        ),
+        encoding='utf-8',
+    )
+
+    class _Analyze:
+        @staticmethod
+        def parse_run_to_result(_path):  # noqa: ANN001, ANN202
+            return {'success': True, 'miss_distance_m': 0.1, 'intercept_time_s': 2.0}
+
+    monkeypatch.setattr(mc, '_load_analyze_run', lambda: _Analyze)
+    calls = {'n': 0}
+
+    def fake_run(_cmd, **_kwargs):  # noqa: ANN001, ANN202
+        calls['n'] += 1
+        if calls['n'] == 1:
+            return types.SimpleNamespace(returncode=0, stdout=f'{log_path}\n{meta_path}\n', stderr='')
+        return types.SimpleNamespace(returncode=2, stdout='', stderr='launch failed')
+
+    monkeypatch.setattr(mc.subprocess, 'run', fake_run)
+
+    args = types.SimpleNamespace(
+        n=2,
+        seed_base=100,
+        launch_args='use_noisy_measurement:=true noise_seed:=42',
+        geometry_id='',
+        scenario='single',
+        timeout_s=1.0,
+        label='unit',
+        cohort='unit_cohort',
+        out_dir=str(tmp_path / 'mc'),
+    )
+
+    rc = mc.cmd_run(args)
+
+    assert rc == 1
+    summary = json.loads((tmp_path / 'mc' / 'unit.json').read_text(encoding='utf-8'))
+    assert summary['n_requested'] == 2
+    assert summary['n_collected'] == 1
+    assert summary['n_failed_captures'] == 1
+    csv_text = (tmp_path / 'mc' / 'unit.csv').read_text(encoding='utf-8')
+    assert 'noise_seed:=100' in csv_text
+    assert 'noise_seed:=42' not in csv_text
+    assert ',100,' in csv_text
