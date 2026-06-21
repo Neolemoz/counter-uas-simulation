@@ -53,15 +53,22 @@ def main() -> int:
             missing_logs.append(lp)
             continue
         mp = log_path.with_suffix('.meta.json')
+        capture_rc = None
         if mp.is_file():
             try:
                 md = json.loads(mp.read_text(encoding='utf-8'))
                 co = md.get('cohort')
                 if co is not None and str(co).strip():
                     cohorts.add(str(co).strip())
+                if md.get('capture_rc') is not None:
+                    capture_rc = int(md['capture_rc'])
             except (OSError, json.JSONDecodeError):
                 pass
-        evidence = classify_run_failure_evidence(log_path, capture_rc=None)
+            except (TypeError, ValueError):
+                capture_rc = None
+        evidence = classify_run_failure_evidence(log_path, capture_rc=capture_rc)
+        if not evidence.get('failure_class'):
+            continue
         hist[str(evidence['failure_class'])] += 1
         evidence_rows.append(evidence)
 

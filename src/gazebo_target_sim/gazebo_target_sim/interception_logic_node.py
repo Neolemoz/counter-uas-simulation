@@ -819,8 +819,9 @@ def simulate_intercept_once(
     Default (rollout off): success ≡ ``is_intercept_feasible`` on the perturbed state (fast).
 
     Rollout on: short horizon ``_monte_carlo_kinematic_hit_rollout`` using ``_compute_intercept`` each step.
-    With positive ``rollout_max_turn_rate_rad_s`` / ``rollout_max_accel_m_s2``, integrates velocity from rest
-    (same limiter ordering as live ``cmd_vel`` smoothing); zeros preserve legacy instant-heading rollout.
+    With positive ``rollout_max_turn_rate_rad_s`` / ``rollout_max_accel_m_s2``, integrates velocity from
+    ``interceptor_initial_velocity`` (same limiter ordering as live ``cmd_vel`` smoothing);
+    zeros preserve legacy instant-heading rollout.
     """
     dly = max(0.0, float(delay_mean_s) + rng.gauss(0.0, float(delay_jitter_s)))
     _vs = float(vel_sigma_m_s)
@@ -2106,6 +2107,7 @@ class InterceptionLogicNode(Node):
         ix: float,
         iy: float,
         iz: float,
+        interceptor_initial_velocity: tuple[float, float, float] = (0.0, 0.0, 0.0),
     ) -> bool:
         """Noise-free kinematic rollout; used when ``eng_rollout_feasibility_gate`` is true."""
         horizon = (
@@ -2141,6 +2143,7 @@ class InterceptionLogicNode(Node):
                 rollout_max_accel_m_s2=self._max_accel,
                 rollout_autopilot_tau_s=self._heatmap_prob_rollout_tau,
                 rollout_cmd_delay_s=self._heatmap_prob_rollout_cmd_delay,
+                interceptor_initial_velocity=interceptor_initial_velocity,
             ),
         )
 
@@ -4377,7 +4380,18 @@ class InterceptionLogicNode(Node):
         mc_ok = self._mc_engage_ok(selected)
         rollout_ok = True
         if self._eng_rollout_gate:
-            rollout_ok = self._eng_rollout_gate_passes(tx, ty, tz, v_tx, v_ty, v_tz, ix, iy, iz)
+            rollout_ok = self._eng_rollout_gate_passes(
+                tx,
+                ty,
+                tz,
+                v_tx,
+                v_ty,
+                v_tz,
+                ix,
+                iy,
+                iz,
+                interceptor_initial_velocity=self._last_guidance_cmd.get(selected, (0.0, 0.0, 0.0)),
+            )
             if not rollout_ok:
                 tnow_g = time.monotonic()
                 if tnow_g - self._last_eng_gate_fail_log.get(selected, -100.0) > 2.0:
@@ -5048,7 +5062,18 @@ class InterceptionLogicNode(Node):
         mc_ok_m = self._mc_engage_ok(selected)
         rollout_ok_m = True
         if self._eng_rollout_gate:
-            rollout_ok_m = self._eng_rollout_gate_passes(tx, ty, tz, v_tx, v_ty, v_tz, ix, iy, iz)
+            rollout_ok_m = self._eng_rollout_gate_passes(
+                tx,
+                ty,
+                tz,
+                v_tx,
+                v_ty,
+                v_tz,
+                ix,
+                iy,
+                iz,
+                interceptor_initial_velocity=self._last_guidance_cmd.get(selected, (0.0, 0.0, 0.0)),
+            )
             if not rollout_ok_m:
                 tnow_g = time.monotonic()
                 gk = f'{target_label}|{selected}'
@@ -5251,7 +5276,18 @@ class InterceptionLogicNode(Node):
         mc_ok_h = self._mc_engage_ok(iid)
         rollout_ok_h = True
         if self._eng_rollout_gate:
-            rollout_ok_h = self._eng_rollout_gate_passes(tx, ty, tz, v_tx, v_ty, v_tz, ix, iy, iz)
+            rollout_ok_h = self._eng_rollout_gate_passes(
+                tx,
+                ty,
+                tz,
+                v_tx,
+                v_ty,
+                v_tz,
+                ix,
+                iy,
+                iz,
+                interceptor_initial_velocity=self._last_guidance_cmd.get(iid, (0.0, 0.0, 0.0)),
+            )
             if not rollout_ok_h:
                 tnow_g = time.monotonic()
                 gk = f'{tlabel}|{iid}'
