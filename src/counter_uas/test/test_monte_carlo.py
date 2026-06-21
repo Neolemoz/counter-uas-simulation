@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import importlib.util
 import json
+from types import SimpleNamespace
 from pathlib import Path
 
 _REPO_ROOT = Path(__file__).resolve().parents[3]
@@ -123,3 +124,64 @@ def test_aggregate_writes_outputs(tmp_path) -> None:
     assert 'noise_seed_mc' in csv_text and 'cohort' in csv_text and 'meta_path' in csv_text
     assert 'unit_cohort' in csv_text and 'cell_a' in csv_text
     assert 'run_a' in csv_text and 'run_b' in csv_text
+
+
+def test_run_mode_replaces_pinned_noise_seed_and_fails_partial_cohort(tmp_path, monkeypatch) -> None:
+    mc = _load_mc()
+    out_dir = tmp_path / 'mc'
+    logs_dir = tmp_path / 'logs'
+    logs_dir.mkdir()
+
+    log = logs_dir / 'run_a.log'
+    log.write_text(_HIT_LOG, encoding='utf-8')
+    log.with_suffix('.meta.json').write_text(
+        json.dumps(
+            {
+                'notes': 'mc_label=unit seed=200',
+                'launch_args_raw': 'use_gazebo_gui:=false noise_seed:=200',
+                'launch_args_kv': {'noise_seed': '200'},
+                'capture_rc': 0,
+            },
+        ),
+        encoding='utf-8',
+    )
+
+    class _Analyze:
+        @staticmethod
+        def parse_run_to_result(_path: str) -> dict:
+            return {'success': True, 'miss_distance_m': 0.1, 'intercept_time_s': 1.0}
+
+    monkeypatch.setattr(mc, '_load_analyze_run', lambda: _Analyze())
+    seen_cmds = []
+
+    def fake_run(cmd, capture_output, text):  # noqa: ANN001, ANN202
+        seen_cmds.append(cmd)
+        if len(seen_cmds) == 1:
+            return SimpleNamespace(returncode=0, stdout=f'{log}\n{log.with_suffix(".meta.json")}\n', stderr='')
+        return SimpleNamespace(returncode=2, stdout='', stderr='boom')
+
+    monkeypatch.setattr(mc.subprocess, 'run', fake_run)
+
+    args = SimpleNamespace(
+        n=2,
+        seed_base=200,
+        launch_args='use_gazebo_gui:=false noise_seed:=999',
+        geometry_id='',
+        timeout_s=1.0,
+        label='unit_run',
+        scenario='single',
+        cohort='',
+        out_dir=str(out_dir),
+    )
+
+    rc = mc.cmd_run(args)
+
+    assert rc == 1
+    first_launch_args = seen_cmds[0][-1]
+    assert 'noise_seed:=999' not in first_launch_args
+    assert 'noise_seed:=200' in first_launch_args
+
+    payload = json.loads((out_dir / 'unit_run.json').read_text(encoding='utf-8'))
+    assert payload['requested_runs'] == 2
+    assert payload['collected_runs'] == 1
+    assert payload['failed_run_count'] == 1

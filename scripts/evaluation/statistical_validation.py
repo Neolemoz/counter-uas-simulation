@@ -175,7 +175,21 @@ def _failure_class(row: dict[str, str]) -> str:
     log_path = (row.get("log_path") or "").strip()
     if not log_path or not Path(log_path).is_file():
         return ""
-    return classify_run_failure(Path(log_path), capture_rc=None)
+    capture_rc = None
+    raw_rc = (row.get("capture_rc") or "").strip()
+    if raw_rc:
+        try:
+            capture_rc = int(float(raw_rc))
+        except ValueError:
+            capture_rc = None
+    if capture_rc is None:
+        meta = _meta_for_row(row)
+        if meta.get("capture_rc") is not None:
+            try:
+                capture_rc = int(meta["capture_rc"])
+            except (TypeError, ValueError):
+                capture_rc = None
+    return classify_run_failure(Path(log_path), capture_rc=capture_rc)
 
 
 def paired_report(
