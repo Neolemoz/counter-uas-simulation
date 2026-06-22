@@ -105,3 +105,16 @@ def test_idle_resets_memory_and_holds_position() -> None:
     assert result.memory.smoothed_velocity == (0.0, 0.0, 0.0)
     assert result.memory.previous_velocity == (0.0, 0.0, 0.0)
     assert len(result.memory.command_buffer) == 2
+
+
+def test_interceptor_controller_orientation_uses_imported_norm_helper() -> None:
+    controller = (
+        _REPO_ROOT
+        / "src"
+        / "gazebo_target_sim"
+        / "gazebo_target_sim"
+        / "interceptor_controller_node.py"
+    )
+    text = controller.read_text(encoding="utf-8")
+    assert "self._norm3" not in text
+    assert "norm3((vx, vy, vz))" in text

@@ -221,3 +221,12 @@ def test_tracks_state_odometry_carries_finite_position_velocity_and_covariance()
     assert all(math.isfinite(float(v)) for v in vals)
     assert msg.pose.covariance[0] > 0.0
     assert msg.twist.covariance[0] > 0.0
+
+
+def test_default_counter_uas_config_uses_gazebo_scale_tracking_gates() -> None:
+    cfg = (_REPO_ROOT / 'src' / 'counter_uas' / 'config' / 'config.yaml').read_text(encoding='utf-8')
+    assert 'candidate_match_gate_m: 20.0' in cfg
+    assert 'candidate_predictive_gate: true' in cfg
+    assert 'association_gate_m: 25.0' in cfg
+    assert 'candidate_max_missed_frames: 5' in cfg
+    assert 'max_track_speed_mps: 80.0' in cfg
