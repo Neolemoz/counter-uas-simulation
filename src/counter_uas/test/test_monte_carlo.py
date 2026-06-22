@@ -6,6 +6,8 @@ import importlib.util
 import json
 from pathlib import Path
 
+import pytest
+
 _REPO_ROOT = Path(__file__).resolve().parents[3]
 
 
@@ -123,3 +125,75 @@ def test_aggregate_writes_outputs(tmp_path) -> None:
     assert 'noise_seed_mc' in csv_text and 'cohort' in csv_text and 'meta_path' in csv_text
     assert 'unit_cohort' in csv_text and 'cell_a' in csv_text
     assert 'run_a' in csv_text and 'run_b' in csv_text
+
+
+def test_cmd_run_forces_per_run_seed_and_fails_partial_cohort(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    mc = _load_mc()
+    out_dir = tmp_path / 'mc'
+    logs_dir = tmp_path / 'logs'
+    logs_dir.mkdir()
+    calls: list[list[str]] = []
+
+    class _Analyze:
+        @staticmethod
+        def parse_run_to_result(_log_path: str) -> dict[str, object]:
+            return {
+                'success': True,
+                'miss_distance_m': 0.25,
+                'intercept_time_s': 5.0,
+                'layer_at_hit': 'engage',
+            }
+
+    def _fake_run(cmd: list[str], capture_output: bool, text: bool):  # noqa: ANN001, ANN202
+        calls.append(cmd)
+        seed = 200 + len(calls) - 1
+        if len(calls) == 2:
+            return mc.subprocess.CompletedProcess(cmd, 2, stdout='', stderr='launch failed')
+        log_path = logs_dir / f'run_{seed}.log'
+        log_path.write_text('[HIT] interceptor_0 min_miss=0.25 m\n', encoding='utf-8')
+        log_path.with_suffix('.meta.json').write_text(
+            json.dumps(
+                {
+                    'capture_rc': 0,
+                    'cohort': 'tier2',
+                    'git_commit': 'abc123',
+                    'git_dirty': False,
+                    'launch_args_raw': f'use_gazebo_gui:=false noise_seed:={seed}',
+                    'launch_args_kv': {'noise_seed': str(seed)},
+                    'notes': f'mc_label=unit seed={seed}',
+                },
+            ),
+            encoding='utf-8',
+        )
+        return mc.subprocess.CompletedProcess(cmd, 0, stdout=f'{log_path}\n{log_path.with_suffix(".meta.json")}\n', stderr='')
+
+    monkeypatch.setattr(mc, '_load_analyze_run', lambda: _Analyze)
+    monkeypatch.setattr(mc.subprocess, 'run', _fake_run)
+
+    class Args:
+        pass
+
+    args = Args()
+    args.n = 2
+    args.seed_base = 200
+    args.launch_args = 'use_gazebo_gui:=false noise_seed:=999'
+    args.geometry_id = ''
+    args.label = 'unit'
+    args.scenario = 'single'
+    args.timeout_s = 14.0
+    args.cohort = 'tier2'
+    args.out_dir = str(out_dir)
+
+    rc = mc.cmd_run(args)
+
+    assert rc == 1
+    assert len(calls) == 2
+    launch_args_idx = calls[0].index('--launch-args') + 1
+    assert calls[0][launch_args_idx] == 'use_gazebo_gui:=false noise_seed:=200'
+    payload = json.loads((out_dir / 'unit.json').read_text(encoding='utf-8'))
+    assert payload['n_requested'] == 2
+    assert payload['n_collected'] == 1
+    assert payload['n_failed'] == 1
+    assert payload['run_failures'][0]['seed'] == 201
+    csv_text = (out_dir / 'unit.csv').read_text(encoding='utf-8')
+    assert 'capture_rc' in csv_text

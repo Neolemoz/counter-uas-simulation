@@ -62,6 +62,24 @@ def test_paired_report_uses_matched_seed_rows() -> None:
     assert [r['seed'] for r in rows] == [1, 2]
 
 
+def test_paired_report_uses_capture_rc_from_meta_for_failure_class(tmp_path: Path) -> None:
+    layer_c = _load_layer_c()
+    base_log = tmp_path / 'base.log'
+    cand_log = tmp_path / 'cand.log'
+    base_log.write_text('[min_miss] = 9.0 m\n', encoding='utf-8')
+    cand_log.write_text('[min_miss] = 9.0 m\n', encoding='utf-8')
+    base_log.with_suffix('.meta.json').write_text(json.dumps({'capture_rc': 124}), encoding='utf-8')
+    cand_log.with_suffix('.meta.json').write_text(json.dumps({'capture_rc': 0}), encoding='utf-8')
+    report, rows = layer_c.paired_report(
+        [{'success': 'false', 'miss_distance_m': '9.0', 'intercept_time_s': '', 'seed': '1', 'log_path': str(base_log)}],
+        [{'success': 'false', 'miss_distance_m': '9.0', 'intercept_time_s': '', 'seed': '1', 'log_path': str(cand_log)}],
+    )
+
+    assert rows[0]['failure_b'] == 'F1_timeout'
+    assert rows[0]['failure_c'] == 'F5_unknown'
+    assert report['failure_transitions'] == {'F1_timeout->F5_unknown': 1}
+
+
 def test_validate_manifest_detects_mixed_cohorts(tmp_path: Path) -> None:
     layer_c = _load_layer_c()
     log_path = tmp_path / 'run.log'
@@ -79,3 +97,21 @@ def test_validate_manifest_detects_mixed_cohorts(tmp_path: Path) -> None:
     assert result['ok'] is False
     assert any('cohorts seen' in p for p in result['problems'])
     assert result['seed_count'] == 1
+
+
+def test_validate_manifest_rejects_blank_cohort_and_missing_git_dirty(tmp_path: Path) -> None:
+    layer_c = _load_layer_c()
+    log_a = tmp_path / 'run_a.log'
+    log_b = tmp_path / 'run_b.log'
+    log_a.write_text('', encoding='utf-8')
+    log_b.write_text('', encoding='utf-8')
+    log_a.with_suffix('.meta.json').write_text(json.dumps({'cohort': 'expected'}), encoding='utf-8')
+    log_b.with_suffix('.meta.json').write_text(json.dumps({'cohort': ''}), encoding='utf-8')
+    rows = [
+        {'seed': '1', 'cohort': 'expected', 'git_dirty': 'False', 'log_path': str(log_a)},
+        {'seed': '2', 'cohort': '', 'git_dirty': '', 'log_path': str(log_b)},
+    ]
+    result = layer_c.validate_manifest({'n': 2, 'cohort': 'expected', 'require_clean_git': True}, rows)
+    assert result['ok'] is False
+    assert any('cohorts seen' in p for p in result['problems'])
+    assert any('missing git_dirty' in p for p in result['problems'])

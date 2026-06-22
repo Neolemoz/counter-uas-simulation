@@ -19,6 +19,27 @@ import stats_helpers as stats  # noqa: E402
 from classify_run import classify_run_failure_evidence  # noqa: E402
 
 
+def _boolish(value: object) -> bool:
+    return str(value).strip().lower() in {'1', 'true', 'yes', 'y'}
+
+
+def _int_or_none(value: object) -> int | None:
+    raw = str(value or '').strip()
+    if not raw:
+        return None
+    try:
+        return int(float(raw))
+    except ValueError:
+        return None
+
+
+def _capture_rc_for_row(row: dict[str, str], meta: dict[str, object]) -> int | None:
+    rc = _int_or_none(row.get('capture_rc'))
+    if rc is not None:
+        return rc
+    return _int_or_none(meta.get('capture_rc'))
+
+
 def main() -> int:
     ap = argparse.ArgumentParser(description='Count failure_class over MC CSV log_path column.')
     ap.add_argument('csv_path', type=Path, help='monte_carlo *.csv with log_path header')
@@ -44,15 +65,20 @@ def main() -> int:
     cohorts: set[str] = set()
     evidence_rows: list[dict[str, object]] = []
     missing_logs: list[str] = []
+    success_rows = 0
     for row in rows:
         lp = (row.get('log_path') or '').strip()
         if not lp:
+            continue
+        if _boolish(row.get('success')):
+            success_rows += 1
             continue
         log_path = Path(lp)
         if not log_path.is_file():
             missing_logs.append(lp)
             continue
         mp = log_path.with_suffix('.meta.json')
+        md: dict[str, object] = {}
         if mp.is_file():
             try:
                 md = json.loads(mp.read_text(encoding='utf-8'))
@@ -61,8 +87,12 @@ def main() -> int:
                     cohorts.add(str(co).strip())
             except (OSError, json.JSONDecodeError):
                 pass
-        evidence = classify_run_failure_evidence(log_path, capture_rc=None)
-        hist[str(evidence['failure_class'])] += 1
+        evidence = classify_run_failure_evidence(log_path, capture_rc=_capture_rc_for_row(row, md))
+        failure_class = str(evidence['failure_class'])
+        if not failure_class:
+            success_rows += 1
+            continue
+        hist[failure_class] += 1
         evidence_rows.append(evidence)
 
     total = int(sum(hist.values()))
@@ -82,6 +112,7 @@ def main() -> int:
         'evidence_rows': evidence_rows,
         'missing_logs': missing_logs,
         'meta_cohorts_seen': sorted(cohorts),
+        'success_rows_skipped': success_rows,
     }
     txt = json.dumps(payload, indent=2, sort_keys=True) + '\n'
     print(txt, end='')
