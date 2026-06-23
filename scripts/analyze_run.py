@@ -66,6 +66,9 @@ _LAYER_IN_HIT_RE = re.compile(r"\blayer=(?P<layer>\S+)\b")
 _MARGIN_RE = re.compile(r"\bmargin\s*=\s*(?P<v>-?[0-9]+(?:\.[0-9]+)?)\s*s\b")
 _TTI_TARGET_RE = re.compile(r"\bTTI_target\s*[:=]\s*(?P<v>-?[0-9]+(?:\.[0-9]+)?)\b")
 _T_REQUIRED_RE = re.compile(r"\bT_required\s*[:=]\s*(?P<v>-?[0-9]+(?:\.[0-9]+)?)\b")
+_RESULT_INTERCEPT_TIME_RE = re.compile(
+    r"\bintercept_time\s*=\s*(?P<v>-?[0-9]+(?:\.[0-9]+)?)\s*s?\b",
+)
 
 
 def _strip_ros_prefix(line: str) -> str:
@@ -212,13 +215,23 @@ def parse_run_to_result(log_path: str) -> dict:
 
     tgo = data.get("tgo_series", []) or []
     thit = data.get("thit_series", []) or []
+    result_intercept_time_s: float | None = None
+    for raw_line in text.splitlines():
+        s = _strip_ros_prefix(raw_line)
+        mt = _RESULT_INTERCEPT_TIME_RE.search(s)
+        if mt:
+            result_intercept_time_s = float(mt.group("v"))
+
     intercept_time_s: float | None
-    if tgo:
-        intercept_time_s = float(tgo[-1])
-        t_note = "intercept_time from last t_go sample"
+    if result_intercept_time_s is not None:
+        intercept_time_s = result_intercept_time_s
+        t_note = "intercept_time from [RESULT]"
     elif thit:
         intercept_time_s = float(thit[-1])
         t_note = "intercept_time from last t_hit sample"
+    elif tgo:
+        intercept_time_s = float(tgo[-1])
+        t_note = "intercept_time from last t_go sample"
     else:
         intercept_time_s = None
         t_note = "intercept_time unavailable"

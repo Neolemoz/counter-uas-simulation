@@ -32,6 +32,22 @@ from pathlib import Path
 _REPO_ROOT = Path(__file__).resolve().parents[3]
 
 
+def test_default_config_uses_gazebo_scale_tracking_gates() -> None:
+    """Default bringup consumes /tracks/state, so config.yaml must form tracks at km scale."""
+    text = (_REPO_ROOT / 'src' / 'counter_uas' / 'config' / 'config.yaml').read_text(encoding='utf-8')
+    expected = {
+        'candidate_match_gate_m': '20.0',
+        'candidate_predictive_gate': 'true',
+        'association_gate_m': '25.0',
+        'confirmation_hits': '2',
+        'candidate_max_missed_frames': '5',
+        'max_track_speed_mps': '80.0',
+        'max_update_jump_m': '25.0',
+    }
+    for key, value in expected.items():
+        assert f'{key}: {value}' in text
+
+
 def _load_tracking_module():  # noqa: ANN201
     # Some ROS-free tests stub geometry_msgs.msg for isolated imports.  Ensure
     # tracking sees the real ROS message package so nav_msgs/Odometry can import

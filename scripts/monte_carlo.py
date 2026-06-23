@@ -18,7 +18,7 @@ Two operating modes
    tests / CI where Gazebo is not available.
 
 2. ``--mode run`` — drive ``scripts/run_capture.py`` for ``--n`` runs. Each injected
-   Monte Carlo RNG uses ``noise_seed:=<seed_base+i>`` (unless overridden) and records
+   Monte Carlo RNG uses ``noise_seed:=<seed_base+i>`` and records
    ``noise_seed_mc`` + optional static ``geometry_id`` for reproducible pairing with
    spatial scenario matrices.
 
@@ -53,6 +53,7 @@ import importlib.util
 import json
 import math
 import re
+import shlex
 import statistics
 import subprocess
 import sys
@@ -280,6 +281,25 @@ def _note_value(notes: str, key: str) -> str:
     return ""
 
 
+def _strip_launch_arg(raw: str | None, key: str) -> str:
+    """Remove a launch ``key:=value`` token from a raw ROS launch-args string."""
+    if not raw:
+        return ""
+    try:
+        tokens = shlex.split(str(raw))
+    except ValueError:
+        pattern = rf'(?:^|\s){re.escape(key)}:=[^\s]+'
+        return re.sub(pattern, ' ', str(raw)).strip()
+    kept = [tok for tok in tokens if tok.split(':=', 1)[0] != key]
+    return shlex.join(kept)
+
+
+def _launch_args_with_mc_seed(base_args: str | None, seed: int) -> str:
+    """Compose per-run launch args with the authoritative MC noise seed."""
+    stripped = _strip_launch_arg(base_args, "noise_seed")
+    return f"{stripped} noise_seed:={seed}".strip()
+
+
 def _enrich_result_with_meta(result: dict, log_path: Path) -> dict:
     """Attach replay/provenance fields needed for Layer C paired cohorts."""
     md = _load_log_meta(log_path)
@@ -377,10 +397,8 @@ def cmd_run(args: argparse.Namespace) -> int:
 
     for i in range(args.n):
         seed = args.seed_base + i
-        # Compose seed-aware launch args without overwriting whatever the caller already set.
-        per_run_args = base_args
-        if "noise_seed" not in base_args:
-            per_run_args = f"{per_run_args} noise_seed:={seed}".strip()
+        # MC rows are paired by noise_seed_mc, so the launched RNG seed must match the row.
+        per_run_args = _launch_args_with_mc_seed(base_args, seed)
         cmd = [
             sys.executable,
             str(rc_script),

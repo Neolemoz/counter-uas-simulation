@@ -51,7 +51,23 @@ def test_parse_run_to_result_shape(tmp_path: Path) -> None:
     r = ar.parse_run_to_result(str(p))
     assert r['success'] is True
     assert r['miss_distance_m'] == pytest.approx(0.42)
-    assert r['intercept_time_s'] == pytest.approx(45.2)
+    assert r['intercept_time_s'] == pytest.approx(12.34)
+
+
+def test_parse_run_to_result_prefers_result_intercept_time(tmp_path: Path) -> None:
+    ar = _load_analyze_run()
+    p = tmp_path / 'run.log'
+    p.write_text(
+        _GOLDEN_LOG
+        + '\n[interception_logic_node-1] [RESULT]\n'
+        + '[interception_logic_node-1] success=True\n'
+        + '[interception_logic_node-1] miss_distance=0.4200 m\n'
+        + '[interception_logic_node-1] intercept_time=9.876s\n',
+        encoding='utf-8',
+    )
+    r = ar.parse_run_to_result(str(p))
+    assert r['success'] is True
+    assert r['intercept_time_s'] == pytest.approx(9.876)
 
 
 def test_metrics_row_regex_matches_prefixed_line() -> None:

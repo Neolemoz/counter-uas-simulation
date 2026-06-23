@@ -62,6 +62,18 @@ def _write_synthetic_logs(tmp_dir: Path) -> None:
     )
 
 
+def test_run_launch_args_force_per_run_noise_seed() -> None:
+    mc = _load_mc()
+    args = mc._launch_args_with_mc_seed(
+        'use_gazebo_gui:=false noise_seed:=42 measurement_delay_s:=0.15',
+        100,
+    )
+    assert 'use_gazebo_gui:=false' in args
+    assert 'measurement_delay_s:=0.15' in args
+    assert 'noise_seed:=42' not in args
+    assert args.endswith('noise_seed:=100')
+
+
 def test_summarise_counts_success_and_misses(tmp_path) -> None:
     mc = _load_mc()
     logs_dir = tmp_path / 'logs'
