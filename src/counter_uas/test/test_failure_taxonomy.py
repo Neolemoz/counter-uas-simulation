@@ -3,6 +3,9 @@
 from __future__ import annotations
 
 import importlib.util
+import csv
+import json
+import sys
 from pathlib import Path
 
 _REPO_ROOT = Path(__file__).resolve().parents[3]
@@ -12,6 +15,16 @@ def _load_classify():  # noqa: ANN201
     path = _REPO_ROOT / 'scripts' / 'evaluation' / 'classify_run.py'
     assert path.is_file(), f'missing {path}'
     spec = importlib.util.spec_from_file_location('classify_run', path)
+    mod = importlib.util.module_from_spec(spec)
+    assert spec.loader is not None
+    spec.loader.exec_module(mod)
+    return mod
+
+
+def _load_failure_hist():  # noqa: ANN201
+    path = _REPO_ROOT / 'scripts' / 'evaluation' / 'summarize_failure_classes.py'
+    assert path.is_file(), f'missing {path}'
+    spec = importlib.util.spec_from_file_location('summarize_failure_classes', path)
     mod = importlib.util.module_from_spec(spec)
     assert spec.loader is not None
     spec.loader.exec_module(mod)
@@ -39,3 +52,29 @@ def test_classify_run_failure_evidence_tracks_instability(tmp_path: Path) -> Non
     assert evidence['failure_class'] == 'F3_track_instability'
     assert evidence['has_eng_metric'] is True
     assert evidence['max_abs_delta_t_go'] == 9.5
+
+
+def test_failure_hist_uses_meta_capture_rc_and_skips_hits(tmp_path: Path, monkeypatch, capsys) -> None:  # noqa: ANN001
+    hist_mod = _load_failure_hist()
+    timeout_log = tmp_path / 'timeout_without_marker.log'
+    timeout_log.write_text('no hit before wrapper timeout\n', encoding='utf-8')
+    timeout_meta = timeout_log.with_suffix('.meta.json')
+    timeout_meta.write_text(json.dumps({'capture_rc': 124}), encoding='utf-8')
+
+    hit_log = tmp_path / 'hit_then_wrapper_timeout.log'
+    hit_log.write_text('[HIT] interceptor_0 min_miss=0.1 m\n', encoding='utf-8')
+    hit_meta = hit_log.with_suffix('.meta.json')
+    hit_meta.write_text(json.dumps({'capture_rc': 124}), encoding='utf-8')
+
+    csv_path = tmp_path / 'mc.csv'
+    with csv_path.open('w', encoding='utf-8', newline='') as f:
+        w = csv.DictWriter(f, fieldnames=['log_path', 'meta_path'])
+        w.writeheader()
+        w.writerow({'log_path': str(timeout_log), 'meta_path': str(timeout_meta)})
+        w.writerow({'log_path': str(hit_log), 'meta_path': str(hit_meta)})
+
+    monkeypatch.setattr(sys, 'argv', ['summarize_failure_classes.py', str(csv_path)])
+    assert hist_mod.main() == 0
+    payload = json.loads(capsys.readouterr().out)
+    assert payload['failure_hist'] == {'F1_timeout': 1}
+    assert payload['n_classified'] == 1

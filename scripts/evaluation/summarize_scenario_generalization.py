@@ -44,7 +44,7 @@ def _maybe_make_failure_hist(csv_path: Path, hist_path: Path, *, enabled: bool) 
         return
     cmd = [
         sys.executable,
-        "scripts/evaluation/summarize_failure_classes.py",
+        str(_EVAL / "summarize_failure_classes.py"),
         str(csv_path),
         "--out-json",
         str(hist_path),

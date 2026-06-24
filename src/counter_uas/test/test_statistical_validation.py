@@ -62,6 +62,30 @@ def test_paired_report_uses_matched_seed_rows() -> None:
     assert [r['seed'] for r in rows] == [1, 2]
 
 
+def test_paired_report_rejects_duplicate_seeds() -> None:
+    layer_c = _load_layer_c()
+    baseline = [
+        {'success': 'true', 'miss_distance_m': '1.0', 'intercept_time_s': '5.0', 'seed': '1'},
+        {'success': 'false', 'miss_distance_m': '4.0', 'intercept_time_s': '8.0', 'seed': '1'},
+    ]
+    candidate = [{'success': 'true', 'miss_distance_m': '1.0', 'intercept_time_s': '5.0', 'seed': '1'}]
+
+    with pytest.raises(ValueError, match='duplicate seeds'):
+        layer_c.paired_report(baseline, candidate)
+
+
+def test_failure_class_uses_capture_rc_from_meta(tmp_path: Path) -> None:
+    layer_c = _load_layer_c()
+    log = tmp_path / 'timeout_without_marker.log'
+    log.write_text('no hit before wrapper timeout\n', encoding='utf-8')
+    meta = log.with_suffix('.meta.json')
+    meta.write_text(json.dumps({'capture_rc': 124}), encoding='utf-8')
+
+    row = {'log_path': str(log), 'meta_path': str(meta)}
+
+    assert layer_c._failure_class(row) == 'F1_timeout'
+
+
 def test_validate_manifest_detects_mixed_cohorts(tmp_path: Path) -> None:
     layer_c = _load_layer_c()
     log_path = tmp_path / 'run.log'
