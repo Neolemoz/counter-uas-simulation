@@ -167,6 +167,11 @@ def run_capture(
     meta_dict = asdict(meta)
     meta_path.write_text(json.dumps(meta_dict, indent=2, sort_keys=True) + "\n", encoding="utf-8")
 
+    def _finalize_capture(return_code: int) -> int:
+        meta_dict["capture_rc"] = int(return_code)
+        meta_path.write_text(json.dumps(meta_dict, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+        return int(return_code)
+
     with log_path.open("w", encoding="utf-8") as f:
         f.write(f"=== run_id: {run_id} ===\n")
         f.write(f"=== created_utc: {ts} ===\n")
@@ -195,11 +200,15 @@ def run_capture(
                 check=False,
                 env=env,
             )
-            return log_path, meta_path, meta, int(r.returncode)
+            rc = int(r.returncode)
+            if rc == 124:
+                f.write("\n=== TIMEOUT ===\n")
+                f.flush()
+            return log_path, meta_path, meta, _finalize_capture(rc)
         except subprocess.TimeoutExpired:
             f.write("\n=== TIMEOUT ===\n")
             f.flush()
-            return log_path, meta_path, meta, 124
+            return log_path, meta_path, meta, _finalize_capture(124)
 
 
 def main() -> int:

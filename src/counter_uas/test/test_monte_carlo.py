@@ -5,6 +5,7 @@ from __future__ import annotations
 import importlib.util
 import json
 from pathlib import Path
+from types import SimpleNamespace
 
 _REPO_ROOT = Path(__file__).resolve().parents[3]
 
@@ -123,3 +124,67 @@ def test_aggregate_writes_outputs(tmp_path) -> None:
     assert 'noise_seed_mc' in csv_text and 'cohort' in csv_text and 'meta_path' in csv_text
     assert 'unit_cohort' in csv_text and 'cell_a' in csv_text
     assert 'run_a' in csv_text and 'run_b' in csv_text
+
+
+def test_launch_args_with_seed_replaces_pinned_noise_seed() -> None:
+    mc = _load_mc()
+
+    assert mc._launch_args_with_seed('use_gazebo_gui:=false noise_seed:=5 foo:=bar', 101) == (
+        'use_gazebo_gui:=false foo:=bar noise_seed:=101'
+    )
+
+
+def test_cmd_run_returns_nonzero_for_partial_cohort(tmp_path, monkeypatch) -> None:  # noqa: ANN001
+    mc = _load_mc()
+    log_path = tmp_path / 'ok.log'
+    log_path.write_text('[HIT] interceptor_0 min_miss=0.1 m\n', encoding='utf-8')
+    log_path.with_suffix('.meta.json').write_text(
+        json.dumps(
+            {
+                'capture_rc': 0,
+                'notes': 'mc_label=unit seed=10',
+                'launch_args_kv': {'noise_seed': '10'},
+            },
+        ),
+        encoding='utf-8',
+    )
+
+    class _Analyze:
+        @staticmethod
+        def parse_run_to_result(_path: str) -> dict:
+            return {'success': True, 'miss_distance_m': 0.1, 'intercept_time_s': 1.0}
+
+    calls = []
+
+    def fake_run(_cmd, **_kwargs):  # noqa: ANN001, ANN202
+        calls.append(_cmd)
+        if len(calls) == 1:
+            return SimpleNamespace(returncode=0, stdout=f'{log_path}\n', stderr='')
+        return SimpleNamespace(returncode=2, stdout='', stderr='boom')
+
+    class Args:
+        pass
+
+    args = Args()
+    args.n = 2
+    args.seed_base = 10
+    args.launch_args = 'noise_seed:=999 use_gazebo_gui:=false'
+    args.geometry_id = ''
+    args.scenario = 'single'
+    args.timeout_s = 1.0
+    args.label = 'unit'
+    args.cohort = None
+    args.out_dir = str(tmp_path / 'mc')
+
+    monkeypatch.setattr(mc, '_load_analyze_run', lambda: _Analyze)
+    monkeypatch.setattr(mc.subprocess, 'run', fake_run)
+
+    assert mc.cmd_run(args) == 1
+    payload = json.loads((tmp_path / 'mc' / 'unit.json').read_text(encoding='utf-8'))
+    assert payload['requested_n'] == 2
+    assert payload['collected_n'] == 1
+    assert payload['incomplete_cohort'] is True
+    assert payload['skipped_runs'][0]['seed'] == 11
+    first_cmd = ' '.join(str(part) for part in calls[0])
+    assert 'noise_seed:=10' in first_cmd
+    assert 'noise_seed:=999' not in first_cmd

@@ -34,6 +34,16 @@ def _float_or_nan(value: object) -> float:
     return f if math.isfinite(f) else float("nan")
 
 
+def _int_or_none(value: object) -> int | None:
+    try:
+        text = str(value).strip()
+        if not text:
+            return None
+        return int(float(text))
+    except (TypeError, ValueError):
+        return None
+
+
 def _read_csv(path: Path) -> list[dict[str, str]]:
     with path.open(encoding="utf-8", newline="") as f:
         return [dict(r) for r in csv.DictReader(f)]
@@ -162,20 +172,33 @@ def aggregate_report(
 def _by_seed(rows: list[dict[str, str]]) -> tuple[dict[int, dict[str, str]], list[dict[str, str]]]:
     out: dict[int, dict[str, str]] = {}
     missing: list[dict[str, str]] = []
+    duplicates: list[int] = []
     for row in rows:
         seed = seed_for_row(row)
         if seed is None:
             missing.append(row)
             continue
+        if seed in out:
+            duplicates.append(seed)
         out[seed] = row
+    if duplicates:
+        raise ValueError(f"duplicate seeds in paired input: {sorted(set(duplicates))}")
     return out, missing
+
+
+def _capture_rc_for_row(row: dict[str, str]) -> int | None:
+    rc = _int_or_none(row.get("capture_rc"))
+    if rc is not None:
+        return rc
+    meta = _meta_for_row(row)
+    return _int_or_none(meta.get("capture_rc"))
 
 
 def _failure_class(row: dict[str, str]) -> str:
     log_path = (row.get("log_path") or "").strip()
     if not log_path or not Path(log_path).is_file():
         return ""
-    return classify_run_failure(Path(log_path), capture_rc=None)
+    return classify_run_failure(Path(log_path), capture_rc=_capture_rc_for_row(row))
 
 
 def paired_report(
@@ -385,11 +408,15 @@ def main() -> int:
         print(f"Wrote {args.out_json.resolve()}")
         return 0
     if args.cmd == "paired":
-        payload, rows_out = paired_report(
-            _read_csv(args.baseline),
-            _read_csv(args.candidate),
-            bootstrap_seed=int(args.bootstrap_seed),
-        )
+        try:
+            payload, rows_out = paired_report(
+                _read_csv(args.baseline),
+                _read_csv(args.candidate),
+                bootstrap_seed=int(args.bootstrap_seed),
+            )
+        except ValueError as exc:
+            print(str(exc), file=sys.stderr)
+            return 1
         _write_json(args.out_json, payload)
         if args.out_csv:
             _write_csv(args.out_csv, rows_out)

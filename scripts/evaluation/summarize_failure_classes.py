@@ -19,6 +19,31 @@ import stats_helpers as stats  # noqa: E402
 from classify_run import classify_run_failure_evidence  # noqa: E402
 
 
+def _int_or_none(value: object) -> int | None:
+    try:
+        text = str(value).strip()
+        if not text:
+            return None
+        return int(float(text))
+    except (TypeError, ValueError):
+        return None
+
+
+def _capture_rc_for_row(row: dict[str, str], log_path: Path) -> int | None:
+    rc = _int_or_none(row.get('capture_rc'))
+    if rc is not None:
+        return rc
+    meta_path = (row.get('meta_path') or '').strip()
+    mp = Path(meta_path) if meta_path else log_path.with_suffix('.meta.json')
+    if not mp.is_file():
+        return None
+    try:
+        md = json.loads(mp.read_text(encoding='utf-8'))
+    except (OSError, json.JSONDecodeError):
+        return None
+    return _int_or_none(md.get('capture_rc'))
+
+
 def main() -> int:
     ap = argparse.ArgumentParser(description='Count failure_class over MC CSV log_path column.')
     ap.add_argument('csv_path', type=Path, help='monte_carlo *.csv with log_path header')
@@ -61,8 +86,10 @@ def main() -> int:
                     cohorts.add(str(co).strip())
             except (OSError, json.JSONDecodeError):
                 pass
-        evidence = classify_run_failure_evidence(log_path, capture_rc=None)
-        hist[str(evidence['failure_class'])] += 1
+        evidence = classify_run_failure_evidence(log_path, capture_rc=_capture_rc_for_row(row, log_path))
+        failure_class = str(evidence['failure_class'])
+        if failure_class:
+            hist[failure_class] += 1
         evidence_rows.append(evidence)
 
     total = int(sum(hist.values()))

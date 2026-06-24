@@ -13,6 +13,7 @@ from __future__ import annotations
 import argparse
 import csv
 import json
+import math
 import re
 import sys
 from collections import defaultdict
@@ -22,7 +23,7 @@ _EVAL = Path(__file__).resolve().parent
 if str(_EVAL) not in sys.path:
     sys.path.insert(0, str(_EVAL))
 
-from statistical_validation import paired_report, seed_for_row  # noqa: E402
+from statistical_validation import _float_or_nan, paired_report, seed_for_row  # noqa: E402
 
 
 def seed_from_meta(log_path: str) -> int | None:
@@ -43,6 +44,7 @@ def seed_from_meta(log_path: str) -> int | None:
 
 def load_by_seed(csv_path: Path) -> dict[int, dict[str, object]]:
     out: dict[int, dict[str, object]] = {}
+    duplicates: list[int] = []
     with csv_path.open(encoding='utf-8', newline='') as f:
         for row in csv.DictReader(f):
             sid = seed_for_row(dict(row))
@@ -53,7 +55,11 @@ def load_by_seed(csv_path: Path) -> dict[int, dict[str, object]]:
                 sid = seed_from_meta(lp)
             if sid is None:
                 continue
+            if sid in out:
+                duplicates.append(sid)
             out[sid] = dict(row)
+    if duplicates:
+        raise ValueError(f'duplicate seeds in {csv_path}: {sorted(set(duplicates))}')
     return out
 
 
@@ -92,10 +98,18 @@ def main() -> int:
     )
     args = ap.parse_args()
 
-    base_map = load_by_seed(args.baseline_csv)
-    cand_map = load_by_seed(args.candidate_csv)
+    try:
+        base_map = load_by_seed(args.baseline_csv)
+        cand_map = load_by_seed(args.candidate_csv)
+    except ValueError as exc:
+        print(str(exc), file=sys.stderr)
+        return 1
     seeds = sorted(set(base_map) & set(cand_map))
-    stats_payload, stats_rows = paired_report(_load_rows(args.baseline_csv), _load_rows(args.candidate_csv))
+    try:
+        stats_payload, stats_rows = paired_report(_load_rows(args.baseline_csv), _load_rows(args.candidate_csv))
+    except ValueError as exc:
+        print(str(exc), file=sys.stderr)
+        return 1
     stats_by_seed = {int(r['seed']): r for r in stats_rows}
 
     buckets: defaultdict[str, list[int]] = defaultdict(list)
@@ -106,10 +120,10 @@ def main() -> int:
         c = cand_map[seed]
         bs = str(b.get('success', '')).strip().lower() == 'true'
         cs = str(c.get('success', '')).strip().lower() == 'true'
-        miss_b = float(b.get('miss_distance_m') or 0)
-        miss_c = float(c.get('miss_distance_m') or 0)
-        tint_b = float(b.get('intercept_time_s') or 0)
-        tint_c = float(c.get('intercept_time_s') or 0)
+        miss_b = _float_or_nan(b.get('miss_distance_m'))
+        miss_c = _float_or_nan(c.get('miss_distance_m'))
+        tint_b = _float_or_nan(b.get('intercept_time_s'))
+        tint_c = _float_or_nan(c.get('intercept_time_s'))
 
         bucket = ''
         if bs and not cs:
@@ -119,11 +133,17 @@ def main() -> int:
         elif not bs and not cs:
             bucket = 'G4_both_fail'
         elif bs and cs:
-            worse_miss = miss_c > miss_b + args.miss_delta
-            worse_tint = tint_c > tint_b + args.tint_delta
+            metrics_complete = all(math.isfinite(v) for v in (miss_b, miss_c, tint_b, tint_c))
+            if not metrics_complete:
+                bucket = 'G_metric_missing'
+                worse_miss = False
+                worse_tint = False
+            else:
+                worse_miss = miss_c > miss_b + args.miss_delta
+                worse_tint = tint_c > tint_b + args.tint_delta
             if worse_miss or worse_tint:
                 bucket = 'G3_both_ok_cand_worse'
-            else:
+            elif metrics_complete:
                 bucket = 'G0_both_ok_cand_not_worse'
         else:
             bucket = 'G_unexpected'
@@ -134,12 +154,12 @@ def main() -> int:
             'bucket': bucket,
             'base_ok': bs,
             'cand_ok': cs,
-            'miss_b': miss_b,
-            'miss_c': miss_c,
-            'miss_delta_c_minus_b': miss_c - miss_b,
-            'tint_b': tint_b,
-            'tint_c': tint_c,
-            'tint_delta_c_minus_b': tint_c - tint_b,
+            'miss_b': miss_b if math.isfinite(miss_b) else '',
+            'miss_c': miss_c if math.isfinite(miss_c) else '',
+            'miss_delta_c_minus_b': miss_c - miss_b if math.isfinite(miss_b) and math.isfinite(miss_c) else '',
+            'tint_b': tint_b if math.isfinite(tint_b) else '',
+            'tint_c': tint_c if math.isfinite(tint_c) else '',
+            'tint_delta_c_minus_b': tint_c - tint_b if math.isfinite(tint_b) and math.isfinite(tint_c) else '',
             'failure_b': stats_by_seed.get(seed, {}).get('failure_b', ''),
             'failure_c': stats_by_seed.get(seed, {}).get('failure_c', ''),
             'log_b': b.get('log_path', ''),
