@@ -109,9 +109,16 @@ def _empirical_cdf(xs: list[float], n_points: int = 21) -> list[tuple[float, flo
     return out
 
 
-def _summarise(results: list[dict], label: str) -> dict:
+def _summarise(
+    results: list[dict],
+    label: str,
+    *,
+    n_requested: int | None = None,
+    n_failed: int = 0,
+) -> dict:
     """Aggregate per-run dicts (output of ``parse_run_to_result``) into a single summary."""
-    n = len(results)
+    n_collected = len(results)
+    n = int(n_requested) if n_requested is not None else n_collected
     successes = [r for r in results if r.get("success")]
     miss = [
         float(r["miss_distance_m"])
@@ -126,6 +133,8 @@ def _summarise(results: list[dict], label: str) -> dict:
     summary: dict = {
         "label": label,
         "n_runs": n,
+        "n_collected": n_collected,
+        "n_failed": int(n_failed),
         "n_success": len(successes),
         "success_rate": (len(successes) / n) if n else float("nan"),
         "success_rate_ci95": layer_c_stats.wilson_ci(len(successes), n),
@@ -245,6 +254,7 @@ def _write_outputs(out_dir: Path, label: str, summary: dict, rows: list[dict]) -
         "launch_args_raw",
         "notes",
         "log_path",
+        "capture_rc",
     ]
     with csv_path.open("w", encoding="utf-8", newline="") as f:
         w = csv.DictWriter(f, fieldnames=fields)
@@ -293,6 +303,8 @@ def _enrich_result_with_meta(result: dict, log_path: Path) -> dict:
     result.setdefault("cohort", md.get("cohort") or "")
     result.setdefault("git_commit", md.get("git_commit") or "")
     result.setdefault("git_dirty", md.get("git_dirty") if md.get("git_dirty") is not None else "")
+    if md.get("capture_rc") is not None:
+        result.setdefault("capture_rc", md.get("capture_rc"))
     result.setdefault("launch_args_raw", md.get("launch_args_raw") or "")
     result.setdefault("notes", notes)
     if seed_text:
@@ -301,6 +313,17 @@ def _enrich_result_with_meta(result: dict, log_path: Path) -> dict:
     if geometry_id:
         result.setdefault("geometry_id", geometry_id)
     return result
+
+
+def _strip_launch_arg(raw: str, key: str) -> str:
+    """Remove an existing ``key:=value`` launch arg before injecting per-run MC values."""
+    keep: list[str] = []
+    prefix = f"{key}:="
+    for tok in str(raw or "").split():
+        if tok.strip().startswith(prefix):
+            continue
+        keep.append(tok)
+    return " ".join(keep)
 
 
 def _log_matches_aggregate_filters(
@@ -368,8 +391,9 @@ def cmd_run(args: argparse.Namespace) -> int:
         return 2
 
     rows: list[dict] = []
-    base_args = args.launch_args or ""
+    base_args = _strip_launch_arg(args.launch_args or "", "noise_seed")
     gid = getattr(args, "geometry_id", "").strip()
+    failed_runs: list[dict[str, object]] = []
 
     geometry_note = ""
     if gid:
@@ -377,10 +401,7 @@ def cmd_run(args: argparse.Namespace) -> int:
 
     for i in range(args.n):
         seed = args.seed_base + i
-        # Compose seed-aware launch args without overwriting whatever the caller already set.
-        per_run_args = base_args
-        if "noise_seed" not in base_args:
-            per_run_args = f"{per_run_args} noise_seed:={seed}".strip()
+        per_run_args = f"{base_args} noise_seed:={seed}".strip()
         cmd = [
             sys.executable,
             str(rc_script),
@@ -402,14 +423,24 @@ def cmd_run(args: argparse.Namespace) -> int:
         if r.returncode not in (0, 124):
             print(r.stderr, file=sys.stderr)
             print(f"[monte_carlo] run failed (rc={r.returncode}); skipping", file=sys.stderr)
+            failed_runs.append({"seed": seed, "rc": int(r.returncode), "reason": "run_capture_failed"})
             continue
         out_lines = (r.stdout or "").strip().splitlines()
         if not out_lines:
             print("[monte_carlo] run produced no output; skipping", file=sys.stderr)
+            failed_runs.append({"seed": seed, "rc": int(r.returncode), "reason": "empty_stdout"})
             continue
         log_path = Path(out_lines[0].strip())
         if not log_path.is_file():
             print(f"[monte_carlo] log path missing: {log_path}", file=sys.stderr)
+            failed_runs.append(
+                {
+                    "seed": seed,
+                    "rc": int(r.returncode),
+                    "reason": "missing_log",
+                    "log_path": str(log_path),
+                },
+            )
             continue
         result = analyze.parse_run_to_result(str(log_path))
         result["run_id"] = log_path.stem
@@ -424,9 +455,18 @@ def cmd_run(args: argparse.Namespace) -> int:
     if not rows:
         print("no successful runs collected", file=sys.stderr)
         return 1
-    summary = _summarise(rows, args.label)
+    summary = _summarise(rows, args.label, n_requested=args.n, n_failed=len(failed_runs))
+    if failed_runs:
+        summary["collection_failures"] = failed_runs
     _print_summary(summary)
     _write_outputs(Path(args.out_dir), args.label, summary, rows)
+    if len(rows) != args.n:
+        print(
+            f"[monte_carlo] incomplete cohort: requested={args.n} collected={len(rows)} "
+            f"failed={len(failed_runs)}",
+            file=sys.stderr,
+        )
+        return 1
     return 0
 
 
