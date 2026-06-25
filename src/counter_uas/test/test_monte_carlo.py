@@ -5,6 +5,7 @@ from __future__ import annotations
 import importlib.util
 import json
 from pathlib import Path
+from types import SimpleNamespace
 
 _REPO_ROOT = Path(__file__).resolve().parents[3]
 
@@ -123,3 +124,56 @@ def test_aggregate_writes_outputs(tmp_path) -> None:
     assert 'noise_seed_mc' in csv_text and 'cohort' in csv_text and 'meta_path' in csv_text
     assert 'unit_cohort' in csv_text and 'cell_a' in csv_text
     assert 'run_a' in csv_text and 'run_b' in csv_text
+
+
+def test_run_mode_fails_incomplete_cohort_and_forces_per_run_seed(tmp_path, monkeypatch) -> None:  # noqa: ANN001
+    mc = _load_mc()
+    log = tmp_path / 'hit.log'
+    log.write_text(_HIT_LOG, encoding='utf-8')
+    out_dir = tmp_path / 'mc'
+    seen_launch_args: list[str] = []
+
+    class _Result:
+        def __init__(self, returncode: int, stdout: str = '', stderr: str = '') -> None:
+            self.returncode = returncode
+            self.stdout = stdout
+            self.stderr = stderr
+
+    calls = {'n': 0}
+
+    def fake_run(cmd, *args, **kwargs):  # noqa: ANN001, ANN202, ARG001
+        calls['n'] += 1
+        launch_arg_idx = cmd.index('--launch-args') + 1
+        seen_launch_args.append(cmd[launch_arg_idx])
+        if calls['n'] == 1:
+            return _Result(0, f'{log}\n')
+        return _Result(2, stderr='launch failed')
+
+    monkeypatch.setattr(mc.subprocess, 'run', fake_run)
+
+    args = SimpleNamespace(
+        n=2,
+        seed_base=12,
+        launch_args='use_gazebo_gui:=false noise_seed:=999',
+        geometry_id='',
+        scenario='single',
+        timeout_s=1.0,
+        label='partial',
+        cohort=None,
+        out_dir=str(out_dir),
+    )
+
+    rc = mc.cmd_run(args)
+
+    assert rc == 1
+    assert seen_launch_args == [
+        'use_gazebo_gui:=false noise_seed:=12',
+        'use_gazebo_gui:=false noise_seed:=13',
+    ]
+    payload = json.loads((out_dir / 'partial.json').read_text(encoding='utf-8'))
+    assert payload['n_runs'] == 2
+    assert payload['n_collected'] == 1
+    assert payload['n_failed'] == 1
+    assert payload['n_success'] == 1
+    assert payload['success_rate'] == 0.5
+    assert payload['collection_failures'][0]['seed'] == 13
