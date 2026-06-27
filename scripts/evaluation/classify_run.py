@@ -39,12 +39,14 @@ def classify_run_failure_evidence(
 
     timeout_seen = '=== timeout ===' in low or (capture_rc is not None and int(capture_rc) == 124)
     assignment_switch_count = len(_REASSIGN_RE.findall(text))
-    feasible_geom_seen = 'feasible_geom=true' in text or '[feas_warn]' in low
+    feasible_geom_seen = 'feasible_geom=true' in low or '[feas_warn]' in low
     has_eng_metric = '[eng_metric]' in low
     max_abs_delta = max((abs(d) for d in deltas), default=None)
 
-    failure_class = 'F5_unknown'
-    if timeout_seen:
+    failure_class = '' if summary.hit else 'F5_unknown'
+    if summary.hit:
+        failure_class = ''
+    elif timeout_seen:
         failure_class = 'F1_timeout'
     elif assignment_switch_count > 0:
         failure_class = 'F4_assignment'
@@ -95,7 +97,9 @@ def main() -> int:
         print(f'missing log: {args.log}', file=sys.stderr)
         return 2
     if args.meta is not None and args.meta.is_file():
-        _ = json.loads(args.meta.read_text(encoding='utf-8'))
+        meta = json.loads(args.meta.read_text(encoding='utf-8'))
+        if args.capture_rc is None and meta.get('capture_rc') is not None:
+            args.capture_rc = int(meta['capture_rc'])
     evidence = classify_run_failure_evidence(args.log, capture_rc=args.capture_rc)
     print(json.dumps(evidence, sort_keys=True))
     return 0

@@ -62,6 +62,14 @@ def test_paired_report_uses_matched_seed_rows() -> None:
     assert [r['seed'] for r in rows] == [1, 2]
 
 
+def test_failure_class_uses_capture_rc_from_meta(tmp_path: Path) -> None:
+    layer_c = _load_layer_c()
+    log_path = tmp_path / 'timeout.log'
+    log_path.write_text('no hit\n', encoding='utf-8')
+    log_path.with_suffix('.meta.json').write_text(json.dumps({'capture_rc': 124}), encoding='utf-8')
+    assert layer_c._failure_class({'log_path': str(log_path)}) == 'F1_timeout'
+
+
 def test_validate_manifest_detects_mixed_cohorts(tmp_path: Path) -> None:
     layer_c = _load_layer_c()
     log_path = tmp_path / 'run.log'

@@ -89,6 +89,17 @@ def test_summarise_counts_success_and_misses(tmp_path) -> None:
     assert 'p95_ci95' in miss
 
 
+def test_mc_launch_args_strip_caller_noise_seed() -> None:
+    mc = _load_mc()
+    stripped = mc._launch_args_without_key(
+        'use_noisy_measurement:=true noise_seed:=999 noise_std_m:=0.5',
+        'noise_seed',
+    )
+    assert 'noise_seed' not in stripped
+    assert 'use_noisy_measurement:=true' in stripped
+    assert 'noise_std_m:=0.5' in stripped
+
+
 def test_aggregate_writes_outputs(tmp_path) -> None:
     mc = _load_mc()
     logs_dir = tmp_path / 'logs'
