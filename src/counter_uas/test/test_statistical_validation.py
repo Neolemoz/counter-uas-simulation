@@ -79,3 +79,39 @@ def test_validate_manifest_detects_mixed_cohorts(tmp_path: Path) -> None:
     assert result['ok'] is False
     assert any('cohorts seen' in p for p in result['problems'])
     assert result['seed_count'] == 1
+
+
+def test_validate_manifest_detects_blank_cohort_rows(tmp_path: Path) -> None:
+    layer_c = _load_layer_c()
+    log_path = tmp_path / 'run.log'
+    log_path.write_text('', encoding='utf-8')
+    log_path.with_suffix('.meta.json').write_text(json.dumps({'cohort': 'expected'}), encoding='utf-8')
+    rows = [
+        {
+            'seed': '1',
+            'cohort': '',
+            'git_dirty': 'False',
+            'log_path': str(log_path),
+        },
+    ]
+    result = layer_c.validate_manifest({'n': 1, 'cohort': 'expected'}, rows)
+    assert result['ok'] is False
+    assert any('cohort !=' in p for p in result['problems'])
+
+
+def test_validate_manifest_requires_git_dirty_provenance(tmp_path: Path) -> None:
+    layer_c = _load_layer_c()
+    log_path = tmp_path / 'run.log'
+    log_path.write_text('', encoding='utf-8')
+    log_path.with_suffix('.meta.json').write_text(json.dumps({'cohort': 'expected'}), encoding='utf-8')
+    rows = [
+        {
+            'seed': '1',
+            'cohort': 'expected',
+            'git_dirty': '',
+            'log_path': str(log_path),
+        },
+    ]
+    result = layer_c.validate_manifest({'n': 1, 'cohort': 'expected', 'require_clean_git': True}, rows)
+    assert result['ok'] is False
+    assert any('missing git_dirty' in p for p in result['problems'])

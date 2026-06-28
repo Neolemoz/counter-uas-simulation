@@ -18,7 +18,7 @@ Two operating modes
    tests / CI where Gazebo is not available.
 
 2. ``--mode run`` — drive ``scripts/run_capture.py`` for ``--n`` runs. Each injected
-   Monte Carlo RNG uses ``noise_seed:=<seed_base+i>`` (unless overridden) and records
+   Monte Carlo RNG uses ``noise_seed:=<seed_base+i>`` and records
    ``noise_seed_mc`` + optional static ``geometry_id`` for reproducible pairing with
    spatial scenario matrices.
 
@@ -243,6 +243,7 @@ def _write_outputs(out_dir: Path, label: str, summary: dict, rows: list[dict]) -
         "git_commit",
         "git_dirty",
         "launch_args_raw",
+        "capture_rc",
         "notes",
         "log_path",
     ]
@@ -264,6 +265,14 @@ def _load_log_meta(log_path: Path) -> dict:
     mp = log_path.with_suffix('.meta.json')
     if not mp.is_file():
         return {}
+
+
+def _strip_launch_arg(raw: str | None, key: str) -> str:
+    """Remove simple ROS launch tokens of the form ``key:=value``."""
+    if not raw:
+        return ""
+    prefix = f"{key}:="
+    return " ".join(tok for tok in str(raw).split() if not tok.startswith(prefix))
     try:
         return json.loads(mp.read_text(encoding='utf-8'))
     except (json.JSONDecodeError, OSError):
@@ -294,6 +303,7 @@ def _enrich_result_with_meta(result: dict, log_path: Path) -> dict:
     result.setdefault("git_commit", md.get("git_commit") or "")
     result.setdefault("git_dirty", md.get("git_dirty") if md.get("git_dirty") is not None else "")
     result.setdefault("launch_args_raw", md.get("launch_args_raw") or "")
+    result.setdefault("capture_rc", md.get("capture_rc") if md.get("capture_rc") is not None else "")
     result.setdefault("notes", notes)
     if seed_text:
         result.setdefault("noise_seed_mc", seed_text)
@@ -368,8 +378,9 @@ def cmd_run(args: argparse.Namespace) -> int:
         return 2
 
     rows: list[dict] = []
-    base_args = args.launch_args or ""
+    base_args = _strip_launch_arg(args.launch_args or "", "noise_seed")
     gid = getattr(args, "geometry_id", "").strip()
+    failed_runs: list[str] = []
 
     geometry_note = ""
     if gid:
@@ -377,10 +388,7 @@ def cmd_run(args: argparse.Namespace) -> int:
 
     for i in range(args.n):
         seed = args.seed_base + i
-        # Compose seed-aware launch args without overwriting whatever the caller already set.
-        per_run_args = base_args
-        if "noise_seed" not in base_args:
-            per_run_args = f"{per_run_args} noise_seed:={seed}".strip()
+        per_run_args = f"{base_args} noise_seed:={seed}".strip()
         cmd = [
             sys.executable,
             str(rc_script),
@@ -401,15 +409,18 @@ def cmd_run(args: argparse.Namespace) -> int:
         r = subprocess.run(cmd, capture_output=True, text=True)
         if r.returncode not in (0, 124):
             print(r.stderr, file=sys.stderr)
-            print(f"[monte_carlo] run failed (rc={r.returncode}); skipping", file=sys.stderr)
+            print(f"[monte_carlo] run failed (rc={r.returncode}); skipping seed={seed}", file=sys.stderr)
+            failed_runs.append(f"seed={seed}: rc={r.returncode}")
             continue
         out_lines = (r.stdout or "").strip().splitlines()
         if not out_lines:
-            print("[monte_carlo] run produced no output; skipping", file=sys.stderr)
+            print(f"[monte_carlo] run produced no output; skipping seed={seed}", file=sys.stderr)
+            failed_runs.append(f"seed={seed}: no output")
             continue
         log_path = Path(out_lines[0].strip())
         if not log_path.is_file():
-            print(f"[monte_carlo] log path missing: {log_path}", file=sys.stderr)
+            print(f"[monte_carlo] log path missing for seed={seed}: {log_path}", file=sys.stderr)
+            failed_runs.append(f"seed={seed}: missing log {log_path}")
             continue
         result = analyze.parse_run_to_result(str(log_path))
         result["run_id"] = log_path.stem
@@ -425,8 +436,18 @@ def cmd_run(args: argparse.Namespace) -> int:
         print("no successful runs collected", file=sys.stderr)
         return 1
     summary = _summarise(rows, args.label)
+    summary["requested_runs"] = int(args.n)
+    summary["collected_runs"] = len(rows)
+    summary["failed_runs"] = len(failed_runs)
+    summary["collection_failures"] = failed_runs
     _print_summary(summary)
     _write_outputs(Path(args.out_dir), args.label, summary, rows)
+    if len(rows) != int(args.n):
+        print(
+            f"[monte_carlo] incomplete cohort: collected {len(rows)}/{args.n} runs",
+            file=sys.stderr,
+        )
+        return 1
     return 0
 
 
