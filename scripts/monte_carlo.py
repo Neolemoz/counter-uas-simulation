@@ -265,6 +265,10 @@ def _load_log_meta(log_path: Path) -> dict:
     mp = log_path.with_suffix('.meta.json')
     if not mp.is_file():
         return {}
+    try:
+        return json.loads(mp.read_text(encoding='utf-8'))
+    except (json.JSONDecodeError, OSError):
+        return {}
 
 
 def _strip_launch_arg(raw: str | None, key: str) -> str:
@@ -273,10 +277,6 @@ def _strip_launch_arg(raw: str | None, key: str) -> str:
         return ""
     prefix = f"{key}:="
     return " ".join(tok for tok in str(raw).split() if not tok.startswith(prefix))
-    try:
-        return json.loads(mp.read_text(encoding='utf-8'))
-    except (json.JSONDecodeError, OSError):
-        return {}
 
 
 def _note_value(notes: str, key: str) -> str:
