@@ -23,9 +23,19 @@ def test_f1_timeout_marker() -> None:
         p.unlink(missing_ok=True)
 
 
-def test_f1_capture_rc_124() -> None:
+def test_hit_with_capture_rc_124_is_success() -> None:
     with tempfile.NamedTemporaryFile(mode='w', suffix='.log', delete=False, encoding='utf-8') as f:
         f.write('[HIT] x min_miss=0.1 m\n')
+        p = Path(f.name)
+    try:
+        assert classify_run_failure(p, capture_rc=124) == ''
+    finally:
+        p.unlink(missing_ok=True)
+
+
+def test_no_hit_capture_rc_124_is_timeout() -> None:
+    with tempfile.NamedTemporaryFile(mode='w', suffix='.log', delete=False, encoding='utf-8') as f:
+        f.write('no hit here\n')
         p = Path(f.name)
     try:
         assert classify_run_failure(p, capture_rc=124) == 'F1_timeout'
@@ -43,7 +53,7 @@ def test_f4_reassign() -> None:
         p.unlink(missing_ok=True)
 
 
-def test_f5_hit_no_specials() -> None:
+def test_hit_no_specials_is_success() -> None:
     text = (
         '[INFO] x: === Interceptor Selection ===\n'
         'selected: interceptor_0\n'
@@ -53,6 +63,6 @@ def test_f5_hit_no_specials() -> None:
         f.write(text)
         p = Path(f.name)
     try:
-        assert classify_run_failure(p) == 'F5_unknown'
+        assert classify_run_failure(p) == ''
     finally:
         p.unlink(missing_ok=True)
